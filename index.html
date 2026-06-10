@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAF International — Outils de gestion</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0a1628;
+    color: #e8edf5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 2.5rem 2rem 1.5rem;
+    border-bottom: 1px solid rgba(200,170,80,0.25);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .logo-badge {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #c8aa50, #e8cc70);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: #0a1628;
+    flex-shrink: 0;
+    letter-spacing: -1px;
+  }
+
+  .header-text h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #c8aa50;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .header-text p {
+    font-size: 0.82rem;
+    color: #7a8fa8;
+    margin-top: 2px;
+    letter-spacing: 0.02em;
+  }
+
+  main {
+    flex: 1;
+    padding: 3rem 2rem;
+    max-width: 820px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .section-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #c8aa50;
+    margin-bottom: 1.5rem;
+    opacity: 0.8;
+  }
+
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+
+  .tool-card {
+    background: #111e33;
+    border: 1px solid rgba(200,170,80,0.15);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s, transform 0.15s, background 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .tool-card:hover {
+    border-color: rgba(200,170,80,0.5);
+    background: #152136;
+    transform: translateY(-2px);
+  }
+
+  .tool-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .icon-sms { background: rgba(220,60,60,0.15); }
+  .icon-cms { background: rgba(60,140,220,0.15); }
+  .icon-omm { background: rgba(60,200,130,0.15); }
+
+  .tool-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #e8edf5;
+  }
+
+  .tool-desc {
+    font-size: 0.8rem;
+    color: #7a8fa8;
+    line-height: 1.5;
+  }
+
+  .tool-tag {
+    display: inline-block;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-top: auto;
+    font-weight: 500;
+  }
+
+  .tag-sms { background: rgba(220,60,60,0.12); color: #e07070; border: 1px solid rgba(220,60,60,0.2); }
+  .tag-cms { background: rgba(60,140,220,0.12); color: #70a8e0; border: 1px solid rgba(60,140,220,0.2); }
+  .tag-omm { background: rgba(60,200,130,0.12); color: #70d0a0; border: 1px solid rgba(60,200,130,0.2); }
+
+  .arrow {
+    margin-left: auto;
+    color: #c8aa50;
+    font-size: 1rem;
+    opacity: 0.5;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  .tool-card:hover .arrow {
+    opacity: 1;
+    transform: translateX(3px);
+  }
+
+  .tool-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid rgba(200,170,80,0.1);
+    text-align: center;
+    font-size: 0.75rem;
+    color: #3a4f68;
+    letter-spacing: 0.03em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-badge">SAF</div>
+  <div class="header-text">
+    <h1>SAF International</h1>
+    <p>Outils de gestion — CH.AOC.3052 / CH.CAMO.3052</p>
+  </div>
+</header>
+
+<main>
+  <p class="section-label">Accès aux outils</p>
+  <div class="tools-grid">
+
+    <a class="tool-card" href="SAF_International_Safety.html">
+      <div class="tool-header">
+        <div class="tool-icon icon-sms">🛡️</div>
+        <span class="tool-name">Safety Management</span>
+        <span class="arrow">→</span>
+      </div>
+      <p class="tool-desc">Registre des occurrences, analyse des risques, indicateurs SPI/KPI, Safety Case et promotion sécurité.</p>
+      <span class="tool-tag tag-sms">SMS</span>
+    </a>
+
+    <a class="tool-card" href="SAF_International_Compliance_Monitoring_System.html">
+      <div class="tool-header">
+        <div class="tool-icon icon-cms">📋</div>
+        <span class="tool-name">Compliance Monitoring</span>
+        <span class="arrow">→</span>
+      </div>
+      <p class="tool-desc">Audits EASA Part-ORO/CAT/CAMO, registre des findings, plan d'audit 12 mois et suivi CAP.</p>
+      <span class="tool-tag tag-cms">CMS</span>
+    </a>
+
+    <a class="tool-card" href="SAF_International_Appendices_OMM.html">
+      <div class="tool-header">
+        <div class="tool-icon icon-omm">📁</div>
+        <span class="tool-name">OMM Appendices</span>
+        <span class="arrow">→</span>
+      </div>
+      <p class="tool-desc">Annexes opérationnelles, organigramme, registre de formation et certificats, bases et équipements.</p>
+      <span class="tool-tag tag-omm">OMM</span>
+    </a>
+
+  </div>
+</main>
+
+<footer>
+  SAF Hélico / SAF Aerogroup &nbsp;·&nbsp; AS 332 C1 Super Puma &nbsp;·&nbsp; FOCA / EASA
+</footer>
+
+</body>
+</html>
