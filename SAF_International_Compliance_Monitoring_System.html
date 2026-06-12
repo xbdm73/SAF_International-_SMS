@@ -1898,7 +1898,7 @@ function safExportPDF() {
       </div>
       <div class="kpiv2-right">
         <div class="kpiv2-big green" id="kpi1">—</div>
-        <div class="kpiv2-target" id="kpiv2-target-kpi1">EASA target : ≥ 90%</div>
+        <div class="kpiv2-target" id="kpiv2-target-kpi1">EASA target : ≥ 90% (ideal ≥ 95%)</div>
         <div class="kpiv2-trend stable" id="kpiv2-trend-kpi1">⊘ Loading data…</div>
       </div>
     </div>
@@ -1916,7 +1916,7 @@ function safExportPDF() {
 </div>
 
 <!-- KPI 2 — Open critical findings -->
-<div class="kpiv2 amber" id="kpiv2-card-kpi2">
+<div class="kpiv2 red" id="kpiv2-card-kpi2">
   <div class="kpiv2-top"></div>
   <div class="kpiv2-body">
     <div class="kpiv2-header">
@@ -1928,12 +1928,12 @@ function safExportPDF() {
     </div>
     <div class="kpiv2-visual">
       <div class="kpiv2-gauge-wrap">
-        <svg viewBox="0 0 80 80"><circle class="kpiv2-gauge-bg" cx="40" cy="40" r="30"/><circle class="kpiv2-gauge-arc" id="kpiv2-arc-kpi2" cx="40" cy="40" r="30" stroke="#f5a623" stroke-dasharray="188.5" stroke-dashoffset="188.5" transform="rotate(-90 40 40)"/></svg>
-        <div class="kpiv2-gauge-text" id="kpiv2-gtext-kpi2" style="color:#f5a623">—</div>
+        <svg viewBox="0 0 80 80"><circle class="kpiv2-gauge-bg" cx="40" cy="40" r="30"/><circle class="kpiv2-gauge-arc" id="kpiv2-arc-kpi2" cx="40" cy="40" r="30" stroke="#ff4444" stroke-dasharray="188.5" stroke-dashoffset="188.5" transform="rotate(-90 40 40)"/></svg>
+        <div class="kpiv2-gauge-text" id="kpiv2-gtext-kpi2" style="color:#ff4444">—</div>
       </div>
       <div class="kpiv2-right">
-        <div class="kpiv2-big amber" id="kpi2" style="color:#f5a623">—</div>
-        <div class="kpiv2-target" id="kpiv2-target-kpi2">EASA target : 0</div>
+        <div class="kpiv2-big red" id="kpi2" style="color:#ff4444">—</div>
+        <div class="kpiv2-target" id="kpiv2-target-kpi2">EASA target : 0 (zero tolerance — L1)</div>
         <div class="kpiv2-trend stable" id="kpiv2-trend-kpi2">⊘ Loading data…</div>
       </div>
     </div>
@@ -1968,7 +1968,7 @@ function safExportPDF() {
       </div>
       <div class="kpiv2-right">
         <div class="kpiv2-big blue" id="kpi3" style="color:#00d4ff">—</div>
-        <div class="kpiv2-target" id="kpiv2-target-kpi3">EASA target : ≥ 85%</div>
+        <div class="kpiv2-target" id="kpiv2-target-kpi3">EASA target : ≥ 85% (ideal ≥ 90%)</div>
         <div class="kpiv2-trend stable" id="kpiv2-trend-kpi3">⊘ Loading data…</div>
       </div>
     </div>
@@ -2003,7 +2003,7 @@ function safExportPDF() {
       </div>
       <div class="kpiv2-right">
         <div class="kpiv2-big green" id="kpi4">—</div>
-        <div class="kpiv2-target" id="kpiv2-target-kpi4">EASA target : 100%</div>
+        <div class="kpiv2-target" id="kpiv2-target-kpi4">EASA target : 100% over the cycle (≤ 24 months)</div>
         <div class="kpiv2-trend stable" id="kpiv2-trend-kpi4">⊘ Loading data…</div>
       </div>
     </div>
@@ -2038,7 +2038,7 @@ function safExportPDF() {
       </div>
       <div class="kpiv2-right">
         <div class="kpiv2-big" id="kpi5" style="color:#8b5cf6">—</div>
-        <div class="kpiv2-target" id="kpiv2-target-kpi5">≤ 14j (critical) / ≤ 30j (major)</div>
+        <div class="kpiv2-target" id="kpiv2-target-kpi5">L1 ≤ 7d · critical ≤ 14d · major ≤ 30d</div>
         <div class="kpiv2-trend stable" id="kpiv2-trend-kpi5" id="kpi5-trend">⊘ Enter value below</div>
       </div>
     </div>
@@ -2085,7 +2085,7 @@ function safExportPDF() {
       </div>
       <div class="kpiv2-right">
         <div class="kpiv2-big red" id="kpi6" style="color:#ff4444">—</div>
-        <div class="kpiv2-target" id="kpiv2-target-kpi6">EASA target : ≤ 5%</div>
+        <div class="kpiv2-target" id="kpiv2-target-kpi6">EASA target : ≤ 5% (alert &gt; 10%)</div>
         <div class="kpiv2-trend stable" id="kpiv2-trend-kpi6">⊘ Loading data…</div>
       </div>
     </div>
@@ -2245,12 +2245,12 @@ function kpiv2ResetEdit(id){
   if(ovr) ovr.value = '';
   // Restore defaults
   var defaults = {
-    kpi1:{name:'Overall compliance rate',unit:'% findings without critical finding',target:'≥ 90%'},
-    kpi2:{name:'Open critical findings',unit:'Unclosed Level 1 findings',target:'0'},
-    kpi3:{name:'CAP closure rate',unit:'% action plans closed within deadlines',target:'≥ 85%'},
-    kpi4:{name:'Audits completed / planned',unit:'% of programme completed',target:'100%'},
-    kpi5:{name:'Average CAP response time',unit:'Working days (manual entry)',target:'≤ 14j critical / ≤ 30j major'},
-    kpi6:{name:'Repeat findings',unit:'% findings occurring 2+ times',target:'≤ 5%'}
+    kpi1:{name:'Overall compliance rate',unit:'% findings without critical finding',target:'≥ 90% (ideal ≥ 95%)'},
+    kpi2:{name:'Open critical findings',unit:'Unclosed Level 1 findings',target:'0 (zero tolerance — L1)'},
+    kpi3:{name:'CAP closure rate',unit:'% action plans closed within deadlines',target:'≥ 85% (ideal ≥ 90%)'},
+    kpi4:{name:'Audits completed / planned',unit:'% of programme completed',target:'100% over the cycle (≤ 24 months)'},
+    kpi5:{name:'Average CAP response time',unit:'Working days (manual entry)',target:'L1 ≤ 7d / critical ≤ 14d / major ≤ 30d'},
+    kpi6:{name:'Repeat findings',unit:'% findings occurring 2+ times',target:'≤ 5% (alert > 10%)'}
   };
   var d = defaults[id] || {};
   var ne = document.getElementById('kpiv2-name-'+id); if(ne && d.name) ne.textContent = d.name;
@@ -3146,6 +3146,20 @@ function updateKPIsFromData() {
     // ── Mise à jour KPI v2 (gauge circulaire) ──
     var cardV2 = el ? el.closest('.kpiv2') : null;
     if (cardV2) {
+      // Appliquer la classe de couleur (green/amber/red/blue/purple)
+      if (gaugeClass) {
+        var colorMap = {green:'#00c48c', amber:'#f5a623', red:'#ff4444', blue:'#00d4ff', purple:'#8b5cf6'};
+        cardV2.className = cardV2.className.replace(/\b(green|amber|red|blue|purple)\b/g, '').trim();
+        cardV2.classList.add(gaugeClass);
+        var col = colorMap[gaugeClass];
+        if (col) {
+          var arcC = document.getElementById('kpiv2-arc-'+id);
+          if (arcC) arcC.setAttribute('stroke', col);
+          var gtC = document.getElementById('kpiv2-gtext-'+id);
+          if (gtC) gtC.style.color = col;
+          if (el) el.style.color = col;
+        }
+      }
       var arc = document.getElementById('kpiv2-arc-'+id);
       var gtext = document.getElementById('kpiv2-gtext-'+id);
       if (arc && value !== null) {
@@ -3166,7 +3180,7 @@ function updateKPIsFromData() {
   if (evaluated === 0) {
     // Aucune donnée saisie → afficher "—" au lieu de chiffres fictifs
     setCard('kpi1', 'green',  null, '—', '⊘ Aucun audit saisi', 'stable');
-    setCard('kpi2', 'amber',  null, '—', '⊘ Aucun audit saisi', 'stable');
+    setCard('kpi2', 'red',    null, '—', '⊘ Aucun audit saisi', 'stable');
     setCard('kpi3', 'blue',   null, '—', '⊘ Aucun audit saisi', 'stable');
     setCard('kpi4', 'green',  null, '—', '⊘ Aucun audit saisi', 'stable');
     setCard('kpi6', 'red',    null, '—', '⊘ Aucun audit saisi', 'stable');
@@ -3185,7 +3199,7 @@ function updateKPIsFromData() {
     var n1Display = String(findingsN1);
     var n1Trend = eN1k.ok ? '✓ Conforme à la cible (' + _lbl('n1') + ')' : '⬇ ' + findingsN1 + ' finding(s) L1 — cible ' + _lbl('n1');
     var n1TrendClass = eN1k.ok ? 'up' : 'down';
-    setCard('kpi2', 'amber', Math.min(findingsN1 * 20, 100), n1Display, n1Trend, n1TrendClass);
+    setCard('kpi2', (eN1k.ok ? 'green' : 'red'), Math.min(findingsN1 * 20, 100), n1Display, n1Trend, n1TrendClass);
 
     // KPI-03 Taux CAP
     var eCapk=_ev('cap',tauxCAP);
@@ -3241,7 +3255,7 @@ function updateKPIsFromData() {
 
   if (evaluated === 0) {
     setDB('db-kpi1','db-kpi1-gauge','db-kpi1-tag', null, '—', '0%', '⊘ Aucun audit saisi','amber');
-    setDB('db-kpi2','db-kpi2-gauge','db-kpi2-tag', null, '—', '0%', '⊘ Aucun audit saisi','amber');
+    setDB('db-kpi2','db-kpi2-gauge','db-kpi2-tag', null, '—', '0%', '⊘ Aucun audit saisi','red');
     setDB('db-kpi3','db-kpi3-gauge','db-kpi3-tag', null, '—', '0%', '⊘ Aucun audit saisi','amber');
     setDB('db-kpi4','db-kpi4-gauge','db-kpi4-tag', null, '—', '0%', '⊘ Aucun audit saisi','amber');
     var s4 = document.getElementById('db-kpi4-sub'); if(s4) s4.textContent = '0 points';
@@ -8938,7 +8952,7 @@ updateSrbProgress();
 <div class="db-sub">Active critical non-compliances</div>
 <div class="db-gauge"><div class="db-gauge-fill red" id="db-kpi2-gauge" style="width:0%"></div></div>
 <div style="display:flex;justify-content:space-between;font-size:10px;color:#6a82a5;font-family:monospace"><span>Target : 0</span><span id="db-kpi2-sub">Action required</span></div>
-<div class="db-tag amber" id="db-kpi2-tag">⊘ No audit entered</div>
+<div class="db-tag red" id="db-kpi2-tag">⊘ No audit entered</div>
 </div>
 <div class="db-card span3 c-amber">
 <div class="db-title">CAP closure within deadlines</div>
