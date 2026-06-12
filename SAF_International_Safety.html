@@ -4026,6 +4026,7 @@ window.safExportAllData_object = function(){
     safRiskDB:        (typeof DB!=='undefined' && Array.isArray(DB) && DB.length) ? JSON.stringify(DB) : _getLS('safRiskDB'),
     safChangeStudies: (typeof CHANGE_STUDIES!=='undefined' && Array.isArray(CHANGE_STUDIES)) ? JSON.stringify(CHANGE_STUDIES) : _getLS('safChangeStudies'),
     safSPITargets:    _getLS('safSPITargets'),
+    safFlightHours:   _getLS('safFlightHours'),
     safOccurrences:   _getLS('safOccurrences'),
     safLessons:       _getLS('safLessons'),
     safSRBMeetings:   _getLS('safSRBMeetings'),
@@ -4110,7 +4111,7 @@ function safImportAllData(evt){
   reader.onload = function(e){
     try{
       var data = JSON.parse(e.target.result);
-      var keys = ['safRiskDB','safChangeStudies','safSPITargets','safOccurrences',
+      var keys = ['safRiskDB','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
                   'safLessons','safSRBMeetings','safAudits','lastModified',
                   'ejsPublicKey','ejsServiceId','ejsTemplateId'];
       var count = 0;
@@ -6106,7 +6107,7 @@ function importJSON(event) {
 
       // ── Format SAF SMS Backup complet (safExportAllData) ──
       if(data._version || data._app || data.safRiskDB || data.safOccurrences || data.safChangeStudies) {
-        const allKeys = ['safRiskDB','safChangeStudies','safSPITargets','safOccurrences',
+        const allKeys = ['safRiskDB','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
                          'safLessons','safSRBMeetings','safAudits','safSAR','safALoS','lastModified',
                          'ejsPublicKey','ejsServiceId','ejsTemplateId'];
         allKeys.forEach(function(k){ if(data[k]!=null){ localStorage.setItem(k,data[k]); imported.push(k); } });
@@ -6804,11 +6805,11 @@ const DEFAULT_SPI_TARGETS = [
   {id:'spi1', name:'Intolerable risks (RED)', formula:'red_count', objective:'Zero intolerable initial risks remain untreated', target:0, green:0, amber:1, red:2, unit:'risks', direction:'down'},
   {id:'spi2', name:'Risk reduction rate', formula:'reduction_pct', objective:'At least 80% of registered hazards have a lower residual score than initial score', target:80, green:80, amber:60, red:59, unit:'%', direction:'up'},
   {id:'spi3', name:'Controls overdue (>12 months)', formula:'overdue_count', objective:'Maintain all safety controls under periodic review', target:0, green:0, amber:2, red:3, unit:'controls', direction:'down'},
-  {id:'spi4', name:'Change studies completed', formula:'cs_count', objective:'Demonstrate active management of operational changes', target:4, green:4, amber:2, red:1, unit:'studies', direction:'up'},
-  {id:'spi5', name:'Occurrences this year', formula:'occ_year', objective:'Monitor reported safety events and weak signals', target:0, green:0, amber:5, red:8, unit:'events', direction:'down'},
-  {id:'spi6', name:'Barriers fully covered', formula:'barrier_pct', objective:'Maximise complete preventive / mitigation / recovery barrier coverage', target:95, green:95, amber:80, red:79, unit:'%', direction:'up'},
+  {id:'spi4', name:'Change studies completed', formula:'cs_count', objective:'Demonstrate active management of operational changes', target:3, green:3, amber:1, red:0, unit:'studies', direction:'up'},
+  {id:'spi5', name:'Reporting rate (reports / 100 FH)', formula:'reporting_rate', objective:'Maintain a healthy reporting culture — reported events and weak signals normalised by flight-hour exposure (higher is better)', target:6, green:6, amber:3, red:2.9, unit:'rep/100FH', direction:'up'},
+  {id:'spi6', name:'Barriers fully covered', formula:'barrier_pct', objective:'Maximise complete preventive / mitigation / recovery barrier coverage', target:90, green:90, amber:75, red:74, unit:'%', direction:'up'},
   {id:'spi7', name:'Residual RED risks', formula:'res_red', objective:'No residual risk remains in RED after mitigation', target:0, green:0, amber:1, red:2, unit:'risks', direction:'down'},
-  {id:'spi8', name:'Lessons learned published', formula:'ll_count', objective:'Keep safety communication active and traceable', target:4, green:4, amber:1, red:0, unit:'bulletins', direction:'up'},
+  {id:'spi8', name:'Lessons learned published', formula:'ll_count', objective:'Keep safety communication active and traceable', target:4, green:4, amber:2, red:1, unit:'bulletins', direction:'up'},
   {id:'capa1', name:'Open actions >30 days', formula:'capa_open_gt30', objective:'Corrective actions are progressed without excessive ageing', target:0, green:0, amber:2, red:3, unit:'actions', direction:'down'},
   {id:'capa2', name:'Repeat findings', formula:'capa_repeat_findings', objective:'Avoid repeated non-conformities and recurring weak controls', target:0, green:0, amber:1, red:2, unit:'repeat groups', direction:'down'},
   {id:'capa3', name:'Closure effectiveness', formula:'capa_closure_effectiveness', objective:'Closed findings remain effective without recurrence', target:90, green:90, amber:70, red:69, unit:'%', direction:'up'}
@@ -6823,6 +6824,9 @@ function getSPITargets(){
     var old = byId[def.id] || {};
     var merged = Object.assign({}, def, old);
     if (merged.objective === undefined) merged.objective = def.objective;
+    if (merged.name === undefined) merged.name = def.name;
+    if (merged.unit === undefined) merged.unit = def.unit;
+    if (merged.direction === undefined) merged.direction = def.direction;
     if (merged.green === undefined) merged.green = def.green;
     if (merged.amber === undefined) merged.amber = def.amber;
     if (merged.red === undefined) merged.red = def.red;
@@ -6831,6 +6835,9 @@ function getSPITargets(){
   });
 }
 function saveSPITargets(t){ localStorage.setItem('safSPITargets', JSON.stringify(t)); }
+// Annual flight-hour exposure used to normalise the reporting-rate SPI.
+function getFlightHours(){ var v=parseFloat(localStorage.getItem('safFlightHours')); return isNaN(v)?0:v; }
+function setFlightHours(v){ localStorage.setItem('safFlightHours', String(parseFloat(v)||0)); }
 function needsControlReview(r){ if(!r.last_control_date)return true; const d=new Date(r.last_control_date); return(new Date()-d)>(365*24*3600*1000); }
 function _sptNow(){ return new Date(); }
 function _daysBetween(a,b){ return Math.floor((b-a)/86400000); }
@@ -6918,6 +6925,9 @@ function computeSPI(){
   const overdue=DB.filter(r=>needsControlReview(r)).length;
   const cs=_getLSArray('safChangeStudies').length;
   const occYear=(()=>{const o=_getLSArray('safOccurrences');const y=new Date().getFullYear();return o.filter(x=>{var d=_safeDate(x.date);return d && d.getFullYear()===y;}).length;})();
+  // Reporting rate normalised per 100 flight hours (EASA AMC1 ORO.GEN.200(a)(3) — exposure-based SPI)
+  const fh=getFlightHours();
+  const reportingRate=(fh>0)?Math.round((occYear/fh*100)*10)/10:0;
   const barrierPct=DB.length?Math.round(DB.filter(r=>r.prevention&&r.mitigation&&r.recovery).length/DB.length*100):0;
   const ll=_getLSArray('safLessons').length;
   const capa=computeCAPAKPI();
@@ -6927,6 +6937,7 @@ function computeSPI(){
     overdue_count:overdue,
     cs_count:cs,
     occ_year:occYear,
+    reporting_rate:reportingRate,
     barrier_pct:barrierPct,
     res_red:resRed,
     ll_count:ll,
@@ -6983,6 +6994,12 @@ function renderSPIView(){
 
   html+='<div class="chart-card" style="padding:24px;margin-bottom:22px;">'
     +'<div class="chart-title" style="margin-bottom:14px;">Safety Performance Targets — objectives, thresholds, trend, automatic status</div>'
+    +'<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;padding:12px 14px;background:rgba(74,159,224,.06);border:1px solid rgba(74,159,224,.25);border-radius:8px;">'
+      +'<label style="font-family:var(--font-mono);font-size:11px;color:var(--grey-200);">Annual flight hours (exposure) for reporting-rate SPI:</label>'
+      +'<input type="number" min="0" step="1" value="'+getFlightHours()+'" onchange="spiUpdateFlightHours(this)" style="width:120px;text-align:center;font-family:var(--font-mono);font-size:12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);border-radius:5px;color:#fff;padding:5px 8px;"/>'
+      +'<span style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">FH/year · used to normalise SPI-5</span>'
+      +'<button class="btn btn-ghost" style="margin-left:auto;font-size:10px;" onclick="spiResetDefaults()">↺ Reset to EASA defaults</button>'
+    +'</div>'
     +'<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;min-width:980px;">'
     +'<thead><tr style="border-bottom:1px solid rgba(255,255,255,.1);">'
     +'<th style="text-align:left;padding:7px 10px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">SPI / SPT</th>'
@@ -7002,9 +7019,10 @@ function renderSPIView(){
     var colour=_statusColour(status);
     var trend=_sptTrend(t,val);
     html+='<tr style="border-bottom:1px solid rgba(255,255,255,.055);">'
-      +'<td style="padding:9px 10px;color:var(--grey-200);font-weight:600;">'+t.name+'<div style="font-size:9px;color:var(--grey-600);font-family:var(--font-mono);margin-top:2px;">'+t.formula+'</div></td>'
-      +'<td style="padding:9px 10px;color:var(--grey-400);line-height:1.35;">'+(t.objective||'')+'</td>'
-      +'<td style="padding:9px 10px;text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--steel-bright);">'+val+' '+t.unit+'</td>'
+      +'<td style="padding:9px 10px;"><input type="text" value="'+String(t.name).replace(/"/g,"&quot;")+'" data-spi="'+i+'" data-field="name" onchange="spiUpdateText(this)" style="width:100%;min-width:150px;font-family:var(--font-display);font-size:11px;font-weight:600;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.12);border-radius:4px;color:var(--grey-200);padding:4px 6px;"/><div style="font-size:9px;color:var(--grey-600);font-family:var(--font-mono);margin-top:3px;">'+t.formula+' · '
+      +'<select data-spi="'+i+'" data-field="direction" onchange="spiUpdateText(this)" style="font-family:var(--font-mono);font-size:9px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.12);border-radius:3px;color:var(--grey-400);padding:1px 3px;"><option value="up"'+(t.direction==='up'?' selected':'')+'>↑ higher=better</option><option value="down"'+(t.direction==='down'?' selected':'')+'>↓ lower=better</option></select></div></td>'
+      +'<td style="padding:9px 10px;"><textarea data-spi="'+i+'" data-field="objective" onchange="spiUpdateText(this)" rows="2" style="width:100%;min-width:200px;font-family:inherit;font-size:11px;line-height:1.35;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.1);border-radius:4px;color:var(--grey-400);padding:4px 6px;resize:vertical;">'+(t.objective||'')+'</textarea></td>'
+      +'<td style="padding:9px 10px;text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--steel-bright);white-space:nowrap;">'+val+' <input type="text" value="'+String(t.unit||'').replace(/"/g,"&quot;")+'" data-spi="'+i+'" data-field="unit" onchange="spiUpdateText(this)" style="width:64px;text-align:center;font-family:var(--font-mono);font-size:9px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.12);border-radius:3px;color:var(--grey-400);padding:2px 4px;margin-top:3px;"/></td>'
       +'<td style="padding:9px 10px;text-align:center;"><input type="number" value="'+t.target+'" data-spi="'+i+'" data-field="target" onchange="spiUpdateTarget(this)" style="width:68px;text-align:center;font-family:var(--font-mono);font-size:11px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.15);border-radius:4px;color:#fff;padding:3px 6px;"/></td>'
       +'<td style="padding:9px 10px;text-align:center;"><input type="number" value="'+t.green+'" data-spi="'+i+'" data-field="green" onchange="spiUpdateTarget(this)" style="width:68px;text-align:center;font-family:var(--font-mono);font-size:11px;background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.3);border-radius:4px;color:#fff;padding:3px 6px;"/></td>'
       +'<td style="padding:9px 10px;text-align:center;"><input type="number" value="'+t.amber+'" data-spi="'+i+'" data-field="amber" onchange="spiUpdateTarget(this)" style="width:68px;text-align:center;font-family:var(--font-mono);font-size:11px;background:rgba(232,179,65,.08);border:1px solid rgba(232,179,65,.3);border-radius:4px;color:#fff;padding:3px 6px;"/></td>'
@@ -7047,6 +7065,23 @@ function spiUpdateTarget(input){
   if(!t[i]) return;
   t[i][input.dataset.field]=parseFloat(input.value)||0;
   saveSPITargets(t);
+  renderSPIView();
+}
+function spiUpdateText(input){
+  const t=getSPITargets(); const i=parseInt(input.dataset.spi,10);
+  if(!t[i]) return;
+  t[i][input.dataset.field]=input.value;
+  saveSPITargets(t);
+  renderSPIView();
+}
+function spiUpdateFlightHours(input){
+  setFlightHours(input.value);
+  renderSPIView();
+}
+function spiResetDefaults(){
+  if(!confirm('Reset all SPI/SPT names, objectives, units, directions and thresholds to the EASA default values? Your custom edits will be lost.')) return;
+  localStorage.removeItem('safSPITargets');
+  if(typeof window.safCloudScheduleSave==='function') window.safCloudScheduleSave();
   renderSPIView();
 }
 
@@ -12012,7 +12047,7 @@ function deleteALoS(id){
   }
 
   // Liste des clés gérées (identique à safExportAllData / importJSON)
-  var KEYS = ['safRiskDB','safChangeStudies','safSPITargets','safOccurrences',
+  var KEYS = ['safRiskDB','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
               'safLessons','safSRBMeetings','safAudits','safSAR','safALoS','lastModified',
               'ejsPublicKey','ejsServiceId','ejsTemplateId'];
 
