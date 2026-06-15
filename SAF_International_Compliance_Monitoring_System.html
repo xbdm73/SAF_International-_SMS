@@ -1628,16 +1628,7 @@ window.safExportPDF = function() {
   } catch(e) { alert('Erreur export PDF: ' + e.message); }
 };
 
-// ── beforeunload : ouvre l'overlay à la fermeture ────────────────
-window.addEventListener('beforeunload', function(e) {
-  var overlay = document.getElementById('saf-export-overlay');
-  if (overlay && !overlay.classList.contains('open')) {
-    overlay.classList.add('open');
-    e.preventDefault();
-    e.returnValue = '';
-    return '';
-  }
-});
+// beforeunload supprimé
 
 // Utilitaire de téléchargement
 function _safDownload(blob, filename) {
