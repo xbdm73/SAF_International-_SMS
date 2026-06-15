@@ -1799,12 +1799,11 @@ function safExportPDF() {
 <!-- ── SAF INTER-TOOL NAV ── -->
 <div id="saf-subnav" style="background:#070e1a;border-bottom:1px solid #1a2840;padding:0 28px;position:sticky;top:118px;z-index:18;">
   <div style="max-width:1800px;margin:auto;display:flex;align-items:center;gap:4px;overflow-x:auto;">
-    <a href="./index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
+    <a href="./" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
     <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
     <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
     <a href="SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
-    <a href="SAF_Grille_Audit.html"                               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#b880e8'" onmouseout="this.style.color='#6a82a5'"><span style="color:#b880e8">■</span> AUDIT</a>
   </div>
 </div>
 <script>
@@ -1813,7 +1812,6 @@ function safExportPDF() {
     'SAF_International_Safety.html':                    '#e07070',
     'SAF_International_Compliance_Monitoring_System.html': '#70a8e0',
     'SAF_International_Appendices_OMM.html':            '#70d0a0',
-    'SAF_Grille_Audit.html':                            '#b880e8',
   };
   var file = location.pathname.split('/').pop() || 'index.html';
   var color = map[file];
@@ -9078,28 +9076,10 @@ updateSrbProgress();
 <div class="db-spi-status green">OK</div>
 </div>
 <div class="db-spi-item">
-<div class="db-spi-dot green"></div>
-<div class="db-spi-label">Unstabilized approaches</div>
-<div class="db-spi-val">0.5%</div>
-<div class="db-spi-status green">OK</div>
-</div>
-<div class="db-spi-item">
 <div class="db-spi-dot amber"></div>
 <div class="db-spi-label">SOP deviations (LOSA/FOQA)</div>
 <div class="db-spi-val">12 / trim.</div>
 <div class="db-spi-status amber">WATCH</div>
-</div>
-<div class="db-spi-item">
-<div class="db-spi-dot green"></div>
-<div class="db-spi-label">Score fatigue FRMS</div>
-<div class="db-spi-val">2.1%</div>
-<div class="db-spi-status green">OK</div>
-</div>
-<div class="db-spi-item">
-<div class="db-spi-dot red"></div>
-<div class="db-spi-label">Activations TAWS/GPWS</div>
-<div class="db-spi-val">3 / trim.</div>
-<div class="db-spi-status red">ALERT</div>
 </div>
 <div class="db-spi-item">
 <div class="db-spi-dot green"></div>
@@ -9127,9 +9107,9 @@ updateSrbProgress();
 </div>
 </div>
 <div style="display:flex;gap:10px;margin-top:12px;justify-content:flex-end">
-<div class="db-tag green">7 OK</div>
+<div class="db-tag green">4 OK</div>
 <div class="db-tag amber">2 Watch</div>
-<div class="db-tag red">2 Alerts</div>
+<div class="db-tag red">1 Alert</div>
 </div>
 </div>
 <!-- ── ROW 3: Grille coverage + donut + quick access ── -->
@@ -9155,6 +9135,11 @@ updateSrbProgress();
 <div class="db-grille-name" style="color:#f59e0b">📋 Part-SPO</div>
 <div class="db-grille-meta">5 audits · 116 points IR/AMC</div>
 <div class="db-grille-bar"><div class="db-grille-fill" style="width:100%;background:#f59e0b;height:100%"></div></div>
+</div>
+<div class="db-grille-item" onclick="showMainTab('grille_NCC',document.querySelector('[onclick*=grille_NCC]'))" style="--c:#ec4899">
+<div class="db-grille-name" style="color:#ec4899">📋 Part-NCC</div>
+<div class="db-grille-meta">— audits · — points IR/AMC</div>
+<div class="db-grille-bar"><div class="db-grille-fill" style="width:0%;background:#ec4899;height:100%"></div></div>
 </div>
 </div>
 <div class="db-stats-row" style="margin-top:14px">
@@ -9193,51 +9178,6 @@ updateSrbProgress();
 </div>
 <div class="db-gauge" style="margin-top:14px"><div class="db-gauge-fill red" style="width:62.5%"></div></div>
 <div style="font-size:10px;color:#6a82a5;font-family:monospace;text-align:center;margin-top:4px">62.5% critical audits · 37.5% major audits</div>
-</div>
-<div class="db-card span4 c-gold">
-<div class="db-title">Quick access</div>
-<div class="db-quick">
-<div class="db-quick-btn" onclick="showMainTab('plan', document.querySelector('button[onclick*=\'plan\']'))">
-<div class="db-quick-icon">📅</div>
-<div class="db-quick-label">Plan d'audit</div>
-<div class="db-quick-sub">12-month calendar</div>
-</div>
-<div class="db-quick-btn" onclick="showMainTab('kpispi',document.querySelector('[onclick*=kpispi]'))">
-<div class="db-quick-icon">📊</div>
-<div class="db-quick-label">KPI / SPI</div>
-<div class="db-quick-sub">EASA indicators</div>
-</div>
-<div class="db-quick-btn" onclick="showMainTab('srb',document.querySelector('[onclick*=srb]'))">
-<div class="db-quick-icon">🛡</div>
-<div class="db-quick-label">Safety Review Board</div>
-<div class="db-quick-sub">10 sections EASA</div>
-</div>
-<div class="db-quick-btn" onclick="showMainTab('corr',document.querySelector('[onclick*=corr]'))">
-<div class="db-quick-icon">🔗</div>
-<div class="db-quick-label">Correspondance</div>
-<div class="db-quick-sub">Mapping audits</div>
-</div>
-<div class="db-quick-btn" onclick="showMainTab('grille_ORO',document.querySelector('[onclick*=grille_ORO]'))">
-<div class="db-quick-icon">📋</div>
-<div class="db-quick-label">Grille Part-ORO</div>
-<div class="db-quick-sub">53 points · 4 audits</div>
-</div>
-<div class="db-quick-btn" onclick="showMainTab('grille_CAT',document.querySelector('[onclick*=grille_CAT]'))">
-<div class="db-quick-icon">📋</div>
-<div class="db-quick-label">Grille Part-CAT</div>
-<div class="db-quick-sub">126 points · 5 audits</div>
-</div>
-<div class="db-quick-btn" onclick="showMainTab('grille_SPA',document.querySelector('[onclick*=grille_SPA]'))">
-<div class="db-quick-icon">📋</div>
-<div class="db-quick-label">Grille Part-SPA</div>
-<div class="db-quick-sub">26 points · 2 audits</div>
-</div>
-<div class="db-quick-btn" onclick="showMainTab('grille_SPO',document.querySelector('[onclick*=grille_SPO]'))">
-<div class="db-quick-icon">📋</div>
-<div class="db-quick-label">Grille Part-SPO</div>
-<div class="db-quick-sub">116 points · 5 audits</div>
-</div>
-</div>
 </div>
 <!-- ── ROW 4: Refs réglementaires + next audit ── -->
 <div class="db-card span6 c-cyan">
