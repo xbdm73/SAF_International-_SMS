@@ -81,6 +81,32 @@ textarea{resize:vertical;}
 .slabel{font-size:10px;font-family:var(--mono);color:var(--gold);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:6px;}
 
 /* ══════════════════════════════════════
+   TAB 3 — QUESTION BANK
+══════════════════════════════════════ */
+#tabBank{display:none;}
+#tabBank.active{display:block;}
+.bank-toolbar{display:flex;align-items:center;gap:10px;padding:12px 20px;background:var(--panel2);border-bottom:1px solid var(--border-dim);flex-wrap:wrap;}
+.bank-domain-tabs{display:flex;gap:4px;flex-wrap:wrap;}
+.bank-dtab{padding:5px 14px;border-radius:20px;border:1px solid var(--border-dim);background:transparent;color:var(--text-dim);font-size:12px;font-family:var(--font);cursor:pointer;transition:.15s;}
+.bank-dtab.active{background:var(--gold);color:var(--navy);border-color:var(--gold);font-weight:600;}
+.bank-body{max-width:900px;margin:0 auto;padding:20px;}
+.bank-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.bank-item{background:var(--panel2);border:1px solid var(--border-dim);border-radius:8px;padding:12px 16px;display:flex;gap:10px;align-items:flex-start;}
+.bank-item-body{flex:1;display:flex;flex-direction:column;gap:6px;}
+.bank-item textarea{width:100%;background:var(--navy-light);border:1px solid var(--border-dim);color:var(--text);font-family:var(--font);font-size:13px;padding:6px 10px;border-radius:var(--radius);resize:vertical;min-height:54px;}
+.bank-item textarea:focus{border-color:var(--gold);outline:none;}
+.bank-item input[type="text"]{width:100%;background:var(--navy-light);border:1px solid var(--border-dim);color:var(--text);font-family:var(--font);font-size:12px;padding:5px 10px;border-radius:var(--radius);}
+.bank-item input:focus{border-color:var(--gold);outline:none;}
+.bank-item-labels{display:flex;gap:8px;align-items:center;}
+.bank-item-labels label{font-size:10px;color:var(--text-dim);font-family:var(--mono);}
+.bank-item-del{background:transparent;border:none;color:var(--red);font-size:16px;cursor:pointer;padding:2px 6px;border-radius:4px;flex-shrink:0;opacity:.6;transition:.15s;}
+.bank-item-del:hover{opacity:1;background:var(--red-bg);}
+.bank-add-btn{width:100%;padding:10px;border:2px dashed var(--border-dim);border-radius:8px;background:transparent;color:var(--text-dim);font-family:var(--font);font-size:13px;cursor:pointer;transition:.15s;}
+.bank-add-btn:hover{border-color:var(--gold);color:var(--gold);}
+.bank-send-bar{position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--border-dim);padding:12px 20px;display:flex;align-items:center;gap:12px;}
+.bank-count{font-size:12px;color:var(--text-dim);}
+
+/* ══════════════════════════════════════
    TAB 1 — EXTRACTEUR
 ══════════════════════════════════════ */
 #tabExtract{display:none;}
@@ -278,6 +304,7 @@ textarea{resize:vertical;}
   <div class="tabs">
     <button class="tab active" id="t1" onclick="switchTab('Extract')">⚡ PDF Extractor</button>
     <button class="tab" id="t2" onclick="switchTab('Grid')">📋 Audit Grid</button>
+    <button class="tab" id="t3" onclick="switchTab('Bank')">✏️ Question Bank</button>
   </div>
 </nav>
 
@@ -348,8 +375,15 @@ textarea{resize:vertical;}
       <div class="cfg-row">
         <label>Domain of extracted lines</label>
         <select id="cfgDomain">
-          <option>OPS</option><option>CAMO</option><option>Maintenance</option>
-          <option>Training</option><option>SMS</option><option>Security</option><option>Other</option>
+          <option>SMS</option>
+          <option>OPS</option>
+          <option>SPA</option>
+          <option>SPO</option>
+          <option>Maintenance</option>
+          <option>CAMO</option>
+          <option>Training</option>
+          <option>Security</option>
+          <option>Other</option>
         </select>
       </div>
       <div class="cfg-row">
@@ -359,19 +393,10 @@ textarea{resize:vertical;}
           <input type="number" id="cfgTo" placeholder="À" min="1">
         </div>
       </div>
-      <div class="cfg-row">
-        <label>Anthropic API key</label>
-        <div class="api-wrap">
-          <input type="password" id="apiKey" placeholder="sk-ant-…" oninput="checkApiKey()">
-          <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px;white-space:nowrap" onclick="saveApiKey()">Save</button>
-        </div>
-        <span class="api-st" id="apiSt">Not configured</span>
-      </div>
-    </div>
 
     <div class="ext-section">
       <button class="btn btn-gold" id="btnExtract" style="width:100%" onclick="startExtraction()" disabled>
-        ⚡ Run extraction
+        ⚡ Extract (local — no API)
       </button>
     </div>
 
@@ -412,8 +437,15 @@ textarea{resize:vertical;}
       <span class="flt-lbl">Domain</span>
       <select id="fltDom" onchange="renderGrid()">
         <option value="">All</option>
-        <option>OPS</option><option>CAMO</option><option>Maintenance</option>
-        <option>Training</option><option>SMS</option><option>Security</option><option>Other</option>
+        <option>SMS</option>
+        <option>OPS</option>
+        <option>SPA</option>
+        <option>SPO</option>
+        <option>Maintenance</option>
+        <option>CAMO</option>
+        <option>Training</option>
+        <option>Security</option>
+        <option>Other</option>
       </select>
     </div>
     <div class="flt-grp">
@@ -462,6 +494,32 @@ textarea{resize:vertical;}
   </div>
 </div>
 
+<!-- ════════════════════════════════════
+     TAB 3 — QUESTION BANK
+════════════════════════════════════ -->
+<div id="tabBank">
+  <div class="bank-toolbar">
+    <span class="slabel" style="margin:0">Domain :</span>
+    <div class="bank-domain-tabs" id="bankDomTabs"></div>
+    <div style="margin-left:auto;display:flex;gap:8px;">
+      <button class="btn btn-ghost" onclick="bankImport()">⬆ Import JSON</button>
+      <button class="btn btn-ghost" onclick="bankExport()">⬇ Export JSON</button>
+    </div>
+  </div>
+  <div class="bank-body">
+    <div class="bank-list" id="bankList"></div>
+    <button class="bank-add-btn" onclick="bankAddQuestion()">+ Add question</button>
+  </div>
+  <div class="bank-send-bar">
+    <span class="bank-count" id="bankCount">0 question(s) in this domain</span>
+    <div style="margin-left:auto;display:flex;gap:8px;">
+      <button class="btn btn-outline" onclick="bankSendSelected()">→ Send selected to grid</button>
+      <button class="btn btn-gold" onclick="bankSendAll()">→ Send all to grid</button>
+    </div>
+  </div>
+</div>
+<input type="file" id="bankFileInput" accept=".json" style="display:none" onchange="bankImportFile(this)">
+
 <!-- MODAL -->
 <div class="modal-ov" id="lineModal">
   <div class="modal">
@@ -469,7 +527,7 @@ textarea{resize:vertical;}
     <div class="modal-grid">
       <div class="m-f"><label>Procedure ref.</label><input type="text" id="mRef" placeholder="OMM §4.3.2"></div>
       <div class="m-f"><label>Domain</label>
-        <select id="mDom"><option>OPS</option><option>CAMO</option><option>Maintenance</option><option>Training</option><option>SMS</option><option>Security</option><option>Other</option></select>
+        <select id="mDom"><option>SMS</option><option>OPS</option><option>SPA</option><option>SPO</option><option>Maintenance</option><option>CAMO</option><option>Training</option><option>Security</option><option>Other</option></select>
       </div>
       <div class="m-f full"><label>Audit question</label><textarea id="mQ" placeholder="Comment procédez-vous lorsque…"></textarea></div>
       <div class="m-f full"><label>Documentary requirement (source text)</label><input type="text" id="mDoc" placeholder="OMM §4.3.2 — Le PIC doit vérifier la MEL avant vol"></div>
@@ -567,7 +625,7 @@ function setSyncStatus(cls, txt) {
 // ══════════════════════════════════════
 // STATE
 // ══════════════════════════════════════
-const DOMAINS = ['OPS','CAMO','Maintenance','Training','SMS','Security','Other'];
+const DOMAINS = ["SMS", "OPS", "SPA", "SPO", "Maintenance", "CAMO", "Training", "Security", "Other"];
 let lines     = [];
 let session   = { ref:'', date:'', auditor:'', scope:'', status:'IN PROGRESS' };
 let editingId = null;
@@ -584,8 +642,11 @@ let selectedExt  = new Set();
 window.switchTab = function(name) {
   document.getElementById('tabExtract').classList.toggle('active', name==='Extract');
   document.getElementById('tabGrid').classList.toggle('active', name==='Grid');
+  document.getElementById('tabBank').classList.toggle('active', name==='Bank');
   document.getElementById('t1').classList.toggle('active', name==='Extract');
   document.getElementById('t2').classList.toggle('active', name==='Grid');
+  document.getElementById('t3').classList.toggle('active', name==='Bank');
+  if (name==='Bank') renderBank();
 };
 
 // ══════════════════════════════════════
@@ -859,42 +920,12 @@ window.resetPDF = function() {
   checkReady();
 };
 
-window.checkApiKey = function() {
-  const k = document.getElementById('apiKey').value.trim();
-  const st = document.getElementById('apiSt');
-  if (k.startsWith('sk-ant-')&&k.length>20) { st.textContent='✓ Valid'; st.className='api-st ok'; }
-  else if (k.length>0) { st.textContent='Invalid format'; st.className='api-st err'; }
-  else { st.textContent='Not configured'; st.className='api-st'; }
-  checkReady();
-};
-
-window.saveApiKey = function() {
-  const k = document.getElementById('apiKey').value.trim();
-  if (!k.startsWith('sk-ant-') || k.length <= 20) { toast('Invalid API key format','err'); return; }
-  try {
-    localStorage.setItem('saf_anthropic_key', k);
-    const st = document.getElementById('apiSt');
-    st.textContent = '✓ Saved in browser'; st.className = 'api-st ok';
-    toast('API key saved in this browser ✓','ok');
-  } catch(e) { toast('Could not save: '+e.message,'err'); }
-  checkReady();
-};
-
-function loadApiKey() {
-  try {
-    const k = localStorage.getItem('saf_anthropic_key');
-    if (k && k.startsWith('sk-ant-') && k.length > 20) {
-      document.getElementById('apiKey').value = k;
-      const st = document.getElementById('apiSt');
-      st.textContent = '✓ Loaded from browser'; st.className = 'api-st ok';
-      checkReady();
-    }
-  } catch(e) {}
-}
+window.checkApiKey = function() {};
+window.saveApiKey = function() {};
+function loadApiKey() {}
 
 function checkReady() {
-  const k = document.getElementById('apiKey').value.trim();
-  document.getElementById('btnExtract').disabled = !(pdfDoc && k.startsWith('sk-ant-') && k.length>20);
+  document.getElementById('btnExtract').disabled = !pdfDoc;
 }
 
 async function getPages(from,to) {
@@ -917,38 +948,70 @@ function chunkPages(pages,size=4) {
   return out;
 }
 
-async function callClaude(text, domain, key) {
-  const sys=`Tu es expert en audit de conformité pour opérateurs aériens hélicoptères EASA (AS 332 C1 Super Puma).
-Tu analyses des extraits de procédures internes (OMM, CAME) et identifies chaque obligation prescriptive vérifiable par entretien terrain.
-Règles :
-- Extrais UNIQUEMENT ce qui est prescriptif : "doit", "est tenu de", "il est interdit", "veille à", "s'assure que", "procède à", "vérifie", "notifie", "renseigne".
-- Ignore définitions, contexte réglementaire général, titres de section.
-- Formule chaque question à la 2ème personne du pluriel : "Pouvez-vous décrire…", "Comment procédez-vous…", "Qui est responsable de…"
-- Réponds UNIQUEMENT en JSON valide, sans markdown, sans commentaire.
-- Format : tableau JSON avec clés exactes : ref, question, docReq, domain.
-  ref : numéro paragraphe si visible, sinon "p.XX"
-  question : question d'audit formulée
-  docReq : texte source exact copié de la procédure
-  domain : "${domain}"
-- Si no requirement found vérifiable : renvoie [].`;
+// ── EXTRACTION LOCALE (sans API) ──────────────────────────────────
+const PRESCRIPTIF_RX = [
+  /\bdoit\b/i, /\bdoivent\b/i, /\best tenu\b/i, /\bsont tenus\b/i,
+  /\bveille à\b/i, /\bs'assure\b/i, /\bs'assurent\b/i,
+  /\bprocède à\b/i, /\bvérifie\b/i, /\bvérifient\b/i,
+  /\bnotifie\b/i, /\bnotifient\b/i, /\brenseigne\b/i,
+  /\bsignale\b/i, /\binforme\b/i, /\binforment\b/i,
+  /\bsoumet\b/i, /\bapprouve\b/i, /\bvalide\b/i,
+  /\bcontrôle\b/i, /\bse conforme\b/i,
+  /\bil est interdit\b/i, /\best interdit\b/i,
+  /\bdoit être\b/i, /\bdoivent être\b/i,
+  /\bresponsable de\b/i, /\bchargé de\b/i,
+  /\bmust\b/i, /\bshall\b/i, /\bis required\b/i
+];
 
-  const resp = await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,system:sys,messages:[{role:'user',content:text}]})
-  });
-  if (!resp.ok) { const e=await resp.json(); throw new Error(e.error?.message||'API '+resp.status); }
-  const d = await resp.json();
-  try { return JSON.parse((d.content?.[0]?.text||'[]').replace(/```json|```/g,'').trim()); }
-  catch { return []; }
+function genQuestion(s) {
+  const sl = s.toLowerCase();
+  if (/vérifie|vérif|check|contrôle/.test(sl))
+    return 'Comment procédez-vous à la vérification décrite ? Qui en est responsable et quelle est la traçabilité ?';
+  if (/notifie|informe|signale|communique|report/.test(sl))
+    return 'Pouvez-vous décrire le processus de notification prévu ? À qui, dans quel délai et sous quelle forme ?';
+  if (/approu|valid/.test(sl))
+    return 'Qui est habilité à approuver/valider cette action ? Comment la traçabilité est-elle assurée ?';
+  if (/soumet|transmet|envoie/.test(sl))
+    return 'Comment et à quelle fréquence ce document est-il transmis ? Pouvez-vous montrer un exemple récent ?';
+  if (/responsable|chargé/.test(sl))
+    return 'Qui assure concrètement cette responsabilité ? Comment est-elle documentée dans l\'organisation ?';
+  if (/interdit|prohib/.test(sl))
+    return 'Comment cette interdiction est-elle portée à la connaissance du personnel et contrôlée en pratique ?';
+  if (/doit être|must be|shall be/.test(sl))
+    return 'Pouvez-vous démontrer que cette exigence est respectée ? Quelle preuve documentaire est disponible ?';
+  return 'Comment cette exigence procédurale est-elle mise en œuvre ? Qui en est responsable et comment le justifiez-vous ?';
+}
+
+function extractLocalRequirements(text, domain, pageNums) {
+  const sentences = text
+    .replace(/([.!?;])\s+/g, '$1|||')
+    .split('|||')
+    .map(s => s.trim())
+    .filter(s => s.length > 35 && s.length < 700);
+
+  const results = [];
+  let currentRef = '';
+  const refRx = /^(\d+\.)+\d*\s/;
+
+  for (const sent of sentences) {
+    if (refRx.test(sent)) currentRef = sent.match(refRx)[0].trim();
+    if (!PRESCRIPTIF_RX.some(rx => rx.test(sent))) continue;
+    const already = results.some(r =>
+      sent.length > 0 && r.docReq.length > 0 &&
+      (r.docReq.includes(sent.slice(0,40)) || sent.includes(r.docReq.slice(0,40)))
+    );
+    if (already) continue;
+    const ref = currentRef || (pageNums && pageNums.length ? 'p.'+pageNums[0] : '—');
+    results.push({ ref, question: genQuestion(sent), docReq: sent, domain });
+  }
+  return results;
 }
 
 window.startExtraction = async function() {
-  const key    = document.getElementById('apiKey').value.trim();
   const domain = document.getElementById('cfgDomain').value;
   const pFrom  = parseInt(document.getElementById('cfgFrom').value)||1;
   const pTo    = parseInt(document.getElementById('cfgTo').value)||totalPages;
-  if (!pdfDoc||!key) return;
+  if (!pdfDoc) return;
 
   extracted=[]; selectedExt.clear(); renderExtracted();
   document.getElementById('btnExtract').disabled=true;
@@ -968,7 +1031,7 @@ window.startExtraction = async function() {
       setProgress(pct,`Bloc ${i+1}/${chunks.length} — pages ${ck.pages[0]}–${ck.pages[ck.pages.length-1]}`);
       xlog(`Bloc ${i+1}/${chunks.length} (p.${ck.pages.join(',')})`);
       try {
-        const res = await callClaude(ck.text, domain, key);
+        const res = extractLocalRequirements(ck.text, domain, ck.pages);
         if (res.length>0) {
           res.forEach(r => {
             const id='E'+Date.now()+Math.random().toString(36).slice(2,4);
@@ -978,7 +1041,6 @@ window.startExtraction = async function() {
           xlog('  → '+res.length+' requirement(s)','lok');
         } else { xlog('  → no requirement found','lwarn'); }
       } catch(e) { xlog('  ✗ '+e.message,'lerr'); }
-      await new Promise(r=>setTimeout(r,400));
     }
     setProgress(100,'Done');
     xlog('✓ Total: '+extracted.length+' lines générées','lok');
@@ -1149,6 +1211,159 @@ function clearLog(){ document.getElementById('logBox').innerHTML=''; }
 
 // ── UTILS ──
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ══════════════════════════════════════
+// QUESTION BANK
+// ══════════════════════════════════════
+// Structure : { OPS:[{ref,question,docReq,selected},...], CAMO:[...], ... }
+let bankData = {};
+let bankCurrentDomain = 'OPS';
+
+// Données pré-chargées depuis le plan d'audit du CMS
+const PLAN_BANK_DATA = {"SMS": [{"ref": "ORO.GEN.200(a)(1) · ORO.GEN.200(b)", "question": "Pouvez-vous décrire la procédure appliquée pour « Safety policy approved and communicated » ? Comment est-elle documentée dans l'OM et à quelle fréquence est-elle révisée ?", "docReq": "ORO.GEN.200(a)(1) · ORO.GEN.200(b)", "selected": false}, {"ref": "ORO.GEN.205(a) · ORO.GEN.205(b) · ORO.AOC.135(a)", "question": "Comment l'exigence « Management responsibilities documented » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.GEN.205(a) · ORO.GEN.205(b) · ORO.AOC.135(a)", "selected": false}, {"ref": "ORO.GEN.200(a)(1) · ORO.GEN.210(a)", "question": "Pouvez-vous présenter la nomination formelle et les qualifications de la personne en charge de « Safety Manager appointed and independent » ? La lettre de nomination est-elle à jour et approuvée par l'autorité ?", "docReq": "ORO.GEN.200(a)(1) · ORO.GEN.210(a)", "selected": false}, {"ref": "ORO.GEN.200(a)(1)", "question": "Comment l'exigence « SMART safety objectives » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.GEN.200(a)(1)", "selected": false}, {"ref": "ORO.GEN.200(a)(2)", "question": "Pouvez-vous décrire la procédure appliquée pour « Hazard identification process » ? Comment est-elle documentée dans l'OM et à quelle fréquence est-elle révisée ?", "docReq": "ORO.GEN.200(a)(2)", "selected": false}, {"ref": "ORO.GEN.200(a)(2)", "question": "Comment l'exigence « Risk register kept up to date » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.GEN.200(a)(2)", "selected": false}, {"ref": "ORO.GEN.200(a)(6) · ORO.GEN.160(a)", "question": "Comment l'exigence « Lessons learned integrated into risk management » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.GEN.200(a)(6) · ORO.GEN.160(a)", "selected": false}, {"ref": "ORO.GEN.200(a)(3)", "question": "Comment l'exigence « SPI/KPI defined, measured and analysed » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.GEN.200(a)(3)", "selected": false}, {"ref": "ORO.GEN.160(a) · ORO.GEN.160(b)", "question": "Comment le processus de notification/signalement relatif à « Event reporting (MOR) » fonctionne-t-il en pratique ? Pouvez-vous citer un exemple récent traité ?", "docReq": "ORO.GEN.160(a) · ORO.GEN.160(b)", "selected": false}, {"ref": "ORO.GEN.160(c)", "question": "Comment le processus de notification/signalement relatif à « Confidential reporting scheme » fonctionne-t-il en pratique ? Pouvez-vous citer un exemple récent traité ?", "docReq": "ORO.GEN.160(c)", "selected": false}, {"ref": "ORO.GEN.200(a)(4)", "question": "Comment le processus de notification/signalement relatif à « Internal occurrence investigation » fonctionne-t-il en pratique ? Pouvez-vous citer un exemple récent traité ?", "docReq": "ORO.GEN.200(a)(4)", "selected": false}, {"ref": "ORO.GEN.200(a)(5)", "question": "Comment le programme de « Initial and recurrent safety training » est-il structuré et suivi ? Pouvez-vous montrer les registres individuels et les attestations les plus récentes ?", "docReq": "ORO.GEN.200(a)(5)", "selected": false}, {"ref": "ORO.GEN.200(a)(5)", "question": "Comment l'exigence « Safety communications distributed » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.GEN.200(a)(5)", "selected": false}, {"ref": "ORO.GEN.200(a)(5)", "question": "Comment l'exigence « Just Culture documented and applied » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.GEN.200(a)(5)", "selected": false}, {"ref": "ORO.GEN.130(a) · ORO.GEN.130(b)", "question": "Pouvez-vous décrire la procédure appliquée pour « Formalised MOC process » ? Comment est-elle documentée dans l'OM et à quelle fréquence est-elle révisée ?", "docReq": "ORO.GEN.130(a) · ORO.GEN.130(b)", "selected": false}, {"ref": "ORO.GEN.130(c) · ORO.GEN.135(a)", "question": "Comment le processus de notification/signalement relatif à « Authority notification before major change » fonctionne-t-il en pratique ? Pouvez-vous citer un exemple récent traité ?", "docReq": "ORO.GEN.130(c) · ORO.GEN.135(a)", "selected": false}, {"ref": "ORO.GEN.135(b) · ORO.AOC.100", "question": "Comment l'exigence « AOC conditions maintained through changes » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.GEN.135(b) · ORO.AOC.100", "selected": false}, {"ref": "ORO.MLR.100 · ORO.MLR.105", "question": "Comment l'exigence « OM-A/B/C/D up to date and distributed » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.MLR.100 · ORO.MLR.105", "selected": false}, {"ref": "ORO.GEN.200(a)(3) · ORO.AOC.135(b)", "question": "Comment l'exigence « Quality system / CMS operational » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.GEN.200(a)(3) · ORO.AOC.135(b)", "selected": false}, {"ref": "ORO.GEN.200(a)(1) · ORO.GEN.200(a)(3)", "question": "Comment l'exigence « Annual Safety Review Board » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.GEN.200(a)(1) · ORO.GEN.200(a)(3)", "selected": false}], "OPS": [{"ref": "ORO.AOC.100 · ORO.AOC.105", "question": "Pouvez-vous présenter la preuve de validité/approbation pour « AOC valid and up to date » ? Quelle est la date d'expiration et qui est responsable du renouvellement ?", "docReq": "ORO.AOC.100 · ORO.AOC.105", "selected": false}, {"ref": "ORO.GEN.210(a) · ORO.GEN.210(b) · ORO.AOC.135(a)", "question": "Comment l'exigence « Management composition and qualifications » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.GEN.210(a) · ORO.GEN.210(b) · ORO.AOC.135(a)", "selected": false}, {"ref": "ORO.FC.005 · ORO.FC.100 · ORO.FC.115 · ORO.FC.120", "question": "Comment l'exigence « Flight crew qualifications » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.FC.005 · ORO.FC.100 · ORO.FC.115 · ORO.FC.120", "selected": false}, {"ref": "ORO.FC.130 · ORO.FC.140 · ORO.FC.145", "question": "Comment le programme de « Initial and recurrent crew training » est-il structuré et suivi ? Pouvez-vous montrer les registres individuels et les attestations les plus récentes ?", "docReq": "ORO.FC.130 · ORO.FC.140 · ORO.FC.145", "selected": false}, {"ref": "ORO.FC.105 · ORO.FC.110", "question": "Comment l'exigence « Flight time and recent experience » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.FC.105 · ORO.FC.110", "selected": false}, {"ref": "ORO.SEC.100", "question": "Comment l'exigence « Aircraft security » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.SEC.100", "selected": false}, {"ref": "CAT.OP.MPA.105(a) · CAT.OP.MPA.105(b) · CAT.GEN.MPA.165", "question": "Pouvez-vous présenter la preuve de validité/approbation pour « Approved MEL applied » ? Quelle est la date d'expiration et qui est responsable du renouvellement ?", "docReq": "CAT.OP.MPA.105(a) · CAT.OP.MPA.105(b) · CAT.GEN.MPA.165", "selected": false}, {"ref": "CAT.OP.MPA.110 · CAT.OP.MPA.115", "question": "Comment l'exigence « Published operational minima observed » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "CAT.OP.MPA.110 · CAT.OP.MPA.115", "selected": false}, {"ref": "CAT.OP.MPA.150(a) · CAT.OP.MPA.150(b) · CAT.OP.MPA.150(c)", "question": "Comment l'exigence « Fuel » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "CAT.OP.MPA.150(a) · CAT.OP.MPA.150(b) · CAT.OP.MPA.150(c)", "selected": false}, {"ref": "CAT.OP.MPA.175(a) · CAT.OP.MPA.175(b)", "question": "Comment l'exigence « Mass and balance » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "CAT.OP.MPA.175(a) · CAT.OP.MPA.175(b)", "selected": false}, {"ref": "CAT.OP.MPA.300 · CAT.OP.MPA.305 · CAT.OP.MPA.310 · CAT.OP.MPA.315", "question": "Comment l'exigence « Performance » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "CAT.OP.MPA.300 · CAT.OP.MPA.305 · CAT.OP.MPA.310 · CAT.OP.MPA.315", "selected": false}, {"ref": "CAT.OP.MPA.100 · CAT.OP.MPA.180", "question": "Comment l'exigence « Flight preparation and briefing » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "CAT.OP.MPA.100 · CAT.OP.MPA.180", "selected": false}, {"ref": "CAT.IDE.H.200 · CAT.IDE.H.260 · CAT.IDE.H.270 · CAT.IDE.H.280", "question": "Comment conformez-vous et maintenez-vous « CAT helicopter equipment » ? Pouvez-vous montrer les documents d'installation, MEL et les dernières vérifications effectuées ?", "docReq": "CAT.IDE.H.200 · CAT.IDE.H.260 · CAT.IDE.H.270 · CAT.IDE.H.280", "selected": false}, {"ref": "CAT.GEN.MPA.180", "question": "Comment conformez-vous et maintenez-vous « Documents on board » ? Pouvez-vous montrer les documents d'installation, MEL et les dernières vérifications effectuées ?", "docReq": "CAT.GEN.MPA.180", "selected": false}, {"ref": "NCC.GEN.100 · NCC.GEN.105 · NCC.GEN.106", "question": "Comment l'exigence « NCC general conditions » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "NCC.GEN.100 · NCC.GEN.105 · NCC.GEN.106", "selected": false}, {"ref": "NCC.OP.100 · NCC.OP.110 · NCC.OP.155 · NCC.OP.175", "question": "Pouvez-vous décrire la procédure appliquée pour « NCC operating procedures » ? Comment est-elle documentée dans l'OM et à quelle fréquence est-elle révisée ?", "docReq": "NCC.OP.100 · NCC.OP.110 · NCC.OP.155 · NCC.OP.175", "selected": false}, {"ref": "NCC.IDE.H.100 · NCC.IDE.H.105 · NCC.IDE.H.230", "question": "Comment conformez-vous et maintenez-vous « NCC helicopter equipment » ? Pouvez-vous montrer les documents d'installation, MEL et les dernières vérifications effectuées ?", "docReq": "NCC.IDE.H.100 · NCC.IDE.H.105 · NCC.IDE.H.230", "selected": false}], "SPA": [{"ref": "SPA.EFB.100(a)", "question": "Pouvez-vous présenter la preuve de validité/approbation pour « Valid operator EFB approval » ? Quelle est la date d'expiration et qui est responsable du renouvellement ?", "docReq": "SPA.EFB.100(a)", "selected": false}, {"ref": "SPA.EFB.100(b)(1) · SPA.EFB.100(b)(2)", "question": "Pouvez-vous décrire la procédure appliquée pour « EFB policy documented » ? Comment est-elle documentée dans l'OM et à quelle fréquence est-elle révisée ?", "docReq": "SPA.EFB.100(b)(1) · SPA.EFB.100(b)(2)", "selected": false}, {"ref": "SPA.EFB.100(b)(3)", "question": "Comment conformez-vous et maintenez-vous « EFB hardware qualified and installed » ? Pouvez-vous montrer les documents d'installation, MEL et les dernières vérifications effectuées ?", "docReq": "SPA.EFB.100(b)(3)", "selected": false}, {"ref": "SPA.EFB.100(b)(4)", "question": "Comment l'exigence « Software and database management » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "SPA.EFB.100(b)(4)", "selected": false}, {"ref": "SPA.EFB.100(b)(5)", "question": "Comment le programme de « Crew EFB training » est-il structuré et suivi ? Pouvez-vous montrer les registres individuels et les attestations les plus récentes ?", "docReq": "SPA.EFB.100(b)(5)", "selected": false}, {"ref": "SPA.EFB.100(b)(6)", "question": "Pouvez-vous décrire la procédure appliquée pour « EFB failure procedure documented » ? Comment est-elle documentée dans l'OM et à quelle fréquence est-elle révisée ?", "docReq": "SPA.EFB.100(b)(6)", "selected": false}, {"ref": "SPA.DG.100(a) · SPA.DG.100(b)", "question": "Pouvez-vous présenter la preuve de validité/approbation pour « Valid DG approval » ? Quelle est la date d'expiration et qui est responsable du renouvellement ?", "docReq": "SPA.DG.100(a) · SPA.DG.100(b)", "selected": false}, {"ref": "SPA.DG.105(a)(1) · SPA.DG.105(a)(2)", "question": "Comment le programme de « DG programme documented » est-il structuré et suivi ? Pouvez-vous montrer les registres individuels et les attestations les plus récentes ?", "docReq": "SPA.DG.105(a)(1) · SPA.DG.105(a)(2)", "selected": false}, {"ref": "SPA.DG.105(b)(1) · SPA.DG.105(b)(2)", "question": "Comment le programme de « DG training for crews and ground staff » est-il structuré et suivi ? Pouvez-vous montrer les registres individuels et les attestations les plus récentes ?", "docReq": "SPA.DG.105(b)(1) · SPA.DG.105(b)(2)", "selected": false}, {"ref": "SPA.DG.105(a)(3)", "question": "Comment conformez-vous et maintenez-vous « DG documentation on board » ? Pouvez-vous montrer les documents d'installation, MEL et les dernières vérifications effectuées ?", "docReq": "SPA.DG.105(a)(3)", "selected": false}, {"ref": "SPA.DG.105(a)(4)", "question": "Pouvez-vous décrire la procédure appliquée pour « DG emergency procedure on board » ? Comment est-elle documentée dans l'OM et à quelle fréquence est-elle révisée ?", "docReq": "SPA.DG.105(a)(4)", "selected": false}, {"ref": "SPA.DG.105(c) · ORO.GEN.160(a)", "question": "Comment le processus de notification/signalement relatif à « DG incident report to authority » fonctionne-t-il en pratique ? Pouvez-vous citer un exemple récent traité ?", "docReq": "SPA.DG.105(c) · ORO.GEN.160(a)", "selected": false}], "SPO": [{"ref": "SPO.GEN.005(a) · SPO.GEN.005(b)", "question": "Comment l'exigence « SPO declaration to competent authority » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "SPO.GEN.005(a) · SPO.GEN.005(b)", "selected": false}, {"ref": "SPO.GEN.010(a) · SPO.GEN.010(b)", "question": "Comment l'exigence « SPO pilot-in-command responsibilities » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "SPO.GEN.010(a) · SPO.GEN.010(b)", "selected": false}, {"ref": "SPO.OP.150(a) · SPO.OP.150(b)", "question": "Comment l'exigence « SPO flight preparation » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "SPO.OP.150(a) · SPO.OP.150(b)", "selected": false}, {"ref": "SPO.OP.230(a) · SPO.OP.230(b)", "question": "Comment l'exigence « SPO specific risk assessment » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "SPO.OP.230(a) · SPO.OP.230(b)", "selected": false}, {"ref": "SPO.OP.200(a) · SPO.OP.200(b)", "question": "Comment l'exigence « AS 332 C1 performance in SPO operations » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "SPO.OP.200(a) · SPO.OP.200(b)", "selected": false}, {"ref": "SPO.IDE.H.100 · SPO.IDE.H.115 · SPO.IDE.H.130", "question": "Comment conformez-vous et maintenez-vous « SPO helicopter equipment » ? Pouvez-vous montrer les documents d'installation, MEL et les dernières vérifications effectuées ?", "docReq": "SPO.IDE.H.100 · SPO.IDE.H.115 · SPO.IDE.H.130", "selected": false}, {"ref": "SPO.SPEC.HESLO.100(a) · SPO.FC.120(a) · SPO.FC.120(b)", "question": "Comment l'exigence « HESLO pilot qualification » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "SPO.SPEC.HESLO.100(a) · SPO.FC.120(a) · SPO.FC.120(b)", "selected": false}, {"ref": "SPO.SPEC.HESLO.105(a) · SPO.SPEC.HESLO.105(b)", "question": "Comment conformez-vous et maintenez-vous « HESLO equipment AS 332 C1 » ? Pouvez-vous montrer les documents d'installation, MEL et les dernières vérifications effectuées ?", "docReq": "SPO.SPEC.HESLO.105(a) · SPO.SPEC.HESLO.105(b)", "selected": false}, {"ref": "SPO.SPEC.HESLO.100(b)", "question": "Comment l'exigence « HESLO load limits documented » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "SPO.SPEC.HESLO.100(b)", "selected": false}, {"ref": "SPO.SPEC.HESLO.110(a) · SPO.SPEC.HESLO.110(b)", "question": "Pouvez-vous décrire la procédure appliquée pour « HESLO emergency procedures » ? Comment est-elle documentée dans l'OM et à quelle fréquence est-elle révisée ?", "docReq": "SPO.SPEC.HESLO.110(a) · SPO.SPEC.HESLO.110(b)", "selected": false}, {"ref": "SPO.OP.150(a) · SPO.OP.230(a)", "question": "Comment la vérification de « Pre-operational HESLO site inspection » est-elle réalisée ? Par qui, à quelle fréquence et quelle est la traçabilité de ce contrôle ?", "docReq": "SPO.OP.150(a) · SPO.OP.230(a)", "selected": false}, {"ref": "SPO.SPEC.MCF.100(a) · SPO.FC.120(a)", "question": "Comment l'exigence « MCF pilot qualification » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "SPO.SPEC.MCF.100(a) · SPO.FC.120(a)", "selected": false}, {"ref": "SPO.SPEC.MCF.105(a) · SPO.SPEC.MCF.105(b)", "question": "Comment conformez-vous et maintenez-vous « MCF equipment » ? Pouvez-vous montrer les documents d'installation, MEL et les dernières vérifications effectuées ?", "docReq": "SPO.SPEC.MCF.105(a) · SPO.SPEC.MCF.105(b)", "selected": false}, {"ref": "SPO.SPEC.MCF.100(b) · SPO.OP.200(a)", "question": "Pouvez-vous décrire la procédure appliquée pour « MCF procedures documented » ? Comment est-elle documentée dans l'OM et à quelle fréquence est-elle révisée ?", "docReq": "SPO.SPEC.MCF.100(b) · SPO.OP.200(a)", "selected": false}, {"ref": "SPO.OP.230(a) · SPO.OP.230(b)", "question": "Comment l'exigence « MCF risk assessment » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "SPO.OP.230(a) · SPO.OP.230(b)", "selected": false}, {"ref": "SPO.OP.150(b) · SPO.GEN.010(b)", "question": "Comment l'exigence « MCF rescue plan » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "SPO.OP.150(b) · SPO.GEN.010(b)", "selected": false}], "Maintenance": [{"ref": "M.A.201(a) · M.A.201(e) · M.A.201(i)", "question": "Comment l'exigence « Continuing airworthiness responsibilities » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "M.A.201(a) · M.A.201(e) · M.A.201(i)", "selected": false}, {"ref": "M.A.202(a) · M.A.202(b)", "question": "Comment le processus de notification/signalement relatif à « Occurrence reporting (defects/damage) » fonctionne-t-il en pratique ? Pouvez-vous citer un exemple récent traité ?", "docReq": "M.A.202(a) · M.A.202(b)", "selected": false}, {"ref": "M.A.302(a) · M.A.302(b) · M.A.302(d) · M.A.302(e)", "question": "Comment le programme de « Approved maintenance programme » est-il structuré et suivi ? Pouvez-vous montrer les registres individuels et les attestations les plus récentes ?", "docReq": "M.A.302(a) · M.A.302(b) · M.A.302(d) · M.A.302(e)", "selected": false}, {"ref": "M.A.303(a) · M.A.303(b) · M.A.303(c)", "question": "Comment l'exigence « Airworthiness Directives (AD) applied » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "M.A.303(a) · M.A.303(b) · M.A.303(c)", "selected": false}, {"ref": "M.A.304(a) · M.A.304(b)", "question": "Comment l'exigence « Data for modifications and repairs » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "M.A.304(a) · M.A.304(b)", "selected": false}, {"ref": "M.A.305(a) · M.A.305(b) · M.A.305(c)", "question": "Comment les enregistrements relatifs à « Airworthiness recording system » sont-ils constitués, classifiés et conservés ? Quelle est la durée de rétention et qui y a accès ?", "docReq": "M.A.305(a) · M.A.305(b) · M.A.305(c)", "selected": false}, {"ref": "M.A.306(a) · M.A.306(b) · M.A.306(c)", "question": "Comment les enregistrements relatifs à « Technical log book (TLB) » sont-ils constitués, classifiés et conservés ? Quelle est la durée de rétention et qui y a accès ?", "docReq": "M.A.306(a) · M.A.306(b) · M.A.306(c)", "selected": false}, {"ref": "M.A.401(a) · M.A.401(b)", "question": "Comment l'exigence « Maintenance data (AMM, RFM, IPC) » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "M.A.401(a) · M.A.401(b)", "selected": false}, {"ref": "M.A.402(a) · M.A.402(b)", "question": "Comment l'exigence « Maintenance execution » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "M.A.402(a) · M.A.402(b)", "selected": false}, {"ref": "M.A.403(a) · M.A.403(b) · M.A.403(c)", "question": "Comment l'exigence « Aircraft defects » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "M.A.403(a) · M.A.403(b) · M.A.403(c)", "selected": false}, {"ref": "M.A.501(a) · M.A.501(b)", "question": "Comment l'exigence « Component installation (EASA Form 1) » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "M.A.501(a) · M.A.501(b)", "selected": false}, {"ref": "M.A.502(a) · M.A.502(b)", "question": "Comment l'exigence « Component maintenance (Part-145) » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "M.A.502(a) · M.A.502(b)", "selected": false}, {"ref": "M.A.504(a) · M.A.504(b) · M.A.504(c)", "question": "Comment l'exigence « Life limited parts (LLP) » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "M.A.504(a) · M.A.504(b) · M.A.504(c)", "selected": false}, {"ref": "M.A.801(a) · M.A.801(b) · M.A.801(c)", "question": "Comment l'exigence « Certificate of release to service (CRS) » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "M.A.801(a) · M.A.801(b) · M.A.801(c)", "selected": false}, {"ref": "M.A.708(a) · M.A.708(b) · M.A.708(c)", "question": "Comment l'exigence « CAMO continuing airworthiness management » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "M.A.708(a) · M.A.708(b) · M.A.708(c)", "selected": false}, {"ref": "M.A.710(a) · M.A.710(b) · M.A.710(c)", "question": "Comment l'exigence « Airworthiness review (ARC) » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "M.A.710(a) · M.A.710(b) · M.A.710(c)", "selected": false}, {"ref": "M.A.901(a) · M.A.902(a) · M.A.902(b)", "question": "Pouvez-vous présenter la preuve de validité/approbation pour « Valid certificate of airworthiness (CofA) » ? Quelle est la date d'expiration et qui est responsable du renouvellement ?", "docReq": "M.A.901(a) · M.A.902(a) · M.A.902(b)", "selected": false}], "CAMO": [{"ref": "CAMO.A.100 · CAMO.A.125(a) · CAMO.A.125(b)", "question": "Pouvez-vous présenter la preuve de validité/approbation pour « Valid CAMO approval and compliant scope » ? Quelle est la date d'expiration et qui est responsable du renouvellement ?", "docReq": "CAMO.A.100 · CAMO.A.125(a) · CAMO.A.125(b)", "selected": false}, {"ref": "CAMO.A.105(a) · CAMO.A.105(b)", "question": "Comment les enregistrements relatifs à « Authority access to premises and records » sont-ils constitués, classifiés et conservés ? Quelle est la durée de rétention et qui y a accès ?", "docReq": "CAMO.A.105(a) · CAMO.A.105(b)", "selected": false}, {"ref": "CAMO.A.115(a) · CAMO.A.115(b)", "question": "Comment l'exigence « Response to safety findings » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "CAMO.A.115(a) · CAMO.A.115(b)", "selected": false}, {"ref": "CAMO.A.120(a) · CAMO.A.120(b) · M.A.202(a)", "question": "Comment le processus de notification/signalement relatif à « CAMO occurrence reporting » fonctionne-t-il en pratique ? Pouvez-vous citer un exemple récent traité ?", "docReq": "CAMO.A.120(a) · CAMO.A.120(b) · M.A.202(a)", "selected": false}, {"ref": "CAMO.A.200(a) · CAMO.A.200(b) · ORO.GEN.200(a)", "question": "Comment l'exigence « CAMO management system operational » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "CAMO.A.200(a) · CAMO.A.200(b) · ORO.GEN.200(a)", "selected": false}, {"ref": "CAMO.A.200(a)(2) · ORO.GEN.200(a)(2)", "question": "Comment l'exigence « Airworthiness risk management » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "CAMO.A.200(a)(2) · ORO.GEN.200(a)(2)", "selected": false}, {"ref": "CAMO.A.200(a)(3) · ORO.GEN.200(a)(3)", "question": "Comment l'exigence « Airworthiness KPIs defined and measured » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "CAMO.A.200(a)(3) · ORO.GEN.200(a)(3)", "selected": false}, {"ref": "CAMO.A.200(a)(6) · ORO.GEN.130(a)", "question": "Comment l'exigence « CAMO change management » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "CAMO.A.200(a)(6) · ORO.GEN.130(a)", "selected": false}, {"ref": "CAMO.A.300(a) · CAMO.A.300(b) · CAMO.A.300(c)", "question": "Pouvez-vous présenter la preuve de validité/approbation pour « Approved and current CAMO manual (CAME) » ? Quelle est la date d'expiration et qui est responsable du renouvellement ?", "docReq": "CAMO.A.300(a) · CAMO.A.300(b) · CAMO.A.300(c)", "selected": false}, {"ref": "CAMO.A.305(a) · CAMO.A.305(b) · CAMO.A.305(c)", "question": "Pouvez-vous présenter la nomination formelle et les qualifications de la personne en charge de « CAMO personnel appointed and qualified » ? La lettre de nomination est-elle à jour et approuvée par l'autorité ?", "docReq": "CAMO.A.305(a) · CAMO.A.305(b) · CAMO.A.305(c)", "selected": false}, {"ref": "CAMO.A.305(g)", "question": "Comment le programme de « Continuous training of CAMO personnel » est-il structuré et suivi ? Pouvez-vous montrer les registres individuels et les attestations les plus récentes ?", "docReq": "CAMO.A.305(g)", "selected": false}, {"ref": "M.A.711(a) · M.A.711(b)", "question": "Comment l'exigence « CAMO privileges respected » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "M.A.711(a) · M.A.711(b)", "selected": false}, {"ref": "CAMO.A.315(a) · CAMO.A.315(b) · CAMO.A.315(c)", "question": "Comment le programme de « CAMO internal audit programme » est-il structuré et suivi ? Pouvez-vous montrer les registres individuels et les attestations les plus récentes ?", "docReq": "CAMO.A.315(a) · CAMO.A.315(b) · CAMO.A.315(c)", "selected": false}, {"ref": "CAMO.A.315(d)", "question": "Comment la vérification de « CAMO audit of Part-145 organisation » est-elle réalisée ? Par qui, à quelle fréquence et quelle est la traçabilité de ce contrôle ?", "docReq": "CAMO.A.315(d)", "selected": false}, {"ref": "CAMO.A.320(a) · CAMO.A.320(b) · M.A.714(a)", "question": "Comment les enregistrements relatifs à « CAMO records archived » sont-ils constitués, classifiés et conservés ? Quelle est la durée de rétention et qui y a accès ?", "docReq": "CAMO.A.320(a) · CAMO.A.320(b) · M.A.714(a)", "selected": false}], "Other": [{"ref": "ORO.GEN.160(a) · M.A.202(a) · CAMO.A.120(a)", "question": "Comment le processus de notification/signalement relatif à « Technical occurrences → SMS + CAMO » fonctionne-t-il en pratique ? Pouvez-vous citer un exemple récent traité ?", "docReq": "ORO.GEN.160(a) · M.A.202(a) · CAMO.A.120(a)", "selected": false}, {"ref": "M.A.708(c) · CAMO.A.315(d)", "question": "Comment l'exigence « CAMO / Part-145 contract » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "M.A.708(c) · CAMO.A.315(d)", "selected": false}, {"ref": "ORO.GEN.130(a) · ORO.GEN.130(c) · CAMO.A.200(a)(6)", "question": "Comment l'exigence « Management of Change » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.GEN.130(a) · ORO.GEN.130(c) · CAMO.A.200(a)(6)", "selected": false}, {"ref": "ORO.GEN.200(a)(1) · CAMO.A.200(a)(1)", "question": "Comment l'exigence « SAF SMS ↔ CAMO management system » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "ORO.GEN.200(a)(1) · CAMO.A.200(a)(1)", "selected": false}, {"ref": "M.A.712(a) · CAMO.A.315(a) · ORO.GEN.200(a)(3)", "question": "Comment la vérification de « CAMO internal audit ↔ SAF CMS » est-elle réalisée ? Par qui, à quelle fréquence et quelle est la traçabilité de ce contrôle ?", "docReq": "M.A.712(a) · CAMO.A.315(a) · ORO.GEN.200(a)(3)", "selected": false}, {"ref": "CAMO.A.305(g) · ORO.GEN.200(a)(5)", "question": "Comment le programme de « Airworthiness training ↔ SMS training programme » est-il structuré et suivi ? Pouvez-vous montrer les registres individuels et les attestations les plus récentes ?", "docReq": "CAMO.A.305(g) · ORO.GEN.200(a)(5)", "selected": false}, {"ref": "CAT.OP.MPA.105(b) · M.A.403(b) · ORO.FC.130", "question": "Comment l'exigence « Crew qualification ↔ MEL airworthiness » est-elle mise en œuvre concrètement ? Pouvez-vous en démontrer la conformité avec des preuves documentaires récentes ?", "docReq": "CAT.OP.MPA.105(b) · M.A.403(b) · ORO.FC.130", "selected": false}, {"ref": "SPO.SPEC.HESLO.105(a) · M.A.501(a) · M.A.502(a)", "question": "Comment conformez-vous et maintenez-vous « HESLO equipment ↔ Component airworthiness » ? Pouvez-vous montrer les documents d'installation, MEL et les dernières vérifications effectuées ?", "docReq": "SPO.SPEC.HESLO.105(a) · M.A.501(a) · M.A.502(a)", "selected": false}]};
+
+function bankInit() {
+  DOMAINS.forEach(d => { if (!bankData[d]) bankData[d] = []; });
+  // Injecter les questions du plan d'audit si la banque est vide pour ce domaine
+  DOMAINS.forEach(d => {
+    if (bankData[d].length === 0 && PLAN_BANK_DATA[d] && PLAN_BANK_DATA[d].length > 0) {
+      bankData[d] = PLAN_BANK_DATA[d].map(q => ({...q, selected: false}));
+    }
+  });
+  // Créer les onglets de domaine
+  const tabs = document.getElementById('bankDomTabs');
+  tabs.innerHTML = DOMAINS.map(d =>
+    `<button class="bank-dtab ${d===bankCurrentDomain?'active':''}" onclick="bankSetDomain('${d}')">${d}</button>`
+  ).join('');
+}
+
+window.bankSetDomain = function(d) {
+  bankCurrentDomain = d;
+  document.querySelectorAll('.bank-dtab').forEach(el =>
+    el.classList.toggle('active', el.textContent===d)
+  );
+  renderBank();
+};
+
+function renderBank() {
+  bankInit();
+  const list = bankData[bankCurrentDomain] || [];
+  document.getElementById('bankCount').textContent =
+    list.length + ' question(s) — ' + list.filter(q=>q.selected).length + ' selected';
+
+  document.getElementById('bankList').innerHTML = list.map((q,i) => `
+    <div class="bank-item" id="bankItem-${i}">
+      <input type="checkbox" style="margin-top:4px;accent-color:var(--gold)"
+        ${q.selected?'checked':''} onchange="bankToggle(${i},this.checked)">
+      <div class="bank-item-body">
+        <div class="bank-item-labels">
+          <label>REF</label>
+          <input type="text" value="${esc(q.ref||'')}" placeholder="OMM §4.3.2"
+            onchange="bankUpdate(${i},'ref',this.value)" style="width:160px">
+          <label style="margin-left:8px">DOCUMENTARY REQUIREMENT</label>
+          <input type="text" value="${esc(q.docReq||'')}" placeholder="Source text from procedure…"
+            onchange="bankUpdate(${i},'docReq',this.value)" style="flex:1">
+        </div>
+        <label style="font-size:10px;color:var(--text-dim);font-family:var(--mono)">AUDIT QUESTION</label>
+        <textarea onchange="bankUpdate(${i},'question',this.value)">${esc(q.question||'')}</textarea>
+      </div>
+      <button class="bank-item-del" onclick="bankDelete(${i})" title="Delete">✕</button>
+    </div>`).join('');
+}
+
+window.bankToggle = function(i, checked) {
+  if (bankData[bankCurrentDomain][i]) bankData[bankCurrentDomain][i].selected = checked;
+  document.getElementById('bankCount').textContent =
+    bankData[bankCurrentDomain].length + ' question(s) — ' +
+    bankData[bankCurrentDomain].filter(q=>q.selected).length + ' selected';
+};
+
+window.bankUpdate = function(i, field, val) {
+  if (bankData[bankCurrentDomain][i]) bankData[bankCurrentDomain][i][field] = val;
+};
+
+window.bankDelete = function(i) {
+  bankData[bankCurrentDomain].splice(i, 1);
+  renderBank();
+};
+
+window.bankAddQuestion = function() {
+  if (!bankData[bankCurrentDomain]) bankData[bankCurrentDomain] = [];
+  bankData[bankCurrentDomain].push({ ref:'', question:'', docReq:'', selected:true });
+  renderBank();
+  // Scroll vers le bas
+  setTimeout(()=>{
+    const list = document.getElementById('bankList');
+    list.lastElementChild?.scrollIntoView({behavior:'smooth'});
+  }, 50);
+};
+
+window.bankSendSelected = function() {
+  const list = bankData[bankCurrentDomain] || [];
+  const sel = list.filter(q => q.selected && q.question.trim());
+  if (!sel.length) { toast('No question selected or questions are empty','warn'); return; }
+  sel.forEach(q => lines.push({
+    id: 'B'+Date.now()+Math.random().toString(36).slice(2,4),
+    ref: q.ref, domain: bankCurrentDomain,
+    question: q.question, docReq: q.docReq,
+    person:'', date: today(), status:'', cap:'',
+    evidence:'', gap:'', effectStatus:'', effectDate:'', effectComment:''
+  }));
+  toast(sel.length+' question(s) sent to grid ✓','ok');
+  switchTab('Grid'); renderGrid();
+};
+
+window.bankSendAll = function() {
+  const list = bankData[bankCurrentDomain] || [];
+  const filled = list.filter(q => q.question.trim());
+  if (!filled.length) { toast('No questions to send','warn'); return; }
+  filled.forEach(q => lines.push({
+    id: 'B'+Date.now()+Math.random().toString(36).slice(2,4),
+    ref: q.ref, domain: bankCurrentDomain,
+    question: q.question, docReq: q.docReq,
+    person:'', date: today(), status:'', cap:'',
+    evidence:'', gap:'', effectStatus:'', effectDate:'', effectComment:''
+  }));
+  toast(filled.length+' question(s) sent to grid ✓','ok');
+  switchTab('Grid'); renderGrid();
+};
+
+window.bankExport = function() {
+  const blob = new Blob([JSON.stringify(bankData, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'SAF_QuestionBank_'+today()+'.json';
+  a.click();
+  toast('Question bank exported ✓','ok');
+};
+
+window.bankImport = function() {
+  document.getElementById('bankFileInput').click();
+};
+
+window.bankImportFile = function(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      // Merge : ajouter aux questions existantes par domaine
+      DOMAINS.forEach(d => {
+        if (data[d] && Array.isArray(data[d])) {
+          if (!bankData[d]) bankData[d] = [];
+          data[d].forEach(q => bankData[d].push({...q, selected:false}));
+        }
+      });
+      toast('Question bank imported ✓','ok');
+      renderBank();
+    } catch(err) {
+      toast('Import error: '+err.message,'err');
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+};
 
 // ── CLOSE MODAL ──
 document.getElementById('lineModal').addEventListener('click',function(e){ if(e.target===this) closeModal(); });
