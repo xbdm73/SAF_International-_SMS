@@ -424,6 +424,40 @@ window.generateCertPDF = function() {
 <div id="header-last-modified-wrap">LAST MODIFICATION · <span id="header-last-modified">08/06/2026 16:41</span></div>
 </div>
 </div></header>
+
+<!-- ── SAF INTER-TOOL NAV ── -->
+<div id="saf-subnav" style="background:#070e1a;border-bottom:1px solid #1a2840;padding:0 28px;z-index:18;">
+  <div style="max-width:1800px;margin:auto;display:flex;align-items:center;gap:4px;overflow-x:auto;">
+    <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
+    <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
+    <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
+    <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
+    <a href="SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
+    <a href="SAF_Grille_Audit.html"                               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#b880e8'" onmouseout="this.style.color='#6a82a5'"><span style="color:#b880e8">■</span> AUDIT</a>
+  </div>
+</div>
+<script>
+(function(){
+  var map = {
+    'SAF_International_Safety.html':                    '#e07070',
+    'SAF_International_Compliance_Monitoring_System.html': '#70a8e0',
+    'SAF_International_Appendices_OMM.html':            '#70d0a0',
+    'SAF_Grille_Audit.html':                            '#b880e8',
+  };
+  var file = location.pathname.split('/').pop() || 'index.html';
+  var color = map[file];
+  if (!color) return;
+  document.querySelectorAll('#saf-subnav a.saf-nav-link').forEach(function(a){
+    if (a.getAttribute('href') === file) {
+      a.style.color = color;
+      a.style.borderBottomColor = color;
+      a.style.background = 'rgba(255,255,255,0.03)';
+    }
+  });
+})();
+</script>
+<!-- ── END SAF INTER-TOOL NAV ── -->
+
 <div class="main-wrap">
 <aside>
 <div class="nav-section"><div class="nav-label">Appendices O.M.M</div><div class="nav-item active" data-view="view-app01" onclick="showView('view-app01',this)"><span class="icon">📑</span><div class="nav-item-text"><span class="nav-app-code">APP01-OMM</span><span class="nav-app-title">List of Appendices</span></div></div><div class="nav-item" data-view="view-app02" onclick="showView('view-app02',this)"><span class="icon">🏢</span><div class="nav-item-text"><span class="nav-app-code">APP02-OMM</span><span class="nav-app-title">Facilities &amp; Infrastructure</span></div></div><div class="nav-item" data-view="view-app03" onclick="showView('view-app03',this)"><span class="icon">🗂️</span><div class="nav-item-text"><span class="nav-app-code">APP03-OMM</span><span class="nav-app-title">Organizational Chart</span></div></div><div class="nav-item" data-view="view-app04" onclick="showView('view-app04',this)"><span class="icon">👥</span><div class="nav-item-text"><span class="nav-app-code">APP04-OMM</span><span class="nav-app-title">List of Management Personnel</span></div></div><div class="nav-item" data-view="view-app13" onclick="showView('view-app13',this)"><span class="icon">📋</span><div class="nav-item-text"><span class="nav-app-code">APP05-OMM</span><span class="nav-app-title">Leasing Overview by FOCA</span></div></div><div class="nav-item" data-view="view-app14" onclick="showView('view-app14',this)"><span class="icon">🚁</span><div class="nav-item-text"><span class="nav-app-code">APP06-OMM</span><span class="nav-app-title">Aircraft being used</span></div></div><div class="nav-item" data-view="view-app07" onclick="showView('view-app07',this)"><span class="icon">🔴</span><div class="nav-item-text"><span class="nav-app-code">APP07-OMM</span><span class="nav-app-title">Safety Promotion</span></div></div></div>
