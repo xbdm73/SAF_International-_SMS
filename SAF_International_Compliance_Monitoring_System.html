@@ -1246,6 +1246,7 @@ nav.cms-sidebar .cms-nav-title{font-size:11.7px;line-height:1.3;color:inherit;}
   nav.cms-sidebar{position:static !important;width:100%;height:auto;border-right:none;border-bottom:1px solid rgba(201,162,39,.25) !important;}
   .panel{margin-left:0 !important;}
   .cms-layout main{margin-left:0 !important;}
+  #saf-subnav{margin-left:0 !important;}
 }
 @media print{ nav.cms-sidebar{display:none !important;} .panel{margin-left:0 !important;} .cms-layout main{margin-left:0 !important;} }
 </style>
@@ -1768,37 +1769,10 @@ function safExportPDF() {
   }, 300);
 }
 </script>
-<div class="cms-layout">
-<nav class="cms-sidebar">
-<div class="cms-nav-section">
-<div class="cms-nav-label">Navigation</div>
-<button class="tab active" onclick="showMainTab('dashboard',this)"><span class="cms-nav-icon">🏠</span><span class="cms-nav-text"><span class="cms-nav-title">Dashboard</span></span></button>
-<button class="tab" onclick="showMainTab('audit_plan',this)"><span class="cms-nav-icon">📝</span><span class="cms-nav-text"><span class="cms-nav-code">APP13</span><span class="cms-nav-title">Audit plan</span></span></button>
-<button class="tab" onclick="showMainTab('kpispi',this)"><span class="cms-nav-icon">📊</span><span class="cms-nav-text"><span class="cms-nav-code">APP14</span><span class="cms-nav-title">Compliance indicators</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_registre',this)"><span class="cms-nav-icon">📋</span><span class="cms-nav-text"><span class="cms-nav-code">APP15</span><span class="cms-nav-title">Corrective Action Plan</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_sous_traitants',this)"><span class="cms-nav-icon">🔗</span><span class="cms-nav-text"><span class="cms-nav-code">APP16</span><span class="cms-nav-title">List of Subcontractors</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_auditeurs',this)"><span class="cms-nav-icon">👤</span><span class="cms-nav-text"><span class="cms-nav-code">APP17</span><span class="cms-nav-title">Internal Auditors & Inspectors</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_trainers',this)"><span class="cms-nav-icon">🎓</span><span class="cms-nav-text"><span class="cms-nav-code">APP18</span><span class="cms-nav-title">List of Trainers</span></span></button>
-</div>
-<div class="cms-nav-section">
-<div class="cms-nav-label">CMS Modules</div>
-<button class="tab" onclick="showMainTab('srb_full',this)"><span class="cms-nav-icon">☑</span><span class="cms-nav-text"><span class="cms-nav-title">SRB Checklist</span></span></button>
-<button class="tab" onclick="showMainTab('srb',this)"><span class="cms-nav-icon">🛡</span><span class="cms-nav-text"><span class="cms-nav-title">SRB</span></span></button>
-<button class="tab" onclick="showMainTab('cms_dashboard',this)"><span class="cms-nav-icon">📈</span><span class="cms-nav-text"><span class="cms-nav-title">CMS Dashboard</span></span></button>
-</div>
-<div class="cms-nav-section">
-<div class="cms-nav-label">Tools</div>
-<button class="tab" onclick="showMainTab('grille_easa',this)"><span class="cms-nav-icon">🔍</span><span class="cms-nav-text"><span class="cms-nav-title">EASA Audit Grid</span></span></button>
-<button class="tab" onclick="showMainTab('sms_bridge',this);smsBridgeLoad()"><span class="cms-nav-icon">🛟</span><span class="cms-nav-text"><span class="cms-nav-title">Safety (SMS)</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_audits',this)"><span class="cms-nav-icon">📁</span><span class="cms-nav-text"><span class="cms-nav-title">Audits &amp; Authority</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_rapport_annuel',this)"><span class="cms-nav-icon">📊</span><span class="cms-nav-text"><span class="cms-nav-title">Annual Report</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_settings',this)"><span class="cms-nav-icon">⚙</span><span class="cms-nav-text"><span class="cms-nav-title">Settings</span></span></button>
-</div>
-</nav>
 
 <!-- ── SAF INTER-TOOL NAV ── -->
-<div id="saf-subnav" style="background:#070e1a;border-bottom:1px solid #1a2840;padding:0 28px;position:sticky;top:118px;z-index:18;">
-  <div style="max-width:1800px;margin:auto;display:flex;align-items:center;gap:4px;overflow-x:auto;">
+<div id="saf-subnav" style="background:#070e1a;border-bottom:1px solid #1a2840;padding:0 28px;position:sticky;top:var(--header-h,118px);z-index:20;margin-left:248px;">
+  <div style="display:flex;align-items:center;gap:4px;overflow-x:auto;">
     <a href="./" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
     <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
@@ -1826,6 +1800,34 @@ function safExportPDF() {
 })();
 </script>
 <!-- ── END SAF INTER-TOOL NAV ── -->
+
+<div class="cms-layout">
+<nav class="cms-sidebar">
+<div class="cms-nav-section">
+<div class="cms-nav-label">Navigation</div>
+<button class="tab active" onclick="showMainTab('dashboard',this)"><span class="cms-nav-icon">🏠</span><span class="cms-nav-text"><span class="cms-nav-title">Dashboard</span></span></button>
+<button class="tab" onclick="showMainTab('audit_plan',this)"><span class="cms-nav-icon">📝</span><span class="cms-nav-text"><span class="cms-nav-code">APP13</span><span class="cms-nav-title">Audit plan</span></span></button>
+<button class="tab" onclick="showMainTab('kpispi',this)"><span class="cms-nav-icon">📊</span><span class="cms-nav-text"><span class="cms-nav-code">APP14</span><span class="cms-nav-title">Compliance indicators</span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_registre',this)"><span class="cms-nav-icon">📋</span><span class="cms-nav-text"><span class="cms-nav-code">APP15</span><span class="cms-nav-title">Corrective Action Plan</span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_sous_traitants',this)"><span class="cms-nav-icon">🔗</span><span class="cms-nav-text"><span class="cms-nav-code">APP16</span><span class="cms-nav-title">List of Subcontractors</span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_auditeurs',this)"><span class="cms-nav-icon">👤</span><span class="cms-nav-text"><span class="cms-nav-code">APP17</span><span class="cms-nav-title">Internal Auditors & Inspectors</span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_trainers',this)"><span class="cms-nav-icon">🎓</span><span class="cms-nav-text"><span class="cms-nav-code">APP18</span><span class="cms-nav-title">List of Trainers</span></span></button>
+</div>
+<div class="cms-nav-section">
+<div class="cms-nav-label">CMS Modules</div>
+<button class="tab" onclick="showMainTab('srb_full',this)"><span class="cms-nav-icon">☑</span><span class="cms-nav-text"><span class="cms-nav-title">SRB Checklist</span></span></button>
+<button class="tab" onclick="showMainTab('srb',this)"><span class="cms-nav-icon">🛡</span><span class="cms-nav-text"><span class="cms-nav-title">SRB</span></span></button>
+<button class="tab" onclick="showMainTab('cms_dashboard',this)"><span class="cms-nav-icon">📈</span><span class="cms-nav-text"><span class="cms-nav-title">CMS Dashboard</span></span></button>
+</div>
+<div class="cms-nav-section">
+<div class="cms-nav-label">Tools</div>
+<button class="tab" onclick="showMainTab('grille_easa',this)"><span class="cms-nav-icon">🔍</span><span class="cms-nav-text"><span class="cms-nav-title">EASA Audit Grid</span></span></button>
+<button class="tab" onclick="showMainTab('sms_bridge',this);smsBridgeLoad()"><span class="cms-nav-icon">🛟</span><span class="cms-nav-text"><span class="cms-nav-title">Safety (SMS)</span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_audits',this)"><span class="cms-nav-icon">📁</span><span class="cms-nav-text"><span class="cms-nav-title">Audits &amp; Authority</span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_rapport_annuel',this)"><span class="cms-nav-icon">📊</span><span class="cms-nav-text"><span class="cms-nav-title">Annual Report</span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_settings',this)"><span class="cms-nav-icon">⚙</span><span class="cms-nav-text"><span class="cms-nav-title">Settings</span></span></button>
+</div>
+</nav>
 
 <main>
 <!-- ═══════════════════════════════════════
