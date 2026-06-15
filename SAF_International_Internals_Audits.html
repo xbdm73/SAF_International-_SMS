@@ -235,6 +235,22 @@ textarea{resize:vertical;}
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:var(--navy);}
 ::-webkit-scrollbar-thumb{background:var(--navy-light);border-radius:3px;}
+
+  /* ── SAF AUTH ── */
+  #saf-login-overlay{position:fixed;inset:0;background:rgba(4,8,15,.97);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Sans',system-ui,sans-serif}
+  #saf-login-box{background:#fff;border-radius:12px;padding:28px;width:340px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  #saf-login-box h2{margin:0 0 4px;font-size:18px;color:#0D1B2A}
+  #saf-login-box p{margin:0 0 18px;font-size:13px;color:#667}
+  #saf-login-box label{display:block;font-weight:600;font-size:13px;margin-bottom:5px;color:#1A2E42}
+  #saf-login-box input{width:100%;padding:10px;border:1px solid #c2c9d2;border-radius:6px;font-size:14px;box-sizing:border-box;margin-bottom:12px}
+  #saf-login-box button{width:100%;background:#1a56db;color:#fff;border:0;padding:11px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer}
+  #saf-login-box button:hover{background:#1446c0}
+  #saf-login-msg{font-size:13px;margin-top:10px;min-height:18px}
+  #saf-login-msg.err{color:#CC2200}#saf-login-msg.ok{color:#1A7A32}
+  #saf-cloud-bar{position:fixed;bottom:12px;right:12px;z-index:9998;background:#0D1B2A;color:#fff;font:12px/1.4 'IBM Plex Mono',monospace;padding:7px 12px;border-radius:20px;box-shadow:0 4px 14px rgba(0,0,0,.3);display:none;align-items:center;gap:8px;border:1px solid #2E75B6}
+  #saf-cloud-bar .dot{width:8px;height:8px;border-radius:50%;background:#00c48c}
+  #saf-cloud-bar.saving .dot{background:#FFD700}
+  #saf-cloud-bar button{background:none;border:1px solid #2E75B6;color:#9fc4e8;border-radius:4px;font-size:11px;padding:2px 7px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -264,6 +280,40 @@ textarea{resize:vertical;}
     <button class="tab" id="t2" onclick="switchTab('Grid')">📋 Audit Grid</button>
   </div>
 </nav>
+
+<!-- ── SAF INTER-TOOL NAV ── -->
+<div id="saf-subnav" style="background:#070e1a;border-bottom:1px solid #1a2840;padding:0 28px;position:sticky;top:77px;z-index:18;">
+  <div style="max-width:1800px;margin:auto;display:flex;align-items:center;gap:4px;overflow-x:auto;">
+    <a href="./index.html"           style="display:flex;align-items:center;gap:5px;padding:8px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;transition:.15s;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
+    <div style="width:1px;height:18px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
+    <a href="SAF_International_Safety.html"                    class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:8px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;transition:.15s;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
+    <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:8px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;transition:.15s;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
+    <a href="SAF_International_Appendices_OMM.html"             class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:8px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;transition:.15s;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
+    <a href="SAF_Grille_Audit.html"                             class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:8px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;transition:.15s;" onmouseover="this.style.color='#b880e8'" onmouseout="this.style.color='#6a82a5'"><span style="color:#b880e8">■</span> AUDIT</a>
+  </div>
+</div>
+<script>
+(function(){
+  var map = {
+    'SAF_International_Safety.html':                    {color:'#e07070', label:'SMS'},
+    'SAF_International_Compliance_Monitoring_System.html': {color:'#70a8e0', label:'CMS'},
+    'SAF_International_Appendices_OMM.html':            {color:'#70d0a0', label:'OMM'},
+    'SAF_Grille_Audit.html':                            {color:'#b880e8', label:'AUDIT'},
+  };
+  var file = location.pathname.split('/').pop();
+  var m = map[file];
+  if (!m) return;
+  document.querySelectorAll('#saf-subnav a.saf-nav-link').forEach(function(a){
+    var href = a.getAttribute('href');
+    if (href === file) {
+      a.style.color = m.color;
+      a.style.borderBottomColor = m.color;
+      a.style.background = 'rgba(255,255,255,0.03)';
+    }
+  });
+})();
+</script>
+<!-- ── END SAF INTER-TOOL NAV ── -->
 
 <!-- ════════════════════════════════════
      TAB 1 — EXTRACTEUR
@@ -313,6 +363,7 @@ textarea{resize:vertical;}
         <label>Anthropic API key</label>
         <div class="api-wrap">
           <input type="password" id="apiKey" placeholder="sk-ant-…" oninput="checkApiKey()">
+          <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px;white-space:nowrap" onclick="saveApiKey()">Save</button>
         </div>
         <span class="api-st" id="apiSt">Not configured</span>
       </div>
@@ -812,9 +863,34 @@ window.checkApiKey = function() {
   const k = document.getElementById('apiKey').value.trim();
   const st = document.getElementById('apiSt');
   if (k.startsWith('sk-ant-')&&k.length>20) { st.textContent='✓ Valid'; st.className='api-st ok'; }
-  else { st.textContent='Invalid format'; st.className='api-st err'; }
+  else if (k.length>0) { st.textContent='Invalid format'; st.className='api-st err'; }
+  else { st.textContent='Not configured'; st.className='api-st'; }
   checkReady();
 };
+
+window.saveApiKey = function() {
+  const k = document.getElementById('apiKey').value.trim();
+  if (!k.startsWith('sk-ant-') || k.length <= 20) { toast('Invalid API key format','err'); return; }
+  try {
+    localStorage.setItem('saf_anthropic_key', k);
+    const st = document.getElementById('apiSt');
+    st.textContent = '✓ Saved in browser'; st.className = 'api-st ok';
+    toast('API key saved in this browser ✓','ok');
+  } catch(e) { toast('Could not save: '+e.message,'err'); }
+  checkReady();
+};
+
+function loadApiKey() {
+  try {
+    const k = localStorage.getItem('saf_anthropic_key');
+    if (k && k.startsWith('sk-ant-') && k.length > 20) {
+      document.getElementById('apiKey').value = k;
+      const st = document.getElementById('apiSt');
+      st.textContent = '✓ Loaded from browser'; st.className = 'api-st ok';
+      checkReady();
+    }
+  } catch(e) {}
+}
 
 function checkReady() {
   const k = document.getElementById('apiKey').value.trim();
@@ -1083,10 +1159,100 @@ document.getElementById('lineModal').addEventListener('click',function(e){ if(e.
 (async function init(){
   document.getElementById('sessDate').value = today();
   document.getElementById('mDate').value    = today();
-  await loadFromSupabase();
+  loadApiKey();
+  // Auth check — only load data if session active (auth overlay handles the rest)
+  var _sb = window.supabase.createClient(
+    'https://qaqehmxoehcvzcojcqkm.supabase.co',
+    'sb_publishable_iiqlYqnEnFRUP__sqhMrSg_1Z4vB15i'
+  );
+  var _sess = await _sb.auth.getSession();
+  if(_sess.data && _sess.data.session){
+    await loadFromSupabase();
+  } else {
+    // Not authenticated — show login overlay, data loads after login
+    setSyncStatus('','Login required');
+    renderGrid();
+  }
 })();
 
 })();
 </script>
+
+<!-- ── SAF LOGIN OVERLAY ── -->
+<div id="saf-login-overlay">
+  <div id="saf-login-box">
+    <h2>SAF International — Audit Grid</h2>
+    <p>Login required to access the Procedure Audit Grid.</p>
+    <label for="saf-email">Email</label>
+    <input type="email" id="saf-email" autocomplete="username" placeholder="firstname.lastname@saf-helico.com">
+    <label for="saf-pwd">Password</label>
+    <input type="password" id="saf-pwd" autocomplete="current-password">
+    <button id="saf-login-btn">Sign in</button>
+    <div id="saf-login-msg"></div>
+  </div>
+</div>
+
+<div id="saf-cloud-bar">
+  <span class="dot"></span><span id="saf-cloud-txt">Synced</span>
+  <button id="saf-logout-btn">Sign out</button>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var SUPABASE_URL = "https://qaqehmxoehcvzcojcqkm.supabase.co";
+  var SUPABASE_KEY = "sb_publishable_iiqlYqnEnFRUP__sqhMrSg_1Z4vB15i";
+  var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  var overlay  = document.getElementById('saf-login-overlay');
+  var bar      = document.getElementById('saf-cloud-bar');
+  var barTxt   = document.getElementById('saf-cloud-txt');
+  var loginMsg = document.getElementById('saf-login-msg');
+
+  function setBar(state, txt){
+    bar.style.display = 'flex';
+    bar.classList.toggle('saving', state === 'saving');
+    barTxt.textContent = txt;
+  }
+
+  // ── Login ──
+  async function doLogin(){
+    var email = document.getElementById('saf-email').value.trim();
+    var pwd   = document.getElementById('saf-pwd').value;
+    loginMsg.className = ''; loginMsg.textContent = 'Signing in…';
+    var res = await db.auth.signInWithPassword({ email: email, password: pwd });
+    if(res.error){
+      loginMsg.className = 'err';
+      loginMsg.textContent = 'Failed: ' + res.error.message;
+      return;
+    }
+    onAuthenticated(res.data.session);
+  }
+
+  async function onAuthenticated(session){
+    overlay.style.display = 'none';
+    setBar('ok', 'Signed in: ' + session.user.email);
+    // Trigger Supabase data load from the main app
+    if(typeof loadFromSupabase === 'function') await loadFromSupabase();
+  }
+
+  document.getElementById('saf-login-btn').addEventListener('click', doLogin);
+  document.getElementById('saf-pwd').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') doLogin();
+  });
+  document.getElementById('saf-logout-btn').addEventListener('click', async function(){
+    await db.auth.signOut(); location.reload();
+  });
+
+  // ── Session already active? ──
+  (async function(){
+    var res = await db.auth.getSession();
+    if(res.data && res.data.session){
+      onAuthenticated(res.data.session);
+    }
+  })();
+})();
+</script>
+
 </body>
 </html>
