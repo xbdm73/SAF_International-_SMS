@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SAF INTERNATIONAL - PROCEDURE AUDIT GRID</title>
+<title>SAF INTERNATIONAL — PROCEDURE AUDIT GRID</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>/* xlsx.full.min.js v0.18.5 — inline */
@@ -79,7 +79,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 
 /* ── HEADER (CMS style) ── */
 header{position:sticky;top:0;z-index:20;background:linear-gradient(135deg,#04080f 0%,#0a1628 60%,#071322 100%);border-bottom:1px solid #1a2e4a;padding:0 28px;}
-.header-inner{max-width:1800px;margin:auto;display:flex;align-items:center;gap:16px;padding:14px 0;}
+.header-inner{max-width:1800px;margin:auto;display:flex;align-items:center;gap:16px;padding:8px 0;min-height:82px;}
 .logo-box{flex-shrink:0;display:flex;align-items:center;}
 .header-text h1{font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;}
 .header-text .sub{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:.02em;}
@@ -332,10 +332,17 @@ textarea{resize:vertical;}
       <h1>SAF INTERNATIONAL — PROCEDURE AUDIT GRID</h1>
       <div class="sub">OMM / CAME procedural compliance · CH.AOC.3052 · AS 332 C1 Super Puma · <span style="color:var(--cyan)">Part-ORO · Part-CAT · Part-CAMO</span></div>
     </div>
-    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
-      <span class="sync-status" id="syncStatus">Supabase…</span>
-      <button class="btn" id="btnSave" onclick="saveToSupabase()">↑ Save</button>
-      <button class="btn primary" onclick="exportExcel()">↓ Excel</button>
+    <div class="saf-edit-meta" style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;margin-left:auto;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <label style="font-family:var(--mono);font-size:10px;color:#ffd54a;letter-spacing:.08em;text-transform:uppercase;">Version <input class="version" type="text" value="1.0" style="margin-left:6px;background:rgba(255,255,255,.04);border:1px solid rgba(245,180,0,.55);color:#fff;padding:5px 8px;border-radius:4px;font-family:var(--mono);font-size:10px;width:60px;"/></label>
+        <label style="font-family:var(--mono);font-size:10px;color:#ffd54a;letter-spacing:.08em;text-transform:uppercase;">Date <input class="update" type="date" value="2026-06-16" style="color-scheme:dark;margin-left:6px;background:rgba(255,255,255,.04);border:1px solid rgba(245,180,0,.55);color:#fff;padding:5px 8px;border-radius:4px;font-family:var(--mono);font-size:10px;"/></label>
+        <span class="sync-status" id="syncStatus">Supabase…</span>
+        <button class="btn" id="btnSave" onclick="saveToSupabase()">↑ Save</button>
+        <button class="btn primary" onclick="exportExcel()">↓ Excel</button>
+      </div>
+      <div id="header-last-modified-wrap" style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;text-align:right;line-height:1.4;">
+        LAST MODIFICATION&nbsp;·&nbsp;<span id="header-last-modified">—</span>
+      </div>
     </div>
   </div>
 </header>
