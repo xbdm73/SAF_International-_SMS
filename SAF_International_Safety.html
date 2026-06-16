@@ -1181,7 +1181,7 @@ nav { top: 118px !important; }
 <!-- ── SAF INTER-TOOL NAV ── -->
 <div id="saf-subnav" style="background:#070e1a;border-bottom:1px solid #1a2840;padding:0 28px;position:sticky;top:75px;z-index:18;">
   <div style="max-width:1800px;margin:auto;display:flex;align-items:center;gap:4px;overflow-x:auto;">
-    <a href="./index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
+    <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
     <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
     <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
@@ -12027,33 +12027,12 @@ function deleteALoS(id){
 <!-- ===== INTÉGRATION SUPABASE (auto-save / auto-load) — SMS ===== -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  #saf-login-overlay{position:fixed;inset:0;background:rgba(13,27,42,.95);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Sans',system-ui,sans-serif}
-  #saf-login-box{background:#fff;border-radius:12px;padding:28px;width:340px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-  #saf-login-box h2{margin:0 0 4px;font-size:18px;color:#0D1B2A}
-  #saf-login-box p{margin:0 0 18px;font-size:13px;color:#667}
-  #saf-login-box label{display:block;font-weight:600;font-size:13px;margin-bottom:5px;color:#1A2E42}
-  #saf-login-box input{width:100%;padding:10px;border:1px solid #c2c9d2;border-radius:6px;font-size:14px;box-sizing:border-box;margin-bottom:12px}
-  #saf-login-box button{width:100%;background:#CC2200;color:#fff;border:0;padding:11px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer}
-  #saf-login-msg{font-size:13px;margin-top:10px;min-height:18px}
-  #saf-login-msg.err{color:#CC2200}#saf-login-msg.ok{color:#1A7A32}
   #saf-cloud-bar{position:fixed;bottom:12px;right:12px;z-index:9998;background:#0D1B2A;color:#fff;font:12px/1.4 'IBM Plex Mono',monospace;padding:7px 12px;border-radius:20px;box-shadow:0 4px 14px rgba(0,0,0,.3);display:none;align-items:center;gap:8px;border:1px solid #2E75B6}
   #saf-cloud-bar .dot{width:8px;height:8px;border-radius:50%;background:#1A7A32}
   #saf-cloud-bar.saving .dot{background:#FFD700}
   #saf-cloud-bar button{background:none;border:1px solid #2E75B6;color:#9fc4e8;border-radius:4px;font-size:11px;padding:2px 7px;cursor:pointer}
 </style>
 
-<div id="saf-login-overlay">
-  <div id="saf-login-box">
-    <h2>SAF International — SMS</h2>
-    <p>Connexion requise pour accéder au Safety Management System.</p>
-    <label for="saf-email">Email</label>
-    <input type="email" id="saf-email" autocomplete="username" placeholder="prenom.nom@saf-helico.com">
-    <label for="saf-pwd">Mot de passe</label>
-    <input type="password" id="saf-pwd" autocomplete="current-password">
-    <button id="saf-login-btn">Se connecter</button>
-    <div id="saf-login-msg"></div>
-  </div>
-</div>
 
 <div id="saf-cloud-bar">
   <span class="dot"></span><span id="saf-cloud-txt">Synchronisé</span>
@@ -12068,10 +12047,8 @@ function deleteALoS(id){
   var MODULE = "sms_data";                 // clé de stockage de CET outil dans saf_data
   var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  var overlay = document.getElementById('saf-login-overlay');
   var bar     = document.getElementById('saf-cloud-bar');
   var barTxt  = document.getElementById('saf-cloud-txt');
-  var loginMsg= document.getElementById('saf-login-msg');
   var saving  = false, dirty = false, ready = false, saveTimer = null;
 
   function setBar(state, txt){
@@ -12179,19 +12156,9 @@ function deleteALoS(id){
   }
   window.safCloudScheduleSave = scheduleSave;
 
-  // --- Connexion ---
-  async function doLogin(){
-    var email = document.getElementById('saf-email').value.trim();
-    var pwd   = document.getElementById('saf-pwd').value;
-    loginMsg.className=''; loginMsg.textContent='Connexion…';
-    var res = await db.auth.signInWithPassword({ email: email, password: pwd });
-    if(res.error){ loginMsg.className='err'; loginMsg.textContent='Échec : '+res.error.message; return; }
-    onAuthenticated(res.data.session);
-  }
-
+  // Chargement automatique sans login
   async function onAuthenticated(session){
-    overlay.style.display='none';
-    setBar('ok','Connecté : '+session.user.email);
+    if(session) setBar('ok','Connecté : '+session.user.email);
     await cloudLoad();
     ready = true;
     attachAutoSave();
@@ -12205,16 +12172,22 @@ function deleteALoS(id){
     }, true);
   }
 
-  document.getElementById('saf-login-btn').addEventListener('click', doLogin);
-  document.getElementById('saf-pwd').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
   document.getElementById('saf-logout-btn').addEventListener('click', async function(){
     await db.auth.signOut(); location.reload();
   });
 
-  // Session déjà active ?
+  // Chargement immédiat
   (async function(){
     var res = await db.auth.getSession();
-    if(res.data && res.data.session) onAuthenticated(res.data.session);
+    if(res.data && res.data.session){
+      onAuthenticated(res.data.session);
+    } else {
+      // Pas de session active — on charge quand même les données locales
+      await cloudLoad();
+      ready = true;
+      attachAutoSave();
+      setBar('ok','Mode local');
+    }
   })();
 })();
 </script>

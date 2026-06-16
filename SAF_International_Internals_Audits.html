@@ -314,16 +314,6 @@ textarea{resize:vertical;}
 ::-webkit-scrollbar-thumb{background:var(--navy-light);border-radius:3px;}
 
   /* ── SAF AUTH ── */
-  #saf-login-overlay{position:fixed;inset:0;background:rgba(4,8,15,.97);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Sans',system-ui,sans-serif}
-  #saf-login-box{background:#fff;border-radius:12px;padding:28px;width:340px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.6)}
-  #saf-login-box h2{margin:0 0 4px;font-size:18px;color:#0D1B2A}
-  #saf-login-box p{margin:0 0 18px;font-size:13px;color:#667}
-  #saf-login-box label{display:block;font-weight:600;font-size:13px;margin-bottom:5px;color:#1A2E42}
-  #saf-login-box input{width:100%;padding:10px;border:1px solid #c2c9d2;border-radius:6px;font-size:14px;box-sizing:border-box;margin-bottom:12px}
-  #saf-login-box button{width:100%;background:#1a56db;color:#fff;border:0;padding:11px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer}
-  #saf-login-box button:hover{background:#1446c0}
-  #saf-login-msg{font-size:13px;margin-top:10px;min-height:18px}
-  #saf-login-msg.err{color:#CC2200}#saf-login-msg.ok{color:#1A7A32}
   #saf-cloud-bar{position:fixed;bottom:12px;right:12px;z-index:9998;background:#0D1B2A;color:#fff;font:12px/1.4 'IBM Plex Mono',monospace;padding:7px 12px;border-radius:20px;box-shadow:0 4px 14px rgba(0,0,0,.3);display:none;align-items:center;gap:8px;border:1px solid #2E75B6}
   #saf-cloud-bar .dot{width:8px;height:8px;border-radius:50%;background:#00c48c}
   #saf-cloud-bar.saving .dot{background:#FFD700}
@@ -1439,14 +1429,12 @@ document.getElementById('lineModal').addEventListener('click',function(e){ if(e.
     if (_sess.data && _sess.data.session) {
       await loadFromSupabase();
     } else {
-      // Real Supabase but not logged in — show login overlay
-      setSyncStatus('','Login required');
+      // No active session — load local data anyway
+      setSyncStatus('ok','Local mode');
       renderGrid();
     }
   } catch(e) {
     // Supabase unavailable (CDN blocked or error) — bypass login, go local
-    var _ov = document.getElementById('saf-login-overlay');
-    if (_ov) _ov.style.display = 'none';
     var _cbar = document.getElementById('saf-cloud-bar');
     if (_cbar) _cbar.style.display = 'none';
     setSyncStatus('ok','Local mode');
@@ -1456,20 +1444,6 @@ document.getElementById('lineModal').addEventListener('click',function(e){ if(e.
 
 })();
 </script>
-
-<!-- ── SAF LOGIN OVERLAY ── -->
-<div id="saf-login-overlay">
-  <div id="saf-login-box">
-    <h2>SAF International — Audit Grid</h2>
-    <p>Login required to access the Procedure Audit Grid.</p>
-    <label for="saf-email">Email</label>
-    <input type="email" id="saf-email" autocomplete="username" placeholder="firstname.lastname@saf-helico.com">
-    <label for="saf-pwd">Password</label>
-    <input type="password" id="saf-pwd" autocomplete="current-password">
-    <button id="saf-login-btn">Sign in</button>
-    <div id="saf-login-msg"></div>
-  </div>
-</div>
 
 <div id="saf-cloud-bar">
   <span class="dot"></span><span id="saf-cloud-txt">Synced</span>
@@ -1483,10 +1457,8 @@ document.getElementById('lineModal').addEventListener('click',function(e){ if(e.
   var SUPABASE_KEY = "sb_publishable_iiqlYqnEnFRUP__sqhMrSg_1Z4vB15i";
   var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  var overlay  = document.getElementById('saf-login-overlay');
   var bar      = document.getElementById('saf-cloud-bar');
   var barTxt   = document.getElementById('saf-cloud-txt');
-  var loginMsg = document.getElementById('saf-login-msg');
 
   function setBar(state, txt){
     bar.style.display = 'flex';
@@ -1494,42 +1466,15 @@ document.getElementById('lineModal').addEventListener('click',function(e){ if(e.
     barTxt.textContent = txt;
   }
 
-  // ── Login ──
-  async function doLogin(){
-    var email = document.getElementById('saf-email').value.trim();
-    var pwd   = document.getElementById('saf-pwd').value;
-    loginMsg.className = ''; loginMsg.textContent = 'Signing in…';
-    var res = await db.auth.signInWithPassword({ email: email, password: pwd });
-    if(res.error){
-      loginMsg.className = 'err';
-      loginMsg.textContent = 'Failed: ' + res.error.message;
-      return;
-    }
-    onAuthenticated(res.data.session);
-  }
-
-  async function onAuthenticated(session){
-    overlay.style.display = 'none';
-    setBar('ok', 'Signed in: ' + session.user.email);
-    // Trigger Supabase data load from the main app
+  // Auto-load without login
+  (async function(){
     if(typeof loadFromSupabase === 'function') await loadFromSupabase();
-  }
+    setBar('ok', 'Ready');
+  })();
 
-  document.getElementById('saf-login-btn').addEventListener('click', doLogin);
-  document.getElementById('saf-pwd').addEventListener('keydown', function(e){
-    if(e.key === 'Enter') doLogin();
-  });
   document.getElementById('saf-logout-btn').addEventListener('click', async function(){
     await db.auth.signOut(); location.reload();
   });
-
-  // ── Session already active? ──
-  (async function(){
-    var res = await db.auth.getSession();
-    if(res.data && res.data.session){
-      onAuthenticated(res.data.session);
-    }
-  })();
 })();
 </script>
 
