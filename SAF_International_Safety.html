@@ -3700,6 +3700,10 @@ nav { top: 118px !important; }
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 <script>
+// Capture du vrai localStorage natif AVANT que le shim ne le remplace
+// Utilisé par le client Supabase pour persister la session auth entre les pages
+window._nativeLocalStorage = window.localStorage;
+
 // SAF STORAGE SHIM v2 — memory cache + window.storage persistence (write-through)
 // NEVER overwrite in-memory variables on reload.
 // Actual persistence between sessions is handled through JSON Export/Import.
@@ -12045,7 +12049,14 @@ function deleteALoS(id){
   var SUPABASE_URL = "https://qaqehmxoehcvzcojcqkm.supabase.co";
   var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q";
   var MODULE = "sms_data";                 // clé de stockage de CET outil dans saf_data
-  var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+      storage: window._nativeLocalStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false
+    }
+  });
 
   var bar     = document.getElementById('saf-cloud-bar');
   var barTxt  = document.getElementById('saf-cloud-txt');
