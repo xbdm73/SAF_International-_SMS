@@ -12043,13 +12043,13 @@ function deleteALoS(id){
 (function(){
   "use strict";
   var SUPABASE_URL = "https://qaqehmxoehcvzcojcqkm.supabase.co";
-  var SUPABASE_KEY = "sb_publishable_iiqlYqnEnFRUP__sqhMrSg_1Z4vB15i";
+  var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q";
   var MODULE = "sms_data";                 // clé de stockage de CET outil dans saf_data
   var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   var bar     = document.getElementById('saf-cloud-bar');
   var barTxt  = document.getElementById('saf-cloud-txt');
-  var saving  = false, dirty = false, ready = false, saveTimer = null;
+  var saving  = false, dirty = false, ready = false, saveTimer = null, authenticated = false;
 
   function setBar(state, txt){
     bar.style.display = 'flex';
@@ -12133,6 +12133,7 @@ function deleteALoS(id){
   // --- Sauvegarde vers la base ---
   async function cloudSave(){
     if(saving){ dirty = true; return; }
+    if(!authenticated){ setBar('ok','Mode local — non connecté'); return; }
     if(typeof window.safExportForCloud !== 'function'){ return; }
     saving = true; setBar('saving','Sauvegarde…');
     try{
@@ -12159,6 +12160,7 @@ function deleteALoS(id){
   // Chargement automatique sans login
   async function onAuthenticated(session){
     if(session) setBar('ok','Connecté : '+session.user.email);
+    authenticated = true;
     await cloudLoad();
     ready = true;
     attachAutoSave();
