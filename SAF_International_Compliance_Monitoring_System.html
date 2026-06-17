@@ -2453,6 +2453,29 @@ function kpiv2UpdateKpi5(v){
 <button class="btn" onclick="collapseAll()">⊟ Collapse all</button>
 </div>
 </div>
+<!-- Section 0 : Données SMS (safSRBMeetings) -->
+<div class="srb-section" id="srb-sms-panel" style="border-left:4px solid #4a9fe0;">
+<div class="srb-section-head" onclick="toggleSRB(this)" style="background:linear-gradient(90deg,#050d1e,#0a1a30);">
+<div class="srb-section-num" style="background:linear-gradient(135deg,#1a3a6a,#4a9fe0);">📋</div>
+<div class="srb-section-title" style="color:#4a9fe0;">Safety Management System — Meetings imported from SMS module</div>
+<div class="srb-section-easa" style="color:#4a9fe0;">ORO.GEN.200(a)(4) · Données issues du module Safety</div>
+<div class="srb-toggle">▼</div>
+</div>
+<div class="srb-body" id="srb-sms-body">
+<p class="muted" style="margin-bottom:14px;">
+  This section automatically reads SRB meeting records saved in the <strong style="color:#4a9fe0;">Safety (SMS)</strong> module on this device.
+  These data supplement the SRB report and allow continuity of information between tools.
+</p>
+<div id="srb-sms-content">
+  <div style="color:var(--muted);font-family:var(--mono);font-size:12px;padding:20px;text-align:center;border:1px dashed rgba(74,159,224,.3);border-radius:8px;">
+    Loading SMS data…
+  </div>
+</div>
+<div style="margin-top:14px;">
+  <button class="btn" onclick="loadSMSMeetings()" style="font-size:11px;">🔄 Refresh SMS data</button>
+</div>
+</div>
+</div>
 <!-- Section 1 : Participants -->
 <div class="srb-section">
 <div class="srb-section-head" onclick="toggleSRB(this)">
@@ -3018,6 +3041,129 @@ function toggleSRB(head){
 }
 function expandAll(){document.querySelectorAll('.srb-body').forEach(b=>{b.classList.remove('collapsed');b.previousElementSibling.querySelector('.srb-toggle').textContent='▼'})}
 function collapseAll(){document.querySelectorAll('.srb-body').forEach(b=>{b.classList.add('collapsed');b.previousElementSibling.querySelector('.srb-toggle').textContent='▶'})}
+
+// ── SMS MEETINGS IMPORT ──
+function loadSMSMeetings(){
+  var container=document.getElementById('srb-sms-content');
+  var raw=localStorage.getItem('safSRBMeetings');
+  if(!raw){
+    container.innerHTML='<div style="color:var(--muted);font-family:var(--mono);font-size:12px;padding:20px;text-align:center;border:1px dashed rgba(255,255,255,.1);border-radius:8px;">No SRB meeting found in SMS module on this device.<br><span style="font-size:10px;opacity:.6;">Save meetings in the Safety tool first.</span></div>';
+    return;
+  }
+  var meetings;
+  try{ meetings=JSON.parse(raw); }catch(e){
+    container.innerHTML='<div style="color:#f85149;font-family:var(--mono);font-size:12px;padding:14px;">Error reading SMS data: '+e.message+'</div>';
+    return;
+  }
+  if(!meetings||!meetings.length){
+    container.innerHTML='<div style="color:var(--muted);font-family:var(--mono);font-size:12px;padding:20px;text-align:center;border:1px dashed rgba(255,255,255,.1);border-radius:8px;">SMS module contains no SRB meetings.</div>';
+    return;
+  }
+  // Sort by date desc
+  meetings=meetings.slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  var last=meetings[0];
+  var next=meetings.find(function(m){return m.next_date&&new Date(m.next_date)>=new Date();});
+  var openActions=[];
+  meetings.forEach(function(m){
+    if(m.actions&&m.actions.length){
+      m.actions.forEach(function(a){
+        if(a.status!=='done'&&a.status!=='closed'&&a.what){
+          openActions.push({meeting:m.id,mDate:m.date,...a});
+        }
+      });
+    }
+  });
+
+  var fmt=function(d){if(!d)return '—';var p=d.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d;};
+  var statusColor=function(s){return s==='open'?'#f85149':s==='in_progress'||s==='in progress'?'#e3b341':'#3fb950';};
+  var statusLabel=function(s){return s==='open'?'Open':s==='in_progress'||s==='in progress'?'In progress':s==='done'||s==='closed'?'Closed':s||'—';};
+
+  var html='';
+
+  // Summary bar
+  html+='<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;">';
+  html+='<div style="background:#0a1628;border:1px solid #1a2840;border-radius:8px;padding:10px 16px;min-width:120px;text-align:center;">';
+  html+='<div style="font-size:22px;font-weight:700;font-family:var(--mono);color:#4a9fe0;">'+meetings.length+'</div>';
+  html+='<div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px;">Meeting(s) in SMS</div></div>';
+  html+='<div style="background:#0a1628;border:1px solid #1a2840;border-radius:8px;padding:10px 16px;min-width:120px;text-align:center;">';
+  html+='<div style="font-size:22px;font-weight:700;font-family:var(--mono);color:'+(openActions.length>0?'#f85149':'#3fb950')+';">'+openActions.length+'</div>';
+  html+='<div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px;">Open action(s)</div></div>';
+  html+='<div style="background:#0a1628;border:1px solid #1a2840;border-radius:8px;padding:10px 16px;min-width:140px;text-align:center;">';
+  html+='<div style="font-size:15px;font-weight:700;font-family:var(--mono);color:#c9d1d9;line-height:1.3;">'+fmt(last.date)+'</div>';
+  html+='<div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px;">Last meeting</div></div>';
+  html+='<div style="background:#0a1628;border:1px solid '+(next?'#3fb950':'#444')+';border-radius:8px;padding:10px 16px;min-width:140px;text-align:center;">';
+  html+='<div style="font-size:15px;font-weight:700;font-family:var(--mono);color:'+(next?'#3fb950':'#888')+';line-height:1.3;">'+(next?fmt(next.next_date):'Not scheduled')+'</div>';
+  html+='<div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px;">Next SRB</div></div>';
+  html+='</div>';
+
+  // Last meeting detail
+  html+='<div style="background:#08111f;border:1px solid #1a2840;border-radius:10px;padding:14px 18px;margin-bottom:14px;">';
+  html+='<div style="font-family:var(--mono);font-size:10px;color:#4a9fe0;letter-spacing:.07em;margin-bottom:10px;">LAST MEETING RECORDED IN SMS</div>';
+  html+='<div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:10px;">';
+  html+='<div><span style="font-size:9px;color:var(--muted);font-family:var(--mono);display:block;">ID</span><span style="font-size:12px;font-family:var(--mono);color:#c9d1d9;">'+last.id+'</span></div>';
+  html+='<div><span style="font-size:9px;color:var(--muted);font-family:var(--mono);display:block;">Date</span><span style="font-size:12px;font-family:var(--mono);color:#c9d1d9;">'+fmt(last.date)+'</span></div>';
+  html+='<div><span style="font-size:9px;color:var(--muted);font-family:var(--mono);display:block;">Type</span><span style="font-size:12px;font-family:var(--mono);color:#c9d1d9;">'+(last.type||'SRB')+'</span></div>';
+  if(last.ref) html+='<div><span style="font-size:9px;color:var(--muted);font-family:var(--mono);display:block;">Reference</span><span style="font-size:12px;font-family:var(--mono);color:#c9d1d9;">'+last.ref+'</span></div>';
+  if(last.chair) html+='<div><span style="font-size:9px;color:var(--muted);font-family:var(--mono);display:block;">Chairperson</span><span style="font-size:12px;font-family:var(--mono);color:#c9d1d9;">'+last.chair+'</span></div>';
+  html+='</div>';
+  if(last.attendees) html+='<div style="margin-bottom:8px;"><span style="font-size:9px;color:var(--muted);font-family:var(--mono);display:block;margin-bottom:3px;">ATTENDEES</span><span style="font-size:12px;color:#c9d1d9;">'+last.attendees+'</span></div>';
+  if(last.agenda) html+='<div style="margin-bottom:8px;"><span style="font-size:9px;color:var(--muted);font-family:var(--mono);display:block;margin-bottom:3px;">AGENDA</span><span style="font-size:12px;color:#c9d1d9;white-space:pre-wrap;">'+last.agenda+'</span></div>';
+  if(last.issues) html+='<div style="margin-bottom:8px;"><span style="font-size:9px;color:var(--muted);font-family:var(--mono);display:block;margin-bottom:3px;">SAFETY ISSUES RAISED</span><span style="font-size:12px;color:#e3b341;white-space:pre-wrap;">'+last.issues+'</span></div>';
+  if(last.decisions) html+='<div style="margin-bottom:4px;"><span style="font-size:9px;color:var(--muted);font-family:var(--mono);display:block;margin-bottom:3px;">DECISIONS MADE</span><span style="font-size:12px;color:#3fb950;white-space:pre-wrap;">'+last.decisions+'</span></div>';
+  html+='</div>';
+
+  // Open actions table
+  if(openActions.length>0){
+    html+='<div style="background:#08111f;border:1px solid #1a2840;border-radius:10px;padding:14px 18px;margin-bottom:14px;">';
+    html+='<div style="font-family:var(--mono);font-size:10px;color:#e3b341;letter-spacing:.07em;margin-bottom:10px;">OPEN ACTION ITEMS (all meetings)</div>';
+    html+='<table style="width:100%;border-collapse:collapse;font-size:11px;">';
+    html+='<thead><tr style="border-bottom:1px solid #1a2840;">';
+    html+='<th style="text-align:left;padding:5px 8px;font-family:var(--mono);font-size:9px;color:var(--muted);">MEETING</th>';
+    html+='<th style="text-align:left;padding:5px 8px;font-family:var(--mono);font-size:9px;color:var(--muted);">RESPONSIBLE</th>';
+    html+='<th style="text-align:left;padding:5px 8px;font-family:var(--mono);font-size:9px;color:var(--muted);">ACTION</th>';
+    html+='<th style="text-align:left;padding:5px 8px;font-family:var(--mono);font-size:9px;color:var(--muted);">DUE</th>';
+    html+='<th style="text-align:left;padding:5px 8px;font-family:var(--mono);font-size:9px;color:var(--muted);">STATUS</th>';
+    html+='</tr></thead><tbody>';
+    openActions.forEach(function(a){
+      var overdue=a.due&&new Date(a.due)<new Date()&&a.status!=='done'&&a.status!=='closed';
+      html+='<tr style="border-bottom:1px solid rgba(255,255,255,.05);">';
+      html+='<td style="padding:5px 8px;font-family:var(--mono);font-size:10px;color:#4a9fe0;">'+a.meeting+'</td>';
+      html+='<td style="padding:5px 8px;color:#c9d1d9;">'+( a.who||'—')+'</td>';
+      html+='<td style="padding:5px 8px;color:#c9d1d9;">'+( a.what||'—')+'</td>';
+      html+='<td style="padding:5px 8px;font-family:var(--mono);color:'+(overdue?'#f85149':'#c9d1d9')+';">'+fmt(a.due||'')+'</td>';
+      html+='<td style="padding:5px 8px;"><span style="background:rgba(0,0,0,.3);border:1px solid '+statusColor(a.status||'open')+';border-radius:4px;padding:2px 7px;font-size:10px;font-family:var(--mono);color:'+statusColor(a.status||'open')+';">'+statusLabel(a.status||'open')+'</span></td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table></div>';
+  }
+
+  // All meetings list
+  html+='<div style="background:#08111f;border:1px solid #1a2840;border-radius:10px;padding:14px 18px;">';
+  html+='<div style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.07em;margin-bottom:10px;">ALL MEETINGS IN SMS ('+meetings.length+')</div>';
+  meetings.forEach(function(m){
+    var acts=m.actions?m.actions.length:0;
+    var openActs=m.actions?m.actions.filter(function(a){return a.status!=='done'&&a.status!=='closed';}).length:0;
+    html+='<div style="display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);">';
+    html+='<span style="font-family:var(--mono);font-size:11px;color:#4a9fe0;min-width:140px;">'+m.id+'</span>';
+    html+='<span style="font-family:var(--mono);font-size:11px;color:#c9d1d9;min-width:90px;">'+fmt(m.date)+'</span>';
+    html+='<span style="font-size:11px;color:var(--muted);flex:1;">'+(m.type||'SRB')+'</span>';
+    html+='<span style="font-family:var(--mono);font-size:10px;color:'+(openActs>0?'#e3b341':'#3fb950')+';">'+openActs+'/'+acts+' actions</span>';
+    if(m.next_date) html+='<span style="font-family:var(--mono);font-size:10px;color:#3fb950;">Next: '+fmt(m.next_date)+'</span>';
+    html+='</div>';
+  });
+  html+='</div>';
+
+  container.innerHTML=html;
+}
+
+// Auto-load SMS data when SRB tab is shown
+(function(){
+  var _orig=window.showMainTab;
+  window.showMainTab=function(id,btn){
+    if(_orig) _orig(id,btn);
+    if(id==='srb') setTimeout(loadSMSMeetings,50);
+  };
+})();
 
 // ── RISK MATRIX ──
 function selectRisk(el,val){
