@@ -604,6 +604,18 @@ main { flex: 1; overflow-y: auto; background: #0A1520; }
 .cs-sig-placeholder{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,.25);font-size:11px;font-family:var(--font-mono);pointer-events:none;white-space:nowrap;}
 .cs-sig-clear{position:absolute;top:4px;right:5px;padding:2px 7px;font-size:10px;background:rgba(255,60,60,.25);border:1px solid rgba(255,80,80,.4);border-radius:4px;color:#ff9090;cursor:pointer;font-family:var(--font-mono);}
 .cs-sig-clear:hover{background:rgba(255,60,60,.4);}
+/* ── Acknowledgement / read-and-understood system ── */
+.cs-esig-box{border:1.5px solid rgba(255,255,255,.13);border-radius:8px;background:rgba(255,255,255,.03);padding:12px 14px;display:flex;flex-direction:column;gap:10px;}
+.cs-esig-box.signed{border-color:rgba(80,200,120,.45);background:rgba(80,200,120,.06);}
+.cs-esig-check-row{display:flex;align-items:center;gap:10px;cursor:pointer;}
+.cs-esig-check-row input[type=checkbox]{width:18px;height:18px;min-width:18px;accent-color:#50c878;cursor:pointer;border-radius:4px;}
+.cs-esig-label{font-family:var(--font-mono);font-size:11px;color:var(--grey-200);line-height:1.45;user-select:none;}
+.cs-esig-label strong{color:var(--white);}
+.cs-esig-stamp{display:none;align-items:center;gap:8px;padding:6px 10px;background:rgba(80,200,120,.12);border:1px solid rgba(80,200,120,.3);border-radius:6px;font-family:var(--font-mono);font-size:11px;color:#50c878;}
+.cs-esig-stamp.visible{display:flex;}
+.cs-esig-stamp svg{flex-shrink:0;}
+.cs-esig-name-row{display:flex;gap:8px;align-items:center;}
+.cs-esig-name-row select,.cs-esig-name-row input{flex:1;font-size:11px;}
 /* ── Follow-up rows ── */
 .fu-action-row{border:1px solid rgba(255,255,255,.1);border-radius:10px;background:var(--navy-mid);overflow:hidden;}
 .fu-action-row-header{display:flex;align-items:center;gap:10px;padding:8px 14px;background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.07);}
@@ -3615,15 +3627,27 @@ nav { top: 118px !important; }
     <div class="field-label" style="margin-bottom:12px;font-size:11px;letter-spacing:.08em;opacity:.6;">ACM SIGN-OFF — applies to all actions above</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;">
       <div class="form-field" style="margin:0;"><label class="field-label">ACM name</label><input id="c-acm-name" type="text" value="Jean Louis CAMUS" placeholder="Full name / function…" style="width:100%;"/></div>
-      <div class="form-field" style="margin:0;"><label class="field-label">ACM digital signature</label>
-        <div class="cs-sig-wrap"><canvas id="c-acm-sig-canvas" width="340" height="90" style="display:block;width:100%;cursor:crosshair;touch-action:none;"></canvas><div id="c-acm-sig-placeholder" class="cs-sig-placeholder">Sign here…</div><button type="button" class="cs-sig-clear" onclick="csClearSig('acm')">✕ Clear</button></div>
+      <div class="form-field" style="margin:0;"><label class="field-label">ACM — read &amp; acknowledged</label>
+        <div class="cs-esig-box" id="c-acm-esig-box">
+          <input type="hidden" id="c-acm-esig-name" value="Jean Louis CAMUS"/>
+          <label class="cs-esig-check-row">
+            <input type="checkbox" id="c-acm-esig-check" onchange="esigUpdate('acm')"/>
+            <span class="cs-esig-label">I confirm that I have read and understood the measures to be implemented.</span>
+          </label>
+          <div class="cs-esig-stamp" id="c-acm-esig-stamp">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="#50c878"/><path d="M3.5 7l2.5 2.5L10.5 5" stroke="#50c878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span id="c-acm-esig-stamp-text"></span>
+          </div>
+        </div>
         <input id="c-acm-signature" type="hidden"/>
       </div>
     </div>
   </div>
   <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-    <div class="form-field" style="margin:0;"><label class="field-label">Assessors signature</label>
-<select id="c-assessors-signature" onchange="csNamePickerChange('assessors-signature')">
+    <div class="form-field" style="margin:0;"><label class="field-label">Assessor — read &amp; acknowledged</label>
+      <div class="cs-esig-box" id="c-assessors-esig-box">
+        <div class="cs-esig-name-row">
+          <select id="c-assessors-signature" onchange="csNamePickerChange('assessors-signature')">
 <option value="">Select assessor…</option>
 <option value="Thierry BERGERET">Thierry BERGERET</option>
 <option value="Xavier BOUVET">Xavier BOUVET</option>
@@ -3632,7 +3656,18 @@ nav { top: 118px !important; }
 <option value="Jean Louis CAMUS">Jean Louis CAMUS</option>
 <option value="__other__">➕ Other name…</option>
 </select>
-<input id="c-assessors-signature-other" type="text" placeholder="Enter name…" style="display:none;margin-top:8px;"/></div>
+          <input id="c-assessors-signature-other" type="text" placeholder="Enter name…" style="display:none;" oninput="csAssessorsEsigUpdate()"/>
+        </div>
+        <label class="cs-esig-check-row">
+          <input type="checkbox" id="c-assessors-esig-check" onchange="csAssessorsEsigUpdate()"/>
+          <span class="cs-esig-label">I hereby confirm that I have read and acknowledged the actions to be implemented in this change study.</span>
+        </label>
+        <div class="cs-esig-stamp" id="c-assessors-esig-stamp">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="#50c878"/><path d="M3.5 7l2.5 2.5L10.5 5" stroke="#50c878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span id="c-assessors-esig-stamp-text"></span>
+        </div>
+      </div>
+    </div>
     <div class="form-field" style="margin:0;"><label class="field-label">Nominated Person</label><input id="c-feedback-external-owner" type="text" placeholder="Name / role of nominated person…"/></div>
   </div>
 </div></div>
@@ -3648,8 +3683,18 @@ nav { top: 118px !important; }
     <div class="field-label" style="margin-bottom:12px;font-size:11px;letter-spacing:.08em;opacity:.6;">ACM SIGN-OFF (FOLLOW-UP) — applies to all action follow-ups above</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;">
       <div class="form-field" style="margin:0;"><label class="field-label">ACM name</label><input id="c-fu-acm-name" type="text" value="Jean Louis CAMUS" placeholder="Full name / function…" style="width:100%;"/></div>
-      <div class="form-field" style="margin:0;"><label class="field-label">ACM digital signature</label>
-        <div class="cs-sig-wrap"><canvas id="c-fu-acm-sig-canvas" width="340" height="90" style="display:block;width:100%;cursor:crosshair;touch-action:none;"></canvas><div id="c-fu-acm-sig-placeholder" class="cs-sig-placeholder">Sign here…</div><button type="button" class="cs-sig-clear" onclick="csClearSig('fu-acm')">✕ Clear</button></div>
+      <div class="form-field" style="margin:0;"><label class="field-label">ACM — read &amp; acknowledged (follow-up)</label>
+        <div class="cs-esig-box" id="c-fu-acm-esig-box">
+          <input type="hidden" id="c-fu-acm-esig-name" value="Jean Louis CAMUS"/>
+          <label class="cs-esig-check-row">
+            <input type="checkbox" id="c-fu-acm-esig-check" onchange="esigUpdate('fu-acm')"/>
+            <span class="cs-esig-label">I hereby confirm that I have read and acknowledged the follow-up of this change study and validate the ACM sign-off.</span>
+          </label>
+          <div class="cs-esig-stamp" id="c-fu-acm-esig-stamp">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="#50c878"/><path d="M3.5 7l2.5 2.5L10.5 5" stroke="#50c878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span id="c-fu-acm-esig-stamp-text"></span>
+          </div>
+        </div>
         <input id="c-fu-acm-signature" type="hidden"/>
       </div>
     </div>
@@ -3674,8 +3719,10 @@ nav { top: 118px !important; }
 <div class="form-field form-full"><label class="field-label">Assessment conclusions <span class="req">*</span></label><textarea id="c-conclusions" placeholder="Decision, residual risk acceptability, conditions before implementation, monitoring requirements…" required></textarea></div>
 </div>
 <div class="form-grid cols-3" style="margin-top:14px;">
-<div class="form-field"><label class="field-label">Assessors signature</label>
-<select id="c-signature" onchange="csNamePickerChange('signature')">
+<div class="form-field"><label class="field-label">Assessor — read &amp; acknowledged (final)</label>
+<div class="cs-esig-box" id="c-final-esig-box">
+  <div class="cs-esig-name-row">
+    <select id="c-signature" onchange="csNamePickerChange('signature')">
 <option value="">Select assessor…</option>
 <option value="Thierry BERGERET">Thierry BERGERET</option>
 <option value="Xavier BOUVET">Xavier BOUVET</option>
@@ -3684,7 +3731,17 @@ nav { top: 118px !important; }
 <option value="Jean Louis CAMUS">Jean Louis CAMUS</option>
 <option value="__other__">➕ Other name…</option>
 </select>
-<input id="c-signature-other" type="text" placeholder="Enter name…" style="display:none;"/></div>
+    <input id="c-signature-other" type="text" placeholder="Enter name…" style="display:none;" oninput="csFinalEsigUpdate()"/>
+  </div>
+  <label class="cs-esig-check-row">
+    <input type="checkbox" id="c-final-esig-check" onchange="csFinalEsigUpdate()"/>
+    <span class="cs-esig-label">I hereby confirm that I have read and acknowledged the conclusions of this change study and approve the defined measures.</span>
+  </label>
+  <div class="cs-esig-stamp" id="c-final-esig-stamp">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="#50c878"/><path d="M3.5 7l2.5 2.5L10.5 5" stroke="#50c878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span id="c-final-esig-stamp-text"></span>
+  </div>
+</div></div>
 <div class="form-field"><label class="field-label">Assessment approval</label><label class="field-label" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:9px 12px;color:var(--white);"><input id="c-approval" type="checkbox" style="width:auto;margin-right:8px;"> Approved</label></div>
 <div class="form-field"><label class="field-label">Diffusion list</label>
 <select id="c-diffusion">
@@ -3754,6 +3811,45 @@ window._nativeLocalStorage = window.localStorage;
 // ══════════════════════════════════════════════════════════════════
 // DATA STORE
 // ══════════════════════════════════════════════════════════════════
+let _sigPads = {};
+
+class SigPad {
+  constructor(canvas, onDraw) {
+    this.canvas=canvas; this.ctx=canvas.getContext('2d');
+    this.drawing=false; this.onDraw=onDraw||(() => {});
+    this._setup();
+  }
+  _pt(e){const r=this.canvas.getBoundingClientRect();const s=e.touches?e.touches[0]:e;const sx=r.width?this.canvas.width/r.width:1;const sy=r.height?this.canvas.height/r.height:1;return{x:(s.clientX-r.left)*sx,y:(s.clientY-r.top)*sy};}
+  _syncSize(){const w=this.canvas.offsetWidth||340;const h=this.canvas.offsetHeight||90;if(w>0&&h>0&&(this.canvas.width!==w||this.canvas.height!==h)){this.canvas.width=w;this.canvas.height=h;}}
+  _setup(){
+    const down=e=>{e.preventDefault();this._syncSize();this.drawing=true;const p=this._pt(e);this.ctx.beginPath();this.ctx.moveTo(p.x,p.y);};
+    const move=e=>{e.preventDefault();if(!this.drawing)return;const p=this._pt(e);this.ctx.lineWidth=1.8;this.ctx.lineCap='round';this.ctx.strokeStyle='rgba(255,255,255,.92)';this.ctx.lineTo(p.x,p.y);this.ctx.stroke();this.onDraw();};
+    const up=()=>{this.drawing=false;this.onDraw();};
+    this.canvas.addEventListener('mousedown',down);this.canvas.addEventListener('mousemove',move);
+    this.canvas.addEventListener('mouseup',up);this.canvas.addEventListener('mouseleave',up);
+    this.canvas.addEventListener('touchstart',down,{passive:false});this.canvas.addEventListener('touchmove',move,{passive:false});this.canvas.addEventListener('touchend',up);
+  }
+  clear(){this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);this.onDraw();}
+  isEmpty(){return !this.ctx.getImageData(0,0,this.canvas.width,this.canvas.height).data.some(v=>v!==0);}
+  toDataURL(){return this.isEmpty()?'':this.canvas.toDataURL('image/png');}
+  fromDataURL(url){if(!url)return;const img=new Image();img.onload=()=>this.ctx.drawImage(img,0,0,this.canvas.width,this.canvas.height);img.src=url;}
+}
+
+function _initSigPad(canvasId,hiddenId,phId){
+  const canvas=document.getElementById(canvasId);
+  if(!canvas||_sigPads[canvasId])return;
+  const hidden=document.getElementById(hiddenId);
+  const ph=document.getElementById(phId);
+  const pad=new SigPad(canvas,()=>{
+    const d=pad.toDataURL();
+    if(hidden)hidden.value=d;
+    if(ph)ph.style.display=d?'none':'';
+    if(typeof saveState==='function')saveState();
+  });
+  _sigPads[canvasId]=pad;
+}
+
+
 const ICAO_COLORS_MAP = {
   "5A":"red","5B":"red","5C":"yellow","5D":"yellow","5E":"yellow",
   "4A":"red","4B":"red","4C":"yellow","4D":"yellow","4E":"yellow",
@@ -5258,11 +5354,10 @@ function editEntry_LEGACY(id) {
 
   showView('form');
   updateBarrierAlertZone();
-
-  // Init signature pads
-  _initSigPad('c-acm-sig-canvas','c-acm-signature','c-acm-sig-placeholder');
-  _initSigPad('c-fu-acm-sig-canvas','c-fu-acm-signature','c-fu-acm-sig-placeholder');
   csRefreshFollowUp();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    // ACM esig boxes restored from saved data in csLoadState
+  }));
   csRefreshBlock6();
 
   // Restore duration dropdown state
@@ -5563,22 +5658,11 @@ function clearAllChangeStudy() {
   if (list) list.innerHTML = '';
   csRenumber();
 
-  // Clear ACM sig pads
-  ['c-acm-sig-canvas','c-fu-acm-sig-canvas'].forEach(cid => {
-    const canvas = document.getElementById(cid);
-    if (canvas) { const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height); }
-    delete _sigPads[cid];
+  ['acm','fu-acm'].forEach(key=>{
+    const chk=document.getElementById('c-'+key+'-esig-check');if(chk)chk.checked=false;
+    const sel=document.getElementById('c-'+key+'-esig-name');if(sel)sel.value='';
+    esigUpdate(key);
   });
-  ['c-acm-signature','c-fu-acm-signature'].forEach(hid => {
-    const h = document.getElementById(hid); if (h) h.value = '';
-  });
-  ['c-acm-sig-placeholder','c-fu-acm-sig-placeholder'].forEach(phid => {
-    const ph = document.getElementById(phid); if (ph) ph.style.display = '';
-  });
-
-  // Re-init pads
-  _initSigPad('c-acm-sig-canvas','c-acm-signature','c-acm-sig-placeholder');
-  _initSigPad('c-fu-acm-sig-canvas','c-fu-acm-signature','c-fu-acm-sig-placeholder');
 
   csRefreshFollowUp();
   csRefreshBlock6();
@@ -5674,6 +5758,7 @@ function showView(name) {
   if(name==='lessons')     renderLessonsList();
   if(name==='erp')           { erpShowSection('contacts'); }
   if(name==='change')      { renderSavedCSList(); csRenderWorkflowBar(document.getElementById('c-workflow-status')?.value||'draft'); }
+  if(name==='form')        { /* esig boxes initialise on render */ }
   if(name==='srb')         renderSRBList();
   if(name==='audittrail')  renderAuditTrail();
   if(name==='surveillance')  { survShowTab('plan'); }
@@ -6408,49 +6493,118 @@ function renderBackupStatus() {
 // BLOCK 4 — DYNAMIC ACTIONS + DIGITAL SIGNATURES
 // ══════════════════════════════════════════════════════════════════
 let CS_ACTIONS = [];
-let _sigPads   = {};
 let CS_FU      = {};
 
-class SigPad {
-  constructor(canvas, onDraw) {
-    this.canvas=canvas; this.ctx=canvas.getContext('2d');
-    this.drawing=false; this.onDraw=onDraw||(() => {});
-    this._setup();
+// ── Acknowledgement / read-and-understood helpers ─────────────────
+function esigUpdate(type){
+  const isAcm=(type==='acm');
+  const prefix=isAcm?'c-acm-esig':'c-fu-acm-esig';
+  const chk=document.getElementById(prefix+'-check');
+  const sel=document.getElementById(prefix+'-name');
+  const selOther=document.getElementById(prefix+'-name-other');
+  const box=document.getElementById(prefix+'-box')?.parentElement?.querySelector('.cs-esig-box')||document.getElementById((isAcm?'c-acm':'c-fu-acm')+'-esig-box');
+  const stamp=document.getElementById(prefix+'-stamp');
+  const stampTxt=document.getElementById(prefix+'-stamp-text');
+  const hiddenSig=document.getElementById(isAcm?'c-acm-signature':'c-fu-acm-signature');
+  // handle "other" toggle
+  if(sel&&selOther){selOther.style.display=(sel.value==='__other__')?'block':'none';}
+  const name=sel?(sel.value==='__other__'?(selOther?selOther.value.trim():''):sel.value):'';
+  const checked=chk?chk.checked:false;
+  const valid=checked&&name;
+  // update box style
+  const esigBox=document.getElementById(isAcm?'c-acm-esig-box':'c-fu-acm-esig-box');
+  if(esigBox){esigBox.classList.toggle('signed',!!valid);}
+  // stamp
+  if(stamp&&stampTxt){
+    if(valid){
+      const now=new Date();const d=now.toLocaleDateString('en-GB');const t=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      stampTxt.textContent=name+' — acknowledged on '+d+' at '+t;
+      stamp.classList.add('visible');
+      if(hiddenSig)hiddenSig.value='ACK:'+name+'|'+now.toISOString();
+    } else {
+      stamp.classList.remove('visible');
+      if(hiddenSig)hiddenSig.value='';
+    }
   }
-  _pt(e){const r=this.canvas.getBoundingClientRect();const s=e.touches?e.touches[0]:e;return{x:(s.clientX-r.left)*(this.canvas.width/r.width),y:(s.clientY-r.top)*(this.canvas.height/r.height)};}
-  _setup(){
-    const down=e=>{e.preventDefault();this.drawing=true;const p=this._pt(e);this.ctx.beginPath();this.ctx.moveTo(p.x,p.y);};
-    const move=e=>{e.preventDefault();if(!this.drawing)return;const p=this._pt(e);this.ctx.lineWidth=1.8;this.ctx.lineCap='round';this.ctx.strokeStyle='rgba(255,255,255,.92)';this.ctx.lineTo(p.x,p.y);this.ctx.stroke();this.onDraw();};
-    const up=()=>{this.drawing=false;this.onDraw();};
-    this.canvas.addEventListener('mousedown',down);this.canvas.addEventListener('mousemove',move);
-    this.canvas.addEventListener('mouseup',up);this.canvas.addEventListener('mouseleave',up);
-    this.canvas.addEventListener('touchstart',down,{passive:false});this.canvas.addEventListener('touchmove',move,{passive:false});this.canvas.addEventListener('touchend',up);
-  }
-  clear(){this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);this.onDraw();}
-  isEmpty(){return !this.ctx.getImageData(0,0,this.canvas.width,this.canvas.height).data.some(v=>v!==0);}
-  toDataURL(){return this.isEmpty()?'':this.canvas.toDataURL('image/png');}
-  fromDataURL(url){if(!url)return;const img=new Image();img.onload=()=>this.ctx.drawImage(img,0,0,this.canvas.width,this.canvas.height);img.src=url;}
+  if(typeof saveState==='function')saveState();
 }
 
-function _initSigPad(canvasId,hiddenId,phId){
-  const canvas=document.getElementById(canvasId);
-  if(!canvas||_sigPads[canvasId])return;
-  const hidden=document.getElementById(hiddenId);
-  const ph=document.getElementById(phId);
-  const pad=new SigPad(canvas,()=>{
-    const d=pad.toDataURL();
-    if(hidden)hidden.value=d;
-    if(ph)ph.style.display=d?'none':'';
-    if(typeof saveState==='function')saveState();
-  });
-  _sigPads[canvasId]=pad;
+function csAssessorsEsigUpdate(){
+  const sel=document.getElementById('c-assessors-signature');
+  const selOther=document.getElementById('c-assessors-signature-other');
+  const chk=document.getElementById('c-assessors-esig-check');
+  const box=document.getElementById('c-assessors-esig-box');
+  const stamp=document.getElementById('c-assessors-esig-stamp');
+  const stampTxt=document.getElementById('c-assessors-esig-stamp-text');
+  if(sel&&selOther){selOther.style.display=(sel.value==='__other__')?'block':'none';}
+  const name=sel?(sel.value==='__other__'?(selOther?selOther.value.trim():''):sel.value):'';
+  const checked=chk?chk.checked:false;
+  const valid=checked&&name;
+  if(box)box.classList.toggle('signed',!!valid);
+  if(stamp&&stampTxt){
+    if(valid){const now=new Date();const d=now.toLocaleDateString('en-GB');const t=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});stampTxt.textContent=name+' — acknowledged on '+d+' at '+t;stamp.classList.add('visible');}
+    else{stamp.classList.remove('visible');}
+  }
+  if(typeof saveState==='function')saveState();
+}
+
+function csFinalEsigUpdate(){
+  const sel=document.getElementById('c-signature');
+  const selOther=document.getElementById('c-signature-other');
+  const chk=document.getElementById('c-final-esig-check');
+  const box=document.getElementById('c-final-esig-box');
+  const stamp=document.getElementById('c-final-esig-stamp');
+  const stampTxt=document.getElementById('c-final-esig-stamp-text');
+  if(sel&&selOther){selOther.style.display=(sel.value==='__other__')?'block':'none';}
+  const name=sel?(sel.value==='__other__'?(selOther?selOther.value.trim():''):sel.value):'';
+  const checked=chk?chk.checked:false;
+  const valid=checked&&name;
+  if(box)box.classList.toggle('signed',!!valid);
+  if(stamp&&stampTxt){
+    if(valid){const now=new Date();const d=now.toLocaleDateString('en-GB');const t=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});stampTxt.textContent=name+' — acknowledged on '+d+' at '+t;stamp.classList.add('visible');}
+    else{stamp.classList.remove('visible');}
+  }
+  if(typeof saveState==='function')saveState();
+}
+
+function csActionEsigUpdate(id){
+  const sel=document.getElementById('cs-sig-sel-'+id);
+  const selOther=document.getElementById('cs-sig-sel-other-'+id);
+  const chk=document.getElementById('cs-sig-check-'+id);
+  const box=document.getElementById('cs-sig-esig-'+id);
+  const stamp=document.getElementById('cs-sig-stamp-'+id);
+  const stampLbl=document.getElementById('cs-sig-label-'+id);
+  const hid=document.getElementById('cs-sig-hidden-'+id);
+  if(sel&&selOther){selOther.style.display=(sel.value==='__other__')?'block':'none';}
+  const name=sel?(sel.value==='__other__'?(selOther?selOther.value.trim():''):sel.value):'';
+  const checked=chk?chk.checked:false;
+  const valid=checked&&name;
+  if(box)box.classList.toggle('signed',!!valid);
+  if(stamp&&stampLbl){
+    if(valid){const now=new Date();const d=now.toLocaleDateString('en-GB');const t=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});stampLbl.textContent=name+' — acknowledged on '+d+' at '+t;stamp.classList.add('visible');if(hid)hid.value='ACK:'+name+'|'+now.toISOString();}
+    else{stamp.classList.remove('visible');if(hid)hid.value='';}
+  }
+  csSyncAction(id);
+  if(typeof saveState==='function')saveState();
 }
 
 function csClearSig(type,actionId){
-  const clear=(cid,hid,phid)=>{const p=_sigPads[cid];if(p){p.clear();const h=document.getElementById(hid);if(h)h.value='';}const ph=document.getElementById(phid);if(ph)ph.style.display='';};
-  if(type==='acm')    clear('c-acm-sig-canvas','c-acm-signature','c-acm-sig-placeholder');
-  else if(type==='fu-acm') clear('c-fu-acm-sig-canvas','c-fu-acm-signature','c-fu-acm-sig-placeholder');
-  else clear('cs-sig-canvas-'+actionId,'cs-sig-hidden-'+actionId,'cs-sig-ph-'+actionId);
+  if(type==='acm'){
+    const el=document.getElementById('c-acm-esig-check');if(el)el.checked=false;
+    const sel=document.getElementById('c-acm-esig-name');if(sel)sel.value='';
+    esigUpdate('acm');
+  } else if(type==='fu-acm'){
+    const el=document.getElementById('c-fu-acm-esig-check');if(el)el.checked=false;
+    const sel=document.getElementById('c-fu-acm-esig-name');if(sel)sel.value='';
+    esigUpdate('fu-acm');
+  } else {
+    const hid=document.getElementById('cs-sig-hidden-'+actionId);if(hid)hid.value='';
+    const chk=document.getElementById('cs-sig-check-'+actionId);if(chk)chk.checked=false;
+    const sel=document.getElementById('cs-sig-sel-'+actionId);if(sel)sel.value='';
+    const stamp=document.getElementById('cs-sig-stamp-'+actionId);if(stamp)stamp.classList.remove('visible');
+    const lbl=document.getElementById('cs-sig-label-'+actionId);if(lbl)lbl.textContent='';
+    const box=document.getElementById('cs-sig-esig-'+actionId);if(box)box.classList.remove('signed');
+  }
   if(typeof saveState==='function')saveState();
 }
 
@@ -6475,13 +6629,25 @@ function csRenderAction(action){
   npInput.addEventListener('input',()=>csSyncAction(id));
   npWrap.appendChild(npLabel);npWrap.appendChild(npInput);
   const sigWrap=document.createElement('div');sigWrap.className='form-field';
-  const sigLabel=document.createElement('label');sigLabel.className='field-label';sigLabel.textContent='Assessor signature';
-  const sigBox=document.createElement('div');sigBox.className='cs-sig-wrap';
-  const sigCanvas=document.createElement('canvas');sigCanvas.id='cs-sig-canvas-'+id;sigCanvas.width=300;sigCanvas.height=80;sigCanvas.style.cssText='display:block;width:100%;cursor:crosshair;touch-action:none;';
-  const sigPh=document.createElement('div');sigPh.id='cs-sig-ph-'+id;sigPh.className='cs-sig-placeholder';sigPh.textContent='Sign here…';
-  const sigClearBtn=document.createElement('button');sigClearBtn.type='button';sigClearBtn.className='cs-sig-clear';sigClearBtn.textContent='✕ Clear';
-  sigClearBtn.addEventListener('click',()=>csClearSig('action',id));
-  sigBox.appendChild(sigCanvas);sigBox.appendChild(sigPh);sigBox.appendChild(sigClearBtn);
+  const sigLabel=document.createElement('label');sigLabel.className='field-label';sigLabel.textContent='Assessor — read & acknowledged';
+  const sigBox=document.createElement('div');sigBox.className='cs-esig-box';sigBox.id='cs-sig-esig-'+id;
+  // name row
+  const nameRow=document.createElement('div');nameRow.className='cs-esig-name-row';
+  const nameSel=document.createElement('select');nameSel.id='cs-sig-sel-'+id;
+  ['','Thierry BERGERET','Xavier BOUVET','Sacha CARRERE','Julien METRO','Jean Louis CAMUS','__other__'].forEach((v,i)=>{const o=document.createElement('option');o.value=v;o.textContent=i===0?'Select…':(v==='__other__'?'➕ Other…':v);nameSel.appendChild(o);});
+  nameSel.addEventListener('change',()=>{csActionEsigUpdate(id);});
+  const nameOther=document.createElement('input');nameOther.type='text';nameOther.id='cs-sig-sel-other-'+id;nameOther.placeholder='Full name…';nameOther.style.display='none';nameOther.addEventListener('input',()=>csActionEsigUpdate(id));
+  nameRow.appendChild(nameSel);nameRow.appendChild(nameOther);
+  // checkbox row
+  const chkLabel=document.createElement('label');chkLabel.className='cs-esig-check-row';
+  const chkBox=document.createElement('input');chkBox.type='checkbox';chkBox.id='cs-sig-check-'+id;
+  chkBox.addEventListener('change',()=>csActionEsigUpdate(id));
+  const chkSpan=document.createElement('span');chkSpan.className='cs-esig-label';chkSpan.innerHTML='I hereby confirm that I have read and acknowledged this action and validate its implementation.';
+  chkLabel.appendChild(chkBox);chkLabel.appendChild(chkSpan);
+  // stamp
+  const stamp=document.createElement('div');stamp.className='cs-esig-stamp';stamp.id='cs-sig-stamp-'+id;
+  stamp.innerHTML=`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="#50c878"/><path d="M3.5 7l2.5 2.5L10.5 5" stroke="#50c878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="cs-sig-label-${id}"></span>`;
+  sigBox.appendChild(nameRow);sigBox.appendChild(chkLabel);sigBox.appendChild(stamp);
   const sigHidden=document.createElement('input');sigHidden.id='cs-sig-hidden-'+id;sigHidden.type='hidden';sigHidden.value=action.sigData||'';
   sigWrap.appendChild(sigLabel);sigWrap.appendChild(sigBox);sigWrap.appendChild(sigHidden);
   // ── Email row ──────────────────────────────────────────────
@@ -6655,7 +6821,7 @@ function csRefreshBlock6(){
       <div class="b6-action-body">
         ${action.text||'<em style="opacity:.5;">No description</em>'}
         ${fu.notes?`<div style="margin-top:6px;padding:6px 8px;background:rgba(255,255,255,.03);border-left:2px solid rgba(74,159,224,.4);border-radius:0 4px 4px 0;font-size:10px;color:var(--grey-400);">${fu.notes}</div>`:''}
-        ${sigData?`<div class="b6-action-sig">Assessor signature: <img src="${sigData}" alt="signature"/></div>`:'<div class="b6-action-sig" style="opacity:.4;">No assessor signature</div>'}
+        ${sigData?`<div class="b6-action-sig" style="color:#50c878;font-family:var(--font-mono);font-size:11px;">☑ ${sigData.startsWith('ACK:')?sigData.replace('ACK:','').replace('|',' — acknowledged on '):'Acknowledgement recorded'}</div>`:'<div class="b6-action-sig" style="opacity:.4;">No acknowledgement recorded</div>'}
       </div>`;
     container.appendChild(card);
   });
@@ -6721,7 +6887,6 @@ function csRefreshFollowUp(){
   });
   CS_ACTIONS.forEach(action=>{const row=document.getElementById('fu-row-'+action.id);if(row)list.appendChild(row);});
   if(empty)empty.style.display=CS_ACTIONS.length?'none':'';
-  _initSigPad('c-fu-acm-sig-canvas','c-fu-acm-signature','c-fu-acm-sig-placeholder');
 }
 
 // ── collectChangeStudy override ──────────────────────────────────
@@ -6735,9 +6900,15 @@ function collectChangeStudy(){
   data.saved_at=new Date().toISOString();
   data.workflow_status = document.getElementById('c-workflow-status')?.value || 'draft';
   try { var _vd=document.getElementById('cs-version-data')?.value; data.version_history=_vd?JSON.parse(_vd):[]; } catch(e){data.version_history=[];}
-  CS_ACTIONS.forEach(a=>{const pad=_sigPads['cs-sig-canvas-'+a.id];if(pad)a.sigData=pad.toDataURL();const em=document.getElementById('cs-email-'+a.id);if(em)a.email=em.value;});
-  const acmPad=_sigPads['c-acm-sig-canvas'];if(acmPad){const h=document.getElementById('c-acm-signature');if(h)h.value=acmPad.toDataURL();}
-  const fuPad=_sigPads['c-fu-acm-sig-canvas'];if(fuPad){const h=document.getElementById('c-fu-acm-signature');if(h)h.value=fuPad.toDataURL();}
+  CS_ACTIONS.forEach(a=>{const em=document.getElementById('cs-email-'+a.id);if(em)a.email=em.value;
+    // collect esig data from checkbox state
+    const chk=document.getElementById('cs-sig-check-'+a.id);
+    const sel=document.getElementById('cs-sig-sel-'+a.id);
+    const selOther=document.getElementById('cs-sig-sel-other-'+a.id);
+    const name=sel?(sel.value==='__other__'?(selOther?selOther.value.trim():''):sel.value):'';
+    if(chk&&chk.checked&&name){a.sigData='ACK:'+name+'|'+(new Date().toISOString());}
+  });
+  // esig values already stored in hidden inputs via esigUpdate()
   data.c_actions_list=JSON.stringify(CS_ACTIONS);
   data.acm_name=document.getElementById('c-acm-name')?.value||'';
   data.acm_signature=document.getElementById('c-acm-signature')?.value||'';
@@ -6750,17 +6921,51 @@ function collectChangeStudy(){
 function csRestoreActions(actionsJson,acmName,acmSig){
   try{CS_ACTIONS=JSON.parse(actionsJson||'[]');}catch(e){CS_ACTIONS=[];}
   const list=document.getElementById('cs-action-list');if(!list)return;
-  list.innerHTML='';_sigPads={};
-  CS_ACTIONS.forEach(action=>{const card=csRenderAction(action);list.appendChild(card);setTimeout(()=>{_initSigPad('cs-sig-canvas-'+action.id,'cs-sig-hidden-'+action.id,'cs-sig-ph-'+action.id);if(action.sigData)_sigPads['cs-sig-canvas-'+action.id]?.fromDataURL(action.sigData);const em=document.getElementById('cs-email-'+action.id);if(em&&action.email)em.value=action.email;},30);});
+  list.innerHTML='';
+  CS_ACTIONS.forEach(action=>{
+    const card=csRenderAction(action);list.appendChild(card);
+    setTimeout(()=>{
+      // restore esig state if previously acknowledged
+      if(action.sigData&&action.sigData.startsWith('ACK:')){
+        const parts=action.sigData.replace('ACK:','').split('|');
+        const name=parts[0]||'';
+        const sel=document.getElementById('cs-sig-sel-'+action.id);
+        const chk=document.getElementById('cs-sig-check-'+action.id);
+        if(sel&&name){
+          // try to match option
+          const opt=Array.from(sel.options).find(o=>o.value===name);
+          if(opt){sel.value=name;}else{sel.value='__other__';const oth=document.getElementById('cs-sig-sel-other-'+action.id);if(oth){oth.style.display='block';oth.value=name;}}
+        }
+        if(chk){chk.checked=true;}
+        csActionEsigUpdate(action.id);
+      }
+      const hid=document.getElementById('cs-sig-hidden-'+action.id);if(hid)hid.value=action.sigData||'';
+      const em=document.getElementById('cs-email-'+action.id);if(em&&action.email)em.value=action.email;
+    },30);
+  });
   csRenumber();
   const nameEl=document.getElementById('c-acm-name');if(nameEl&&acmName)nameEl.value=acmName;
-  setTimeout(()=>{_initSigPad('c-acm-sig-canvas','c-acm-signature','c-acm-sig-placeholder');if(acmSig){const pad=_sigPads['c-acm-sig-canvas'];if(pad)pad.fromDataURL(acmSig);const ph=document.getElementById('c-acm-sig-placeholder');if(ph)ph.style.display='none';}},40);
+  // restore ACM esig if saved
+  if(acmSig&&acmSig.startsWith('ACK:')){
+    const parts=acmSig.replace('ACK:','').split('|');const name=parts[0]||'';
+    const sel=document.getElementById('c-acm-esig-name');const chk=document.getElementById('c-acm-esig-check');
+    if(sel&&name){const opt=Array.from(sel.options).find(o=>o.value===name);if(opt){sel.value=name;}}
+    if(chk){chk.checked=true;}
+    esigUpdate('acm');
+  }
 }
 
 function csRestoreFollowUp(fuJson,fuAcmName,fuAcmSig){
   try{CS_FU=JSON.parse(fuJson||'{}');}catch(e){CS_FU={};}
   const nameEl=document.getElementById('c-fu-acm-name');if(nameEl&&fuAcmName)nameEl.value=fuAcmName;
-  setTimeout(()=>{_initSigPad('c-fu-acm-sig-canvas','c-fu-acm-signature','c-fu-acm-sig-placeholder');if(fuAcmSig){const pad=_sigPads['c-fu-acm-sig-canvas'];if(pad)pad.fromDataURL(fuAcmSig);const ph=document.getElementById('c-fu-acm-sig-placeholder');if(ph)ph.style.display='none';}},80);
+  // restore fu-acm esig if saved
+  if(fuAcmSig&&fuAcmSig.startsWith('ACK:')){
+    const parts=fuAcmSig.replace('ACK:','').split('|');const name=parts[0]||'';
+    const sel=document.getElementById('c-fu-acm-esig-name');const chk=document.getElementById('c-fu-acm-esig-check');
+    if(sel&&name){const opt=Array.from(sel.options).find(o=>o.value===name);if(opt){sel.value=name;}}
+    if(chk){chk.checked=true;}
+    esigUpdate('fu-acm');
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -9282,7 +9487,16 @@ function loadCSIntoForm(ref){
     cs.actions.forEach(function(a2){
       CS_ACTIONS.push(a2);
       if(list){var card=csRenderAction(a2);list.appendChild(card);
-        setTimeout(function(){_initSigPad('cs-sig-canvas-'+a2.id,'cs-sig-hidden-'+a2.id,'cs-sig-ph-'+a2.id);},20);}
+        setTimeout(function(){
+          // restore esig state
+          if(a2.sigData&&a2.sigData.startsWith('ACK:')){
+            var parts=a2.sigData.replace('ACK:','').split('|');var name=parts[0]||'';
+            var sel2=document.getElementById('cs-sig-sel-'+a2.id);var chk2=document.getElementById('cs-sig-check-'+a2.id);
+            if(sel2&&name){var opt2=Array.from(sel2.options).find(function(o){return o.value===name;});if(opt2){sel2.value=name;}else{sel2.value='__other__';var oth2=document.getElementById('cs-sig-sel-other-'+a2.id);if(oth2){oth2.style.display='block';oth2.value=name;}}}
+            if(chk2){chk2.checked=true;}csActionEsigUpdate(a2.id);
+          }
+          var hid2=document.getElementById('cs-sig-hidden-'+a2.id);if(hid2)hid2.value=a2.sigData||'';
+        },20);}
     });
     csRenumber();
   }
@@ -9346,7 +9560,7 @@ function erpResetChecklist() {
 function erpAddLogEntry() {
   var container = document.getElementById('erp-log-entries');
   if (!container) return;
-  var now = new Date(); var ts = now.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+  var now = new Date(); var ts = now.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
   var d = now.toISOString().slice(0,10);
   var row = document.createElement('div');
   row.style.cssText = 'border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:14px;background:rgba(255,255,255,.02);margin-bottom:4px;';

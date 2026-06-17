@@ -228,12 +228,16 @@ tr:last-child td{border-bottom:none}
 .btn-del:hover{background:#2a0a0a;border-color:#ff4444}
 
 /* Signatures */
-.sig-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:10px}
+.sig-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:10px}
 .sig-box{background:#050c18;border:1px solid #1a2840;border-radius:10px;padding:14px;text-align:center}
 .sig-box label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:8px}
-.sig-box input{width:100%;background:transparent;border:none;border-bottom:1px solid #1a2840;color:var(--text);font-family:var(--font);font-size:13px;padding:6px 0;text-align:center}
-.sig-box input:focus{outline:none;border-bottom-color:var(--cyan)}
 .sig-date{font-size:10px;color:var(--muted);margin-top:6px;font-family:var(--mono)}
+.sig-date input{background:transparent;border:none;border-bottom:1px solid #1a2840;color:var(--muted);font-family:var(--mono);font-size:10px;padding:2px 4px;width:90px;text-align:center;}
+.sig-date input:focus{outline:none;border-bottom-color:var(--cyan);}
+.srb-sig-wrap{position:relative;border:1px solid rgba(255,255,255,.15);border-radius:6px;overflow:hidden;background:rgba(0,0,0,.25);margin-bottom:6px;}
+.srb-sig-ph{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,.2);font-size:11px;font-family:var(--mono);pointer-events:none;white-space:nowrap;}
+.srb-sig-clear{position:absolute;top:4px;right:5px;padding:2px 7px;font-size:10px;background:rgba(255,60,60,.22);border:1px solid rgba(255,80,80,.35);border-radius:4px;color:#ff9090;cursor:pointer;font-family:var(--mono);}
+.srb-sig-clear:hover{background:rgba(255,60,60,.38);}
 
 /* Print-specific */
 @media print{
@@ -2867,25 +2871,27 @@ function kpiv2UpdateKpi5(v){
 <div class="sig-grid">
 <div class="sig-box">
 <label>Accountable Manager</label>
-<input placeholder="Signature / Name" type="text"/>
-<div class="sig-date">Date: ___/___/______</div>
+<div class="srb-sig-wrap"><canvas id="srb-sig-acm" width="280" height="70" style="display:block;width:100%;cursor:crosshair;touch-action:none;"></canvas><div class="srb-sig-ph" id="srb-sig-ph-acm">Sign here…</div><button type="button" class="srb-sig-clear" onclick="srbClearSig('acm')">✕</button></div>
+<div class="sig-date">Date: <input type="date" id="srb-date-acm" style="color-scheme:dark;"/></div>
 </div>
 <div class="sig-box">
 <label>Safety Manager</label>
-<input placeholder="Signature / Name" type="text"/>
-<div class="sig-date">Date: ___/___/______</div>
+<div class="srb-sig-wrap"><canvas id="srb-sig-sm" width="280" height="70" style="display:block;width:100%;cursor:crosshair;touch-action:none;"></canvas><div class="srb-sig-ph" id="srb-sig-ph-sm">Sign here…</div><button type="button" class="srb-sig-clear" onclick="srbClearSig('sm')">✕</button></div>
+<div class="sig-date">Date: <input type="date" id="srb-date-sm" style="color-scheme:dark;"/></div>
 </div>
 <div class="sig-box">
 <label>Compliance Manager</label>
-<input placeholder="Signature / Name" type="text"/>
-<div class="sig-date">Date: ___/___/______</div>
+<div class="srb-sig-wrap"><canvas id="srb-sig-cmm" width="280" height="70" style="display:block;width:100%;cursor:crosshair;touch-action:none;"></canvas><div class="srb-sig-ph" id="srb-sig-ph-cmm">Sign here…</div><button type="button" class="srb-sig-clear" onclick="srbClearSig('cmm')">✕</button></div>
+<div class="sig-date">Date: <input type="date" id="srb-date-cmm" style="color-scheme:dark;"/></div>
 </div>
 <div class="sig-box">
 <label>Head of Operations</label>
-<input placeholder="Signature / Name" type="text"/>
-<div class="sig-date">Date: ___/___/______</div>
+<div class="srb-sig-wrap"><canvas id="srb-sig-npfo" width="280" height="70" style="display:block;width:100%;cursor:crosshair;touch-action:none;"></canvas><div class="srb-sig-ph" id="srb-sig-ph-npfo">Sign here…</div><button type="button" class="srb-sig-clear" onclick="srbClearSig('npfo')">✕</button></div>
+<div class="sig-date">Date: <input type="date" id="srb-date-npfo" style="color-scheme:dark;"/></div>
 </div>
 </div>
+<!-- Hidden inputs to store base64 sig data for save/load -->
+<input type="hidden" id="srb-sig-data-acm"/><input type="hidden" id="srb-sig-data-sm"/><input type="hidden" id="srb-sig-data-cmm"/><input type="hidden" id="srb-sig-data-npfo"/>
 <div class="srb-field" style="margin-top:16px"><label>Next SRB — Planned date &amp; location</label>
 <input placeholder="E.g.: 15 December 2026 — Mayn meeting room" type="text"/>
 </div>
@@ -19905,3 +19911,79 @@ window.safSmsConfirmImport=safSmsConfirmImport;
 
 </body>
 </html>
+<script>
+/* ─── SRB Signature Pads ─── */
+(function(){
+  const SRB_SIGS = ['acm','sm','cmm','npfo'];
+  const _pads = {};
+
+  class SrbSigPad {
+    constructor(canvas, onDraw){
+      this.canvas = canvas; this.ctx = canvas.getContext('2d');
+      this.drawing = false; this.onDraw = onDraw || (()=>{});
+      this._setup();
+    }
+    _pt(e){ const r=this.canvas.getBoundingClientRect(); const s=e.touches?e.touches[0]:e; return {x:(s.clientX-r.left)*(this.canvas.width/r.width),y:(s.clientY-r.top)*(this.canvas.height/r.height)}; }
+    _setup(){
+      const down=e=>{e.preventDefault();this.drawing=true;const p=this._pt(e);this.ctx.beginPath();this.ctx.moveTo(p.x,p.y);};
+      const move=e=>{e.preventDefault();if(!this.drawing)return;const p=this._pt(e);this.ctx.lineWidth=1.8;this.ctx.lineCap='round';this.ctx.strokeStyle='rgba(255,255,255,.92)';this.ctx.lineTo(p.x,p.y);this.ctx.stroke();this.onDraw();};
+      const up=()=>{this.drawing=false;this.onDraw();};
+      this.canvas.addEventListener('mousedown',down);this.canvas.addEventListener('mousemove',move);
+      this.canvas.addEventListener('mouseup',up);this.canvas.addEventListener('mouseleave',up);
+      this.canvas.addEventListener('touchstart',down,{passive:false});this.canvas.addEventListener('touchmove',move,{passive:false});this.canvas.addEventListener('touchend',up);
+    }
+    clear(){ this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height); this.onDraw(); }
+    isEmpty(){ return !this.ctx.getImageData(0,0,this.canvas.width,this.canvas.height).data.some(v=>v!==0); }
+    toDataURL(){ return this.isEmpty()?'':this.canvas.toDataURL('image/png'); }
+    fromDataURL(url){ if(!url)return; const img=new Image(); img.onload=()=>this.ctx.drawImage(img,0,0,this.canvas.width,this.canvas.height); img.src=url; }
+  }
+
+  function initSrbSigPad(key){
+    const canvas = document.getElementById('srb-sig-'+key);
+    if(!canvas || _pads[key]) return;
+    const pad = new SrbSigPad(canvas, ()=>{
+      const ph = document.getElementById('srb-sig-ph-'+key);
+      if(ph) ph.style.display = pad.isEmpty() ? '' : 'none';
+      const hid = document.getElementById('srb-sig-data-'+key);
+      if(hid) hid.value = pad.toDataURL();
+    });
+    _pads[key] = pad;
+  }
+
+  window.srbClearSig = function(key){
+    const p = _pads[key]; if(p){ p.clear(); }
+    const hid = document.getElementById('srb-sig-data-'+key); if(hid) hid.value='';
+    const ph = document.getElementById('srb-sig-ph-'+key); if(ph) ph.style.display='';
+  };
+
+  function tryInitAll(){
+    const panel = document.getElementById('srb');
+    if(!panel || panel.style.display==='none') return;
+    SRB_SIGS.forEach(k => initSrbSigPad(k));
+  }
+
+  const origShowMainTab = window.showMainTab;
+  window.showMainTab = function(id, btn){
+    if(origShowMainTab) origShowMainTab(id, btn);
+    if(id==='srb') setTimeout(tryInitAll, 30);
+  };
+
+  document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(tryInitAll, 100); });
+
+  // Patch loadSRB to restore canvas drawings after load
+  const origLoadSRB = window.loadSRB;
+  window.loadSRB = function(){
+    if(origLoadSRB) origLoadSRB();
+    setTimeout(()=>{
+      SRB_SIGS.forEach(k=>{
+        const hid = document.getElementById('srb-sig-data-'+k);
+        if(hid && hid.value){
+          initSrbSigPad(k);
+          const p = _pads[k]; if(p) p.fromDataURL(hid.value);
+          const ph = document.getElementById('srb-sig-ph-'+k); if(ph) ph.style.display='none';
+        }
+      });
+    }, 150);
+  };
+})();
+</script>
