@@ -7970,7 +7970,7 @@ function saveLesson(){}
 // LESSONS LEARNED
 // ════════════════════════════════════════════════════════════════
 function getLessons(){try{return JSON.parse(localStorage.getItem('safLessons')||'[]');}catch(e){return[];}}
-function saveLessons(l){localStorage.setItem('safLessons',JSON.stringify(l));updateLastModified();}
+function saveLessons(l){localStorage.setItem('safLessons',JSON.stringify(l));updateLastModified();if(typeof window.safCloudScheduleSave==='function')window.safCloudScheduleSave();}
 
 function llNextRef(type){
   var prefix=type==='alert'?'SA':'COM';
@@ -12186,7 +12186,7 @@ function deleteALoS(id){
       await cloudLoad();
       ready = true;
       attachAutoSave();
-      setBar('ok','Mode local');
+      bar.style.display='flex'; bar.querySelector('.dot').style.background='#E07020'; barTxt.textContent='Mode local — non connecté'; document.getElementById('saf-logout-btn').style.display='none';
     }
   })();
 })();
