@@ -88,6 +88,15 @@ header {
 .btn-export-global { font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:.05em; padding:9px 20px; border-radius:6px; border:none; background:rgba(201,162,39,.18); color:var(--gold-light); border:1px solid rgba(201,162,39,.4); cursor:pointer; transition:background .2s; }
 .btn-export-global:hover { background:rgba(201,162,39,.32); }
 .btn-export-global:disabled { opacity:.45; cursor:not-allowed; }
+.btn-import-global { font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:.05em; padding:9px 20px; border-radius:6px; border:none; background:rgba(60,140,220,.15); color:#70b8f0; border:1px solid rgba(60,140,220,.35); cursor:pointer; transition:background .2s; }
+.btn-import-global:hover { background:rgba(60,140,220,.28); }
+.btn-import-global:disabled { opacity:.45; cursor:not-allowed; }
+#import-confirm-bar { display:none; align-items:center; gap:12px; padding:12px 20px; background:rgba(220,80,60,.08); border:1px solid rgba(220,80,60,.3); border-radius:8px; margin-top:10px; flex-wrap:wrap; }
+.import-confirm-msg { font-family:var(--font-mono); font-size:11px; color:#f0a080; flex:1; min-width:200px; }
+.btn-confirm-import { font-family:var(--font-mono); font-size:11px; font-weight:700; padding:8px 18px; border-radius:6px; border:none; background:rgba(220,80,60,.25); color:#f08070; border:1px solid rgba(220,80,60,.4); cursor:pointer; transition:background .2s; }
+.btn-confirm-import:hover { background:rgba(220,80,60,.45); }
+.btn-cancel-import { font-family:var(--font-mono); font-size:11px; padding:8px 14px; border-radius:6px; border:1px solid rgba(255,255,255,.1); background:transparent; color:var(--grey-400); cursor:pointer; transition:border-color .2s; }
+.btn-cancel-import:hover { border-color:rgba(255,255,255,.3); color:var(--white); }
 #export-status { font-family:var(--font-mono); font-size:10px; color:var(--grey-400); }
 
 /* ─── MAIN ────────────────────────────────────── */
@@ -206,6 +215,13 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     </div>
     <span id="export-status"></span>
     <button class="btn-export-global" id="btn-export-global" onclick="exportGlobal()">⬇ Exporter tout en JSON</button>
+    <button class="btn-import-global" id="btn-import-global" onclick="document.getElementById('import-file-input').click()">⬆ Restaurer depuis JSON</button>
+    <input type="file" id="import-file-input" accept=".json" style="display:none">
+  </div>
+  <div class="export-bar" id="import-confirm-bar">
+    <div class="import-confirm-msg" id="import-confirm-msg"></div>
+    <button class="btn-cancel-import" id="btn-cancel-import" onclick="cancelImport()">Annuler</button>
+    <button class="btn-confirm-import" id="btn-confirm-import" onclick="confirmImport()">⚠ Confirmer la restauration</button>
   </div>
 
 </main>
@@ -310,6 +326,98 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     }
     btn.disabled = false;
   };
+
+  // ── IMPORT ──────────────────────────────────────────────────────────────
+  var _pendingBundle = null;
+
+  document.getElementById('import-file-input').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    // reset pour permettre de recharger le même fichier
+    e.target.value = '';
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      try {
+        var bundle = JSON.parse(ev.target.result);
+        if(!bundle._meta || !bundle._meta.modules){
+          showImportStatus('⚠ Fichier invalide : structure _meta manquante.', '#e07070');
+          return;
+        }
+        var modules = bundle._meta.modules;
+        var present = modules.filter(function(k){ return bundle[k] && bundle[k].data; });
+        if(present.length === 0){
+          showImportStatus('⚠ Aucun module avec des données dans ce fichier.', '#e07070');
+          return;
+        }
+        _pendingBundle = bundle;
+        var d = bundle._meta.exported_at ? bundle._meta.exported_at.slice(0,19).replace('T',' ') : '?';
+        var by = bundle._meta.exported_by || '?';
+        document.getElementById('import-confirm-msg').innerHTML =
+          '<strong style="color:var(--gold-light)">⚠ Restauration imminente</strong><br>' +
+          'Fichier exporté le <strong>' + d + '</strong> par <strong>' + by + '</strong><br>' +
+          'Modules à écraser : <strong>' + present.join(', ') + '</strong> — cette action est irréversible.';
+        document.getElementById('import-confirm-bar').style.display = 'flex';
+        document.getElementById('import-confirm-bar').scrollIntoView({behavior:'smooth', block:'nearest'});
+      } catch(err) {
+        showImportStatus('⚠ Erreur de lecture JSON : ' + err.message, '#e07070');
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  window.cancelImport = function(){
+    _pendingBundle = null;
+    document.getElementById('import-confirm-bar').style.display = 'none';
+  };
+
+  window.confirmImport = async function(){
+    if(!_pendingBundle) return;
+    var bundle = _pendingBundle;
+    _pendingBundle = null;
+    document.getElementById('import-confirm-bar').style.display = 'none';
+
+    var btn = document.getElementById('btn-import-global');
+    var btnExp = document.getElementById('btn-export-global');
+    btn.disabled = true; btnExp.disabled = true;
+    var status = document.getElementById('export-status');
+
+    var LABEL = { sms_data:'SMS', cms_data:'CMS', omm_appendices:'OMM', audit_data:'Audits' };
+    var modules = bundle._meta.modules;
+    var errors = [];
+    var done = 0;
+
+    for(var i=0; i<modules.length; i++){
+      var key = modules[i];
+      if(!bundle[key] || !bundle[key].data){ continue; }
+      status.textContent = 'Restauration ' + (LABEL[key]||key) + ' (' + (i+1) + '/' + modules.length + ')…';
+      status.style.color = 'var(--grey-400)';
+      try {
+        var res = await db.from('saf_data').upsert(
+          { module: key, data: bundle[key].data },
+          { onConflict: 'module' }
+        );
+        if(res.error){ errors.push((LABEL[key]||key) + ': ' + res.error.message); }
+        else { done++; }
+      } catch(e) {
+        errors.push((LABEL[key]||key) + ': ' + e.message);
+      }
+    }
+
+    if(errors.length){
+      status.textContent = '⚠ Restauration partielle — ' + done + ' ok, erreurs : ' + errors.join(' · ');
+      status.style.color = '#e3b341';
+    } else {
+      status.textContent = '✓ ' + done + ' module(s) restauré(s) avec succès';
+      status.style.color = '#3fb950';
+    }
+    btn.disabled = false; btnExp.disabled = false;
+  };
+
+  function showImportStatus(msg, color){
+    var s = document.getElementById('export-status');
+    s.textContent = msg;
+    s.style.color = color || 'var(--grey-400)';
+  }
 
   // Session déjà active ?
   (async function(){
