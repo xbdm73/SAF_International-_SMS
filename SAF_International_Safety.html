@@ -1390,6 +1390,7 @@ nav { top: 118px !important; }
 <div class="nav-item" onclick="showView('lessons')"><span class="icon">📢</span> Lessons Learned</div>
 <div class="nav-item" onclick="showView('safetyassurance')"><span class="icon">🔍</span> Safety Assurance</div>
 <div class="nav-item" onclick="showView('alos')"><span class="icon">🎯</span> ALoS / Safety Case</div>
+<div class="nav-item" onclick="showView('camointerface')"><span class="icon">🔗</span> CAMO → SMS Interface <span class="count" id="cnt-camo-signals">0</span></div>
 
 
 </div>
@@ -2553,6 +2554,18 @@ nav { top: 118px !important; }
 </div>
 <div id="alos-form-wrap" style="display:none;padding:0 28px 24px;"></div>
 <div id="alos-list-wrap" style="padding:0 28px 48px;"></div>
+</div>
+
+<div class="view" id="view-camointerface">
+<div class="dash-header">
+  <div>
+    <div class="dash-title">🔗 INTERFACE CAMO → SMS</div>
+    <div class="dash-subtitle">AMC1 CAMO.A.200(a)(2) · AMC1 ORO.GEN.200(a)(3) — Signaux de sécurité remontés par la CAMO vers le SMS opérationnel</div>
+  </div>
+  <button class="btn btn-primary" onclick="showCAMOSignalForm()">＋ Nouveau signal CAMO</button>
+</div>
+<div id="camo-signal-form-wrap" style="display:none;padding:0 28px 24px;"></div>
+<div id="camo-signal-list" style="padding:0 28px 48px;"></div>
 </div>
 
 <div class="view" id="view-erp">
@@ -5666,6 +5679,7 @@ function showView(name) {
   if(name==='surveillance')  { survShowTab('plan'); }
   if(name==='safetyassurance') renderSARList();
   if(name==='alos')        renderALoSView();
+  if(name==='camointerface')  { renderCAMOSignals(); }
 }
 
 // ── Utility: download file ─────────────────────────────────────────
@@ -6146,7 +6160,7 @@ function importJSON(event) {
       // ── Format SAF SMS Backup complet (safExportAllData) ──
       if(data._version || data._app || data.safRiskDB || data.safOccurrences || data.safChangeStudies) {
         const allKeys = ['safRiskDB','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
-                         'safLessons','safSRBMeetings','safAudits','safSAR','safALoS','lastModified',
+                         'safLessons','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','lastModified',
                          'ejsPublicKey','ejsServiceId','ejsTemplateId'];
         allKeys.forEach(function(k){ if(data[k]!=null){ localStorage.setItem(k,data[k]); imported.push(k); } });
         if(data['saf_header']!=null) localStorage.setItem('saf_international_safety_management_header_v1', data['saf_header']);
@@ -7013,6 +7027,7 @@ function _statusLabel(status){ return {green:'GREEN',amber:'AMBER',red:'RED',unk
 
 function renderSPIView(){
   const el=document.getElementById('spi-content'); if(!el)return;
+  spiRecordMonthlySnapshot(); // enregistrement mensuel automatique
   const targets=getSPITargets(); const vals=computeSPI(); const capa=computeCAPAKPI();
   var html='<div style="padding:0 28px 28px;">';
 
@@ -7049,6 +7064,7 @@ function renderSPIView(){
     +'<th style="text-align:center;padding:7px 10px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">Red</th>'
     +'<th style="text-align:center;padding:7px 10px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">Trend</th>'
     +'<th style="text-align:center;padding:7px 10px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">Status</th>'
+    +'<th style="text-align:center;padding:7px 10px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">Trend 12M ↗</th>'
     +'</tr></thead><tbody>';
 
   targets.forEach(function(t,i){
@@ -7067,6 +7083,7 @@ function renderSPIView(){
       +'<td style="padding:9px 10px;text-align:center;"><input type="number" value="'+t.red+'" data-spi="'+i+'" data-field="red" onchange="spiUpdateTarget(this)" style="width:68px;text-align:center;font-family:var(--font-mono);font-size:11px;background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.3);border-radius:4px;color:#fff;padding:3px 6px;"/></td>'
       +'<td style="padding:9px 10px;text-align:center;font-family:var(--font-mono);color:var(--grey-200);">'+trend+'</td>'
       +'<td style="padding:9px 10px;text-align:center;"><span style="display:inline-block;min-width:62px;padding:3px 8px;border-radius:4px;background:'+colour+'22;border:1px solid '+colour+';color:'+colour+';font-family:var(--font-mono);font-size:10px;font-weight:700;">'+_statusLabel(status)+'</span></td>'
+      +'<td style="padding:6px 10px;text-align:center;">'+spiDrawTrendSVG(t.id, t, t.direction)+'</td>'
       +'</tr>';
   });
   html+='</tbody></table></div></div>';
@@ -7122,6 +7139,236 @@ function spiResetDefaults(){
   if(typeof window.safCloudScheduleSave==='function') window.safCloudScheduleSave();
   renderSPIView();
 }
+
+// ════════════════════════════════════════════════════════════════
+// SPI TRENDING — enregistrement mensuel 12 mois glissants
+// AMC1 ORO.GEN.200(a)(4) — trending & early warning
+// ════════════════════════════════════════════════════════════════
+function spiHistoryKey(spiId){ return 'safSPIHistory_' + spiId; }
+function getSPIHistory(spiId){
+  try{ return JSON.parse(localStorage.getItem(spiHistoryKey(spiId)) || '[]'); } catch(e){ return []; }
+}
+function saveSPIHistory(spiId, arr){ localStorage.setItem(spiHistoryKey(spiId), JSON.stringify(arr)); }
+
+function spiRecordMonthlySnapshot(){
+  // Appelé à l'ouverture de la vue SPI — enregistre la valeur du mois courant pour chaque SPI
+  var vals = computeSPI();
+  var capa = computeCAPAKPI();
+  var allVals = Object.assign({}, vals, {
+    capa_open_gt30: capa.open_gt30,
+    capa_repeat_findings: capa.repeat_findings,
+    capa_closure_effectiveness: capa.closure_effectiveness
+  });
+  var month = new Date().toISOString().slice(0,7); // "2026-06"
+  getSPITargets().forEach(function(t){
+    var val = allVals[t.formula];
+    if(val === undefined || val === null) return;
+    var hist = getSPIHistory(t.id);
+    // Upsert : remplace si le mois existe déjà, sinon ajoute
+    var idx = hist.findIndex(function(h){ return h.m === month; });
+    if(idx >= 0){ hist[idx].v = val; } else { hist.push({m: month, v: val}); }
+    // Garder seulement les 13 derniers mois
+    hist.sort(function(a,b){ return a.m.localeCompare(b.m); });
+    if(hist.length > 13) hist = hist.slice(hist.length - 13);
+    saveSPIHistory(t.id, hist);
+  });
+}
+
+function spiDrawTrendSVG(spiId, t, direction){
+  var hist = getSPIHistory(spiId);
+  if(hist.length < 2) return '<span style="font-family:var(--font-mono);font-size:9px;color:var(--grey-600);">Données insuffisantes (< 2 mois)</span>';
+  var vals = hist.map(function(h){ return parseFloat(h.v); });
+  var labels = hist.map(function(h){ return h.m.slice(5); }); // "06", "07"…
+  var min = Math.min.apply(null, vals);
+  var max = Math.max.apply(null, vals);
+  var range = (max - min) || 1;
+  var W = 280, H = 70, pad = {l:30, r:8, t:8, b:18};
+  var iW = W - pad.l - pad.r, iH = H - pad.t - pad.b;
+  var n = vals.length;
+  function px(i){ return pad.l + (i / (n-1)) * iW; }
+  function py(v){ return pad.t + iH - ((v - min) / range) * iH; }
+  // Couleur de la ligne = statut du dernier point
+  var lastStatus = t ? (function(){
+    var v = vals[vals.length-1];
+    if(isNaN(v)) return 'unknown';
+    if(direction === 'down'){
+      if(v <= parseFloat(t.green)) return 'green';
+      if(v <= parseFloat(t.amber)) return 'amber';
+      return 'red';
+    }
+    if(v >= parseFloat(t.green)) return 'green';
+    if(v >= parseFloat(t.amber)) return 'amber';
+    return 'red';
+  })() : 'unknown';
+  var lineColor = {green:'#3fb950', amber:'#e3b341', red:'#f85149', unknown:'#4a9fe0'}[lastStatus];
+  // Polyline points
+  var pts = vals.map(function(v,i){ return px(i)+','+py(v); }).join(' ');
+  // Labels mois (1 sur 2 si >6 points)
+  var labelSVG = '';
+  labels.forEach(function(lb, i){
+    if(n <= 6 || i % 2 === 0 || i === n-1){
+      labelSVG += '<text x="'+px(i)+'" y="'+(H-3)+'" text-anchor="middle" font-size="7" fill="#8fa8c0" font-family="monospace">'+lb+'</text>';
+    }
+  });
+  // Ligne de target
+  var targetSVG = '';
+  if(t && t.green !== undefined){
+    var tgt = parseFloat(direction==='up' ? t.green : t.green);
+    if(!isNaN(tgt) && tgt >= min && tgt <= max){
+      var ty = py(tgt);
+      targetSVG = '<line x1="'+pad.l+'" y1="'+ty+'" x2="'+(W-pad.r)+'" y2="'+ty+'" stroke="#3fb950" stroke-width="0.7" stroke-dasharray="3,2" opacity="0.5"/>';
+    }
+  }
+  // Points
+  var dotsSVG = vals.map(function(v,i){
+    return '<circle cx="'+px(i)+'" cy="'+py(v)+'" r="'+(i===n-1?3:1.8)+'" fill="'+(i===n-1?lineColor:'#4a9fe0')+'" opacity="'+(i===n-1?1:0.6)+'"/>';
+  }).join('');
+  // Valeur Y-axis : min et max
+  var yAxisSVG = '<text x="'+(pad.l-3)+'" y="'+(pad.t+4)+'" text-anchor="end" font-size="7" fill="#8fa8c0" font-family="monospace">'+max.toFixed(max%1===0?0:1)+'</text>'
+    + '<text x="'+(pad.l-3)+'" y="'+(pad.t+iH+4)+'" text-anchor="end" font-size="7" fill="#8fa8c0" font-family="monospace">'+min.toFixed(min%1===0?0:1)+'</text>';
+  return '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="overflow:visible;">'
+    + '<line x1="'+pad.l+'" y1="'+pad.t+'" x2="'+pad.l+'" y2="'+(pad.t+iH)+'" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>'
+    + '<line x1="'+pad.l+'" y1="'+(pad.t+iH)+'" x2="'+(W-pad.r)+'" y2="'+(pad.t+iH)+'" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>'
+    + targetSVG
+    + '<polyline points="'+pts+'" fill="none" stroke="'+lineColor+'" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>'
+    + dotsSVG + labelSVG + yAxisSVG + '</svg>';
+}
+
+
+
+// ════════════════════════════════════════════════════════════════
+// INTERFACE CAMO → SMS
+// AMC1 CAMO.A.200(a)(2) · AMC1 ORO.GEN.200(a)(3)
+// Remontée des signaux CAMO vers le registre de dangers SMS
+// ════════════════════════════════════════════════════════════════
+function getCAMOSignals(){ try{ return JSON.parse(localStorage.getItem('safCAMOSignals')||'[]'); }catch(e){ return []; } }
+function saveCAMOSignals(arr){
+  localStorage.setItem('safCAMOSignals', JSON.stringify(arr));
+  if(typeof window.safCloudScheduleSave==='function') window.safCloudScheduleSave();
+}
+
+var CAMO_SIGNAL_TYPES = [
+  'Défaut récurrent aéronef','Consigne de navigabilité (AD) critique','Incident de maintenance','Dégradation constatée (composant/système)','Non-conformité CAME','Dépassement potentiel LLP','Tendance fiabilité dégradée','Changement organisationnel CAMO','Autre signal sécurité CAMO'
+];
+
+function updateCAMOBadge(){
+  var el = document.getElementById('cnt-camo-signals');
+  if(el){ var open = getCAMOSignals().filter(function(s){ return s.status !== 'closed'; }).length; el.textContent = open || ''; }
+}
+
+function showCAMOSignalForm(editId){
+  var wrap = document.getElementById('camo-signal-form-wrap');
+  if(!wrap) return;
+  var ex = editId ? (getCAMOSignals().find(function(s){ return s.id === editId; }) || {}) : {};
+  wrap.style.display = 'block';
+  wrap.innerHTML = '<div class="chart-card" style="padding:24px;margin-bottom:20px;">'
+    +'<div class="chart-title" style="margin-bottom:18px;">🔗 '+(editId?'Modifier':'Nouveau')+' signal CAMO → SMS</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">'
+    +'<div class="form-field" style="margin:0;"><label class="field-label">Date *</label><input id="csi-date" type="date" value="'+(ex.date||new Date().toISOString().slice(0,10))+'" style="width:100%;"/></div>'
+    +'<div class="form-field" style="margin:0;"><label class="field-label">Type de signal *</label><select id="csi-type" style="width:100%;"><option value="">Sélectionner…</option>'
+    +CAMO_SIGNAL_TYPES.map(function(t){ return '<option value="'+t+'"'+(ex.type===t?' selected':'')+'>'+t+'</option>'; }).join('')
+    +'</select></div>'
+    +'<div class="form-field" style="margin:0;"><label class="field-label">Référence (aéronef/composant)</label><input id="csi-ref" type="text" placeholder="ex: F-HABC / Makila 1A2 / AD 2026-015" value="'+(ex.ref||'')+'"/></div>'
+    +'</div>'
+    +'<div class="form-field" style="margin:0 0 14px;"><label class="field-label">Description du signal *</label><textarea id="csi-desc" rows="3" placeholder="Décrire le danger ou la non-conformité identifié par la CAMO…">'+(ex.description||'')+'</textarea></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">'
+    +'<div class="form-field" style="margin:0;"><label class="field-label">Impact sécurité potentiel</label><select id="csi-impact" style="width:100%;"><option value="low"'+(ex.impact==='low'?' selected':'')+'>Faible — surveillance accrue</option><option value="medium"'+(ex.impact==='medium'?' selected':'')+'>Moyen — action corrective requise</option><option value="high"'+(ex.impact==='high'?' selected':'')+'>Élevé — action immédiate SMS</option></select></div>'
+    +'<div class="form-field" style="margin:0;"><label class="field-label">Lien Risk Register (ID)</label><input id="csi-riskid" type="text" placeholder="ex: GEN-3 · HESLO/G-2" value="'+(ex.risk_id||'')+'"/></div>'
+    +'</div>'
+    +'<div class="form-field" style="margin:0 0 14px;"><label class="field-label">Action SMS proposée</label><textarea id="csi-action" rows="2" placeholder="Action recommandée vers le Safety Manager ou le Risk Register…">'+(ex.sms_action||'')+'</textarea></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px;">'
+    +'<div class="form-field" style="margin:0;"><label class="field-label">Remonté par</label><input id="csi-author" type="text" placeholder="Nom / fonction CAMO" value="'+(ex.author||'')+'"/></div>'
+    +'<div class="form-field" style="margin:0;"><label class="field-label">Statut</label><select id="csi-status" style="width:100%;"><option value="open"'+(ex.status==='open'||!ex.status?' selected':'')+'>Ouvert — en attente SMS</option><option value="in_progress"'+(ex.status==='in_progress'?' selected':'')+'>En cours — traitement SMS</option><option value="closed"'+(ex.status==='closed'?' selected':'')+'>Clôturé</option></select></div>'
+    +'<div class="form-field" style="margin:0;"><label class="field-label">Date clôture</label><input id="csi-closedate" type="date" value="'+(ex.close_date||'')+'"/></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:12px;">'
+    +'<button class="btn btn-primary" onclick="saveCAMOSignal('+(editId?'''+editId+''':'null')+')">💾 Enregistrer</button>'
+    +'<button class="btn btn-ghost" onclick="hideCAMOSignalForm()">Annuler</button>'
+    +'</div></div>';
+}
+
+function hideCAMOSignalForm(){
+  var wrap = document.getElementById('camo-signal-form-wrap');
+  if(wrap){ wrap.style.display='none'; wrap.innerHTML=''; }
+}
+
+function saveCAMOSignal(editId){
+  var date = document.getElementById('csi-date').value;
+  var type = document.getElementById('csi-type').value;
+  var desc = document.getElementById('csi-desc').value.trim();
+  if(!date || !type || !desc){ alert('Date, type et description sont obligatoires.'); return; }
+  var signals = getCAMOSignals();
+  var signal = {
+    id: editId || ('CAMO-' + Date.now()),
+    date: date,
+    type: type,
+    ref: document.getElementById('csi-ref').value.trim(),
+    description: desc,
+    impact: document.getElementById('csi-impact').value,
+    risk_id: document.getElementById('csi-riskid').value.trim(),
+    sms_action: document.getElementById('csi-action').value.trim(),
+    author: document.getElementById('csi-author').value.trim(),
+    status: document.getElementById('csi-status').value,
+    close_date: document.getElementById('csi-closedate').value,
+    created_at: editId ? (signals.find(function(s){return s.id===editId;})||{}).created_at : new Date().toISOString()
+  };
+  if(editId){ var idx=signals.findIndex(function(s){return s.id===editId;}); if(idx>=0) signals[idx]=signal; else signals.push(signal); }
+  else { signals.push(signal); }
+  saveCAMOSignals(signals);
+  hideCAMOSignalForm();
+  renderCAMOSignals();
+}
+
+function deleteCAMOSignal(id){
+  if(!confirm('Supprimer ce signal CAMO ?')) return;
+  saveCAMOSignals(getCAMOSignals().filter(function(s){ return s.id!==id; }));
+  renderCAMOSignals();
+}
+
+function renderCAMOSignals(){
+  var wrap = document.getElementById('camo-signal-list'); if(!wrap) return;
+  updateCAMOBadge();
+  var signals = getCAMOSignals().slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+  if(!signals.length){
+    wrap.innerHTML='<div style="text-align:center;padding:40px;color:var(--grey-400);font-family:var(--font-mono);font-size:12px;border:1px dashed rgba(255,255,255,.12);border-radius:10px;margin-top:8px;">Aucun signal CAMO enregistré.<br>Utilisez « + Nouveau signal CAMO » pour remonter un danger ou une non-conformité identifié par la CAMO.</div>';
+    return;
+  }
+  var impactColors = {low:'#4a9fe0', medium:'#e3b341', high:'#f85149'};
+  var impactLabels = {low:'Faible', medium:'Moyen', high:'Élevé'};
+  var statusColors = {open:'#f85149', in_progress:'#e3b341', closed:'#3fb950'};
+  var statusLabels = {open:'Ouvert', in_progress:'En cours', closed:'Clôturé'};
+  var html = '<div style="display:flex;flex-direction:column;gap:14px;">';
+  signals.forEach(function(s){
+    var ic = impactColors[s.impact]||'#4a9fe0';
+    var sc = statusColors[s.status]||'#4a9fe0';
+    html += '<div style="background:var(--navy-mid);border:1px solid rgba(255,255,255,.1);border-left:4px solid '+ic+';border-radius:10px;padding:18px 22px;">'
+      +'<div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">'
+      +'<div style="flex:1;min-width:200px;">'
+      +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">'
+      +'<span style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">'+s.date+'</span>'
+      +'<span style="background:'+ic+'22;border:1px solid '+ic+';color:'+ic+';font-family:var(--font-mono);font-size:9px;padding:2px 8px;border-radius:4px;">'+s.type+'</span>'
+      +(s.ref?'<span style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">'+s.ref+'</span>':'')
+      +'<span style="background:'+sc+'22;border:1px solid '+sc+';color:'+sc+';font-family:var(--font-mono);font-size:9px;padding:2px 8px;border-radius:4px;">'+statusLabels[s.status]+'</span>'
+      +'<span style="font-family:var(--font-mono);font-size:9px;color:'+ic+';border:1px solid '+ic+'44;padding:2px 8px;border-radius:4px;">Impact: '+impactLabels[s.impact]+'</span>'
+      +'</div>'
+      +'<div style="font-size:13px;color:var(--white);margin-bottom:8px;line-height:1.5;">'+s.description+'</div>'
+      +(s.sms_action?'<div style="font-size:11px;color:var(--grey-200);padding:8px 12px;background:rgba(74,159,224,.06);border:1px solid rgba(74,159,224,.2);border-radius:6px;margin-bottom:8px;"><span style="font-family:var(--font-mono);font-size:9px;color:var(--steel-bright);">ACTION SMS PROPOSÉE : </span>'+s.sms_action+'</div>':'')
+      +'<div style="display:flex;gap:16px;flex-wrap:wrap;">'
+      +(s.risk_id?'<span style="font-family:var(--font-mono);font-size:10px;color:var(--gold-light);">⟶ Risk Register : '+s.risk_id+'</span>':'')
+      +(s.author?'<span style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">Remonté par : '+s.author+'</span>':'')
+      +(s.close_date&&s.status==='closed'?'<span style="font-family:var(--font-mono);font-size:10px;color:#3fb950;">Clôturé le : '+s.close_date+'</span>':'')
+      +'</div>'
+      +'</div>'
+      +'<div style="display:flex;gap:8px;flex-shrink:0;">'
+      +'<button class="btn btn-ghost" style="font-size:10px;padding:5px 10px;" onclick="showCAMOSignalForm(''+s.id+'')">✏️ Edit</button>'
+      +'<button class="btn btn-ghost" style="font-size:10px;padding:5px 10px;color:#f85149;" onclick="deleteCAMOSignal(''+s.id+'')">🗑</button>'
+      +'</div>'
+      +'</div></div>';
+  });
+  html += '</div>';
+  wrap.innerHTML = html;
+}
+
 
 // ════════════════════════════════════════════════════════════════
 // CONTROLS REVIEW
@@ -12074,7 +12321,7 @@ function deleteALoS(id){
 
   // Liste des clés gérées (identique à safExportAllData / importJSON)
   var KEYS = ['safRiskDB','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
-              'safLessons','safSRBMeetings','safAudits','safSAR','safALoS','lastModified',
+              'safLessons','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','lastModified',
               'ejsPublicKey','ejsServiceId','ejsTemplateId'];
 
   // --- Chargement depuis la base ---
@@ -12179,6 +12426,7 @@ function deleteALoS(id){
     await cloudLoad();
     ready = true;
     attachAutoSave();
+    if(typeof updateCAMOBadge==='function') updateCAMOBadge();
   }
 
   function attachAutoSave(){
@@ -12204,6 +12452,7 @@ function deleteALoS(id){
       ready = true;
       attachAutoSave();
       bar.style.display='flex'; bar.querySelector('.dot').style.background='#E07020'; barTxt.textContent='Mode local — non connecté'; document.getElementById('saf-logout-btn').style.display='none';
+      if(typeof updateCAMOBadge==='function') updateCAMOBadge();
     }
   })();
 })();
