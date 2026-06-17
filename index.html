@@ -83,6 +83,12 @@ header {
 #saf-user-info { font-family: var(--font-mono); font-size: 10px; color: var(--grey-400); letter-spacing: .04em; }
 #saf-logout-btn { font-family: var(--font-mono); font-size: 10px; color: var(--grey-400); background: none; border: 1px solid rgba(255,255,255,.1); padding: 4px 10px; border-radius: 4px; cursor: pointer; letter-spacing: .04em; }
 #saf-logout-btn:hover { color: var(--white); border-color: rgba(255,255,255,.3); }
+.export-bar { display:flex; align-items:center; gap:14px; margin:24px 0 0; padding:16px 20px; background:var(--navy-mid); border:1px solid rgba(255,255,255,.08); border-radius:10px; flex-wrap:wrap; }
+.export-bar-label { font-family:var(--font-mono); font-size:11px; color:var(--grey-400); flex:1; min-width:200px; }
+.btn-export-global { font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:.05em; padding:9px 20px; border-radius:6px; border:none; background:rgba(201,162,39,.18); color:var(--gold-light); border:1px solid rgba(201,162,39,.4); cursor:pointer; transition:background .2s; }
+.btn-export-global:hover { background:rgba(201,162,39,.32); }
+.btn-export-global:disabled { opacity:.45; cursor:not-allowed; }
+#export-status { font-family:var(--font-mono); font-size:10px; color:var(--grey-400); }
 
 /* ─── MAIN ────────────────────────────────────── */
 main { flex: 1; padding: 3rem 2rem; max-width: 960px; margin: 0 auto; width: 100%; }
@@ -192,6 +198,16 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     </a>
 
   </div>
+
+  <div class="export-bar" id="export-bar" style="display:none;">
+    <div class="export-bar-label">
+      <span style="color:var(--gold-light);font-weight:700;">💾 Sauvegarde globale</span><br>
+      Exporte les données des 4 modules (SMS · CMS · OMM · Audits) depuis Supabase en un seul fichier JSON.
+    </div>
+    <span id="export-status"></span>
+    <button class="btn-export-global" id="btn-export-global" onclick="exportGlobal()">⬇ Exporter tout en JSON</button>
+  </div>
+
 </main>
 
 <footer>SAF Hélico / SAF Aerogroup &nbsp;·&nbsp; AS 332 C1 Super Puma &nbsp;·&nbsp; FOCA / EASA</footer>
@@ -212,6 +228,8 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     var email = session.user.email;
     userInfo.textContent = email;
     logoutBtn.style.display = 'inline-block';
+    var bar = document.getElementById('export-bar');
+    if(bar) bar.style.display = 'flex';
   }
 
   async function doLogin(){
@@ -234,6 +252,64 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     await db.auth.signOut();
     location.reload();
   });
+
+  window.exportGlobal = async function(){
+    var btn = document.getElementById('btn-export-global');
+    var status = document.getElementById('export-status');
+    btn.disabled = true;
+    status.textContent = 'Connexion Supabase…';
+
+    var MODULES = [
+      { key: 'sms_data',       label: 'SMS' },
+      { key: 'cms_data',       label: 'CMS' },
+      { key: 'omm_appendices', label: 'OMM' },
+      { key: 'audit_data',     label: 'Audits' }
+    ];
+
+    var bundle = {
+      _meta: {
+        exported_at: new Date().toISOString(),
+        exported_by: document.getElementById('saf-user-info').textContent,
+        tool: 'SAF International — Export global',
+        version: '1.0',
+        modules: MODULES.map(function(m){ return m.key; })
+      }
+    };
+
+    var errors = [];
+    for(var i=0; i<MODULES.length; i++){
+      var mod = MODULES[i];
+      status.textContent = 'Chargement ' + mod.label + ' (' + (i+1) + '/' + MODULES.length + ')…';
+      try {
+        var res = await db.from('saf_data').select('data, updated_at').eq('module', mod.key).single();
+        if(res.error){ errors.push(mod.label + ': ' + res.error.message); bundle[mod.key] = null; }
+        else { bundle[mod.key] = { data: res.data.data, updated_at: res.data.updated_at }; }
+      } catch(e) {
+        errors.push(mod.label + ': ' + e.message);
+        bundle[mod.key] = null;
+      }
+    }
+
+    status.textContent = 'Génération du fichier…';
+    var json = JSON.stringify(bundle, null, 2);
+    var date = new Date().toISOString().slice(0,10);
+    var filename = 'SAF_International_backup_' + date + '.json';
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([json], {type:'application/json'}));
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    if(errors.length){
+      status.textContent = '⚠ Terminé avec erreurs : ' + errors.join(' · ');
+      status.style.color = '#e3b341';
+    } else {
+      status.textContent = '✓ ' + filename + ' téléchargé';
+      status.style.color = '#3fb950';
+    }
+    btn.disabled = false;
+  };
 
   // Session déjà active ?
   (async function(){
