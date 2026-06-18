@@ -5,6 +5,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>SAFETY MANAGEMENT SYSTEM</title>
+<!-- SAF ECCAIRS OCCLOG PATCH V2 TESTED 2026-06-18 -->
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&amp;family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&amp;family=Bebas+Neue&amp;display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -3790,6 +3791,7 @@ window._nativeLocalStorage = window.localStorage;
 // Actual persistence between sessions is handled through JSON Export/Import.
 (function() {
   'use strict';
+window.__SAF_ECCAIRS_OCCLOG_PATCH='V2_TESTED_2026-06-18';
   var _cache = {};
   function safeKey(k){ return k.replace(/[:\/\'"\\]/g,'-'); }
   // Asynchronous write to window.storage
@@ -8078,6 +8080,11 @@ function occEccairsCompleteness(occ){
   return {done:done,total:req.length,percent:req.length?Math.round(done*100/req.length):100};
 }
 function occActionTextForInput(a){ return (typeof a==='object' && a!==null) ? (a.text||'') : String(a||''); }
+
+
+window.occRenderEccairsFields = occRenderEccairsFields;
+window.occGetEccairsFields = occGetEccairsFields;
+window.occEccairsCompleteness = occEccairsCompleteness;
 
 function showOccurrenceForm(editId){
   const w=document.getElementById('occ-form-wrap');if(!w)return;w.style.display='';
