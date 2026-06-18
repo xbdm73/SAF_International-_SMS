@@ -1387,7 +1387,7 @@ nav { top: 118px !important; }
 </div>
 <div class="nav-item" onclick="showView('occurrences')">
 <span class="icon">⚡</span>
-<span class="nav-item-text"><span class="nav-app-code">APP12-OMM</span><span class="nav-app-title">Occurrence Log</span></span>
+<span class="nav-item-text"><span class="nav-app-code">APP12-OMM</span><span class="nav-app-title">Occurrence Log <span class="count" id="cnt-pending-reports" style="background:#f85149;color:#fff;border-radius:10px;padding:1px 6px;font-size:9px;display:none;"></span></span></span>
 </div>
 </div>
 <div class="nav-section">
@@ -2492,6 +2492,13 @@ nav { top: 118px !important; }
 <div class="view" id="view-occurrences">
 <div class="dash-header"><div><div class="dash-title">OCCURRENCE LOG</div><div class="dash-subtitle">Reg. (EU) 376/2014 Art. 4 — Occurrence tracking with 5 Whys root cause analysis</div></div>
 <button class="btn btn-primary" onclick="showOccurrenceForm()">＋ New Occurrence</button></div>
+<div id="mobile-reports-banner" style="display:none;margin:0 28px 16px;padding:14px 18px;background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.35);border-left:3px solid #f85149;border-radius:0 8px 8px 0;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+  <div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:#f85149;font-weight:700;letter-spacing:.5px;margin-bottom:3px;">⚠ SIGNALEMENTS MOBILES EN ATTENTE D'INSTRUCTION</div>
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);" id="mobile-banner-txt"></div>
+  </div>
+  <button onclick="filterPendingMobile()" style="padding:6px 14px;background:rgba(248,81,73,.2);border:1px solid rgba(248,81,73,.5);border-radius:5px;color:#f85149;font-family:var(--font-mono);font-size:10px;cursor:pointer;white-space:nowrap;flex-shrink:0;">Afficher uniquement</button>
+</div>
 <div id="occ-form-wrap" style="display:none;padding:0 28px 24px;"></div>
 <div id="occ-list-wrap" style="padding:0 28px 28px;"></div>
 <div id="five-whys-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:300;background:rgba(13,27,42,.97);overflow-y:auto;padding:32px;">
@@ -5754,7 +5761,7 @@ function showView(name) {
   if(name==='spi')         renderSPIView();
   if(name==='controls')    renderControlsView();
   if(name==='bowtie')    { btPopulateSelect(); renderBowtie(); }
-  if(name==='occurrences') renderOccurrenceList();
+  if(name==='occurrences'){ renderOccurrenceList(); if(typeof updatePendingBadge==='function') updatePendingBadge(); }
   if(name==='lessons')     renderLessonsList();
   if(name==='erp')           { erpShowSection('contacts'); }
   if(name==='change')      { renderSavedCSList(); csRenderWorkflowBar(document.getElementById('c-workflow-status')?.value||'draft'); }
@@ -7461,6 +7468,78 @@ function updateCAMOBadge(){
   if(el){ var open = getCAMOSignals().filter(function(s){ return s.status !== 'closed'; }).length; el.textContent = open || ''; }
 }
 
+function updatePendingBadge(){
+  var occs = getOccurrences();
+  var pending = occs.filter(function(o){ return o.status === 'pending_review'; });
+  var n = pending.length;
+  // Nav badge
+  var badge = document.getElementById('cnt-pending-reports');
+  if(badge){ badge.textContent = n || ''; badge.style.display = n ? 'inline-block' : 'none'; }
+  // Banner
+  var banner = document.getElementById('mobile-reports-banner');
+  var txt = document.getElementById('mobile-banner-txt');
+  if(banner){
+    banner.style.display = n ? 'flex' : 'none';
+    if(txt) txt.textContent = n + ' signalement' + (n > 1 ? 's' : '') + ' mobile' + (n > 1 ? 's' : '') + ' reçu' + (n > 1 ? 's' : '') + ' via SAF_Report — à ouvrir, instruire (Just Culture / 5 Whys) et clôturer.';
+  }
+  // Tile in dashboard
+  var tile = document.getElementById('pending-count-tile');
+  if(tile) tile.textContent = n;
+}
+
+function filterPendingMobile(){
+  showView('occurrences');
+  setTimeout(function(){
+    var occs = getOccurrences().sort(function(a,b){ return new Date(b.date)-new Date(a.date); });
+    var pending = occs.filter(function(o){ return o.status === 'pending_review'; });
+    var el = document.getElementById('occ-list-wrap');
+    if(!el) return;
+    if(!pending.length){
+      el.innerHTML = '<div style="color:var(--grey-400);font-family:var(--font-mono);font-size:12px;padding:20px;text-align:center;border:1px dashed rgba(255,255,255,.1);border-radius:8px;">Aucun signalement mobile en attente.</div>';
+      return;
+    }
+    // Inject a reset button at top
+    var resetBar = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:10px 14px;background:rgba(248,81,73,.06);border:1px solid rgba(248,81,73,.25);border-radius:6px;">'
+      + '<span style="font-family:var(--font-mono);font-size:10px;color:#f85149;">📱 Filtre actif : signalements mobiles en attente ('+pending.length+')</span>'
+      + '<button onclick="renderOccurrenceList()" style="padding:4px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:4px;color:var(--grey-200);font-family:var(--font-mono);font-size:10px;cursor:pointer;">✕ Tout afficher</button>'
+      + '</div>';
+    var sevColors = {accident:'#f85149',serious:'#f85149',incident:'#e3b341',hazard:'#8fa8c0'};
+    var sevLabel  = {accident:'ACCIDENT',serious:'SERIOUS INC.',incident:'INCIDENT',hazard:'HAZARD'};
+    var html = resetBar + '<div class="chart-card" style="padding:0;overflow:hidden;">'
+      + '<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead>'
+      + '<tr style="background:rgba(248,81,73,.08);">'
+      + '<th style="text-align:left;padding:10px 14px;font-family:var(--font-mono);font-size:10px;color:#f85149;">ID</th>'
+      + '<th style="padding:10px 14px;font-family:var(--font-mono);font-size:10px;color:#f85149;">Date</th>'
+      + '<th style="padding:10px 14px;font-family:var(--font-mono);font-size:10px;color:#f85149;">Entité</th>'
+      + '<th style="padding:10px 14px;font-family:var(--font-mono);font-size:10px;color:#f85149;">Sévérité</th>'
+      + '<th style="padding:10px 14px;font-family:var(--font-mono);font-size:10px;color:#f85149;">Description</th>'
+      + '<th style="padding:10px 14px;font-family:var(--font-mono);font-size:10px;color:#f85149;">Reporter</th>'
+      + '<th style="padding:10px 14px;font-family:var(--font-mono);font-size:10px;color:#f85149;">Action</th>'
+      + '</tr></thead><tbody>';
+    pending.forEach(function(o){
+      var sc = sevColors[o.severity] || '#8fa8c0';
+      var sl = sevLabel[o.severity]  || (o.severity || '—').toUpperCase();
+      html += '<tr style="border-bottom:1px solid rgba(255,255,255,.05);background:rgba(248,81,73,.03);">'
+        + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);">' + o.id + '</td>'
+        + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;">' + (o.date||'—') + '</td>'
+        + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--grey-200);">' + (o.entity||'—') + '</td>'
+        + '<td style="padding:8px 14px;"><span style="background:'+sc+'22;color:'+sc+';border:1px solid '+sc+'55;border-radius:3px;padding:2px 7px;font-family:var(--font-mono);font-size:9px;font-weight:700;">'+sl+'</span></td>'
+        + '<td style="padding:8px 14px;color:var(--grey-200);">' + (o.description||'').slice(0,60) + '</td>'
+        + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">' + (o.reporter||'—') + '</td>'
+        + '<td style="padding:8px 14px;"><button class="edit-occ-btn" data-id="'+o.id+'" style="padding:4px 12px;background:rgba(248,81,73,.2);border:1px solid rgba(248,81,73,.5);border-radius:4px;color:#f85149;font-family:var(--font-mono);font-size:10px;cursor:pointer;font-weight:700;">▶ Instruire</button></td>'
+        + '</tr>';
+    });
+    html += '</tbody></table></div>';
+    el.innerHTML = html;
+    el.querySelectorAll('.edit-occ-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        showOccurrenceForm(this.getAttribute('data-id'));
+        document.getElementById('occ-form-wrap')?.scrollIntoView({behavior:'smooth',block:'start'});
+      });
+    });
+  }, 80);
+}
+
 function showCAMOSignalForm(editId){
   var wrap = document.getElementById('camo-signal-form-wrap');
   if(!wrap) return;
@@ -7532,7 +7611,7 @@ function deleteCAMOSignal(id){
 
 function renderCAMOSignals(){
   var wrap = document.getElementById('camo-signal-list'); if(!wrap) return;
-  updateCAMOBadge();
+  updateCAMOBadge(); updatePendingBadge();
   var signals = getCAMOSignals().slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
   if(!signals.length){
     wrap.innerHTML='<div style="text-align:center;padding:40px;color:var(--grey-400);font-family:var(--font-mono);font-size:12px;border:1px dashed rgba(255,255,255,.12);border-radius:10px;margin-top:8px;">Aucun signal CAMO enregistré.<br>Utilisez « + Nouveau signal CAMO » pour remonter un danger ou une non-conformité identifié par la CAMO.</div>';
@@ -8139,11 +8218,12 @@ function renderOccurrenceList() {
   var accSer   = occs.filter(function(o){return o.severity==='accident'||o.severity==='serious';}).length;
   var linked   = occs.filter(function(o){return o.risk_link;}).length;
 
-  var html = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">'
+  var html = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;">'
     + '<div style="background:var(--navy-mid);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:var(--steel-bright);">' + occs.length + '</div><div style="font-size:10px;color:var(--grey-400);font-family:var(--font-mono);margin-top:4px;">Total occurrences</div></div>'
     + '<div style="background:var(--navy-mid);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:#e3b341;">' + byYear + '</div><div style="font-size:10px;color:var(--grey-400);font-family:var(--font-mono);margin-top:4px;">This year (' + thisYear + ')</div></div>'
     + '<div style="background:var(--navy-mid);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:#f85149;">' + accSer + '</div><div style="font-size:10px;color:var(--grey-400);font-family:var(--font-mono);margin-top:4px;">Accidents / Serious</div></div>'
     + '<div style="background:var(--navy-mid);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:#3fb950;">' + linked + '</div><div style="font-size:10px;color:var(--grey-400);font-family:var(--font-mono);margin-top:4px;">Linked to risk DB</div></div>'
+    + '<div style="background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:14px;text-align:center;cursor:pointer;" onclick="filterPendingMobile()"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:#f85149;" id="pending-count-tile">' + occs.filter(function(o){return o.status==='pending_review';}).length + '</div><div style="font-size:10px;color:#f85149;font-family:var(--font-mono);margin-top:4px;opacity:.8;">⚠ À instruire</div></div>'
     + '</div>';
 
   html += '<div class="chart-card" style="padding:0;overflow:hidden;">'
@@ -8163,8 +8243,11 @@ function renderOccurrenceList() {
     var sc  = sevColors[o.severity] || '#8fa8c0';
     var sl  = sevLabel[o.severity]  || (o.severity || '—').toUpperCase();
     var fw5done = (o.five_whys && o.five_whys.root_cause);
-    html += '<tr style="border-bottom:1px solid rgba(255,255,255,.05);">'
-      + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);">' + o.id + '</td>'
+    var isPending = (o.status === 'pending_review');
+    var rowStyle = isPending ? 'border-bottom:1px solid rgba(255,255,255,.05);background:rgba(248,81,73,.04);' : 'border-bottom:1px solid rgba(255,255,255,.05);';
+    var pendingTag = isPending ? '<span style="display:inline-block;background:rgba(248,81,73,.2);border:1px solid rgba(248,81,73,.5);color:#f85149;border-radius:3px;padding:1px 5px;font-family:var(--font-mono);font-size:8px;font-weight:700;letter-spacing:.5px;margin-left:4px;">📱 À INSTRUIRE</span>' : '';
+    html += '<tr style="'+rowStyle+'">'
+      + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);">' + o.id + pendingTag + '</td>'
       + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;">' + o.date + '</td>'
       + '<td style="padding:8px 14px;"><span style="background:' + sc + '22;color:' + sc + ';border:1px solid ' + sc + '55;border-radius:3px;padding:2px 7px;font-family:var(--font-mono);font-size:9px;font-weight:700;">' + sl + '</span></td>'
       + '<td style="padding:8px 14px;color:var(--grey-200);">' + (o.description || '').slice(0, 55) + '</td>'
@@ -12640,7 +12723,7 @@ function deleteALoS(id){
     await cloudLoad();
     ready = true;
     attachAutoSave();
-    if(typeof updateCAMOBadge==='function') updateCAMOBadge();
+    if(typeof updateCAMOBadge==='function') updateCAMOBadge(); if(typeof updatePendingBadge==='function') updatePendingBadge();
   }
 
   function attachAutoSave(){
@@ -12666,7 +12749,7 @@ function deleteALoS(id){
       ready = true;
       attachAutoSave();
       bar.style.display='flex'; bar.querySelector('.dot').style.background='#E07020'; barTxt.textContent='Mode local — non connecté'; document.getElementById('saf-logout-btn').style.display='none';
-      if(typeof updateCAMOBadge==='function') updateCAMOBadge();
+      if(typeof updateCAMOBadge==='function') updateCAMOBadge(); if(typeof updatePendingBadge==='function') updatePendingBadge();
     }
   })();
 })();
