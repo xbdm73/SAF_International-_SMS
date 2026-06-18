@@ -2491,7 +2491,10 @@ nav { top: 118px !important; }
 </div></div>
 <div class="view" id="view-occurrences">
 <div class="dash-header"><div><div class="dash-title">OCCURRENCE LOG</div><div class="dash-subtitle">Reg. (EU) 376/2014 Art. 4 — Occurrence tracking with 5 Whys root cause analysis</div></div>
-<button class="btn btn-primary" onclick="showOccurrenceForm()">＋ New Occurrence</button></div>
+<div style="display:flex;gap:8px;align-items:center;">
+<button class="btn" style="background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.4);color:#f85149;font-family:var(--font-mono);font-size:11px;padding:7px 14px;border-radius:6px;cursor:pointer;" onclick="if(typeof safImportMobileReports==='function') safImportMobileReports().then(function(){ showToast('Vérification terminée','success'); })" title="Vérifier les rapports mobiles en attente dans saf_reports">📱 Rapports mobiles</button>
+<button class="btn btn-primary" onclick="showOccurrenceForm()">＋ New Occurrence</button>
+</div></div>
 <div id="mobile-reports-banner" style="display:none;margin:0 28px 16px;padding:14px 18px;background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.35);border-left:3px solid #f85149;border-radius:0 8px 8px 0;display:flex;align-items:center;justify-content:space-between;gap:16px;">
   <div>
     <div style="font-family:var(--font-mono);font-size:11px;color:#f85149;font-weight:700;letter-spacing:.5px;margin-bottom:3px;">⚠ SIGNALEMENTS MOBILES EN ATTENTE D'INSTRUCTION</div>
@@ -12721,10 +12724,59 @@ function deleteALoS(id){
     if(session) setBar('ok','Connecté : '+session.user.email);
     authenticated = true;
     await cloudLoad();
+    await importMobileReports();
     ready = true;
     attachAutoSave();
     if(typeof updateCAMOBadge==='function') updateCAMOBadge(); if(typeof updatePendingBadge==='function') updatePendingBadge();
   }
+
+  /* ── Import des rapports mobiles depuis saf_reports ── */
+  async function importMobileReports(){
+    try{
+      var res = await db.from('saf_reports')
+        .select('report_id, submitted_at, report_data')
+        .eq('status','pending_review')
+        .order('submitted_at', {ascending:false});
+      if(res.error || !res.data || !res.data.length) return;
+
+      var existing = [];
+      try{ existing = JSON.parse(localStorage.getItem('safOccurrences')||'[]'); }catch(e){}
+      if(!Array.isArray(existing)) existing = [];
+      var existingIds = new Set(existing.map(function(o){ return o.id; }));
+
+      var newOnes = [];
+      res.data.forEach(function(row){
+        var occ = row.report_data;
+        if(!occ || existingIds.has(occ.id)) return; // déjà importé
+        newOnes.push(occ);
+      });
+
+      if(!newOnes.length) return;
+
+      // Fusion : nouveaux rapports en tête
+      existing = newOnes.concat(existing);
+      localStorage.setItem('safOccurrences', JSON.stringify(existing));
+
+      // Marque comme importés dans saf_reports (status → 'imported')
+      var ids = newOnes.map(function(o){ return o.id; });
+      await db.from('saf_reports')
+        .update({status:'imported'})
+        .in('report_id', ids);
+
+      // Déclenche une sauvegarde cloud pour persister la fusion
+      if(typeof window.safCloudScheduleSave==='function') window.safCloudScheduleSave();
+
+      // Rafraîchit l'affichage
+      if(typeof renderOccurrenceList==='function') renderOccurrenceList();
+      if(typeof updatePendingBadge==='function') updatePendingBadge();
+
+      // Toast de notification
+      if(typeof showToast==='function')
+        showToast(newOnes.length+' rapport'+(newOnes.length>1?'s':'')+' mobile'+(newOnes.length>1?'s':'')+' importé'+(newOnes.length>1?'s':''), 'success');
+
+    }catch(e){ console.warn('importMobileReports:', e); }
+  }
+  window.safImportMobileReports = importMobileReports;
 
   function attachAutoSave(){
     document.addEventListener('input',  scheduleSave, true);
