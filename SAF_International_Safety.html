@@ -12853,34 +12853,54 @@ function deleteALoS(id){
       var existingIds = new Set(existing.map(function(o){ return o.id; }));
 
       var newOnes = [];
+      var reportIdMap = {}; // occ.id -> report_id Supabase
       res.data.forEach(function(row){
         var occ = row.report_data;
-        if(!occ || existingIds.has(occ.id)) return; // déjà importé
+        if(!occ || existingIds.has(occ.id)) return; // deja importe
         newOnes.push(occ);
+        reportIdMap[occ.id] = row.report_id;
       });
 
       if(!newOnes.length) return;
 
-      // Fusion : nouveaux rapports en tête
+      // Fusion : nouveaux rapports en tete
       existing = newOnes.concat(existing);
       localStorage.setItem('safOccurrences', JSON.stringify(existing));
 
-      // Marque comme importés dans saf_reports (status → 'imported')
-      var ids = newOnes.map(function(o){ return o.id; });
-      await db.from('saf_reports')
-        .update({status:'imported'})
-        .in('report_id', ids);
-
-      // Déclenche une sauvegarde cloud pour persister la fusion
-      if(typeof window.safCloudScheduleSave==='function') window.safCloudScheduleSave();
-
-      // Rafraîchit l'affichage
+      // Rafraichit l'affichage immediatement
       if(typeof renderOccurrenceList==='function') renderOccurrenceList();
       if(typeof updatePendingBadge==='function') updatePendingBadge();
 
+      // Sauvegarde cloud SYNCHRONE - on attend confirmation avant de marquer 'imported'
+      // Evite qu'un F5 rapide efface le SR si cloudSave n'avait pas eu le temps de tourner
+      var saveOk = false;
+      try{
+        if(authenticated && typeof window.safExportForCloud === 'function'){
+          var payload = window.safExportForCloud();
+          var saveRes = await db.from('saf_data').upsert(
+            { module: MODULE, data: payload, updated_at: new Date() },
+            { onConflict: 'module' }
+          );
+          if(!saveRes.error){ saveOk = true; setBar('ok','Synchronise '+new Date().toLocaleTimeString()); }
+          else{ setBar('ok','Erreur sauvegarde: '+saveRes.error.message); }
+        }
+      }catch(e2){ console.warn('importMobileReports cloudSave:', e2); }
+
+      // On marque 'imported' dans saf_reports SEULEMENT si la sauvegarde cloud a reussi
+      // Si elle a echoue (hors-ligne, non authentifie), les SR restent en pending_review
+      // et seront re-importes au prochain chargement
+      if(saveOk){
+        var supabaseIds = newOnes.map(function(o){ return reportIdMap[o.id]; }).filter(Boolean);
+        if(supabaseIds.length){
+          await db.from('saf_reports')
+            .update({status:'imported'})
+            .in('report_id', supabaseIds);
+        }
+      }
+
       // Toast de notification
       if(typeof showToast==='function')
-        showToast(newOnes.length+' rapport'+(newOnes.length>1?'s':'')+' mobile'+(newOnes.length>1?'s':'')+' importé'+(newOnes.length>1?'s':''), 'success');
+        showToast(newOnes.length+' rapport'+(newOnes.length>1?'s':'')+' mobile'+(newOnes.length>1?'s':'')+' importe'+(newOnes.length>1?'s':''), 'success');
 
     }catch(e){ console.warn('importMobileReports:', e); }
   }
