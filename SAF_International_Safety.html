@@ -12877,10 +12877,13 @@ function deleteALoS(id){
               'safLessons','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','lastModified',
               'ejsPublicKey','ejsServiceId','ejsTemplateId'];
 
-  // --- Chargement depuis la base ---
+  // --- Chargement depuis la base --- (timeout 6s pour éviter le blocage)
   async function cloudLoad(){
     try{
-      var res = await db.from('saf_data').select('data').eq('module', MODULE).single();
+      var res = await Promise.race([
+        db.from('saf_data').select('data').eq('module', MODULE).single(),
+        new Promise(function(_, reject){ setTimeout(function(){ reject(new Error('timeout réseau')); }, 6000); })
+      ]);
       if(res.error){
         if(res.error.code === 'PGRST116'){ setBar('ok','Base vide — sauvegarde au 1er changement'); return; }
         setBar('ok','Erreur chargement: '+res.error.message); return;
@@ -13064,13 +13067,27 @@ function deleteALoS(id){
     await db.auth.signOut(); location.reload();
   });
 
-  // Chargement immédiat
+  // Chargement immédiat — avec timeout sur getSession() pour éviter le blocage infini
+  // (peut arriver si _nativeLocalStorage est inaccessible dans certains contextes)
   (async function(){
-    var res = await db.auth.getSession();
-    if(res.data && res.data.session){
-      onAuthenticated(res.data.session);
+    var session = null;
+    try{
+      var sessionResult = await Promise.race([
+        db.auth.getSession(),
+        new Promise(function(_, reject){ setTimeout(function(){ reject(new Error('timeout')); }, 4000); })
+      ]);
+      if(sessionResult && sessionResult.data && sessionResult.data.session){
+        session = sessionResult.data.session;
+      }
+    }catch(e){
+      // timeout ou erreur auth — on continue en mode local
+      console.warn('SAF getSession:', e.message);
+    }
+
+    if(session){
+      onAuthenticated(session);
     } else {
-      // Pas de session active — on charge quand même les données locales
+      // Pas de session active — on charge quand même les données depuis Supabase (anonyme)
       await cloudLoad();
       ready = true;
       attachAutoSave();
