@@ -3786,15 +3786,16 @@ nav { top: 118px !important; }
 // Utilisé par le client Supabase pour persister la session auth entre les pages
 window._nativeLocalStorage = window.localStorage;
 
-// SAF STORAGE SHIM v2 — memory cache + window.storage persistence (write-through)
-// NEVER overwrite in-memory variables on reload.
-// Actual persistence between sessions is handled through JSON Export/Import.
+// SAF STORAGE SHIM v3 — memory cache + window.storage write-through + BOOT RESTORE
+// Nouveauté v3 : recharge window.storage au démarrage pour reconstruire _cache
+// avant que le reste du code s'exécute (évite données perdues à chaque ouverture).
+window.__SAF_ECCAIRS_OCCLOG_PATCH='V3_2026-06-19';
 (function() {
   'use strict';
-window.__SAF_ECCAIRS_OCCLOG_PATCH='V2_TESTED_2026-06-18';
   var _cache = {};
+
   function safeKey(k){ return k.replace(/[:\/\'"\\]/g,'-'); }
-  // Asynchronous write to window.storage
+
   function persist(k,v){
     if(window.storage && typeof window.storage.set==='function'){
       window.storage.set(safeKey(k), v).catch(function(){});
@@ -3805,7 +3806,8 @@ window.__SAF_ECCAIRS_OCCLOG_PATCH='V2_TESTED_2026-06-18';
       window.storage.delete(safeKey(k)).catch(function(){});
     }
   }
-  // Objet localStorage synchrone
+
+  // Objet localStorage synchrone (identique v2)
   var _ls = {
     getItem:    function(k){ return Object.prototype.hasOwnProperty.call(_cache,k) ? _cache[k] : null; },
     setItem:    function(k,v){ _cache[k]=String(v); persist(k,String(v)); },
@@ -3817,6 +3819,54 @@ window.__SAF_ECCAIRS_OCCLOG_PATCH='V2_TESTED_2026-06-18';
   try{
     Object.defineProperty(window,'localStorage',{get:function(){return _ls;},configurable:true});
   }catch(e){ window.localStorage=_ls; }
+
+  // ── Restauration asynchrone depuis window.storage au boot ──
+  // Recharge toutes les clés SAF connues dans _cache AVANT le rendu de l'app.
+  var SAF_KEYS = [
+    'safRiskDB','safChangeStudies','safSPITargets','safFlightHours',
+    'safOccurrences','safLessons','safSRBMeetings','safAudits',
+    'safSAR','safALoS','safCAMOSignals','lastModified',
+    'ejsPublicKey','ejsServiceId','ejsTemplateId',
+    'saf_international_safety_management_header_v1'
+  ];
+
+  // Intercepte DOMContentLoaded pour bloquer le démarrage le temps du restore
+  var _domCbs = [];
+  var _domReady = false;
+  var _origAddEL = document.addEventListener.bind(document);
+  document.addEventListener = function(type, cb, opts){
+    if(type === 'DOMContentLoaded' && !_domReady){ _domCbs.push({cb:cb,opts:opts}); return; }
+    _origAddEL(type, cb, opts);
+  };
+  function _flushDOM(){
+    _domReady = true;
+    document.addEventListener = _origAddEL;
+    _domCbs.forEach(function(x){ _origAddEL('DOMContentLoaded', x.cb, x.opts); });
+    _domCbs = [];
+    if(document.readyState !== 'loading'){
+      _domCbs.forEach(function(x){ try{ x.cb(new Event('DOMContentLoaded')); }catch(e){} });
+    }
+  }
+
+  (async function bootRestore(){
+    try{
+      if(window.storage && typeof window.storage.list === 'function'){
+        var listed = await window.storage.list();
+        var keys = (listed && listed.keys) ? listed.keys : [];
+        for(var i=0; i<SAF_KEYS.length; i++){
+          var k = SAF_KEYS[i];
+          var sk = safeKey(k);
+          if(keys.indexOf(sk) !== -1 || keys.indexOf(k) !== -1){
+            try{
+              var res = await window.storage.get(sk);
+              if(res && res.value != null){ _cache[k] = res.value; }
+            }catch(e){}
+          }
+        }
+      }
+    }catch(e){ /* window.storage indisponible — mode purement mémoire */ }
+    _flushDOM();
+  })();
 })();
 </script>
 <script>
@@ -12770,16 +12820,18 @@ function deleteALoS(id){
 <!-- ===== INTÉGRATION SUPABASE (auto-save / auto-load) — SMS ===== -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  #saf-cloud-bar{position:fixed;bottom:12px;right:12px;z-index:9998;background:#0D1B2A;color:#fff;font:12px/1.4 'IBM Plex Mono',monospace;padding:7px 12px;border-radius:20px;box-shadow:0 4px 14px rgba(0,0,0,.3);display:none;align-items:center;gap:8px;border:1px solid #2E75B6}
-  #saf-cloud-bar .dot{width:8px;height:8px;border-radius:50%;background:#1A7A32}
+  #saf-cloud-bar{position:fixed;bottom:12px;right:12px;z-index:9998;background:#0D1B2A;color:#fff;font:12px/1.4 'IBM Plex Mono',monospace;padding:7px 12px;border-radius:20px;box-shadow:0 4px 14px rgba(0,0,0,.3);display:flex;align-items:center;gap:8px;border:1px solid #2E75B6}
+  #saf-cloud-bar .dot{width:8px;height:8px;border-radius:50%;background:#888}
   #saf-cloud-bar.saving .dot{background:#FFD700}
+  #saf-cloud-bar.ok .dot{background:#1A7A32}
+  #saf-cloud-bar.error .dot{background:#CC2200}
   #saf-cloud-bar button{background:none;border:1px solid #2E75B6;color:#9fc4e8;border-radius:4px;font-size:11px;padding:2px 7px;cursor:pointer}
 </style>
 
 
 <div id="saf-cloud-bar">
-  <span class="dot"></span><span id="saf-cloud-txt">Synchronisé</span>
-  <button id="saf-logout-btn">Déconnexion</button>
+  <span class="dot"></span><span id="saf-cloud-txt">Chargement…</span>
+  <button id="saf-logout-btn" style="display:none">Déconnexion</button>
 </div>
 
 <script>
@@ -12788,6 +12840,17 @@ function deleteALoS(id){
   var SUPABASE_URL = "https://qaqehmxoehcvzcojcqkm.supabase.co";
   var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q";
   var MODULE = "sms_data";                 // clé de stockage de CET outil dans saf_data
+
+  // Garde-fou : si le CDN Supabase n'a pas chargé, on reste en mode local sans planter
+  if(!window.supabase || typeof window.supabase.createClient !== 'function'){
+    var _bar = document.getElementById('saf-cloud-bar');
+    var _txt = document.getElementById('saf-cloud-txt');
+    if(_bar){ _bar.classList.add('error'); }
+    if(_txt){ _txt.textContent = 'Mode local (Supabase indisponible)'; }
+    window.safCloudScheduleSave = function(){};
+    return; // sort de la IIFE — pas d'erreur JS
+  }
+
   var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     auth: {
       storage: window._nativeLocalStorage,
@@ -12804,6 +12867,8 @@ function deleteALoS(id){
   function setBar(state, txt){
     bar.style.display = 'flex';
     bar.classList.toggle('saving', state === 'saving');
+    bar.classList.toggle('ok',     state === 'ok');
+    bar.classList.toggle('error',  state === 'error');
     barTxt.textContent = txt;
   }
 
@@ -12912,7 +12977,7 @@ function deleteALoS(id){
 
   // Chargement automatique sans login
   async function onAuthenticated(session){
-    if(session) setBar('ok','Connecté : '+session.user.email);
+    if(session){ setBar('ok','Connecté : '+session.user.email); document.getElementById('saf-logout-btn').style.display=''; }
     authenticated = true;
     await cloudLoad();
     await importMobileReports();
