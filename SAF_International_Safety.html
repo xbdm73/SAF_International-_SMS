@@ -12778,6 +12778,11 @@ function deleteALoS(id){
         if(Array.isArray(savedCS) && typeof CHANGE_STUDIES!=='undefined'){ CHANGE_STUDIES.length=0; savedCS.forEach(function(s){ CHANGE_STUDIES.push(s); }); }
       }catch(e){}
 
+      // Importe les rapports mobiles en attente (saf_reports) avant le rendu
+      // Ceci évite que cloudLoad() écrase safOccurrences sans avoir rapatrié
+      // les SR en pending_review → ils restent disponibles même après F5
+      try{ await importMobileReports(); }catch(e){}
+
       // Re-rendu : on relance les fonctions de l'outil pour refléter les données
       refreshAll();
       setBar('ok','Données chargées depuis le cloud');
