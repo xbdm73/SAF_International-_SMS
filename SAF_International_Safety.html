@@ -12843,31 +12843,50 @@ function deleteALoS(id){
       var data = res.data && res.data.data;
       if(!data){ setBar('ok','Base vide'); return; }
 
-      // Fusion intelligente : les champs fichiers lourds (eccairs2_pdf, image) ne sont
-      // pas synchronisés dans le cloud. On préserve donc ceux déjà présents en local.
-      function mergeHeavy(cloudJson, localJson, idField, heavyFields){
+      // Fusion bidirectionnelle : cloud + local → on garde TOUS les enregistrements
+      // présents dans l'un OU l'autre, en préservant les champs lourds (eccairs2_pdf, image)
+      // non synchronisés dans le cloud. Les entrées locales absentes du cloud (SR importés
+      // mais pas encore sauvegardés) sont ainsi préservées et ne sont plus perdues au F5.
+      function mergeBidi(cloudJson, localJson, idField, heavyFields){
         try{
           var cloudArr = JSON.parse(cloudJson||'[]');
           var localArr = JSON.parse(localJson||'[]');
-          if(!Array.isArray(cloudArr)) return cloudJson;
+          if(!Array.isArray(cloudArr)) cloudArr = [];
+          if(!Array.isArray(localArr)) localArr = [];
+
+          // Index par id
+          var cloudById = {};
+          cloudArr.forEach(function(it){ if(it && it[idField]!=null) cloudById[it[idField]] = it; });
           var localById = {};
-          (Array.isArray(localArr)?localArr:[]).forEach(function(it){ if(it && it[idField]!=null) localById[it[idField]] = it; });
+          localArr.forEach(function(it){ if(it && it[idField]!=null) localById[it[idField]] = it; });
+
+          // 1. Pour chaque entrée cloud : restaurer les champs lourds depuis le local
           cloudArr.forEach(function(it){
             if(!it) return;
             var loc = localById[it[idField]];
             heavyFields.forEach(function(f){
-              // si le cloud n'a pas le fichier mais le local oui → on garde le local
               if((!it[f] || it[f]==='') && loc && loc[f]) it[f] = loc[f];
             });
           });
+
+          // 2. Ajouter les entrées locales absentes du cloud (SR importés, modifications offline)
+          localArr.forEach(function(it){
+            if(!it || it[idField]==null) return;
+            if(!cloudById[it[idField]]){
+              cloudArr.push(it); // entrée locale uniquement → on la conserve
+            }
+          });
+
           return JSON.stringify(cloudArr);
         }catch(e){ return cloudJson; }
       }
 
       var localOcc = (function(){ try{ return localStorage.getItem('safOccurrences'); }catch(e){ return null; } })();
       var localLes = (function(){ try{ return localStorage.getItem('safLessons'); }catch(e){ return null; } })();
-      if(data.safOccurrences!=null) data.safOccurrences = mergeHeavy(data.safOccurrences, localOcc, 'id', ['eccairs2_pdf']);
-      if(data.safLessons!=null)     data.safLessons     = mergeHeavy(data.safLessons, localLes, 'id', ['image']);
+      if(data.safOccurrences!=null) data.safOccurrences = mergeBidi(data.safOccurrences, localOcc, 'id', ['eccairs2_pdf']);
+      else if(localOcc) data.safOccurrences = localOcc; // cloud vide mais local non vide → on garde le local
+      if(data.safLessons!=null)     data.safLessons     = mergeBidi(data.safLessons, localLes, 'id', ['image']);
+      else if(localLes) data.safLessons = localLes;
 
       // Réécrit les clés dans localStorage (mêmes clés que l'import natif)
       KEYS.forEach(function(k){ if(data[k]!=null){ try{ localStorage.setItem(k, data[k]); }catch(e){} } });
@@ -12936,8 +12955,7 @@ function deleteALoS(id){
   async function onAuthenticated(session){
     if(session) setBar('ok','Connecté : '+session.user.email);
     authenticated = true;
-    await cloudLoad();
-    await importMobileReports();
+    await cloudLoad(); // cloudLoad() appelle importMobileReports() en interne
     ready = true;
     attachAutoSave();
     if(typeof updateCAMOBadge==='function') updateCAMOBadge(); if(typeof updatePendingBadge==='function') updatePendingBadge();
