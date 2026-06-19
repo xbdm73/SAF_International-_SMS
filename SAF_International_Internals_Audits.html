@@ -2368,7 +2368,7 @@ document.getElementById('lineModal').addEventListener('click',function(e){ if(e.
   // Auth check — only load data if session active (auth overlay handles the rest)
   var _sb = window.supabase.createClient(
     'https://qaqehmxoehcvzcojcqkm.supabase.co',
-    'sb_publishable_iiqlYqnEnFRUP__sqhMrSg_1Z4vB15i'
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MTE1MDUsImV4cCI6MjA2MjI4NzUwNX0.B-xmDfW1gRCaQaEYkbqAeWVX5xvSH0KGEjUaAKPm8hE'
   );
   var _sess = await _sb.auth.getSession();
   if(_sess.data && _sess.data.session){
@@ -2406,7 +2406,7 @@ document.getElementById('lineModal').addEventListener('click',function(e){ if(e.
 (function(){
   "use strict";
   var SUPABASE_URL = "https://qaqehmxoehcvzcojcqkm.supabase.co";
-  var SUPABASE_KEY = "sb_publishable_iiqlYqnEnFRUP__sqhMrSg_1Z4vB15i";
+  var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MTE1MDUsImV4cCI6MjA2MjI4NzUwNX0.B-xmDfW1gRCaQaEYkbqAeWVX5xvSH0KGEjUaAKPm8hE";
   var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   var overlay  = document.getElementById('saf-login-overlay');
