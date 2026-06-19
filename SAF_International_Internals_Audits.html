@@ -615,7 +615,7 @@ textarea{resize:vertical;}
 // ══════════════════════════════════════
 const SB_URL  = 'https://qaqehmxoehcvzcojcqkm.supabase.co';
 const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q';
-const sb      = supabase.createClient(SB_URL, SB_KEY);
+const sb      = window.supabase.createClient(SB_URL, SB_KEY);
 const MODULE  = 'audit_grid';
 
 async function loadFromSupabase() {
