@@ -12818,7 +12818,8 @@ function deleteALoS(id){
 }
 </script>
 <!-- ===== INTÉGRATION SUPABASE (auto-save / auto-load) — SMS ===== -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window.__supabaseFailed=true"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js" onerror="window.__supabaseFailed=true"></script>
 <style>
   #saf-cloud-bar{position:fixed;bottom:12px;right:12px;z-index:9998;background:#0D1B2A;color:#fff;font:12px/1.4 'IBM Plex Mono',monospace;padding:7px 12px;border-radius:20px;box-shadow:0 4px 14px rgba(0,0,0,.3);display:flex;align-items:center;gap:8px;border:1px solid #2E75B6}
   #saf-cloud-bar .dot{width:8px;height:8px;border-radius:50%;background:#888}
@@ -12833,6 +12834,21 @@ function deleteALoS(id){
   <span class="dot"></span><span id="saf-cloud-txt">Chargement…</span>
   <button id="saf-logout-btn" style="display:none">Déconnexion</button>
 </div>
+<script>
+// Watchdog : si la barre affiche encore "Chargement…" après 5s, Supabase n'a pas chargé
+setTimeout(function(){
+  var txt = document.getElementById('saf-cloud-txt');
+  var bar = document.getElementById('saf-cloud-bar');
+  if(txt && txt.textContent === 'Chargement…'){
+    txt.textContent = 'Mode local (hors-ligne)';
+    if(bar){ bar.querySelector('.dot').style.background='#E07020'; }
+    // Active quand même l'autosave local
+    if(typeof window.safCloudScheduleSave === 'undefined'){
+      window.safCloudScheduleSave = function(){};
+    }
+  }
+}, 5000);
+</script>
 
 <script>
 (function(){
