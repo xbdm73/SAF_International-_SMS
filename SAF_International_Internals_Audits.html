@@ -623,6 +623,7 @@ async function loadFromSupabase() {
   // En file://, Supabase est bloqué par CORS — on travaille en mode local silencieux
   const isLocal = location.protocol === 'file:';
   if (isLocal) {
+    loadLocal();
     setSyncStatus('ok','Local mode');
     renderGrid();
     return;
@@ -643,6 +644,7 @@ async function loadFromSupabase() {
     setSyncStatus('err','Offline');
     // Pas de toast bloquant — l'outil reste utilisable sans Supabase
     console.warn('Supabase load error:', e.message);
+    loadLocal();
     renderGrid();
   }
 }
@@ -678,6 +680,22 @@ const DOMAINS = ["SMS", "OPS", "SPA", "SPO", "Maintenance", "CAMO", "Training", 
 let lines     = [];
 let session   = { ref:'', date:'', auditor:'', scope:'', status:'IN PROGRESS' };
 let editingId = null;
+
+// Local persistence fallback for file:// / offline mode
+const LOCAL_KEY = 'saf_internal_audits_v1';
+function saveLocal(){
+  try { localStorage.setItem(LOCAL_KEY, JSON.stringify({session, lines})); } catch(e) { console.warn('Local save error:', e.message); }
+}
+function loadLocal(){
+  try {
+    const raw = localStorage.getItem(LOCAL_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    if (d.session) { session = d.session; restoreSession(); }
+    if (Array.isArray(d.lines)) { lines = d.lines; }
+    return true;
+  } catch(e) { console.warn('Local load error:', e.message); return false; }
+}
 
 // Extractor state
 let pdfDoc       = null;
@@ -857,7 +875,7 @@ window.toggleDetail = function(id) {
 
 window.upd = function(id, field, val) {
   const l = lines.find(x=>x.id===id);
-  if (l) { l[field]=val; }
+  if (l) { l[field]=val; saveLocal(); }
 };
 
 window.rerender = function(id) {
@@ -915,12 +933,12 @@ window.saveLine = function() {
     const idx = lines.findIndex(x=>x.id===editingId);
     if (idx>=0) { const old=lines[idx]; l.effectStatus=old.effectStatus; l.effectDate=old.effectDate; l.effectComment=old.effectComment; lines[idx]=l; }
   } else { lines.push(l); }
-  closeModal(); renderGrid();
+  closeModal(); saveLocal(); renderGrid();
 };
 
 window.deleteLine = function(id) {
   if (!confirm('Delete cette ligne ?')) return;
-  lines = lines.filter(x=>x.id!==id); renderGrid();
+  lines = lines.filter(x=>x.id!==id); saveLocal(); renderGrid();
 };
 
 // ══════════════════════════════════════
@@ -1165,7 +1183,7 @@ window.sendToGrid = function() {
     effectStatus:'', effectDate:'', effectComment:''
   }));
   toast(`${sel.length} line(s) added to grid ✓`,'ok');
-  switchTab('Grid'); renderGrid();
+  saveLocal(); switchTab('Grid'); renderGrid();
 };
 
 // ══════════════════════════════════════
@@ -1359,7 +1377,7 @@ window.bankSendSelected = function() {
     evidence:'', gap:'', effectStatus:'', effectDate:'', effectComment:''
   }));
   toast(sel.length+' question(s) sent to grid ✓','ok');
-  switchTab('Grid'); renderGrid();
+  saveLocal(); switchTab('Grid'); renderGrid();
 };
 
 window.bankSendAll = function() {
@@ -1374,7 +1392,7 @@ window.bankSendAll = function() {
     evidence:'', gap:'', effectStatus:'', effectDate:'', effectComment:''
   }));
   toast(filled.length+' question(s) sent to grid ✓','ok');
-  switchTab('Grid'); renderGrid();
+  saveLocal(); switchTab('Grid'); renderGrid();
 };
 
 window.bankExport = function() {
@@ -1445,6 +1463,7 @@ document.getElementById('lineModal').addEventListener('click',function(e){ if(e.
     // Supabase unavailable (CDN blocked or error) — bypass login, go local
     var _cbar = document.getElementById('saf-cloud-bar');
     if (_cbar) _cbar.style.display = 'none';
+    loadLocal();
     setSyncStatus('ok','Local mode');
     renderGrid();
   }
@@ -1463,7 +1482,7 @@ document.getElementById('lineModal').addEventListener('click',function(e){ if(e.
   "use strict";
   var SUPABASE_URL = "https://qaqehmxoehcvzcojcqkm.supabase.co";
   var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q";
-  var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  var db = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
   var bar      = document.getElementById('saf-cloud-bar');
   var barTxt   = document.getElementById('saf-cloud-txt');
@@ -1476,12 +1495,19 @@ document.getElementById('lineModal').addEventListener('click',function(e){ if(e.
 
   // Auto-load without login
   (async function(){
-    if(typeof loadFromSupabase === 'function') await loadFromSupabase();
-    setBar('ok', 'Ready');
+    try {
+      if(typeof loadFromSupabase === 'function') await loadFromSupabase();
+      setBar('ok', 'Ready');
+    } catch(e) {
+      if(typeof loadLocal === 'function') loadLocal();
+      if(typeof renderGrid === 'function') renderGrid();
+      setBar('ok', 'Local mode');
+    }
   })();
 
   document.getElementById('saf-logout-btn').addEventListener('click', async function(){
-    await db.auth.signOut(); location.reload();
+    if (db && db.auth) await db.auth.signOut();
+    location.reload();
   });
 })();
 </script>
