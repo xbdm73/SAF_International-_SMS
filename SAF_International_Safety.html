@@ -12831,7 +12831,7 @@ function deleteALoS(id){
 
 
 <div id="saf-cloud-bar">
-  <span class="dot"></span><span id="saf-cloud-txt">Chargement…</span>
+  <span class="dot"></span><span id="saf-cloud-txt">Chargement...</span>
   <button id="saf-logout-btn" style="display:none">Déconnexion</button>
 </div>
 <script>
@@ -12839,7 +12839,7 @@ function deleteALoS(id){
 setTimeout(function(){
   var txt = document.getElementById('saf-cloud-txt');
   var bar = document.getElementById('saf-cloud-bar');
-  if(txt && txt.textContent === 'Chargement…'){
+  if(txt && txt.textContent === 'Chargement...'){
     txt.textContent = 'Mode local (hors-ligne)';
     if(bar){ bar.querySelector('.dot').style.background='#E07020'; }
     // Active quand même l'autosave local
@@ -12972,7 +12972,7 @@ setTimeout(function(){
     if(saving){ dirty = true; return; }
     if(!authenticated){ setBar('ok','Mode local — non connecté'); return; }
     if(typeof window.safExportForCloud !== 'function'){ return; }
-    saving = true; setBar('saving','Sauvegarde…');
+    saving = true; setBar('saving','Sauvegarde...');
     try{
       var payload = window.safExportForCloud();
       var res = await db.from('saf_data').upsert(
@@ -12989,7 +12989,7 @@ setTimeout(function(){
   function scheduleSave(){
     if(!ready) return;
     clearTimeout(saveTimer);
-    setBar('saving','Modification détectée…');
+    setBar('saving','Modification detectee...');
     saveTimer = setTimeout(cloudSave, 1500);
   }
   window.safCloudScheduleSave = scheduleSave;
@@ -13120,6 +13120,11 @@ function occCheckHFACSTrigger(){
   if(!wrap)return;
   wrap.style.display=(sev==='accident'||sev==='serious'||sev==='incident')?'':'none';
 }
+function safRemoveComment(btn){
+  var n=btn;
+  while(n && !n.hasAttribute('data-comment-ts')) n=n.parentElement;
+  if(n) n.remove();
+}
 function occAddInvestComment(commentObj){
   var container=document.getElementById('occ-invest-comments');if(!container)return;
   var author,text,ts;
@@ -13128,7 +13133,7 @@ function occAddInvestComment(commentObj){
     author=(document.getElementById('occ-invest-author')?.value||'SM').trim();
     text=(document.getElementById('occ-invest-comment-text')?.value||'').trim();
     ts=new Date().toISOString();
-    if(!text){showToast('Saisir un commentaire avant d'ajouter.','error');return;}
+    if(!text){showToast("Saisir un commentaire avant d'ajouter.",'error');return;}
     var inp=document.getElementById('occ-invest-comment-text');if(inp)inp.value='';
   }
   var d=new Date(ts);
@@ -13138,7 +13143,7 @@ function occAddInvestComment(commentObj){
   div.style.cssText='padding:10px 12px;background:rgba(74,159,224,.07);border:1px solid rgba(74,159,224,.18);border-left:3px solid rgba(74,159,224,.5);border-radius:0 6px 6px 0;position:relative;';
   div.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;"><span style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:#4A9FE0;">'+author+'</span><span style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);">'+dtStr+'</span></div>'
     +'<div style="font-size:12px;color:var(--grey-200);line-height:1.5;">'+(text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>'
-    +'<button type="button" onclick="this.closest('[data-comment-ts]').remove()" style="position:absolute;top:6px;right:6px;background:none;border:none;color:var(--grey-600);cursor:pointer;font-size:12px;">✕</button>';
+    +'<button type="button" onclick="safRemoveComment(this)" style="position:absolute;top:6px;right:6px;background:none;border:none;color:var(--grey-600);cursor:pointer;font-size:12px;">✕</button>';
   container.appendChild(div);
   container.scrollTop=container.scrollHeight;
 }
