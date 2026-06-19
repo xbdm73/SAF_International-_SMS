@@ -8946,7 +8946,7 @@ updateSrbProgress();
 // SUPABASE
 // ══════════════════════════════════════
 const SB_URL  = 'https://qaqehmxoehcvzcojcqkm.supabase.co';
-const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MTE1MDUsImV4cCI6MjA2MjI4NzUwNX0.B-xmDfW1gRCaQaEYkbqAeWVX5xvSH0KGEjUaAKPm8hE';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q';
 const sb      = supabase.createClient(SB_URL, SB_KEY);
 const MODULE  = 'audit_grid';
 
@@ -9763,7 +9763,7 @@ document.getElementById('lineModal').addEventListener('click',function(e){ if(e.
   // Auth check — only load data if session active (auth overlay handles the rest)
   var _sb = window.supabase.createClient(
     'https://qaqehmxoehcvzcojcqkm.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MTE1MDUsImV4cCI6MjA2MjI4NzUwNX0.B-xmDfW1gRCaQaEYkbqAeWVX5xvSH0KGEjUaAKPm8hE'
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q'
   );
   var _sess = await _sb.auth.getSession();
   if(_sess.data && _sess.data.session){
