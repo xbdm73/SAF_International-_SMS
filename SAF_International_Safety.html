@@ -8095,7 +8095,7 @@ function showOccurrenceForm(editId){
     <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
       <div class="form-field" style="margin:0;"><label class="field-label">Occurrence ID <span class="req">*</span><span style="font-size:9px;color:var(--grey-600);margin-left:5px;font-style:italic;">modifiable</span></label><input id="occ-custom-id" type="text" placeholder="ex. OCC-2024-001" style="width:100%;font-family:var(--font-mono);font-size:11px;" title="Identifiant unique de l'occurrence — modifiable librement"/></div>
       <div class="form-field" style="margin:0;"><label class="field-label">Date <span class="req">*</span></label><input id="occ-date" type="date" style="width:100%;"/></div>
-      <div class="form-field" style="margin:0;"><label class="field-label">Severity</label><select id="occ-severity" style="width:100%;"><option value="">Select…</option><option value="accident">Accident</option><option value="serious">Serious Incident</option><option value="incident">Incident</option><option value="hazard">Hazard / Near miss</option></select></div>
+      <div class="form-field" style="margin:0;"><label class="field-label">Severity</label><select id="occ-severity" style="width:100%;" onchange="occCheckHFACSTrigger()"><option value="">Select…</option><option value="accident">Accident</option><option value="serious">Serious Incident</option><option value="incident">Incident</option><option value="hazard">Hazard / Near miss</option></select></div>
       <div class="form-field" style="margin:0;"><label class="field-label">Linked risk ID</label><select id="occ-risk-link" style="width:100%;"><option value="">None</option>${DB.map(r=>`<option value="${r.id}">${r.id} — ${(r.event||'').slice(0,40)}</option>`).join('')}</select></div>
     </div>
     <div class="form-field" style="margin:0 0 12px;"><label class="field-label">Description <span class="req">*</span></label><textarea id="occ-desc" rows="3" placeholder="Brief factual description…"></textarea></div>
@@ -8162,6 +8162,103 @@ function showOccurrenceForm(editId){
       </div>
     </div>
 
+
+    <!-- ══ INVESTIGATIONS ══════════════════════════════════════════════ -->
+    <div id="occ-invest-wrap" style="margin-top:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:2px;color:#4A9FE0;text-transform:uppercase;border-bottom:1px solid rgba(74,159,224,.25);padding-bottom:6px;flex:1;">🔍 Investigations &amp; Comments</div>
+        <button type="button" class="occ-panel-toggle" onclick="occTogglePanel('occ-invest-body',this)" style="margin-left:12px;"><span class="occ-panel-chevron">▼</span> Replier / déplier</button>
+      </div>
+      <div id="occ-invest-body" class="occ-panel-body">
+        <!-- Status -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <label style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);letter-spacing:1px;text-transform:uppercase;flex-shrink:0;">Status investigation</label>
+          <select id="occ-invest-status" style="width:180px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--white);font-family:var(--font-mono);font-size:11px;padding:7px 10px;">
+            <option value="open">🔴 Ouvert</option>
+            <option value="ongoing">🟡 En cours</option>
+            <option value="closed">🟢 Clos</option>
+          </select>
+        </div>
+        <!-- Comment journal -->
+        <div style="margin-bottom:14px;">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Journal de commentaires</div>
+          <div id="occ-invest-comments" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;max-height:320px;overflow-y:auto;padding-right:4px;"></div>
+          <div style="display:grid;grid-template-columns:160px 1fr auto;gap:8px;align-items:end;">
+            <div class="form-field" style="margin:0;">
+              <label class="field-label">Auteur</label>
+              <select id="occ-invest-author" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--white);font-family:var(--font-mono);font-size:11px;padding:7px 8px;">
+                <option value="SM">SM</option>
+                <option value="NPFO">NPFO</option>
+                <option value="NPCT">NPCT</option>
+                <option value="NPGO">NPGO</option>
+                <option value="NPCA">NPCA</option>
+                <option value="ACM">ACM</option>
+                <option value="CMM">CMM</option>
+                <option value="Pilot">Pilot</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-field" style="margin:0;">
+              <label class="field-label">Commentaire</label>
+              <input type="text" id="occ-invest-comment-text" placeholder="Observation, fait, hypothèse, conclusion…" style="width:100%;"/>
+            </div>
+            <button type="button" onclick="occAddInvestComment()" style="padding:8px 14px;background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.4);border-radius:6px;color:#4A9FE0;font-family:var(--font-mono);font-size:11px;cursor:pointer;white-space:nowrap;height:fit-content;">+ Ajouter</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ HFACS ════════════════════════════════════════════════════════ -->
+    <div id="occ-hfacs-wrap" style="margin-top:16px;display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:2px;color:#e3b341;text-transform:uppercase;border-bottom:1px solid rgba(227,179,65,.25);padding-bottom:6px;flex:1;">⚠ HFACS Assessment — Human Factors Analysis &amp; Classification</div>
+        <button type="button" class="occ-panel-toggle" onclick="occTogglePanel('occ-hfacs-body',this)" style="margin-left:12px;"><span class="occ-panel-chevron">▼</span> Replier / déplier</button>
+      </div>
+      <div id="occ-hfacs-body" class="occ-panel-body">
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-bottom:16px;padding:8px 12px;background:rgba(227,179,65,.06);border-left:3px solid rgba(227,179,65,.4);border-radius:0 6px 6px 0;">
+          HFACS (Wiegmann &amp; Shappell) — 4 niveaux d'analyse. Cocher tous les facteurs applicables.
+        </div>
+
+        <!-- L4 — Organizational -->
+        <div style="margin-bottom:18px;">
+          <div style="font-family:var(--font-mono);font-size:10px;color:#f85149;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding:6px 10px;background:rgba(248,81,73,.08);border-radius:4px;">L4 — Organizational Influences</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+            ${['Resource Management — Staffing','Resource Management — Training','Resource Management — Equipment/facilities','Organizational Climate — Culture of safety','Organizational Climate — Policies','Organizational Process — Operations','Organizational Process — Procedures','Organizational Process — Oversight'].map(function(f){return '<label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--grey-200);cursor:pointer;padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;"><input type="checkbox" class="hfacs-cb" data-level="L4" value="'+f+'" style="width:auto;margin-top:2px;flex-shrink:0;"/> '+f+'</label>';}).join('')}
+          </div>
+        </div>
+
+        <!-- L3 — Unsafe Supervision -->
+        <div style="margin-bottom:18px;">
+          <div style="font-family:var(--font-mono);font-size:10px;color:#e05000;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding:6px 10px;background:rgba(224,80,0,.08);border-radius:4px;">L3 — Unsafe Supervision</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+            ${['Inadequate Supervision — Guidance','Inadequate Supervision — Oversight','Inadequate Supervision — Training opportunities','Planned Inappropriate Operations — Risk management','Planned Inappropriate Operations — Crew pairing','Failed to Correct — Known problem','Failed to Correct — Rule violations','Supervisory Violations — Rules/regulations'].map(function(f){return '<label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--grey-200);cursor:pointer;padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;"><input type="checkbox" class="hfacs-cb" data-level="L3" value="'+f+'" style="width:auto;margin-top:2px;flex-shrink:0;"/> '+f+'</label>';}).join('')}
+          </div>
+        </div>
+
+        <!-- L2 — Preconditions -->
+        <div style="margin-bottom:18px;">
+          <div style="font-family:var(--font-mono);font-size:10px;color:#e3b341;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding:6px 10px;background:rgba(227,179,65,.08);border-radius:4px;">L2 — Preconditions for Unsafe Acts</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+            ${['Environmental — Physical (weather, terrain)','Environmental — Technological (equip design)','Condition of Operator — Adverse mental (stress, fatigue)','Condition of Operator — Adverse physiological','Condition of Operator — Physical/mental limitation','Personnel Factors — CRM breakdown','Personnel Factors — Personal readiness'].map(function(f){return '<label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--grey-200);cursor:pointer;padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;"><input type="checkbox" class="hfacs-cb" data-level="L2" value="'+f+'" style="width:auto;margin-top:2px;flex-shrink:0;"/> '+f+'</label>';}).join('')}
+          </div>
+        </div>
+
+        <!-- L1 — Unsafe Acts -->
+        <div style="margin-bottom:18px;">
+          <div style="font-family:var(--font-mono);font-size:10px;color:#3fb950;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding:6px 10px;background:rgba(63,185,80,.08);border-radius:4px;">L1 — Unsafe Acts</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+            ${['Errors — Skill-based (slip/lapse)','Errors — Decision error','Errors — Perceptual error','Violations — Routine','Violations — Exceptional'].map(function(f){return '<label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--grey-200);cursor:pointer;padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;"><input type="checkbox" class="hfacs-cb" data-level="L1" value="'+f+'" style="width:auto;margin-top:2px;flex-shrink:0;"/> '+f+'</label>';}).join('')}
+          </div>
+        </div>
+
+        <!-- Narrative -->
+        <div class="form-field" style="margin:0;">
+          <label class="field-label">HFACS narrative / synthesis</label>
+          <textarea id="occ-hfacs-narrative" rows="3" placeholder="Synthèse des facteurs HFACS identifiés et leur enchaînement causal…"></textarea>
+        </div>
+      </div>
+    </div>
+
         <input type="hidden" id="occ-edit-id" value=""/>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
       <button onclick="saveOccurrence()" class="btn btn-primary">✓ Save occurrence</button>
@@ -8192,6 +8289,10 @@ function showOccurrenceForm(editId){
       var cb = document.querySelector('input[name="occ-cf"][value="'+cf+'"]');
       if(cb) cb.checked = true;
     });
+
+    // Restore investigation & HFACS
+    occRestoreInvestigation(_occ.investigation);
+    occRestoreHFACS(_occ.hfacs, _occ.severity);
 
     // Restore decision-tree answers
     if(_occ.just_culture){
@@ -8278,7 +8379,9 @@ function saveOccurrence(){
       created_at:   existing.created_at || new Date().toISOString(),
       updated_at:   new Date().toISOString(),
       five_whys:    occGetFiveWhys()||existing.five_whys||null,
-      eccairs:      occGetEccairsFields()
+      eccairs:      occGetEccairsFields(),
+      investigation: occGetInvestigation(existing.investigation),
+      hfacs:        occGetHFACS(existing.hfacs)
     };
     saveOccurrences(occs);
     document.getElementById('occ-form-wrap').style.display='none';
@@ -8304,7 +8407,9 @@ function saveOccurrence(){
       classification: document.getElementById('occ-classification')?.value||'',
       created_at:  new Date().toISOString(),
       five_whys:   occGetFiveWhys(),
-      eccairs:     occGetEccairsFields()
+      eccairs:     occGetEccairsFields(),
+      investigation: occGetInvestigation(null),
+      hfacs:        occGetHFACS(null)
     };
     occs.push(occ);
     saveOccurrences(occs);
@@ -12933,6 +13038,114 @@ function deleteALoS(id){
     }
   })();
 })();
+
+/* ══════════════════════════════════════════════════════════════════
+   INVESTIGATIONS & HFACS — functions
+══════════════════════════════════════════════════════════════════ */
+
+// ── Check HFACS visibility based on severity ──────────────────────
+function occCheckHFACSTrigger(){
+  var sev = (document.getElementById('occ-severity')?.value||'').toLowerCase();
+  var wrap = document.getElementById('occ-hfacs-wrap');
+  if(!wrap) return;
+  var show = (sev==='accident'||sev==='serious'||sev==='incident');
+  wrap.style.display = show ? '' : 'none';
+}
+
+// ── Add a comment to the journal ──────────────────────────────────
+function occAddInvestComment(commentObj){
+  var container = document.getElementById('occ-invest-comments');
+  if(!container) return;
+  var author, text, ts;
+  if(commentObj && typeof commentObj === 'object'){
+    author = commentObj.author; text = commentObj.text; ts = commentObj.ts;
+  } else {
+    author = (document.getElementById('occ-invest-author')?.value||'SM').trim();
+    text   = (document.getElementById('occ-invest-comment-text')?.value||'').trim();
+    ts     = new Date().toISOString();
+    if(!text){ showToast('Saisir un commentaire avant d'ajouter.','error'); return; }
+    var inp = document.getElementById('occ-invest-comment-text');
+    if(inp) inp.value = '';
+  }
+  var d = new Date(ts);
+  var dtStr = d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  var div = document.createElement('div');
+  div.dataset.commentTs = ts;
+  div.dataset.commentAuthor = author;
+  div.dataset.commentText = text;
+  div.style.cssText = 'padding:10px 12px;background:rgba(74,159,224,.07);border:1px solid rgba(74,159,224,.18);border-left:3px solid rgba(74,159,224,.5);border-radius:0 6px 6px 0;position:relative;';
+  div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">'
+    +'<span style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:#4A9FE0;">'+author+'</span>'
+    +'<span style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);">'+dtStr+'</span>'
+    +'</div>'
+    +'<div style="font-size:12px;color:var(--grey-200);line-height:1.5;">'+escapeHtml(text)+'</div>'
+    +'<button type="button" onclick="this.closest('[data-comment-ts]').remove()" title="Supprimer" style="position:absolute;top:6px;right:6px;background:none;border:none;color:var(--grey-600);cursor:pointer;font-size:12px;line-height:1;" onmouseover="this.style.color='#f85149'" onmouseout="this.style.color='var(--grey-600)'">✕</button>';
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+// ── Collect investigation data from DOM ───────────────────────────
+function occGetInvestigation(existing){
+  var status = document.getElementById('occ-invest-status')?.value || 'open';
+  var comments = [];
+  document.querySelectorAll('#occ-invest-comments [data-comment-ts]').forEach(function(el){
+    comments.push({
+      author: el.dataset.commentAuthor || '',
+      text:   el.dataset.commentText   || '',
+      ts:     el.dataset.commentTs     || ''
+    });
+  });
+  // Merge: keep any previously saved comments that are no longer in DOM (shouldn't happen but safety net)
+  return { status: status, comments: comments };
+}
+
+// ── Restore investigation data into DOM ───────────────────────────
+function occRestoreInvestigation(investigation){
+  if(!investigation) return;
+  var sel = document.getElementById('occ-invest-status');
+  if(sel && investigation.status) sel.value = investigation.status;
+  var container = document.getElementById('occ-invest-comments');
+  if(container) container.innerHTML = '';
+  (investigation.comments||[]).forEach(function(c){ occAddInvestComment(c); });
+}
+
+// ── Collect HFACS data from DOM ───────────────────────────────────
+function occGetHFACS(existing){
+  var L4=[],L3=[],L2=[],L1=[];
+  document.querySelectorAll('.hfacs-cb[data-level="L4"]:checked').forEach(function(cb){ L4.push(cb.value); });
+  document.querySelectorAll('.hfacs-cb[data-level="L3"]:checked').forEach(function(cb){ L3.push(cb.value); });
+  document.querySelectorAll('.hfacs-cb[data-level="L2"]:checked').forEach(function(cb){ L2.push(cb.value); });
+  document.querySelectorAll('.hfacs-cb[data-level="L1"]:checked').forEach(function(cb){ L1.push(cb.value); });
+  var narrative = document.getElementById('occ-hfacs-narrative')?.value||'';
+  var triggered = document.getElementById('occ-hfacs-wrap')?.style.display !== 'none';
+  return { triggered: triggered, L4: L4, L3: L3, L2: L2, L1: L1, narrative: narrative };
+}
+
+// ── Restore HFACS data into DOM ───────────────────────────────────
+function occRestoreHFACS(hfacs, severity){
+  // Determine visibility
+  var sev = (severity||'').toLowerCase();
+  var show = (sev==='accident'||sev==='serious'||sev==='incident') || (hfacs && hfacs.triggered);
+  var wrap = document.getElementById('occ-hfacs-wrap');
+  if(wrap) wrap.style.display = show ? '' : 'none';
+  if(!hfacs) return;
+  // Restore checkboxes
+  ['L4','L3','L2','L1'].forEach(function(level){
+    var vals = hfacs[level]||[];
+    vals.forEach(function(v){
+      var cb = document.querySelector('.hfacs-cb[data-level="'+level+'"][value="'+v+'"]');
+      if(cb) cb.checked = true;
+    });
+  });
+  var narr = document.getElementById('occ-hfacs-narrative');
+  if(narr && hfacs.narrative) narr.value = hfacs.narrative;
+}
+
+// ── HTML escape helper (used in comment rendering) ────────────────
+function escapeHtml(str){
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 </script>
 
 </body>
