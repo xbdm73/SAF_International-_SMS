@@ -157,6 +157,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
   </div>
   <div class="header-right">
     <span id="saf-user-info"></span>
+    <span id="saf-role-badge" style="display:none;font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;padding:2px 7px;border-radius:3px;border:1px solid;"></span>
     <button id="saf-logout-btn" style="display:none">Déconnexion</button>
     <div class="header-badge">FOCA / EASA</div>
   </div>
@@ -196,22 +197,13 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
       <span class="tool-tag tag-omm">OMM</span>
     </a>
 
-    <a class="tool-card" href="SAF_International_Internals_Audits.html">
-      <div class="tool-header">
-        <div class="tool-icon icon-aud">🔍</div>
-        <span class="tool-name">Internal Audits</span>
-        <span class="arrow">→</span>
-      </div>
-      <p class="tool-desc">Extracteur PDF, grille d'audit de conformité procédurale — vérifie l'application des procédures OMM/CAME.</p>
-      <span class="tool-tag tag-aud">AUDIT</span>
-    </a>
 
   </div>
 
   <div class="export-bar" id="export-bar" style="display:none;">
     <div class="export-bar-label">
       <span style="color:var(--gold-light);font-weight:700;">💾 Sauvegarde globale</span><br>
-      Exporte les données des 4 modules (SMS · CMS · OMM · Audits) depuis Supabase en un seul fichier JSON.
+      Exporte les données des 3 modules (SMS · CMS · OMM) depuis Supabase en un seul fichier JSON.
     </div>
     <span id="export-status"></span>
     <button class="btn-export-global" id="btn-export-global" onclick="exportGlobal()">⬇ Exporter tout en JSON</button>
@@ -239,13 +231,34 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
   var userInfo = document.getElementById('saf-user-info');
   var logoutBtn = document.getElementById('saf-logout-btn');
 
+  var SAF_ROLE = 'reader';
+
+  async function loadAndApplyRole(email){
+    try {
+      var res = await db.from('user_roles').select('role').eq('user_email', email).single();
+      SAF_ROLE = (res.data && res.data.role) ? res.data.role : 'reader';
+    } catch(e) { SAF_ROLE = 'reader'; }
+    // Badge rôle
+    var badge = document.getElementById('saf-role-badge');
+    if(badge){
+      badge.textContent  = SAF_ROLE === 'admin' ? 'ADMIN' : 'READ ONLY';
+      badge.style.color  = SAF_ROLE === 'admin' ? '#C9A227' : '#6a82a5';
+      badge.style.borderColor = SAF_ROLE === 'admin' ? 'rgba(201,162,39,.4)' : 'rgba(106,130,165,.3)';
+      badge.style.display = 'inline-block';
+    }
+    // Export/Import : admin uniquement
+    var bar = document.getElementById('export-bar');
+    if(bar) bar.style.display = SAF_ROLE === 'admin' ? 'flex' : 'none';
+    // Publie le rôle pour les outils via localStorage
+    try { localStorage.setItem('saf_role', SAF_ROLE + '|' + email); } catch(e){}
+  }
+
   function onAuthenticated(session){
     overlay.style.display = 'none';
     var email = session.user.email;
     userInfo.textContent = email;
     logoutBtn.style.display = 'inline-block';
-    var bar = document.getElementById('export-bar');
-    if(bar) bar.style.display = 'flex';
+    loadAndApplyRole(email);
   }
 
   async function doLogin(){
@@ -278,8 +291,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     var MODULES = [
       { key: 'sms_data',       label: 'SMS' },
       { key: 'cms_data',       label: 'CMS' },
-      { key: 'omm_appendices', label: 'OMM' },
-      { key: 'audit_data',     label: 'Audits' }
+      { key: 'omm_appendices', label: 'OMM' }
     ];
 
     var bundle = {
@@ -381,7 +393,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     btn.disabled = true; btnExp.disabled = true;
     var status = document.getElementById('export-status');
 
-    var LABEL = { sms_data:'SMS', cms_data:'CMS', omm_appendices:'OMM', audit_data:'Audits' };
+    var LABEL = { sms_data:'SMS', cms_data:'CMS', omm_appendices:'OMM' };
     var modules = bundle._meta.modules;
     var errors = [];
     var done = 0;

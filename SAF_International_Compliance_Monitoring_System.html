@@ -1436,6 +1436,28 @@ tbody tr.hidden{display:none;}
 .ed:empty::before{content:attr(data-ph);color:var(--text-dim);opacity:.4;font-style:italic;pointer-events:none;}
 /* Règles impression de la grille fusionnées dans le @media print principal */
 
+/* ══ PDF-TO-GRID MODULE ══════════════════════════════════════════════════ */
+/* Mode switcher tabs */
+#g-mode-bar{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--navy);margin-bottom:0;}
+.g-mode-btn{flex:1;padding:11px 16px;background:transparent;border:none;border-bottom:3px solid transparent;color:var(--text-dim);font-family:'DM Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.5px;cursor:pointer;text-align:center;transition:all .2s;text-transform:uppercase;}
+.g-mode-btn:hover{color:var(--text);background:rgba(232,160,32,.04);}
+.g-mode-btn.g-mode-active{color:var(--accent-light);border-bottom-color:var(--accent);background:rgba(232,160,32,.06);}
+/* PDF upload pane */
+/* Status */
+/* Audit info bar for PDF mode */
+#gpdf-info-bar{display:none;background:var(--navy-mid);border-bottom:1px solid var(--border);padding:8px 20px;gap:10px;flex-wrap:wrap;}
+#gpdf-info-bar.visible{display:flex;}
+.gpdf-ifield{display:flex;flex-direction:column;gap:2px;flex:1;min-width:130px;}
+.gpdf-ilabel{font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);}
+.gpdf-iinput{background:rgba(10,20,40,.6);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-family:'DM Mono',monospace;font-size:11px;outline:none;}
+.gpdf-iinput:focus{border-color:var(--accent);}
+/* PDF grid section */
+#gpdf-grid{padding-bottom:40px;}
+/* Extra toolbar buttons for PDF mode */
+#g-pdf-toolbar-btns{display:none;gap:6px;align-items:center;}
+#g-pdf-toolbar-btns.visible{display:flex;}
+/* ══ END PDF-TO-GRID MODULE ═══════════════════════════════════════════════ */
+
 </style>
 <style>
 #ap2{font-family:'IBM Plex Sans',sans-serif;color:#e8f0fe}
@@ -1469,7 +1491,9 @@ tbody tr.hidden{display:none;}
 #ap2 .ap-p-green{background:rgba(0,196,140,.14);color:#6ee7b7}
 #ap2 .ap-p-blue{background:rgba(26,86,219,.2);color:#60a5fa}
 #ap2 .ap-p-purple{background:rgba(139,92,246,.15);color:#c4b5fd}
-#ap2 table{width:100%;border-collapse:collapse;background:#0b1120;border:1px solid #1a2840;border-radius:10px;overflow:hidden;margin:0;font-size:11px}
+#ap2 table{width:100%;border-collapse:collapse;background:#0b1120;border:1px solid #1a2840;border-radius:10px;overflow:hidden;margin:0;font-size:11px;table-layout:fixed;}
+#ap2 table td:nth-child(1){width:30%;}
+#ap2 table td:nth-child(2){width:10%;}
 #ap2 thead tr{background:#070e1a}
 #ap2 th{text-align:left;padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid #1a2840;font-family:'IBM Plex Mono',monospace;white-space:nowrap}
 #ap2 td{padding:9px 10px;border-bottom:1px solid #0e1c30;vertical-align:top;line-height:1.55}
@@ -1783,12 +1807,11 @@ function safExportPDF() {
 <!-- ── SAF INTER-TOOL NAV ── -->
 <div id="saf-subnav" style="background:#070e1a;border-bottom:1px solid #1a2840;padding:0 28px;position:sticky;top:var(--header-h,118px);z-index:20;margin-left:248px;">
   <div style="display:flex;align-items:center;gap:4px;overflow-x:auto;">
-    <a href="../files" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
+    <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
     <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
     <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
     <a href="SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
-    <a href="SAF_International_Internals_Audits.html"              class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#b880e8'" onmouseout="this.style.color='#6a82a5'"><span style="color:#b880e8">■</span> AUDIT</a>
   </div>
 </div>
 <script>
@@ -2907,6 +2930,14 @@ function kpiv2UpdateKpi5(v){
 ══════════════════════════════════════ -->
 <section class="panel" id="grille_easa">
 <div id="grille-easa-panel">
+
+<!-- ══ MODE SWITCHER ══ -->
+<div id="g-mode-bar">
+  <button class="g-mode-btn g-mode-active" id="g-mode-reg" onclick="gSwitchMode('reg')">🔍 EASA Regulation Grid</button>
+  <button class="g-mode-btn" id="g-mode-pdf" onclick="gSwitchMode('pdf')">📄 PDF → Audit Grid</button>
+</div>
+
+<!-- ══ MODE 1 : EASA REGULATION (existant) ══ -->
 <div id="grille-app">
 <div class="card" id="g-saved-card" style="display:none;margin-bottom:16px;">
 <span class="step-badge" style="background:rgba(0,196,140,.18);color:#00d49a;">RESUME</span>
@@ -2964,12 +2995,71 @@ function kpiv2UpdateKpi5(v){
 </div>
 </div>
 </div>
+
+<!-- ══ MODE 2 : PDF → AUDIT GRID ══ -->
+<div id="gpdf-info-bar">
+  <div class="gpdf-ifield">
+    <span class="gpdf-ilabel">N° Audit</span>
+    <input class="gpdf-iinput" id="gpdf-num" placeholder="INT-2025-XXX" type="text">
+  </div>
+  <div class="gpdf-ifield" style="flex:2;">
+    <span class="gpdf-ilabel">Titre</span>
+    <input class="gpdf-iinput" id="gpdf-title" placeholder="Titre de la grille…" type="text">
+  </div>
+  <div class="gpdf-ifield">
+    <span class="gpdf-ilabel">Auditeur</span>
+    <input class="gpdf-iinput" id="gpdf-auditor" placeholder="Nom / fonction" type="text">
+  </div>
+  <div class="gpdf-ifield">
+    <span class="gpdf-ilabel">Date</span>
+    <input class="gpdf-iinput" id="gpdf-date" type="date">
+  </div>
+</div>
+<div id="g-pdf-app">
+  <!-- How-to instructions -->
+  <div style="max-width:620px;margin:24px auto 20px;background:rgba(26,58,110,.25);border:1px solid rgba(100,140,220,.2);border-radius:10px;padding:20px 24px;">
+    <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent-light);margin-bottom:14px;">How to generate an internal audit grid from a PDF</div>
+    <ol style="margin:0;padding:0 0 0 18px;display:flex;flex-direction:column;gap:10px;">
+      <li style="font-size:12px;color:var(--text-dim);line-height:1.6;">
+        <strong style="color:var(--text);">Upload your PDF to Claude.ai</strong> — in this conversation, send your document (procedure, manual, checklist, regulation…) to Claude.
+      </li>
+      <li style="font-size:12px;color:var(--text-dim);line-height:1.6;">
+        <strong style="color:var(--text);">Ask Claude to generate the audit grid</strong> — use the prompt:<br>
+        <span style="display:inline-block;margin-top:6px;background:rgba(10,20,40,.6);border:1px solid rgba(100,140,220,.2);border-radius:5px;padding:6px 10px;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent-light);line-height:1.5;">"Generate an internal audit grid JSON from this PDF, following the SAF International CMS format."</span>
+      </li>
+      <li style="font-size:12px;color:var(--text-dim);line-height:1.6;">
+        <strong style="color:var(--text);">Download the .json file</strong> — Claude will provide a downloadable JSON file containing all audit checkpoints (IR + AMC).
+      </li>
+      <li style="font-size:12px;color:var(--text-dim);line-height:1.6;">
+        <strong style="color:var(--text);">Load it here</strong> — click the button below to import the file. The grid will be displayed instantly, ready to fill in.
+      </li>
+    </ol>
+  </div>
+  <!-- Load button -->
+  <div style="text-align:center;padding-bottom:16px;">
+    <button onclick="gpdf_loadJSON()" class="btn-primary" style="display:inline-flex;align-items:center;gap:10px;padding:12px 28px;font-size:14px;">
+      <span>📂</span><span>Load a saved grid (.json)</span>
+    </button>
+  </div>
+</div>
+<div id="gpdf-grid"></div>
+
+<!-- ══ SHARED TOOLBAR ══ -->
 <div id="g-toolbar">
 <div class="tbar" style="margin-bottom:8px;">
-<input class="srch" id="g-audit-num" onchange="g_resyncAllFindings();g_autosave();" placeholder="Audit N° — click Generate" style="width:170px;" type="text"/>
-<button class="bexp" onclick="g_genAuditNum()" title="Generate the next audit number">🔢 Generate N°</button>
-<input class="srch" id="g-audit-title" onchange="g_resyncAllFindings();g_autosave();" placeholder="Audit title" style="width:260px;flex:1;" type="text"/>
-<span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim);">Level 1 &amp; Level 2 findings are sent automatically to the Corrective Action Plan</span>
+  <!-- REG mode fields -->
+  <span id="g-reg-toolbar-fields" style="display:flex;gap:8px;align-items:center;flex:1;">
+    <input class="srch" id="g-audit-num" onchange="g_resyncAllFindings();g_autosave();" placeholder="Audit N° — click Generate" style="width:170px;" type="text"/>
+    <button class="bexp" onclick="g_genAuditNum()" title="Generate the next audit number">🔢 Generate N°</button>
+    <input class="srch" id="g-audit-title" onchange="g_resyncAllFindings();g_autosave();" placeholder="Audit title" style="width:260px;flex:1;" type="text"/>
+    <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim);">Level 1 &amp; Level 2 findings are sent automatically to the Corrective Action Plan</span>
+  </span>
+  <!-- PDF mode extra buttons -->
+  <span id="g-pdf-toolbar-btns">
+    <button class="bexp" onclick="gpdf_saveJSON()">💾 Sauvegarder</button>
+    <button class="bexp" onclick="gpdf_loadJSON()">📂 Charger</button>
+
+  </span>
 </div>
 <div class="tbar">
 <input class="srch" id="g-srch" oninput="g_filterRows()" placeholder="🔍 Reference or keyword..." type="text"/>
@@ -16894,9 +16984,10 @@ function g_toggleText(el){
 <!-- ═══ SMS ═══ -->
 <div class="ap-panel ap-active" id="ap2-sms">
 
+<div class="ap-col-hdr" style="position:sticky;top:70px;z-index:99;display:grid;grid-template-columns:30% 10% 1fr;background:#070e1a;border-bottom:2px solid #1a2840;padding:0;margin:0 0 0 0;"><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Audit point</div><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Priority</div><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Applicable IR</div></div>
 <div class="ap-section">
 <div class="ap-sec-title">Pillar 1 — Safety policy &amp; objectives</div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">Safety policy approved and communicated</div><div class="ap-desc">Accountable Manager signature, accessible to all personnel</div></td><td><span class="ap-prio"><span class="ap-dot d-a"></span>High</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.200(a)(1)</span><span class="ap-ir ir-oro">ORO.GEN.200(b)</span></div></td></tr>
 <tr><td><div class="ap-point">Management responsibilities documented</div><div class="ap-desc">Organisation chart, job descriptions, formal delegations</div></td><td><span class="ap-prio"><span class="ap-dot d-a"></span>High</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.205(a)</span><span class="ap-ir ir-oro">ORO.GEN.205(b)</span><span class="ap-ir ir-oro">ORO.AOC.135(a)</span></div></td></tr>
 <tr><td><div class="ap-point">Safety Manager appointed and independent</div><div class="ap-desc">Appointment letter, duties, direct access to AM</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.200(a)(1)</span><span class="ap-ir ir-oro">ORO.GEN.210(a)</span></div></td></tr>
@@ -16906,7 +16997,7 @@ function g_toggleText(el){
 
 <div class="ap-section">
 <div class="ap-sec-title">Pillar 2 — Safety risk management</div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">Hazard identification process</div><div class="ap-desc">Formalised method (HIRA, checklist, REX), proactive and reactive</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.200(a)(2)</span></div></td></tr>
 <tr><td><div class="ap-point">Risk register kept up to date</div><div class="ap-desc">Risks assessed, mitigations tracked, periodic review</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.200(a)(2)</span></div></td></tr>
 <tr><td><div class="ap-point">Lessons learned integrated into risk management</div><div class="ap-desc">Occurrences → risk register updated</div></td><td><span class="ap-prio"><span class="ap-dot d-a"></span>High</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.200(a)(6)</span><span class="ap-ir ir-oro">ORO.GEN.160(a)</span></div></td></tr>
@@ -16915,7 +17006,7 @@ function g_toggleText(el){
 
 <div class="ap-section">
 <div class="ap-sec-title">Pillar 3 — Safety assurance</div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">SPI/KPI defined, measured and analysed</div><div class="ap-desc">Reactive (occurrence rate) and proactive (FDM, audits) indicators</div></td><td><span class="ap-prio"><span class="ap-dot d-a"></span>High</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.200(a)(3)</span></div></td></tr>
 <tr><td><div class="ap-point">Event reporting (MOR)</div><div class="ap-desc">Internal and external procedure, deadlines, ECCAIRS/E5X forms</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.160(a)</span><span class="ap-ir ir-oro">ORO.GEN.160(b)</span></div></td></tr>
 <tr><td><div class="ap-point">Confidential reporting scheme</div><div class="ap-desc">Reporter protection, Just Culture, voluntary reporting</div></td><td><span class="ap-prio"><span class="ap-dot d-a"></span>High</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.160(c)</span></div></td></tr>
@@ -16925,7 +17016,7 @@ function g_toggleText(el){
 
 <div class="ap-section">
 <div class="ap-sec-title">Pillar 4 — Safety promotion</div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">Initial and recurrent safety training</div><div class="ap-desc">SMS training programme, individual records</div></td><td><span class="ap-prio"><span class="ap-dot d-a"></span>High</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.200(a)(5)</span></div></td></tr>
 <tr><td><div class="ap-point">Safety communications distributed</div><div class="ap-desc">Safety Alerts, bulletins, investigation feedback to crews</div></td><td><span class="ap-prio"><span class="ap-dot d-g"></span>Standard</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.200(a)(5)</span></div></td></tr>
 <tr><td><div class="ap-point">Just Culture documented and applied</div><div class="ap-desc">Decision criteria published, practical cases processed</div></td><td><span class="ap-prio"><span class="ap-dot d-a"></span>High</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.200(a)(5)</span></div></td></tr>
@@ -16934,7 +17025,7 @@ function g_toggleText(el){
 
 <div class="ap-section">
 <div class="ap-sec-title">Management of Change (MOC)</div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">Formalised MOC process</div><div class="ap-desc">Change identification, assessment, approval, MOC- prefix</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.130(a)</span><span class="ap-ir ir-oro">ORO.GEN.130(b)</span></div></td></tr>
 <tr><td><div class="ap-point">Authority notification before major change</div><div class="ap-desc">Regulatory deadlines met (DGAC/FOCA), prior approval if required</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.130(c)</span><span class="ap-ir ir-oro">ORO.GEN.135(a)</span></div></td></tr>
 <tr><td><div class="ap-point">AOC conditions maintained through changes</div><div class="ap-desc">AOC remains valid after each organisational change</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.135(b)</span><span class="ap-ir ir-oro">ORO.AOC.100</span></div></td></tr>
@@ -16943,7 +17034,7 @@ function g_toggleText(el){
 
 <div class="ap-section">
 <div class="ap-sec-title">Documentation &amp; quality system</div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">OM-A/B/C/D up to date and distributed</div><div class="ap-desc">Controlled revisions, distribution list, receipt proof</div></td><td><span class="ap-prio"><span class="ap-dot d-a"></span>High</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.MLR.100</span><span class="ap-ir ir-oro">ORO.MLR.105</span></div></td></tr>
 <tr><td><div class="ap-point">Quality system / CMS operational</div><div class="ap-desc">Annual audit programme, CMM appointed, findings tracked</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.200(a)(3)</span><span class="ap-ir ir-oro">ORO.AOC.135(b)</span></div></td></tr>
 <tr><td><div class="ap-point">Annual Safety Review Board</div><div class="ap-desc">Attendees, agenda, minutes, formalised decisions</div></td><td><span class="ap-prio"><span class="ap-dot d-a"></span>High</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.200(a)(1)</span><span class="ap-ir ir-oro">ORO.GEN.200(a)(3)</span></div></td></tr>
@@ -16955,9 +17046,10 @@ function g_toggleText(el){
 <!-- ═══ ORO/CAT/NCC ═══ -->
 <div class="ap-panel" id="ap2-ops">
 
+<div class="ap-col-hdr" style="position:sticky;top:70px;z-index:99;display:grid;grid-template-columns:30% 10% 1fr;background:#070e1a;border-bottom:2px solid #1a2840;padding:0;margin:0 0 0 0;"><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Audit point</div><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Priority</div><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Applicable IR</div></div>
 <div class="ap-section">
 <div class="ap-sec-title">ORO — General organisation <span class="ap-pill ap-p-green">Reg. 965/2012 Annex III</span></div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">AOC valid and up to date</div><div class="ap-desc">Conditions, limitations, operations specifications compliant</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.AOC.100</span><span class="ap-ir ir-oro">ORO.AOC.105</span></div></td></tr>
 <tr><td><div class="ap-point">Management composition and qualifications</div><div class="ap-desc">Post-holders accepted by authority, updated CVs (AM, NomPers, DQ, NPCA)</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.210(a)</span><span class="ap-ir ir-oro">ORO.GEN.210(b)</span><span class="ap-ir ir-oro">ORO.AOC.135(a)</span></div></td></tr>
 <tr><td><div class="ap-point">Flight crew qualifications</div><div class="ap-desc">Licences, AS 332 type ratings, CU validity, line checks</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.FC.005</span><span class="ap-ir ir-oro">ORO.FC.100</span><span class="ap-ir ir-oro">ORO.FC.115</span><span class="ap-ir ir-oro">ORO.FC.120</span></div></td></tr>
@@ -16969,7 +17061,7 @@ function g_toggleText(el){
 
 <div class="ap-section">
 <div class="ap-sec-title">CAT — Commercial air transport <span class="ap-pill ap-p-green">Reg. 965/2012 Annex IV</span></div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">Approved MEL applied</div><div class="ap-desc">Derived from AS 332 MMEL, A/B/C/D categories respected, rectification procedures</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-cat">CAT.OP.MPA.105(a)</span><span class="ap-ir ir-cat">CAT.OP.MPA.105(b)</span><span class="ap-ir ir-cat">CAT.GEN.MPA.165</span></div></td></tr>
 <tr><td><div class="ap-point">Published operational minima observed</div><div class="ap-desc">Conforming OAT, pre-flight weather check, documented derogations</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-cat">CAT.OP.MPA.110</span><span class="ap-ir ir-cat">CAT.OP.MPA.115</span></div></td></tr>
 <tr><td><div class="ap-point">Fuel — policy and calculation</div><div class="ap-desc">Documented fuel policy, HIGE/HOGE considered, conforming reserves</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-cat">CAT.OP.MPA.150(a)</span><span class="ap-ir ir-cat">CAT.OP.MPA.150(b)</span><span class="ap-ir ir-cat">CAT.OP.MPA.150(c)</span></div></td></tr>
@@ -16983,7 +17075,7 @@ function g_toggleText(el){
 
 <div class="ap-section">
 <div class="ap-sec-title">NCC — Non-commercial operations (complex aircraft) <span class="ap-pill ap-p-amber">Reg. 965/2012 Annex VI</span></div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">NCC general conditions</div><div class="ap-desc">Commander responsibilities, documentation, NCC-specific checklist</div></td><td><span class="ap-prio"><span class="ap-dot d-a"></span>High</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-ncc">NCC.GEN.100</span><span class="ap-ir ir-ncc">NCC.GEN.105</span><span class="ap-ir ir-ncc">NCC.GEN.106</span></div></td></tr>
 <tr><td><div class="ap-point">NCC operating procedures</div><div class="ap-desc">Fuel, minima, M&amp;B, flight preparation — consistency with OM</div></td><td><span class="ap-prio"><span class="ap-dot d-a"></span>High</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-ncc">NCC.OP.100</span><span class="ap-ir ir-ncc">NCC.OP.110</span><span class="ap-ir ir-ncc">NCC.OP.155</span><span class="ap-ir ir-ncc">NCC.OP.175</span></div></td></tr>
 <tr><td><div class="ap-point">NCC helicopter equipment</div><div class="ap-desc">Flight instruments, communication equipment, survival equipment</div></td><td><span class="ap-prio"><span class="ap-dot d-g"></span>Standard</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-ncc">NCC.IDE.H.100</span><span class="ap-ir ir-ncc">NCC.IDE.H.105</span><span class="ap-ir ir-ncc">NCC.IDE.H.230</span></div></td></tr>
@@ -16995,9 +17087,10 @@ function g_toggleText(el){
 <!-- ═══ SPA ═══ -->
 <div class="ap-panel" id="ap2-spa">
 
+<div class="ap-col-hdr" style="position:sticky;top:70px;z-index:99;display:grid;grid-template-columns:30% 10% 1fr;background:#070e1a;border-bottom:2px solid #1a2840;padding:0;margin:0 0 0 0;"><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Audit point</div><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Priority</div><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Applicable IR</div></div>
 <div class="ap-section">
 <div class="ap-sec-title">SPA.EFB — Electronic Flight Bag <span class="ap-pill ap-p-red">DGAC/FOCA approval required</span></div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">Valid operator EFB approval</div><div class="ap-desc">DGAC/FOCA approval in force, scope of use compliant</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-spa">SPA.EFB.100(a)</span></div></td></tr>
 <tr><td><div class="ap-point">EFB policy documented</div><div class="ap-desc">Authorised application types (A/B), in-flight use procedures</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-spa">SPA.EFB.100(b)(1)</span><span class="ap-ir ir-spa">SPA.EFB.100(b)(2)</span></div></td></tr>
 <tr><td><div class="ap-point">EFB hardware qualified and installed</div><div class="ap-desc">AS 332 cockpit mounting, power supply, accessibility, RF interference verified</div></td><td><span class="ap-prio"><span class="ap-dot d-a"></span>High</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-spa">SPA.EFB.100(b)(3)</span></div></td></tr>
@@ -17009,7 +17102,7 @@ function g_toggleText(el){
 
 <div class="ap-section">
 <div class="ap-sec-title">SPA.DG — Dangerous goods <span class="ap-pill ap-p-red">Critical risk</span></div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">Valid DG approval</div><div class="ap-desc">Operator approval for DG transport, scope compliant</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-spa">SPA.DG.100(a)</span><span class="ap-ir ir-spa">SPA.DG.100(b)</span></div></td></tr>
 <tr><td><div class="ap-point">DG programme documented</div><div class="ap-desc">DG acceptance, checking and refusal procedures before loading</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-spa">SPA.DG.105(a)(1)</span><span class="ap-ir ir-spa">SPA.DG.105(a)(2)</span></div></td></tr>
 <tr><td><div class="ap-point">DG training for crews and ground staff</div><div class="ap-desc">IATA DGR Cat. 6 (operators), valid certificates (&lt; 2 years), records</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-spa">SPA.DG.105(b)(1)</span><span class="ap-ir ir-spa">SPA.DG.105(b)(2)</span></div></td></tr>
@@ -17024,9 +17117,10 @@ function g_toggleText(el){
 <!-- ═══ SPO ═══ -->
 <div class="ap-panel" id="ap2-spo">
 
+<div class="ap-col-hdr" style="position:sticky;top:70px;z-index:99;display:grid;grid-template-columns:30% 10% 1fr;background:#070e1a;border-bottom:2px solid #1a2840;padding:0;margin:0 0 0 0;"><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Audit point</div><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Priority</div><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Applicable IR</div></div>
 <div class="ap-section">
 <div class="ap-sec-title">SPO — General &amp; common procedures <span class="ap-pill ap-p-purple">Reg. 965/2012 Annex VIII</span></div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">SPO declaration to competent authority</div><div class="ap-desc">HESLO and MCF declared, scope matches actual operations</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-spo">SPO.GEN.005(a)</span><span class="ap-ir ir-spo">SPO.GEN.005(b)</span></div></td></tr>
 <tr><td><div class="ap-point">SPO pilot-in-command responsibilities</div><div class="ap-desc">Authority, flight decision, SPO-specific documentation</div></td><td><span class="ap-prio"><span class="ap-dot d-a"></span>High</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-spo">SPO.GEN.010(a)</span><span class="ap-ir ir-spo">SPO.GEN.010(b)</span></div></td></tr>
 <tr><td><div class="ap-point">SPO flight preparation</div><div class="ap-desc">Operation-specific briefing, site survey, client communication, contingency plan</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-spo">SPO.OP.150(a)</span><span class="ap-ir ir-spo">SPO.OP.150(b)</span></div></td></tr>
@@ -17038,7 +17132,7 @@ function g_toggleText(el){
 
 <div class="ap-section">
 <div class="ap-sec-title">SPO.SPEC.HESLO — Helicopter external sling load <span class="ap-pill ap-p-red">Critical risk</span></div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">HESLO pilot qualification</div><div class="ap-desc">Initial HESLO training, annual recurrence, individual records</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-spo">SPO.SPEC.HESLO.100(a)</span><span class="ap-ir ir-spo">SPO.FC.120(a)</span><span class="ap-ir ir-spo">SPO.FC.120(b)</span></div></td></tr>
 <tr><td><div class="ap-point">HESLO equipment AS 332 C1</div><div class="ap-desc">Certified hook, load limiter, emergency jettison, ground/air intercom</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-spo">SPO.SPEC.HESLO.105(a)</span><span class="ap-ir ir-spo">SPO.SPEC.HESLO.105(b)</span></div></td></tr>
 <tr><td><div class="ap-point">HESLO load limits documented</div><div class="ap-desc">Max load by operation type, minimum weather conditions, wind limit</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-spo">SPO.SPEC.HESLO.100(b)</span></div></td></tr>
@@ -17049,7 +17143,7 @@ function g_toggleText(el){
 
 <div class="ap-section">
 <div class="ap-sec-title">SPO.SPEC.MCF — Mountain &amp; longline operations <span class="ap-pill ap-p-amber">High risk</span></div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">MCF pilot qualification</div><div class="ap-desc">Specialist mountain training, confined area, recent high-altitude experience</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-spo">SPO.SPEC.MCF.100(a)</span><span class="ap-ir ir-spo">SPO.FC.120(a)</span></div></td></tr>
 <tr><td><div class="ap-point">MCF equipment</div><div class="ap-desc">Rescue hoist, mountain equipment, medical kit if applicable</div></td><td><span class="ap-prio"><span class="ap-dot d-a"></span>High</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-spo">SPO.SPEC.MCF.105(a)</span><span class="ap-ir ir-spo">SPO.SPEC.MCF.105(b)</span></div></td></tr>
 <tr><td><div class="ap-point">MCF procedures documented</div><div class="ap-desc">Confined approach, high-altitude hover, ground/air team communication, high-altitude limits</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-spo">SPO.SPEC.MCF.100(b)</span><span class="ap-ir ir-spo">SPO.OP.200(a)</span></div></td></tr>
@@ -17063,9 +17157,10 @@ function g_toggleText(el){
 <!-- ═══ PART-M ═══ -->
 <div class="ap-panel" id="ap2-partm">
 
+<div class="ap-col-hdr" style="position:sticky;top:70px;z-index:99;display:grid;grid-template-columns:30% 10% 1fr;background:#070e1a;border-bottom:2px solid #1a2840;padding:0;margin:0 0 0 0;"><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Audit point</div><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Priority</div><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Applicable IR</div></div>
 <div class="ap-section">
 <div class="ap-sec-title">Part-M — Sub-parts A, B and C <span class="ap-pill ap-p-blue">Reg. 1321/2014 Annex I</span></div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">Continuing airworthiness responsibilities</div><div class="ap-desc">Written, signed, current operator/CAMO contract covering AS 332 C1</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-m">M.A.201(a)</span><span class="ap-ir ir-m">M.A.201(e)</span><span class="ap-ir ir-m">M.A.201(i)</span></div></td></tr>
 <tr><td><div class="ap-point">Occurrence reporting (defects/damage)</div><div class="ap-desc">Internal procedure, DGAC/FOCA + EASA notification, 72h deadline for critical items</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-m">M.A.202(a)</span><span class="ap-ir ir-m">M.A.202(b)</span></div></td></tr>
 <tr><td><div class="ap-point">Approved maintenance programme</div><div class="ap-desc">Approved by DGAC/FOCA or validated by CAMO, correct intervals, conditional tasks</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-m">M.A.302(a)</span><span class="ap-ir ir-m">M.A.302(b)</span><span class="ap-ir ir-m">M.A.302(d)</span><span class="ap-ir ir-m">M.A.302(e)</span></div></td></tr>
@@ -17081,7 +17176,7 @@ function g_toggleText(el){
 
 <div class="ap-section">
 <div class="ap-sec-title">Part-M — Sub-parts D, E, G and H</div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">Component installation (EASA Form 1)</div><div class="ap-desc">Correct category components, release document traceability</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-m">M.A.501(a)</span><span class="ap-ir ir-m">M.A.501(b)</span></div></td></tr>
 <tr><td><div class="ap-point">Component maintenance (Part-145)</div><div class="ap-desc">Tasks in approved workshop, external contracts (MGB, blades, engines)</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-m">M.A.502(a)</span><span class="ap-ir ir-m">M.A.502(b)</span></div></td></tr>
 <tr><td><div class="ap-point">Life limited parts (LLP)</div><div class="ap-desc">LLP register by S/N, hours/cycles tracked, replacement thresholds respected</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-m">M.A.504(a)</span><span class="ap-ir ir-m">M.A.504(b)</span><span class="ap-ir ir-m">M.A.504(c)</span></div></td></tr>
@@ -17097,9 +17192,10 @@ function g_toggleText(el){
 <!-- ═══ PART-CAMO ═══ -->
 <div class="ap-panel" id="ap2-camo">
 
+<div class="ap-col-hdr" style="position:sticky;top:70px;z-index:99;display:grid;grid-template-columns:30% 10% 1fr;background:#070e1a;border-bottom:2px solid #1a2840;padding:0;margin:0 0 0 0;"><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Audit point</div><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Priority</div><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Applicable IR</div></div>
 <div class="ap-section">
 <div class="ap-sec-title">Part-CAMO — General requirements <span class="ap-pill ap-p-purple">Reg. 1321/2014 Annex Vc</span></div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">Valid CAMO approval and compliant scope</div><div class="ap-desc">DGAC/FOCA approval including AS 332 C1, approval conditions met</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-camo">CAMO.A.100</span><span class="ap-ir ir-camo">CAMO.A.125(a)</span><span class="ap-ir ir-camo">CAMO.A.125(b)</span></div></td></tr>
 <tr><td><div class="ap-point">Authority access to premises and records</div><div class="ap-desc">Documented cooperation during DGAC/FOCA inspections</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-camo">CAMO.A.105(a)</span><span class="ap-ir ir-camo">CAMO.A.105(b)</span></div></td></tr>
 <tr><td><div class="ap-point">Response to safety findings</div><div class="ap-desc">Authority finding response deadlines, formalised corrective action plan</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-camo">CAMO.A.115(a)</span><span class="ap-ir ir-camo">CAMO.A.115(b)</span></div></td></tr>
@@ -17109,7 +17205,7 @@ function g_toggleText(el){
 
 <div class="ap-section">
 <div class="ap-sec-title">Part-CAMO — Integrated management system</div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">CAMO management system operational</div><div class="ap-desc">Consistent with SAF SMS (ORO.GEN.200), airworthiness safety policy aligned</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-camo">CAMO.A.200(a)</span><span class="ap-ir ir-camo">CAMO.A.200(b)</span><span class="ap-ir ir-oro">ORO.GEN.200(a)</span></div></td></tr>
 <tr><td><div class="ap-point">Airworthiness risk management</div><div class="ap-desc">Integration into SAF global risk register, mitigation measures</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-camo">CAMO.A.200(a)(2)</span><span class="ap-ir ir-oro">ORO.GEN.200(a)(2)</span></div></td></tr>
 <tr><td><div class="ap-point">Airworthiness KPIs defined and measured</div><div class="ap-desc">Availability rate, AD delay, repeat defects, CRS on time</div></td><td><span class="ap-prio"><span class="ap-dot d-a"></span>High</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-camo">CAMO.A.200(a)(3)</span><span class="ap-ir ir-oro">ORO.GEN.200(a)(3)</span></div></td></tr>
@@ -17119,7 +17215,7 @@ function g_toggleText(el){
 
 <div class="ap-section">
 <div class="ap-sec-title">Part-CAMO — Organisation, personnel &amp; CAME</div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Audit point</th><th style="width:10%">Priority</th><th>Applicable IR</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">Approved and current CAMO manual (CAME)</div><div class="ap-desc">Organisation, management procedures, quality system, SMS interface — all sections compliant</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-camo">CAMO.A.300(a)</span><span class="ap-ir ir-camo">CAMO.A.300(b)</span><span class="ap-ir ir-camo">CAMO.A.300(c)</span></div></td></tr>
 <tr><td><div class="ap-point">CAMO personnel appointed and qualified</div><div class="ap-desc">Accountable Manager, Continuing Airworthiness Manager — accepted by authority</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-camo">CAMO.A.305(a)</span><span class="ap-ir ir-camo">CAMO.A.305(b)</span><span class="ap-ir ir-camo">CAMO.A.305(c)</span></div></td></tr>
 <tr><td><div class="ap-point">Continuous training of CAMO personnel</div><div class="ap-desc">Training records, regulatory training (1321/2014, AD, new technology)</div></td><td><span class="ap-prio"><span class="ap-dot d-a"></span>High</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-camo">CAMO.A.305(g)</span></div></td></tr>
@@ -17135,9 +17231,10 @@ function g_toggleText(el){
 <!-- ═══ INTERFACES ═══ -->
 <div class="ap-panel" id="ap2-iface">
 
+<div class="ap-col-hdr" style="position:sticky;top:70px;z-index:99;display:grid;grid-template-columns:30% 10% 1fr;background:#070e1a;border-bottom:2px solid #1a2840;padding:0;margin:0 0 0 0;"><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Audit point</div><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Priority</div><div style="padding:8px 10px;font-size:10px;font-weight:600;color:#4a6a8a;text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;">Applicable IR</div></div>
 <div class="ap-section">
 <div class="ap-sec-title">Cross-regulatory interface points</div>
-<table><thead><tr style="position:sticky;top:0;z-index:2;"><th style="width:30%">Interface</th><th style="width:10%">Priorité</th><th>IR des deux règlements</th></tr></thead><tbody>
+<table><tbody>
 <tr><td><div class="ap-point">Technical occurrences → SMS + CAMO</div><div class="ap-desc">Coordination between airworthiness MOR (CAMO) and SMS reporting (Safety Manager). No double reporting or omission</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.160(a)</span><span class="ap-ir ir-m">M.A.202(a)</span><span class="ap-ir ir-camo">CAMO.A.120(a)</span></div></td></tr>
 <tr><td><div class="ap-point">CAMO / Part-145 contract</div><div class="ap-desc">Written contract formalising responsibilities, exchange procedures, deadlines, aircraft access</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-m">M.A.708(c)</span><span class="ap-ir ir-camo">CAMO.A.315(d)</span></div></td></tr>
 <tr><td><div class="ap-point">Management of Change — MOC ↔ CAMO</div><div class="ap-desc">Changes affecting airworthiness processed via SAF MOC and notified to CAMO</div></td><td><span class="ap-prio"><span class="ap-dot d-r"></span>Critical</span></td><td><div class="ap-ir-tags"><span class="ap-ir ir-oro">ORO.GEN.130(a)</span><span class="ap-ir ir-oro">ORO.GEN.130(c)</span><span class="ap-ir ir-camo">CAMO.A.200(a)(6)</span></div></td></tr>
@@ -19986,4 +20083,305 @@ window.safSmsConfirmImport=safSmsConfirmImport;
     }, 150);
   };
 })();
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MODULE PDF-TO-AUDIT-GRID
+   Intégré dans EASA Audit Grid — onglet "PDF → Audit Grid"
+══════════════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+
+  /* ── state module ── */
+  var gpdf_gridData = null;
+  var gpdf_rowStore = {};
+  var gpdf_currentMode = 'reg'; // 'reg' | 'pdf'
+
+
+
+  /* ── mode switcher ── */
+  window.gSwitchMode = function(mode){
+    gpdf_currentMode = mode;
+    var modeBar = document.getElementById('g-mode-bar');
+    if(!modeBar) return;
+    document.getElementById('g-mode-reg').classList.toggle('g-mode-active', mode==='reg');
+    document.getElementById('g-mode-pdf').classList.toggle('g-mode-active', mode==='pdf');
+
+    var grille = document.getElementById('grille-app');
+    var pdfApp = document.getElementById('g-pdf-app');
+    var pdfGrid = document.getElementById('gpdf-grid');
+    var toolbar = document.getElementById('g-toolbar');
+    var regFields = document.getElementById('g-reg-toolbar-fields');
+    var pdfBtns = document.getElementById('g-pdf-toolbar-btns');
+    var infoBar = document.getElementById('gpdf-info-bar');
+
+    if(mode === 'reg'){
+      if(grille) grille.style.display = 'flex';
+      if(pdfApp) pdfApp.classList.remove('visible');
+      if(pdfGrid) pdfGrid.style.display = 'none';
+      if(infoBar) infoBar.classList.remove('visible');
+      if(regFields) regFields.style.display = 'flex';
+      if(pdfBtns) pdfBtns.classList.remove('visible');
+      /* Si la reg-grid n'est pas active, masquer la toolbar aussi */
+      var gridSec = document.getElementById('g-grid-section');
+      if(toolbar && gridSec && !gridSec.innerHTML.trim()){
+        toolbar.style.display = 'none';
+        grille.style.display = 'flex';
+      }
+    } else {
+      /* PDF mode */
+      if(grille) grille.style.display = 'none';
+      var gridSec = document.getElementById('g-grid-section');
+      if(gridSec) gridSec.style.display = 'none';
+      if(toolbar) toolbar.style.display = 'none';
+      if(pdfGrid && gpdf_gridData){
+        pdfGrid.style.display = 'block';
+        toolbar.style.display = 'block';
+        regFields.style.display = 'none';
+        pdfBtns.classList.add('visible');
+        infoBar.classList.add('visible');
+      } else {
+        if(pdfApp) pdfApp.classList.add('visible');
+        if(pdfGrid) pdfGrid.style.display = 'none';
+      }
+    }
+  };
+
+
+
+
+  function gpdf_countRows(parsed){
+    var n=0; (parsed.sections||[]).forEach(function(s){n+=(s.rows||[]).length;}); return n;
+  }
+
+  /* ── build grid HTML ── */
+  function gpdf_buildGrid(parsed){
+    var sections = parsed.sections || [];
+    var color = '#C9A227';
+    var html = '';
+    var idx = 0;
+
+    sections.forEach(function(sec){
+      var rows = sec.rows || [];
+      html += '<div class="reg-block">';
+      html += '<div class="reg-hdr" style="border-left:4px solid ' + color + '">';
+      html += '<div style="display:flex;flex-direction:column;gap:2px;">';
+      html += '<span style="font-family:\'DM Mono\',monospace;font-size:10px;font-weight:700;letter-spacing:1px;color:' + color + ';">' + gpdf_esc(sec.sectionRef) + '</span>';
+      html += '<h2>' + gpdf_esc(sec.sectionTitle) + '</h2>';
+      if(parsed.source) html += '<span style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--text-dim);">Source : ' + gpdf_esc(parsed.source) + (parsed.domain ? ' — ' + gpdf_esc(parsed.domain) : '') + '</span>';
+      html += '</div>';
+      html += '<span class="reg-cnt">' + rows.length + ' points IR/AMC</span>';
+      html += '</div>';
+
+      html += '<table><colgroup><col class="c-ref"><col class="c-title"><col class="c-ir"><col class="c-status"><col class="c-obs"><col class="c-doc"><col class="c-action"><col class="c-resp"></colgroup>';
+      html += '<thead><tr><th>Référence</th><th>Point de contrôle</th><th>IR / AMC</th><th>Status</th><th>Observations</th><th>Réf. document</th><th>Action corrective</th><th>Responsable</th></tr></thead><tbody>';
+
+      rows.forEach(function(row){
+        var rid = 'gpdf-r-' + idx; idx++;
+        gpdf_rowStore[rid] = {status:'',obs:'',refdoc:'',action:'',resp:''};
+
+        var irText = (row.ir||[]).join('\n');
+        var amcList = row.amc || [];
+
+        html += '<tr class="ir-row" data-gpdf-rid="' + rid + '" data-status="">';
+        html += '<td class="cref">' + gpdf_esc(row.ref) + '</td>';
+        html += '<td class="ctitle">' + gpdf_esc(row.title) + '</td>';
+        html += '<td class="cir-cell"><div class="cir" onclick="gpdf_toggleText(this)">' + gpdf_esc(irText) + '</div><button class="expand-btn" onclick="gpdf_toggleText(this.previousElementSibling)">▼ Voir plus</button></td>';
+        html += gpdf_statusCell(rid);
+        html += '<td class="cobs ed" contenteditable="true" data-ph="Observations…" onblur="gpdf_setField(this,\'' + rid + '\',\'obs\')"></td>';
+        html += '<td class="crefdoc ed" contenteditable="true" data-ph="Réf. doc…" onblur="gpdf_setField(this,\'' + rid + '\',\'refdoc\')"></td>';
+        html += '<td class="caction ed" contenteditable="true" data-ph="Action…" onblur="gpdf_setField(this,\'' + rid + '\',\'action\')"></td>';
+        html += '<td class="cresp">' + gpdf_respCell(rid) + '</td>';
+        html += '</tr>';
+
+        if(amcList.length === 0){
+          var amid = 'gpdf-r-' + idx; idx++;
+          gpdf_rowStore[amid] = {status:'',obs:'',refdoc:'',action:'',resp:''};
+          html += '<tr class="amc-row" data-gpdf-rid="' + amid + '" data-status="">';
+          html += '<td class="amc-ref-cell">—</td><td colspan="2"><span class="camc-label">Aucun AMC</span></td>';
+          html += gpdf_statusCell(amid);
+          html += '<td class="cobs ed" contenteditable="true" data-ph="Observations…" onblur="gpdf_setField(this,\'' + amid + '\',\'obs\')"></td>';
+          html += '<td class="crefdoc ed" contenteditable="true" data-ph="Réf. doc…" onblur="gpdf_setField(this,\'' + amid + '\',\'refdoc\')"></td>';
+          html += '<td class="caction ed" contenteditable="true" data-ph="Action…" onblur="gpdf_setField(this,\'' + amid + '\',\'action\')"></td>';
+          html += '<td class="cresp">' + gpdf_respCell(amid) + '</td>';
+          html += '</tr>';
+        } else {
+          amcList.forEach(function(amc){
+            var amid = 'gpdf-r-' + idx; idx++;
+            gpdf_rowStore[amid] = {status:'',obs:'',refdoc:'',action:'',resp:''};
+            var amcTxt = typeof amc === 'string' ? amc : (amc.text||String(amc));
+            var amcRef = typeof amc === 'object' && amc.ref ? amc.ref : 'AMC';
+            html += '<tr class="amc-row" data-gpdf-rid="' + amid + '" data-status="">';
+            html += '<td class="amc-ref-cell">' + gpdf_esc(amcRef) + '</td>';
+            html += '<td colspan="2" class="amc-indent"><span class="amc-body" onclick="gpdf_toggleText(this)">' + gpdf_esc(amcTxt) + '</span><button class="expand-btn" onclick="gpdf_toggleText(this.previousElementSibling)">▼ Voir plus</button></td>';
+            html += gpdf_statusCell(amid);
+            html += '<td class="cobs ed" contenteditable="true" data-ph="Observations…" onblur="gpdf_setField(this,\'' + amid + '\',\'obs\')"></td>';
+            html += '<td class="crefdoc ed" contenteditable="true" data-ph="Réf. doc…" onblur="gpdf_setField(this,\'' + amid + '\',\'refdoc\')"></td>';
+            html += '<td class="caction ed" contenteditable="true" data-ph="Action…" onblur="gpdf_setField(this,\'' + amid + '\',\'action\')"></td>';
+            html += '<td class="cresp">' + gpdf_respCell(amid) + '</td>';
+            html += '</tr>';
+          });
+        }
+      });
+      html += '</tbody></table></div>';
+    });
+
+    var container = document.getElementById('gpdf-grid');
+    if(container) container.innerHTML = html;
+  }
+
+  function gpdf_statusCell(rid){
+    return '<td><select class="ss" onchange="gpdf_setStatus(this,\'' + rid + '\')">' +
+      '<option value="">— En attente</option>' +
+      '<option value="s-compliant">✓ Compliant</option>' +
+      '<option value="s-level1">✗ Level 1</option>' +
+      '<option value="s-level2">⚠ Level 2</option>' +
+      '<option value="s-na">— Not Applicable</option>' +
+      '<option value="s-no">○ Not Observed</option>' +
+      '</select></td>';
+  }
+
+  function gpdf_respCell(rid){
+    return '<select class="g-resp-sel" onchange="gpdf_setResp(this,\'' + rid + '\')">' +
+      '<option value="">— Affecter —</option>' +
+      '<option value="NPFO">NPFO</option><option value="NPCT">NPCT</option>' +
+      '<option value="NPCA">NPCA</option><option value="NPGO">NPGO</option>' +
+      '<option value="SM">SM</option><option value="CMM">CMM</option>' +
+      '<option value="ACM">ACM</option><option value="__other">Autre…</option>' +
+      '</select>';
+  }
+
+  function gpdf_esc(s){
+    if(!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── interactions ── */
+  window.gpdf_toggleText = function(el){ el.classList.toggle('expanded'); var b=el.nextElementSibling; if(b&&b.classList.contains('expand-btn')) b.textContent=el.classList.contains('expanded')?'▲ Réduire':'▼ Voir plus'; };
+  window.gpdf_setStatus = function(sel, rid){ if(gpdf_rowStore[rid]) gpdf_rowStore[rid].status=sel.value; var m={'':'','s-compliant':'s-compliant','s-level1':'s-level1','s-level2':'s-level2','s-na':'s-na','s-no':'s-no'}; sel.className='ss '+(m[sel.value]||''); var tr=sel.closest('tr'); if(tr) tr.setAttribute('data-status',sel.value); gpdf_updateStats(); };
+  window.gpdf_setField = function(el, rid, field){ if(gpdf_rowStore[rid]) gpdf_rowStore[rid][field]=el.textContent; };
+  window.gpdf_setResp = function(sel, rid){ if(gpdf_rowStore[rid]) gpdf_rowStore[rid].resp=sel.value; };
+
+  function gpdf_updateStats(){
+    var c={ok:0,l1:0,l2:0,na:0,no:0,tot:0};
+    document.querySelectorAll('#gpdf-grid tr[data-gpdf-rid]').forEach(function(tr){ c.tot++; var v=tr.getAttribute('data-status')||''; if(v==='s-compliant')c.ok++; else if(v==='s-level1')c.l1++; else if(v==='s-level2')c.l2++; else if(v==='s-na')c.na++; else if(v==='s-no')c.no++; });
+    var s=document.getElementById('g-c-ok'); if(s) s.textContent=c.ok;
+    s=document.getElementById('g-c-l1'); if(s) s.textContent=c.l1;
+    s=document.getElementById('g-c-l2'); if(s) s.textContent=c.l2;
+    s=document.getElementById('g-c-na'); if(s) s.textContent=c.na;
+    s=document.getElementById('g-c-no'); if(s) s.textContent=c.no;
+    s=document.getElementById('g-c-tot'); if(s) s.textContent=c.tot;
+  }
+
+  /* ── filter: reuse g_filterRows but scoped to pdf grid ── */
+  var _origFilterRows = window.g_filterRows;
+  window.g_filterRows = function(){
+    if(gpdf_currentMode === 'pdf'){
+      var srch = (document.getElementById('g-srch')||{}).value||'';
+      var fstat = (document.getElementById('g-f-status')||{}).value||'';
+      srch = srch.toLowerCase();
+      document.querySelectorAll('#gpdf-grid tr[data-gpdf-rid]').forEach(function(tr){
+        var text = tr.textContent.toLowerCase();
+        var stat = tr.getAttribute('data-status')||'';
+        var show = (!srch || text.includes(srch)) && (!fstat || stat===fstat);
+        tr.style.display = show ? '' : 'none';
+      });
+    } else {
+      if(_origFilterRows) _origFilterRows();
+    }
+  };
+
+
+  /* ── save / load ── */
+  window.gpdf_saveJSON = function(){
+    var d = {
+      auditNum: (document.getElementById('gpdf-num')||{}).value||'',
+      auditTitle: (document.getElementById('gpdf-title')||{}).value||'',
+      auditor: (document.getElementById('gpdf-auditor')||{}).value||'',
+      auditDate: (document.getElementById('gpdf-date')||{}).value||'',
+      gridSource: gpdf_gridData,
+      rowData: {}
+    };
+    document.querySelectorAll('#gpdf-grid tr[data-gpdf-rid]').forEach(function(tr){
+      var rid=tr.getAttribute('data-gpdf-rid');
+      var ss=tr.querySelector('.ss'); var resp=tr.querySelector('.g-resp-sel');
+      d.rowData[rid]={ status:ss?ss.value:'', obs:(tr.querySelector('.cobs')||{}).textContent||'', refdoc:(tr.querySelector('.crefdoc')||{}).textContent||'', action:(tr.querySelector('.caction')||{}).textContent||'', resp:resp?resp.value:'' };
+    });
+    var blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='SAF_PDF_AuditGrid_'+(d.auditNum||'draft')+'_'+new Date().toISOString().slice(0,10)+'.json';
+    a.click(); gpdf_toast('Grille sauvegardée','success');
+  };
+
+  window.gpdf_loadJSON = function(){
+    var input=document.createElement('input'); input.type='file'; input.accept='.json';
+    input.onchange=function(){
+      var fr=new FileReader(); fr.onload=function(e){
+        try {
+          var d=JSON.parse(e.target.result);
+          if(!d.gridSource) throw new Error('Format invalide');
+          gpdf_gridData=d.gridSource; gpdf_rowStore={};
+          gpdf_buildGrid(d.gridSource);
+          /* show toolbar/grid */
+          var pdfApp=document.getElementById('g-pdf-app'); if(pdfApp) pdfApp.classList.remove('visible');
+          var pdfGrid=document.getElementById('gpdf-grid'); if(pdfGrid) pdfGrid.style.display='block';
+          var toolbar=document.getElementById('g-toolbar'); if(toolbar) toolbar.style.display='block';
+          var regFields=document.getElementById('g-reg-toolbar-fields'); if(regFields) regFields.style.display='none';
+          var pdfBtns=document.getElementById('g-pdf-toolbar-btns'); if(pdfBtns) pdfBtns.classList.add('visible');
+          var infoBar=document.getElementById('gpdf-info-bar'); if(infoBar) infoBar.classList.add('visible');
+          var n=document.getElementById('gpdf-num'); if(n) n.value=d.auditNum||'';
+          var t=document.getElementById('gpdf-title'); if(t) t.value=d.auditTitle||'';
+          var au=document.getElementById('gpdf-auditor'); if(au) au.value=d.auditor||'';
+          var dt=document.getElementById('gpdf-date'); if(dt) dt.value=d.auditDate||'';
+          /* restore row data */
+          if(d.rowData){ document.querySelectorAll('#gpdf-grid tr[data-gpdf-rid]').forEach(function(tr){ var rid=tr.getAttribute('data-gpdf-rid'); var rd=d.rowData[rid]; if(!rd) return; var ss=tr.querySelector('.ss'); if(ss&&rd.status){ss.value=rd.status;gpdf_setStatus(ss,rid);} ['obs','refdoc','action'].forEach(function(f){var el=tr.querySelector('.c'+f+', .crefdoc, .caction'); if(f==='obs'&&(tr.querySelector('.cobs'))) tr.querySelector('.cobs').textContent=rd[f]||''; if(f==='refdoc'&&(tr.querySelector('.crefdoc'))) tr.querySelector('.crefdoc').textContent=rd[f]||''; if(f==='action'&&(tr.querySelector('.caction'))) tr.querySelector('.caction').textContent=rd[f]||'';}); var resp=tr.querySelector('.g-resp-sel'); if(resp&&rd.resp) resp.value=rd.resp; }); }
+          gpdf_fixStickyHeader(); gpdf_updateStats(); gpdf_toast('Grille chargée','success');
+        } catch(err){ gpdf_toast('Erreur chargement : '+err.message,'error'); }
+      };
+      fr.readAsText(input.files[0]);
+    };
+    input.click();
+  };
+
+  /* ── sticky header ── */
+  function gpdf_fixStickyHeader(){
+    var header = document.querySelector('header');
+    var toolbar = document.getElementById('g-toolbar');
+    var infoBar = document.getElementById('gpdf-info-bar');
+    if(!toolbar) return;
+    var hH = header ? Math.round(header.getBoundingClientRect().height) : 0;
+    var tbH = Math.round(toolbar.getBoundingClientRect().height);
+    var ibH = (infoBar && infoBar.classList.contains('visible')) ? Math.round(infoBar.getBoundingClientRect().height) : 0;
+    document.documentElement.style.setProperty('--g-sticky-top', (hH + tbH + ibH) + 'px');
+  }
+  window.addEventListener('resize', function(){ if(gpdf_currentMode==='pdf') gpdf_fixStickyHeader(); }, {passive:true});
+
+  /* ── toast ── */
+  function gpdf_toast(msg, type){
+    var el = document.getElementById('toast-cms');
+    if(!el){ el=document.createElement('div'); el.id='toast-cms'; el.style.cssText='position:fixed;bottom:20px;right:20px;background:rgba(18,34,64,.96);border:1px solid rgba(200,212,232,.15);border-radius:8px;padding:10px 18px;font-family:"DM Mono",monospace;font-size:11px;color:#d4dff0;z-index:9999;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;'; document.body.appendChild(el); }
+    el.textContent = msg;
+    el.style.borderColor = type==='success'?'rgba(0,192,32,.4)':type==='error'?'rgba(255,26,26,.4)':'rgba(200,212,232,.15)';
+    el.style.color = type==='success'?'#5dff80':type==='error'?'#ff8080':'#d4dff0';
+    el.style.opacity='1'; el.style.transform='translateY(0)';
+    clearTimeout(el._t); el._t=setTimeout(function(){el.style.opacity='0';el.style.transform='translateY(8px)';},3000);
+  }
+
+
+  /* ── patch showMainTab to reset pdf mode when leaving grille_easa ── */
+  var _origShowMainTab = window.showMainTab;
+  if(_origShowMainTab){
+    window.showMainTab = function(id, btn){
+      _origShowMainTab(id, btn);
+      if(id !== 'grille_easa'){
+        gpdf_currentMode = 'reg';
+        var regFields = document.getElementById('g-reg-toolbar-fields');
+        var pdfBtns = document.getElementById('g-pdf-toolbar-btns');
+        if(regFields) regFields.style.display = 'flex';
+        if(pdfBtns) pdfBtns.classList.remove('visible');
+      }
+    };
+  }
+
+})();
+/* ══ END MODULE PDF-TO-AUDIT-GRID ══════════════════════════════════════ */
 </script>
