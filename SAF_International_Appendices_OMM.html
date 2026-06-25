@@ -2561,6 +2561,7 @@ h1 {
 
 <div id="saf-cloud-bar">
   <span class="dot"></span><span id="saf-cloud-txt">Synchronisé</span>
+  <span id="saf-role-badge" style="display:none;font-size:9px;letter-spacing:.1em;padding:2px 7px;border-radius:3px;border:1px solid;"></span>
   <button id="saf-logout-btn">Déconnexion</button>
 </div>
 
@@ -2641,9 +2642,54 @@ h1 {
     onAuthenticated(res.data.session);
   }
 
+  // ── RÔLE UTILISATEUR ────────────────────────────────────────────────────
+  var SAF_ROLE = 'reader';
+
+  async function loadAndApplyRole(email){
+    try {
+      var res = await db.from('user_roles').select('role').eq('user_email', email).single();
+      SAF_ROLE = (res.data && res.data.role) ? res.data.role : 'reader';
+    } catch(e) { SAF_ROLE = 'reader'; }
+    // Badge
+    var badge = document.getElementById('saf-role-badge');
+    if(badge){
+      badge.textContent  = SAF_ROLE === 'admin' ? 'ADMIN' : 'READ ONLY';
+      badge.style.color  = SAF_ROLE === 'admin' ? '#C9A227' : '#9fc4e8';
+      badge.style.borderColor = SAF_ROLE === 'admin' ? 'rgba(201,162,39,.4)' : 'rgba(106,130,165,.3)';
+      badge.style.display = 'inline-block';
+    }
+    if(SAF_ROLE !== 'admin') applyReadOnly();
+    try { localStorage.setItem('saf_role', SAF_ROLE + '|' + email); } catch(e){}
+  }
+
+  function applyReadOnly(){
+    setTimeout(function(){
+      // Bannière lecture seule
+      var banner = document.createElement('div');
+      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(30,50,80,.92);border-bottom:1px solid rgba(106,130,165,.3);padding:5px 16px;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;color:#9fc4e8;text-align:center;pointer-events:none;';
+      banner.textContent = '🔒 MODE LECTURE SEULE — consultation uniquement, aucune modification possible.';
+      document.body.prepend(banner);
+      // Désactive boutons d'écriture
+      var WRITE = /ajouter|enregistrer|sauvegarder|supprimer|modifier|valider|créer|générer|importer|add|save|delete|remove|submit|confirm/i;
+      document.querySelectorAll('button').forEach(function(el){
+        if(el.id === 'saf-logout-btn') return;
+        var label = (el.textContent || el.id || '').trim();
+        if(WRITE.test(label) || el.classList.contains('btn-save') || el.classList.contains('btn-delete') || el.classList.contains('btn-add')){
+          el.disabled = true; el.style.opacity = '0.35'; el.style.cursor = 'not-allowed'; el.title = 'Lecture seule';
+        }
+      });
+      // Désactive champs de saisie
+      document.querySelectorAll('input:not([type="search"]):not([type="checkbox"]):not([type="radio"]), textarea, select').forEach(function(el){
+        if(el.closest('#saf-cloud-bar') || el.closest('#saf-subnav') || el.closest('#saf-login-overlay')) return;
+        el.disabled = true; el.style.opacity = '0.5'; el.title = 'Lecture seule';
+      });
+    }, 1000);
+  }
+
   async function onAuthenticated(session){
     overlay.style.display='none';
     setBar('ok','Connecté : '+session.user.email);
+    await loadAndApplyRole(session.user.email);
     await cloudLoad();
     ready = true;
     attachAutoSave();
