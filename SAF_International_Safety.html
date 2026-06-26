@@ -5,7 +5,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>SAFETY MANAGEMENT SYSTEM</title>
-<!-- SAF ECCAIRS OCCLOG PATCH V2 TESTED 2026-06-18 -->
+<!-- SAF ECCAIRS OCCLOG PATCH V2 TESTED 2026-06-18 | BOWTIE SMS DROPDOWN FIX -->
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&amp;family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&amp;family=Bebas+Neue&amp;display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -1050,6 +1050,30 @@ select[id$="-status"].status-clos{border-left-color:#3fb950;}
   background: #081421 !important;
   color: #e8ecf0 !important;
   border-left-color: #f0c040 !important;
+}
+
+
+/* Bow-Tie collapsible display */
+.bt-collapse-btn {
+  align-self: flex-end;
+  white-space: nowrap;
+}
+.bt-collapsed #bowtie-diagram {
+  display: none !important;
+}
+.bt-collapsed-note {
+  display: none;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px dashed rgba(74,159,224,.35);
+  border-radius: 8px;
+  background: rgba(74,159,224,.06);
+  color: var(--grey-400);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.bt-collapsed .bt-collapsed-note {
+  display: block;
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
@@ -2612,10 +2636,10 @@ function updateOaciDefinitionDropdown(sel) {
 <div id="controls-content"></div></div>
 <div class="view" id="view-bowtie">
 <div class="dash-header"><div><div class="dash-title">BOW-TIE ANALYSIS</div><div class="dash-subtitle">ICAO Doc 9859 §6 — Causes → Undesirable Event → Consequences with barriers</div></div></div>
-<div style="padding:0 28px 28px;">
+<div id="bowtie-panel" style="padding:0 28px 28px;">
   <div style="display:flex;gap:14px;align-items:end;margin-bottom:20px;flex-wrap:wrap;">
     <div class="form-field" style="margin:0;min-width:520px;flex:1;"><label class="field-label">SMS event</label>
-      <select id="bt-cat-filter" onchange="renderBowtie()" style="width:100%;">
+      <select id="bt-cat-filter" style="width:100%;">
         <option value="SMS-A" style="background:#0d1b2a;color:#f4f6f8;">SMS-A — Maîtrise du vol / LOC-I / performance aéronef</option>
         <option value="SMS-B" style="background:#0d1b2a;color:#f4f6f8;">SMS-B — CFIT / navigation / météo / préparation site</option>
         <option value="SMS-C" style="background:#0d1b2a;color:#f4f6f8;">SMS-C — Collision / séparation / obstacles / oiseaux / personnel</option>
@@ -2626,8 +2650,10 @@ function updateOaciDefinitionDropdown(sel) {
         <option value="SMS-H" style="background:#0d1b2a;color:#f4f6f8;">SMS-H — Facteurs humains, compétences, fatigue, communication</option>
         <option value="SMS-I" style="background:#0d1b2a;color:#f4f6f8;">SMS-I — Numérique, EFB, cyber, données et flight-following</option>
       </select></div>
+    <button type="button" id="bt-toggle-btn" class="btn btn-ghost bt-collapse-btn" onclick="toggleBowtiePanel()" title="Replier ou afficher le Bow-Tie sélectionné">▾ Replier le Bow-Tie</button>
   </div>
   <div id="bowtie-diagram"></div>
+  <div class="bt-collapsed-note">Bow-Tie replié — sélectionnez un autre évènement SMS ou cliquez sur “Afficher le Bow-Tie”.</div>
 </div></div>
 <div class="view" id="view-occurrences">
 <div class="dash-header"><div><div class="dash-title">OCCURRENCE LOG</div><div class="dash-subtitle">Reg. (EU) 376/2014 Art. 4 — Occurrence tracking with 5 Whys root cause analysis</div></div>
@@ -8075,12 +8101,47 @@ function ctrlSetEffectiveness(id,val){const r=DB.find(x=>x.id===id);if(!r)return
 function btFilterRisks(){ renderBowtie(); }
 function btPopulateSelect(){
   const sel=document.getElementById('bt-cat-filter');
-  if(sel && !sel.value) sel.value='SMS-A';
-  renderBowtie();
+  if(!sel) return;
+  const smsRisks=(DB||[]).filter(r=>/^SMS-[A-I]$/.test(String(r.id||'')));
+  const current=sel.value;
+  const makeLabel=r=>`${r.id} — ${r.event || r.category || ''}`;
+
+  // Rebuild the dropdown from the current Risk Register so the Bow-Tie list is always
+  // coherent with the 9 SMS events and cannot remain stuck on the first hard-coded option.
+  if(smsRisks.length){
+    const expected=smsRisks.map(r=>r.id).join('|');
+    if(sel.dataset.smsIds!==expected || sel.options.length!==smsRisks.length){
+      sel.innerHTML=smsRisks.map(r=>`<option value="${r.id}" style="background:#0d1b2a;color:#f4f6f8;">${makeLabel(r)}</option>`).join('');
+      sel.dataset.smsIds=expected;
+    }
+  }
+
+  if(current && [...sel.options].some(o=>o.value===current)) sel.value=current;
+  else if(sel.options.length) sel.value=sel.options[0].value;
+
+  if(!sel.dataset.btBound){
+    sel.addEventListener('change', ()=>renderBowtie(sel.value));
+    sel.addEventListener('input',  ()=>renderBowtie(sel.value));
+    sel.dataset.btBound='1';
+  }
+  renderBowtie(sel.value);
 }
-function renderBowtie(){
+function toggleBowtiePanel(forceState){
+  const panel=document.getElementById('bowtie-panel');
+  const btn=document.getElementById('bt-toggle-btn');
+  if(!panel) return;
+  const collapsed = (typeof forceState==='boolean') ? forceState : !panel.classList.contains('bt-collapsed');
+  panel.classList.toggle('bt-collapsed', collapsed);
+  if(btn){
+    btn.textContent = collapsed ? '▸ Afficher le Bow-Tie' : '▾ Replier le Bow-Tie';
+    btn.title = collapsed ? 'Afficher le Bow-Tie sélectionné' : 'Replier le Bow-Tie sélectionné';
+  }
+}
+function renderBowtie(selectedId){
   const el=document.getElementById('bowtie-diagram');if(!el)return;
-  const id=document.getElementById('bt-cat-filter')?.value || 'SMS-A';
+  const sel=document.getElementById('bt-cat-filter');
+  const id=selectedId || sel?.value || (DB||[]).find(x=>/^SMS-[A-I]$/.test(String(x.id||'')))?.id || 'SMS-A';
+  if(sel && sel.value!==id && [...sel.options].some(o=>o.value===id)) sel.value=id;
   const r=DB.find(x=>x.id===id);if(!r){el.innerHTML='<div style="color:var(--grey-400);font-family:var(--font-mono);font-size:12px;padding:20px;">SMS event not found in the risk register.</div>';return;}
   const parse=txt=>(txt||'').split(/\d+[-–]/).map(s=>s.trim()).filter(Boolean);
   const causes=parse(r.dangers);const prevs=parse(r.prevention);const mits=parse(r.mitigation);const recs=parse(r.recovery);
