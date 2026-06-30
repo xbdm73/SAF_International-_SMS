@@ -226,6 +226,12 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
   var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q";
   var db = window.supabase.createClient(SB_URL, SB_KEY);
 
+  // ── TOKEN D'ACCÈS INVITÉ ─────────────────────────────────────────────────
+  // Modifiez cette valeur pour changer le token à distribuer aux invités.
+  // L'URL à partager sera : https://xbdm73.github.io/SAF_International-_SMS/?token=SAF-READONLY-2025
+  var GUEST_TOKEN = 'SAF-READONLY-2025';
+  // ────────────────────────────────────────────────────────────────────────
+
   var overlay  = document.getElementById('saf-login-overlay');
   var loginMsg = document.getElementById('saf-login-msg');
   var userInfo = document.getElementById('saf-user-info');
@@ -233,24 +239,28 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
 
   var SAF_ROLE = 'reader';
 
+  function applyRole(role, label){
+    SAF_ROLE = role;
+    var badge = document.getElementById('saf-role-badge');
+    if(badge){
+      badge.textContent  = role === 'admin' ? 'ADMIN' : 'READ ONLY';
+      badge.style.color  = role === 'admin' ? '#C9A227' : '#6a82a5';
+      badge.style.borderColor = role === 'admin' ? 'rgba(201,162,39,.4)' : 'rgba(106,130,165,.3)';
+      badge.style.display = 'inline-block';
+    }
+    // Export/Import : admin uniquement
+    var bar = document.getElementById('export-bar');
+    if(bar) bar.style.display = role === 'admin' ? 'flex' : 'none';
+    // Publie le rôle pour les outils via localStorage
+    try { localStorage.setItem('saf_role', role + '|' + (label || 'guest')); } catch(e){}
+  }
+
   async function loadAndApplyRole(email){
     try {
       var res = await db.from('user_roles').select('role').eq('user_email', email).single();
       SAF_ROLE = (res.data && res.data.role) ? res.data.role : 'reader';
     } catch(e) { SAF_ROLE = 'reader'; }
-    // Badge rôle
-    var badge = document.getElementById('saf-role-badge');
-    if(badge){
-      badge.textContent  = SAF_ROLE === 'admin' ? 'ADMIN' : 'READ ONLY';
-      badge.style.color  = SAF_ROLE === 'admin' ? '#C9A227' : '#6a82a5';
-      badge.style.borderColor = SAF_ROLE === 'admin' ? 'rgba(201,162,39,.4)' : 'rgba(106,130,165,.3)';
-      badge.style.display = 'inline-block';
-    }
-    // Export/Import : admin uniquement
-    var bar = document.getElementById('export-bar');
-    if(bar) bar.style.display = SAF_ROLE === 'admin' ? 'flex' : 'none';
-    // Publie le rôle pour les outils via localStorage
-    try { localStorage.setItem('saf_role', SAF_ROLE + '|' + email); } catch(e){}
+    applyRole(SAF_ROLE, email);
   }
 
   function onAuthenticated(session){
@@ -260,6 +270,23 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     logoutBtn.style.display = 'inline-block';
     loadAndApplyRole(email);
   }
+
+  // ── ACCÈS INVITÉ PAR TOKEN URL ───────────────────────────────────────────
+  function checkGuestToken(){
+    var params = new URLSearchParams(window.location.search);
+    var token  = params.get('token');
+    if(token && token === GUEST_TOKEN){
+      // Accès accordé en lecture seule — pas de compte Supabase requis
+      overlay.style.display = 'none';
+      userInfo.textContent  = 'Invité';
+      // Pas de bouton déconnexion pour les invités (inutile)
+      logoutBtn.style.display = 'none';
+      applyRole('reader', 'guest');
+      return true;
+    }
+    return false;
+  }
+  // ────────────────────────────────────────────────────────────────────────
 
   async function doLogin(){
     var email = document.getElementById('saf-email').value.trim();
@@ -279,6 +306,10 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
 
   logoutBtn.addEventListener('click', async function(){
     await db.auth.signOut();
+    // Effacer le token de l'URL si présent avant rechargement
+    var url = new URL(window.location.href);
+    url.searchParams.delete('token');
+    window.history.replaceState({}, '', url);
     location.reload();
   });
 
@@ -351,8 +382,44 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     reader.onload = function(ev){
       try {
         var bundle = JSON.parse(ev.target.result);
+
+        // ── Détection format SMS localStorage (v1 ou v3) ──────────────────
+        // v3 : _version + _app + safRiskDB   (safExportAllData)
+        // v1 : version + app + risks          (exportJSON ancien)
+        var isSmsLocalFormat =
+          (bundle._version && bundle._app) ||
+          (bundle._app === 'SAF International SMS') ||
+          (bundle.safRiskDB != null) ||
+          (bundle.version && bundle.app && Array.isArray(bundle.risks));
+
+        if(isSmsLocalFormat){
+          // Normaliser en v3 si nécessaire (format v1 → v3)
+          if(!bundle._version && !bundle.safRiskDB && Array.isArray(bundle.risks)){
+            bundle = {
+              _version: 3,
+              _app: 'SAF International SMS',
+              _exported_at: bundle.exported_at || new Date().toISOString(),
+              safRiskDB:        JSON.stringify(bundle.risks || []),
+              safChangeStudies: JSON.stringify(bundle.change_studies || [])
+            };
+          }
+          _pendingBundle = { _smsLocal: true, _smsData: bundle };
+          var d = (bundle._exported_at || bundle.exported_at || '').slice(0,19).replace('T',' ') || '?';
+          var nbRisks = 0;
+          try { nbRisks = JSON.parse(bundle.safRiskDB || '[]').length; } catch(x){}
+          document.getElementById('import-confirm-msg').innerHTML =
+            '<strong style="color:var(--gold-light)">⚠ Restauration imminente</strong><br>' +
+            'Format : <strong>SMS localStorage</strong> — exporté le <strong>' + d + '</strong><br>' +
+            'Contenu : <strong>' + nbRisks + ' risques SMS</strong> (données locales du navigateur).<br>' +
+            'Note : ce fichier ne contient pas les données Supabase (CMS / OMM).';
+          document.getElementById('import-confirm-bar').style.display = 'flex';
+          document.getElementById('import-confirm-bar').scrollIntoView({behavior:'smooth', block:'nearest'});
+          return;
+        }
+
+        // ── Format global Supabase (_meta) ─────────────────────────────────
         if(!bundle._meta || !bundle._meta.modules){
-          showImportStatus('⚠ Fichier invalide : structure _meta manquante.', '#e07070');
+          showImportStatus('⚠ Fichier invalide : structure _meta manquante et format SMS non reconnu.', '#e07070');
           return;
         }
         var modules = bundle._meta.modules;
@@ -393,6 +460,49 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     btn.disabled = true; btnExp.disabled = true;
     var status = document.getElementById('export-status');
 
+    // ── Format SMS localStorage ────────────────────────────────────────────
+    if(bundle._smsLocal){
+      status.textContent = 'Restauration SMS localStorage…';
+      status.style.color = 'var(--grey-400)';
+      try {
+        var sms = bundle._smsData;
+        var keys = ['safRiskDB','safChangeStudies','safSPITargets','safFlightHours',
+                    'safOccurrences','safLessons','safSRBMeetings','safAudits',
+                    'safSAR','safALoS','safCAMOSignals','lastModified',
+                    'ejsPublicKey','ejsServiceId','ejsTemplateId'];
+        var count = 0;
+        keys.forEach(function(k){
+          if(k === 'safRiskDB') return; // géré séparément
+          if(sms[k] != null){ try { localStorage.setItem(k, sms[k]); count++; } catch(ex){} }
+        });
+        if(sms['saf_header'] != null){
+          try { localStorage.setItem('saf_international_safety_management_header_v1', sms['saf_header']); } catch(ex){}
+        }
+        // safRiskDB : valider avant d'écrire
+        if(sms.safRiskDB != null){
+          try {
+            var parsed = JSON.parse(sms.safRiskDB);
+            if(Array.isArray(parsed) && parsed.length === 9 &&
+               parsed.every(function(r){ return r && /^SMS-[A-I]$/.test(String(r.id||'')); })){
+              localStorage.setItem('safRiskDB', sms.safRiskDB);
+              count++;
+            } else {
+              status.textContent = '⚠ safRiskDB ignoré : ne correspond pas au registre SMS 9 événements.';
+              status.style.color = '#e3b341';
+            }
+          } catch(ex){}
+        }
+        status.textContent = '✓ SMS localStorage restauré (' + count + ' clés). Ouvrez le module SMS pour vérifier.';
+        status.style.color = '#3fb950';
+      } catch(e){
+        status.textContent = '⚠ Erreur restauration SMS : ' + e.message;
+        status.style.color = '#e07070';
+      }
+      btn.disabled = false; btnExp.disabled = false;
+      return;
+    }
+
+    // ── Format global Supabase ─────────────────────────────────────────────
     var LABEL = { sms_data:'SMS', cms_data:'CMS', omm_appendices:'OMM' };
     var modules = bundle._meta.modules;
     var errors = [];
@@ -431,11 +541,14 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     s.style.color = color || 'var(--grey-400)';
   }
 
-  // Session déjà active ?
+  // Session déjà active ? Sinon, vérifier le token invité.
   (async function(){
     var res = await db.auth.getSession();
     if(res.data && res.data.session){
       onAuthenticated(res.data.session);
+    } else {
+      // Pas de session Supabase → vérifier token invité dans l'URL
+      checkGuestToken();
     }
   })();
 })();

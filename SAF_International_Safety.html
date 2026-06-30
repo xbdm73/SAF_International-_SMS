@@ -4508,6 +4508,20 @@ function safImportAllData(evt){
   reader.onload = function(e){
     try{
       var data = JSON.parse(e.target.result);
+
+      // ── Normalisation : format v1 (exportJSON → version/app/risks)
+      //    converti en format v3 (safExportAllData → _version/_app/safRiskDB)
+      if(!data._version && !data._app && !data.safRiskDB &&
+         (data.version || data.app || Array.isArray(data.risks))) {
+        data = {
+          _version: 3,
+          _app: 'SAF International SMS',
+          _exported_at: data.exported_at || new Date().toISOString(),
+          safRiskDB:        JSON.stringify(Array.isArray(data.risks) ? data.risks : []),
+          safChangeStudies: JSON.stringify(Array.isArray(data.change_studies) ? data.change_studies : [])
+        };
+      }
+
       var keys = ['safRiskDB','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
                   'safLessons','safSRBMeetings','safAudits','lastModified',
                   'ejsPublicKey','ejsServiceId','ejsTemplateId'];
@@ -6309,16 +6323,21 @@ function exportAuditItemPDF(auditId) {
 }
 
 function exportJSON() {
-  const backup = {
-    version: '2.0',
-    exported_at: new Date().toISOString(),
-    app: 'SAF Risk Database · AS 332 C1 Super Puma',
-    risks: DB,
-    change_studies: CHANGE_STUDIES,
-    stats: { risks: DB.length, change_studies: CHANGE_STUDIES.length }
-  };
-  _download(`SAF_FullBackup_${_today()}.json`, JSON.stringify(backup, null, 2), 'application/json');
-  showToast('✓ Full backup exported', 'success');
+  // Délègue à safExportAllData() pour garantir le format v3 (compatible import)
+  if(typeof safExportAllData === 'function'){
+    safExportAllData();
+  } else {
+    // Fallback de sécurité (ne devrait jamais s'exécuter)
+    const backup = {
+      _version: 3,
+      _exported_at: new Date().toISOString(),
+      _app: 'SAF International SMS',
+      safRiskDB: JSON.stringify(DB),
+      safChangeStudies: JSON.stringify(CHANGE_STUDIES)
+    };
+    _download(`SAF_FullBackup_${_today()}.json`, JSON.stringify(backup, null, 2), 'application/json');
+    showToast('✓ Full backup exported', 'success');
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -13365,6 +13384,16 @@ setTimeout(function(){
           if(!Array.isArray(cloudArr)) return cloudJson;
           var localById = {};
           (Array.isArray(localArr)?localArr:[]).forEach(function(it){ if(it && it[idField]!=null) localById[it[idField]] = it; });
+
+          // PATCH — merge additif : préserve les entrées locales absentes du cloud
+          // (occurrences créées localement mais pas encore synchronisées)
+          var cloudIds = new Set(cloudArr.map(function(it){ return it && it[idField]; }).filter(Boolean));
+          (Array.isArray(localArr)?localArr:[]).forEach(function(it){
+            if(it && it[idField]!=null && !cloudIds.has(it[idField])){
+              cloudArr.push(it); // réintègre l'entrée locale manquante
+            }
+          });
+
           cloudArr.forEach(function(it){
             if(!it) return;
             var loc = localById[it[idField]];
@@ -13379,7 +13408,15 @@ setTimeout(function(){
 
       var localOcc = (function(){ try{ return localStorage.getItem('safOccurrences'); }catch(e){ return null; } })();
       var localLes = (function(){ try{ return localStorage.getItem('safLessons'); }catch(e){ return null; } })();
+      // PATCH — si le cloud n'a pas encore de safOccurrences, utiliser le local comme base
+      if(data.safOccurrences==null && localOcc && localOcc!=='[]' && localOcc!=='null'){
+        data.safOccurrences = localOcc;
+      }
       if(data.safOccurrences!=null) data.safOccurrences = mergeHeavy(data.safOccurrences, localOcc, 'id', ['eccairs2_pdf']);
+      // PATCH — idem pour safLessons
+      if(data.safLessons==null && localLes && localLes!=='[]' && localLes!=='null'){
+        data.safLessons = localLes;
+      }
       if(data.safLessons!=null)     data.safLessons     = mergeHeavy(data.safLessons, localLes, 'id', ['image']);
 
       // Risk Register consolidé: ne jamais restaurer l'ancien registre cloud à 47 entrées.
