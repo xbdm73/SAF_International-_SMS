@@ -1308,7 +1308,7 @@ nav { top: 118px !important; }
 <!-- ── SAF INTER-TOOL NAV ── -->
 <div id="saf-subnav" style="background:#070e1a;border-bottom:1px solid #1a2840;padding:0 28px;position:sticky;top:75px;z-index:18;">
   <div style="max-width:1800px;margin:auto;display:flex;align-items:center;gap:4px;overflow-x:auto;">
-    <a href="https://xbdm73.github.io/SAF_International-_SMS/index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
+    <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
     <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
     <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
@@ -1324,14 +1324,27 @@ nav { top: 118px !important; }
   };
   var file = location.pathname.split('/').pop() || 'index.html';
   var color = map[file];
-  if (!color) return;
-  document.querySelectorAll('#saf-subnav a.saf-nav-link').forEach(function(a){
-    if (a.getAttribute('href') === file) {
-      a.style.color = color;
-      a.style.borderBottomColor = color;
-      a.style.background = 'rgba(255,255,255,0.03)';
-    }
-  });
+  if (color) {
+    document.querySelectorAll('#saf-subnav a.saf-nav-link').forEach(function(a){
+      if (a.getAttribute('href') === file) {
+        a.style.color = color;
+        a.style.borderBottomColor = color;
+        a.style.background = 'rgba(255,255,255,0.03)';
+      }
+    });
+  }
+  // Propage ?token=... (accès invité) sur tous les liens de la sous-nav inter-outils,
+  // afin qu'un invité qui navigue d'un outil à l'autre conserve son accès en lecture seule.
+  var token = new URLSearchParams(window.location.search).get('token');
+  if (token) {
+    document.querySelectorAll('#saf-subnav a[href]').forEach(function(a){
+      try{
+        var url = new URL(a.getAttribute('href'), window.location.href);
+        url.searchParams.set('token', token);
+        a.setAttribute('href', url.pathname + url.search);
+      }catch(e){}
+    });
+  }
 })();
 </script>
 <!-- ── END SAF INTER-TOOL NAV ── -->
@@ -1510,6 +1523,7 @@ nav { top: 118px !important; }
 </div>
 <div class="nav-section">
 <div class="nav-label">SMS Modules</div>
+<div class="nav-item" onclick="showView('safetypolicy')"><span class="icon">🔒</span> Safety Policy &amp; Objectives</div>
 <div class="nav-item" onclick="showView('controls')"><span class="icon">⏱</span> Controls Review</div>
 <div class="nav-item" onclick="showView('bowtie')"><span class="icon">🎯</span> Bow-Tie Analysis</div>
 <div class="nav-item" onclick="showView('lessons')"><span class="icon">📢</span> Lessons Learned</div>
@@ -2631,6 +2645,73 @@ function updateOaciDefinitionDropdown(sel) {
 <div class="view" id="view-spi">
 <div class="dash-header"><div><div class="dash-title">SAFETY PERFORMANCE — SPT & CAPA KPI</div><div class="dash-subtitle">AMC1 ORO.GEN.200(a)(3) & AMC1 ORO.GEN.200(a)(6) — targets, thresholds, trends, corrective action effectiveness</div></div><button class="btn btn-ghost" onclick="renderSPIView()">↺ Refresh</button></div>
 <div id="spi-content"></div></div>
+<div class="view" id="view-safetypolicy">
+<div class="dash-header"><div><div class="dash-title">🔒 SAFETY POLICY &amp; OBJECTIVES</div><div class="dash-subtitle">ORO.GEN.200(a)(1) &amp; AMC1 ORO.GEN.200(a)(1) — Politique de sécurité signée par l'Accountable Manager, diffusée, versionnée et revue annuellement</div></div></div>
+<div style="padding:0 28px 28px;display:flex;flex-direction:column;gap:20px;">
+
+  <div class="chart-card" style="padding:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+      <div class="chart-title" style="margin:0;">Statut de la politique en vigueur</div>
+      <div style="display:flex;gap:8px;align-items:center;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">
+        <span>Version <strong id="sp-status-version" style="color:var(--gold-light);">—</strong></span>
+        <span>·</span>
+        <span>Approuvée le <strong id="sp-status-date" style="color:var(--white);">—</strong></span>
+        <span>·</span>
+        <span id="sp-status-badge" style="padding:2px 9px;border-radius:10px;border:1px solid rgba(255,255,255,.15);">Non signée</span>
+      </div>
+    </div>
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);line-height:1.6;">Toute modification du texte ou des objectifs après signature invalide automatiquement la signature en cours — une nouvelle approbation est alors requise (traçabilité des révisions).</div>
+  </div>
+
+  <div class="chart-card" style="padding:20px;">
+    <div class="chart-title" style="margin-bottom:14px;">1 — Politique de sécurité</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
+      <div class="form-field" style="margin:0;"><label class="field-label">Numéro de version</label><input id="sp-version" type="text" placeholder="ex. 4.0" oninput="spOnContentChanged()"/></div>
+      <div class="form-field" style="margin:0;"><label class="field-label">Date de rédaction / révision</label><input id="sp-rev-date" type="date" oninput="spOnContentChanged()" onchange="spOnContentChanged()"/></div>
+      <div class="form-field" style="margin:0;"><label class="field-label">Prochaine revue prévue</label><input id="sp-next-review" type="date" oninput="spOnContentChanged()" onchange="spOnContentChanged()"/></div>
+    </div>
+    <div class="form-field" style="margin:0 0 14px;">
+      <label class="field-label">Texte de la politique de sécurité</label>
+      <textarea id="sp-policy-text" rows="10" placeholder="Déclaration d'engagement de la direction envers la sécurité : priorité de la sécurité, allocation des ressources, culture juste, amélioration continue, conformité réglementaire…" oninput="spOnContentChanged()"></textarea>
+    </div>
+    <div class="form-field" style="margin:0;">
+      <label class="field-label">Objectifs de sécurité de l'année (mesurables)</label>
+      <textarea id="sp-objectives" rows="6" placeholder="1- Objectif mesurable n°1 (ex. réduire le taux d'événements HESLO de X%)&#10;2- Objectif mesurable n°2…" oninput="spOnContentChanged()"></textarea>
+    </div>
+  </div>
+
+  <div class="chart-card" style="padding:20px;">
+    <div class="chart-title" style="margin-bottom:14px;">2 — Approbation et signature électronique — Accountable Manager</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;">
+      <div class="form-field" style="margin:0;"><label class="field-label">Accountable Manager</label><input id="sp-acm-name" type="text" value="Jean Louis CAMUS" placeholder="Nom / fonction…"/></div>
+      <div class="form-field" style="margin:0;"><label class="field-label">Approbation — lu et validé</label>
+        <div class="cs-esig-box" id="sp-acm-esig-box">
+          <input type="hidden" id="sp-acm-esig-name" value="Jean Louis CAMUS"/>
+          <label class="cs-esig-check-row">
+            <input type="checkbox" id="sp-acm-esig-check" onchange="spEsigUpdate()"/>
+            <span class="cs-esig-label">Je confirme avoir rédigé/revu cette politique de sécurité et ses objectifs, et j'en approuve la diffusion à l'ensemble du personnel.</span>
+          </label>
+          <div class="cs-esig-stamp" id="sp-acm-esig-stamp">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" stroke="#50c878"/><path d="M3.5 7l2.5 2.5L10.5 5" stroke="#50c878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span id="sp-acm-esig-stamp-text"></span>
+          </div>
+        </div>
+        <input id="sp-acm-signature" type="hidden"/>
+      </div>
+    </div>
+    <div id="sp-invalidated-warning" style="display:none;margin-top:14px;padding:10px 14px;background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.35);border-radius:8px;font-family:var(--font-mono);font-size:11px;color:#f85149;">⚠ Le texte ou les objectifs ont été modifiés depuis la dernière signature — une nouvelle approbation est requise.</div>
+  </div>
+
+  <div class="chart-card" style="padding:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div class="chart-title" style="margin:0;">3 — Historique des versions</div>
+      <button onclick="spSaveVersion()" style="padding:8px 18px;background:rgba(74,159,224,.18);border:1px solid var(--steel-bright);border-radius:6px;color:var(--steel-bright);font-family:var(--font-mono);font-size:11px;font-weight:700;cursor:pointer;">💾 Enregistrer cette version</button>
+    </div>
+    <div id="sp-history-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+  </div>
+
+</div>
+</div>
 <div class="view" id="view-controls">
 <div class="dash-header"><div><div class="dash-title">CONTROLS REVIEW</div><div class="dash-subtitle">Reg. (EU) 376/2014 — Periodic review of safety control measures, ALARP acceptance, effectiveness</div></div><button class="btn btn-ghost" onclick="renderControlsView()">↺ Refresh</button></div>
 <div id="controls-content"></div></div>
@@ -6394,6 +6475,7 @@ function showView(name) {
   if(!localStorage.getItem('safLessons'))localStorage.setItem('safLessons','[]');
   if(!localStorage.getItem('safSAR'))localStorage.setItem('safSAR','[]');
   if(!localStorage.getItem('safALoS'))localStorage.setItem('safALoS','[]');
+  if(!localStorage.getItem('safSafetyPolicy'))localStorage.setItem('safSafetyPolicy', JSON.stringify({current:null,history:[]}));
   if(name==='database')    renderTable();
   if(name==='export')      renderExportView();
   if(name==='spi')         renderSPIView();
@@ -6410,6 +6492,7 @@ function showView(name) {
   if(name==='safetyassurance') renderSARList();
   if(name==='alos')        renderALoSView();
   if(name==='camointerface')  { renderCAMOSignals(); }
+  if(name==='safetypolicy')   { renderSafetyPolicy(); }
 }
 
 // ── Utility: download file ─────────────────────────────────────────
@@ -7364,6 +7447,254 @@ function csActionEsigUpdate(id){
   }
   csSyncAction(id);
   if(typeof saveState==='function')saveState();
+}
+
+// ════════════════════════════════════════════════════════════════════
+// SAFETY POLICY & OBJECTIVES — ORO.GEN.200(a)(1) / AMC1 ORO.GEN.200(a)(1)
+// ════════════════════════════════════════════════════════════════════
+function getSafetyPolicy(){
+  try{
+    var raw=localStorage.getItem('safSafetyPolicy');
+    return raw?JSON.parse(raw):{current:null,history:[]};
+  }catch(e){ return {current:null,history:[]}; }
+}
+function saveSafetyPolicy(data){
+  localStorage.setItem('safSafetyPolicy', JSON.stringify(data));
+  updateLastModified();
+}
+
+// Reconstruit un hash du contenu signé, afin d'invalider automatiquement la
+// signature si le texte/objectifs changent après approbation (traçabilité).
+function _spContentHash(){
+  var get=function(id){ return (document.getElementById(id)?.value||'').trim(); };
+  return [get('sp-version'),get('sp-rev-date'),get('sp-next-review'),get('sp-policy-text'),get('sp-objectives')].join('||');
+}
+
+function spEsigUpdate(){
+  const chk=document.getElementById('sp-acm-esig-check');
+  const sel=document.getElementById('sp-acm-esig-name');
+  const box=document.getElementById('sp-acm-esig-box');
+  const stamp=document.getElementById('sp-acm-esig-stamp');
+  const stampTxt=document.getElementById('sp-acm-esig-stamp-text');
+  const hiddenSig=document.getElementById('sp-acm-signature');
+  const nameInput=document.getElementById('sp-acm-name');
+  if(sel&&nameInput) sel.value=nameInput.value.trim();
+  const name=sel?sel.value.trim():'';
+  const checked=chk?chk.checked:false;
+  const valid=checked&&name;
+  if(box) box.classList.toggle('signed',!!valid);
+  if(stamp&&stampTxt){
+    if(valid){
+      const now=new Date();
+      const d=now.toLocaleDateString('en-GB');
+      const t=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      stampTxt.textContent=name+' — approved on '+d+' at '+t;
+      stamp.classList.add('visible');
+      if(hiddenSig) hiddenSig.value='APPROVED:'+name+'|'+now.toISOString()+'|hash:'+_spContentHash();
+    } else {
+      stamp.classList.remove('visible');
+      if(hiddenSig) hiddenSig.value='';
+    }
+  }
+  spUpdateStatusBar();
+  spSyncCurrent();
+}
+
+// Si le texte/objectifs changent après une approbation, le hash stocké dans la
+// signature ne correspond plus : on affiche un avertissement et on retire le
+// style "signed", sans effacer la trace de la signature précédente.
+function spOnContentChanged(){
+  const hiddenSig=document.getElementById('sp-acm-signature');
+  const sigVal=hiddenSig?hiddenSig.value:'';
+  const warning=document.getElementById('sp-invalidated-warning');
+  if(sigVal){
+    var hashInSig=(sigVal.split('|hash:')[1]||'');
+    var currentHash=_spContentHash();
+    var stale=hashInSig && hashInSig!==currentHash;
+    if(warning) warning.style.display=stale?'block':'none';
+    if(stale){
+      var box=document.getElementById('sp-acm-esig-box');
+      if(box) box.classList.remove('signed');
+    }
+  } else if(warning){
+    warning.style.display='none';
+  }
+  spUpdateStatusBar();
+  spSyncCurrent();
+}
+
+// Persiste l'état courant (brouillon, signé ou non) sans créer de nouvelle
+// entrée d'historique — l'historique n'est alimenté qu'au clic "Enregistrer".
+function spSyncCurrent(){
+  var data=getSafetyPolicy();
+  var get=function(id){ return document.getElementById(id)?.value||''; };
+  data.current={
+    version: get('sp-version'),
+    rev_date: get('sp-rev-date'),
+    next_review: get('sp-next-review'),
+    policy_text: get('sp-policy-text'),
+    objectives: get('sp-objectives'),
+    acm_name: get('sp-acm-name'),
+    signature: get('sp-acm-signature'),
+    updated_at: new Date().toISOString()
+  };
+  if(!Array.isArray(data.history)) data.history=[];
+  saveSafetyPolicy(data);
+}
+
+function spUpdateStatusBar(){
+  var sigVal=document.getElementById('sp-acm-signature')?.value||'';
+  var versionEl=document.getElementById('sp-status-version');
+  var dateEl=document.getElementById('sp-status-date');
+  var badge=document.getElementById('sp-status-badge');
+  if(versionEl) versionEl.textContent=document.getElementById('sp-version')?.value||'—';
+  if(dateEl) dateEl.textContent=formatDateOrDash(document.getElementById('sp-rev-date')?.value||'');
+  if(badge){
+    var hashInSig=(sigVal.split('|hash:')[1]||'');
+    var stale=sigVal && hashInSig && hashInSig!==_spContentHash();
+    if(sigVal && !stale){
+      badge.textContent='✓ Signée par l\'Accountable Manager';
+      badge.style.color='#3fb950'; badge.style.borderColor='rgba(63,185,80,.4)'; badge.style.background='rgba(63,185,80,.1)';
+    } else if(stale){
+      badge.textContent='⚠ Signature obsolète — re-approbation requise';
+      badge.style.color='#e3b341'; badge.style.borderColor='rgba(227,179,65,.4)'; badge.style.background='rgba(227,179,65,.1)';
+    } else {
+      badge.textContent='Non signée';
+      badge.style.color='var(--grey-400)'; badge.style.borderColor='rgba(255,255,255,.15)'; badge.style.background='transparent';
+    }
+  }
+}
+
+// Enregistre explicitement la version courante dans l'historique versionné.
+function spSaveVersion(){
+  var get=function(id){ return (document.getElementById(id)?.value||'').trim(); };
+  var version=get('sp-version');
+  var revDate=get('sp-rev-date');
+  var policyText=get('sp-policy-text');
+  if(!version||!revDate||!policyText){
+    showToast('⚠ Renseigner au minimum la version, la date de révision et le texte de la politique','error');
+    return;
+  }
+  var data=getSafetyPolicy();
+  if(!Array.isArray(data.history)) data.history=[];
+  var sigVal=get('sp-acm-signature');
+  var hashInSig=(sigVal.split('|hash:')[1]||'');
+  var signedAndValid = !!sigVal && hashInSig===_spContentHash();
+  var entry={
+    id: 'SP-'+Date.now(),
+    version: version,
+    rev_date: revDate,
+    next_review: get('sp-next-review'),
+    policy_text: policyText,
+    objectives: get('sp-objectives'),
+    acm_name: get('sp-acm-name'),
+    signature: sigVal,
+    signed: signedAndValid,
+    saved_at: new Date().toISOString()
+  };
+  data.history.unshift(entry);
+  data.current=entry;
+  saveSafetyPolicy(data);
+  renderSafetyPolicyHistory();
+  spUpdateStatusBar();
+  showToast((signedAndValid?'✓ Version '+version+' enregistrée et signée':'✓ Version '+version+' enregistrée (non signée)'),'success');
+}
+
+function spLoadHistoryEntry(id){
+  var data=getSafetyPolicy();
+  var entry=(data.history||[]).find(function(e){ return e.id===id; });
+  if(!entry) return;
+  var setVal=function(id2,v){ var el=document.getElementById(id2); if(el) el.value=v||''; };
+  setVal('sp-version', entry.version);
+  setVal('sp-rev-date', entry.rev_date);
+  setVal('sp-next-review', entry.next_review);
+  setVal('sp-policy-text', entry.policy_text);
+  setVal('sp-objectives', entry.objectives);
+  setVal('sp-acm-name', entry.acm_name);
+  setVal('sp-acm-signature', entry.signature);
+  var nameHidden=document.getElementById('sp-acm-esig-name');
+  if(nameHidden) nameHidden.value=entry.acm_name||'';
+  var chk=document.getElementById('sp-acm-esig-check');
+  var hashInSig=((entry.signature||'').split('|hash:')[1]||'');
+  var stillValid=!!entry.signature && hashInSig===_spContentHash();
+  if(chk) chk.checked=!!entry.signature;
+  var box=document.getElementById('sp-acm-esig-box');
+  var stamp=document.getElementById('sp-acm-esig-stamp');
+  var stampTxt=document.getElementById('sp-acm-esig-stamp-text');
+  if(entry.signature){
+    var parts=entry.signature.split('|');
+    var name=(parts[0]||'').replace('APPROVED:','');
+    var iso=parts[1];
+    var d=iso?new Date(iso):null;
+    if(stampTxt && d) stampTxt.textContent=name+' — approved on '+d.toLocaleDateString('en-GB')+' at '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    if(stamp) stamp.classList.toggle('visible', stillValid);
+    if(box) box.classList.toggle('signed', stillValid);
+  } else {
+    if(stamp) stamp.classList.remove('visible');
+    if(box) box.classList.remove('signed');
+  }
+  spOnContentChanged();
+  showToast('Version '+entry.version+' chargée dans l\'éditeur','success');
+}
+
+function renderSafetyPolicyHistory(){
+  var list=document.getElementById('sp-history-list');
+  if(!list) return;
+  var data=getSafetyPolicy();
+  var history=data.history||[];
+  if(!history.length){
+    list.innerHTML='<div style="color:var(--grey-400);font-family:var(--font-mono);font-size:12px;padding:16px;text-align:center;border:1px dashed rgba(255,255,255,.1);border-radius:8px;">Aucune version enregistrée — utilisez "Enregistrer cette version" ci-dessus.</div>';
+    return;
+  }
+  list.innerHTML=history.map(function(e){
+    var statusColor=e.signed?'#3fb950':'#e3b341';
+    var statusLabel=e.signed?'✓ Signée':'Non signée';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 14px;background:var(--navy-mid);border:1px solid rgba(255,255,255,.08);border-radius:8px;flex-wrap:wrap;">'
+      + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">'
+      +   '<span style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--gold-light);">v'+(e.version||'—')+'</span>'
+      +   '<span style="font-family:var(--font-mono);font-size:11px;color:var(--grey-400);">'+formatDateOrDash(e.rev_date)+'</span>'
+      +   '<span style="font-family:var(--font-mono);font-size:10px;padding:1px 8px;border-radius:8px;border:1px solid '+statusColor+';color:'+statusColor+';">'+statusLabel+'</span>'
+      +   (e.acm_name?'<span style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">'+e.acm_name+'</span>':'')
+      + '</div>'
+      + '<button onclick="spLoadHistoryEntry(\''+e.id+'\')" style="padding:4px 12px;background:rgba(74,159,224,.12);border:1px solid rgba(74,159,224,.35);border-radius:5px;color:var(--steel-bright);font-family:var(--font-mono);font-size:10px;cursor:pointer;">Charger</button>'
+      + '</div>';
+  }).join('');
+}
+
+function renderSafetyPolicy(){
+  var data=getSafetyPolicy();
+  var cur=data.current;
+  if(cur){
+    var setVal=function(id,v){ var el=document.getElementById(id); if(el && !el.value) el.value=v||''; };
+    setVal('sp-version', cur.version);
+    setVal('sp-rev-date', cur.rev_date);
+    setVal('sp-next-review', cur.next_review);
+    setVal('sp-policy-text', cur.policy_text);
+    setVal('sp-objectives', cur.objectives);
+    setVal('sp-acm-name', cur.acm_name);
+    var nameHidden=document.getElementById('sp-acm-esig-name');
+    if(nameHidden && cur.acm_name) nameHidden.value=cur.acm_name;
+    var sigHidden=document.getElementById('sp-acm-signature');
+    if(sigHidden && !sigHidden.value) sigHidden.value=cur.signature||'';
+    if(cur.signature){
+      var chk=document.getElementById('sp-acm-esig-check');
+      if(chk) chk.checked=true;
+      var parts=cur.signature.split('|');
+      var name=(parts[0]||'').replace('APPROVED:','');
+      var iso=parts[1];
+      var d=iso?new Date(iso):null;
+      var stampTxt=document.getElementById('sp-acm-esig-stamp-text');
+      var stamp=document.getElementById('sp-acm-esig-stamp');
+      var box=document.getElementById('sp-acm-esig-box');
+      var hashInSig=(parts[2]||'').replace('hash:','');
+      var stillValid=hashInSig===_spContentHash();
+      if(stampTxt && d) stampTxt.textContent=name+' — approved on '+d.toLocaleDateString('en-GB')+' at '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      if(stamp) stamp.classList.toggle('visible', stillValid);
+      if(box) box.classList.toggle('signed', stillValid);
+    }
+  }
+  renderSafetyPolicyHistory();
+  spUpdateStatusBar();
 }
 
 function csClearSig(type,actionId){

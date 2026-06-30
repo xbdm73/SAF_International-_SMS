@@ -2632,6 +2632,43 @@ h1 {
   }
   window.safCloudScheduleSave = scheduleSave;
 
+  // ── ACCÈS INVITÉ PAR TOKEN URL ───────────────────────────────────────────
+  // Doit rester strictement identique à celui d'index.html / Safety / CMS.
+  var GUEST_TOKEN = 'SAF-READONLY-2025';
+  function checkGuestToken(){
+    var params = new URLSearchParams(window.location.search);
+    var token  = params.get('token');
+    if(token && token === GUEST_TOKEN){
+      overlay.style.display = 'none';
+      var badge = document.getElementById('saf-role-badge');
+      if(badge){
+        badge.textContent = 'READ ONLY';
+        badge.style.color = '#9fc4e8';
+        badge.style.borderColor = 'rgba(106,130,165,.3)';
+        badge.style.display = 'inline-block';
+      }
+      var logoutBtn = document.getElementById('saf-logout-btn');
+      if(logoutBtn) logoutBtn.style.display = 'none';
+      try { localStorage.setItem('saf_role', 'reader|guest'); } catch(e){}
+      applyReadOnly();
+      propagateGuestTokenToNav(token);
+      cloudLoad().then(function(){ ready = true; attachAutoSave(); });
+      return true;
+    }
+    return false;
+  }
+  // Propage ?token=... aux liens de la sous-nav cross-outils (HOME / SMS / CMS / OMM)
+  function propagateGuestTokenToNav(token){
+    document.querySelectorAll('#saf-subnav a[href]').forEach(function(a){
+      try{
+        var url = new URL(a.getAttribute('href'), window.location.href);
+        url.searchParams.set('token', token);
+        a.setAttribute('href', url.pathname + url.search);
+      }catch(e){}
+    });
+  }
+  // ────────────────────────────────────────────────────────────────────────
+
   // --- Connexion ---
   async function doLogin(){
     var email = document.getElementById('saf-email').value.trim();
@@ -2720,6 +2757,7 @@ h1 {
   (async function(){
     var res = await db.auth.getSession();
     if(res.data && res.data.session) onAuthenticated(res.data.session);
+    else checkGuestToken();
   })();
 })();
 </script>

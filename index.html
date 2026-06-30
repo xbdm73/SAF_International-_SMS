@@ -282,9 +282,20 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
       // Pas de bouton déconnexion pour les invités (inutile)
       logoutBtn.style.display = 'none';
       applyRole('reader', 'guest');
+      propagateGuestTokenToToolLinks(token);
       return true;
     }
     return false;
+  }
+  // Propage ?token=... aux liens des outils pour que l'accès invité suive la navigation
+  function propagateGuestTokenToToolLinks(token){
+    document.querySelectorAll('a.tool-card[href]').forEach(function(a){
+      try{
+        var url = new URL(a.getAttribute('href'), window.location.href);
+        url.searchParams.set('token', token);
+        a.setAttribute('href', url.pathname + url.search);
+      }catch(e){}
+    });
   }
   // ────────────────────────────────────────────────────────────────────────
 
