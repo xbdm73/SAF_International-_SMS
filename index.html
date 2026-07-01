@@ -28,7 +28,7 @@ body { font-family: var(--font-body); background: var(--navy); color: var(--whit
 /* ─── LOGIN OVERLAY ─────────────────────────────── */
 #saf-login-overlay {
   position: fixed; inset: 0; background: rgba(4,8,15,.97);
-  z-index: 99999; display: flex; align-items: center; justify-content: center;
+  z-index: 99999; display: none; align-items: center; justify-content: center;
   font-family: var(--font-body);
 }
 #saf-login-box {
@@ -143,6 +143,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     <label for="saf-pwd">Mot de passe</label>
     <input type="password" id="saf-pwd" autocomplete="current-password">
     <button id="saf-login-btn">Se connecter</button>
+    <button id="saf-login-cancel-btn" type="button" style="width:100%;background:none;color:var(--grey-400);border:1px solid rgba(255,255,255,.12);margin-top:8px;padding:10px;border-radius:6px;font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;cursor:pointer;">Annuler</button>
     <div id="saf-login-msg"></div>
   </div>
 </div>
@@ -158,6 +159,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
   <div class="header-right">
     <span id="saf-user-info"></span>
     <span id="saf-role-badge" style="display:none;font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;padding:2px 7px;border-radius:3px;border:1px solid;"></span>
+    <button id="saf-login-trigger-btn" style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);background:none;border:1px solid rgba(255,255,255,.1);padding:4px 10px;border-radius:4px;cursor:pointer;letter-spacing:.04em;">Connexion admin</button>
     <button id="saf-logout-btn" style="display:none">Déconnexion</button>
     <div class="header-badge">FOCA / EASA</div>
   </div>
@@ -167,7 +169,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
   <p class="section-label">Accès aux outils</p>
   <div class="tools-grid">
 
-    <a class="tool-card" href="SAF_International_Safety.html">
+    <a class="tool-card" href="SAF_International_Safety%20old.html">
       <div class="tool-header">
         <div class="tool-icon icon-sms">🛡️</div>
         <span class="tool-name">Safety Management</span>
@@ -226,16 +228,12 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
   var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q";
   var db = window.supabase.createClient(SB_URL, SB_KEY);
 
-  // ── TOKEN D'ACCÈS INVITÉ ─────────────────────────────────────────────────
-  // Modifiez cette valeur pour changer le token à distribuer aux invités.
-  // L'URL à partager sera : https://xbdm73.github.io/SAF_International-_SMS/?token=SAF-READONLY-2025
-  var GUEST_TOKEN = 'SAF-READONLY-2025';
-  // ────────────────────────────────────────────────────────────────────────
-
   var overlay  = document.getElementById('saf-login-overlay');
   var loginMsg = document.getElementById('saf-login-msg');
   var userInfo = document.getElementById('saf-user-info');
   var logoutBtn = document.getElementById('saf-logout-btn');
+  var loginTriggerBtn = document.getElementById('saf-login-trigger-btn');
+  var loginCancelBtn = document.getElementById('saf-login-cancel-btn');
 
   var SAF_ROLE = 'reader';
 
@@ -268,34 +266,19 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     var email = session.user.email;
     userInfo.textContent = email;
     logoutBtn.style.display = 'inline-block';
+    loginTriggerBtn.style.display = 'none';
     loadAndApplyRole(email);
   }
 
-  // ── ACCÈS INVITÉ PAR TOKEN URL ───────────────────────────────────────────
-  function checkGuestToken(){
-    var params = new URLSearchParams(window.location.search);
-    var token  = params.get('token');
-    if(token && token === GUEST_TOKEN){
-      // Accès accordé en lecture seule — pas de compte Supabase requis
-      overlay.style.display = 'none';
-      userInfo.textContent  = 'Invité';
-      // Pas de bouton déconnexion pour les invités (inutile)
-      logoutBtn.style.display = 'none';
-      applyRole('reader', 'guest');
-      propagateGuestTokenToToolLinks(token);
-      return true;
-    }
-    return false;
-  }
-  // Propage ?token=... aux liens des outils pour que l'accès invité suive la navigation
-  function propagateGuestTokenToToolLinks(token){
-    document.querySelectorAll('a.tool-card[href]').forEach(function(a){
-      try{
-        var url = new URL(a.getAttribute('href'), window.location.href);
-        url.searchParams.set('token', token);
-        a.setAttribute('href', url.pathname + url.search);
-      }catch(e){}
-    });
+  // ── ACCÈS INVITÉ PAR DÉFAUT ──────────────────────────────────────────────
+  // Tout visiteur sans session admin obtient automatiquement un accès
+  // lecture seule, sans login ni token requis.
+  function applyGuestRole(){
+    overlay.style.display = 'none';
+    userInfo.textContent  = 'Invité';
+    logoutBtn.style.display = 'none';
+    loginTriggerBtn.style.display = 'inline-block';
+    applyRole('reader', 'guest');
   }
   // ────────────────────────────────────────────────────────────────────────
 
@@ -315,13 +298,18 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
   document.getElementById('saf-login-btn').addEventListener('click', doLogin);
   document.getElementById('saf-pwd').addEventListener('keydown', function(e){ if(e.key === 'Enter') doLogin(); });
 
+  loginTriggerBtn.addEventListener('click', function(){
+    loginMsg.className = ''; loginMsg.textContent = '';
+    overlay.style.display = 'flex';
+  });
+
+  loginCancelBtn.addEventListener('click', function(){
+    overlay.style.display = 'none';
+  });
+
   logoutBtn.addEventListener('click', async function(){
     await db.auth.signOut();
-    // Effacer le token de l'URL si présent avant rechargement
-    var url = new URL(window.location.href);
-    url.searchParams.delete('token');
-    window.history.replaceState({}, '', url);
-    location.reload();
+    applyGuestRole();
   });
 
   window.exportGlobal = async function(){
@@ -552,14 +540,13 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     s.style.color = color || 'var(--grey-400)';
   }
 
-  // Session déjà active ? Sinon, vérifier le token invité.
+  // Session admin active → accès complet. Sinon → accès invité automatique.
   (async function(){
     var res = await db.auth.getSession();
     if(res.data && res.data.session){
       onAuthenticated(res.data.session);
     } else {
-      // Pas de session Supabase → vérifier token invité dans l'URL
-      checkGuestToken();
+      applyGuestRole();
     }
   })();
 })();
