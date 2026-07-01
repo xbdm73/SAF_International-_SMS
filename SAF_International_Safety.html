@@ -14357,7 +14357,7 @@ setTimeout(function(){
     try { localStorage.setItem('saf_role', SAF_ROLE + '|' + email); } catch(e){}
   }
 
-  var WRITE_LABEL = /ajouter|enregistrer|sauvegarder|supprimer|modifier|valider|créer|générer|importer|^add\b|^save\b|^delete\b|^remove\b|^submit\b|^confirm\b|^edit\b|^copy\b|new entry|new event|new occurrence|new lesson|new review|new safety case|nouvelle?\b|nouveau\b/i;
+  var WRITE_LABEL = /ajouter|enregistrer|sauvegarder|supprimer|modifier|valider|créer|générer|importer|\badd\b|\bsave\b|\bdelete\b|\bremove\b|\bsubmit\b|\bconfirm\b|\bedit\b|\bcopy\b|new entry|new event|new occurrence|new lesson|new review|new safety case|nouvelle?\b|nouveau\b/i;
   var WRITE_ONCLICK = /submitEntry|editEntry\(|copyEntry\(|deleteEntry\(|showOccurrenceForm|showLessonForm|showSARForm|showALoSForm|showCAMOSignalForm|saveAndExportE5X|saveOccurrence|saveSRBMeeting|saveSARRecord|saveALoSRecord|saveCAMOSignal|saveChangeStudy|ejsSaveConfig|showAuditForm|saveAudit\(|showView\('form'\)|json-file-input/i;
 
   function lockWriteElementsIn(root){
@@ -14389,6 +14389,32 @@ setTimeout(function(){
       el.setAttribute('contenteditable', 'false');
       el.style.opacity = '0.6'; el.title = 'Lecture seule';
       el.__safLocked = true;
+    });
+  }
+
+  // ── VERROU DE SÉCURITÉ AU NIVEAU FONCTION (indépendant de l'affichage) ──
+  // Neutralise directement les fonctions d'écriture/persistance pour les
+  // invités, quelle que soit la façon dont elles seraient déclenchées
+  // (bouton mal détecté, raccourci, console navigateur, etc.).
+  function guardWriteFunctions(){
+    var WRITE_FN_NAMES = [
+      'submitEntry','editEntry','editEntry_LEGACY','copyEntry','deleteEntry',
+      'deleteOccurrence','deleteLesson','deleteSAR','deleteALoS','deleteCAMOSignal',
+      'saveOccurrence','saveAndExportE5X','saveLesson','saveSAR','saveALoS',
+      'saveCAMOSignal','saveChangeStudy','saveSRBMeeting','saveSARRecord','saveALoSRecord',
+      'saveEditModal','importJSON','saveAudit','ejsSaveConfig','csSaveNewRisk',
+      'safSaveDirectPoint','saveSafetyPolicy'
+    ];
+    WRITE_FN_NAMES.forEach(function(name){
+      var orig = window[name];
+      if(typeof orig === 'function' && !orig.__safGuarded){
+        var guarded = function(){
+          if(typeof showToast === 'function') showToast('Mode invité — lecture seule. Connectez-vous en admin pour modifier.', 'error');
+          return;
+        };
+        guarded.__safGuarded = true;
+        window[name] = guarded;
+      }
     });
   }
 
@@ -14567,6 +14593,7 @@ setTimeout(function(){
       // (lecture seule, autorisée par Supabase RLS) et on affiche l'ensemble
       // du site normalement, sans aucune possibilité d'écriture.
       isGuest = true;
+      guardWriteFunctions();
       await cloudLoad();
       ready = true;
       bar.style.display='flex'; bar.querySelector('.dot').style.background='#E07020'; barTxt.textContent='Mode invité — lecture seule'; document.getElementById('saf-logout-btn').style.display='none';
