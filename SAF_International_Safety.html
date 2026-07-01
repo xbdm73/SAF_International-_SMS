@@ -14377,7 +14377,7 @@ setTimeout(function(){
     });
     var inputSel = 'input:not([type="search"]):not([type="checkbox"]):not([type="radio"]), textarea, select';
     (root.matches && root.matches(inputSel) ? [root] : []).concat(Array.prototype.slice.call(root.querySelectorAll(inputSel))).forEach(function(el){
-      if(el.closest('#saf-cloud-bar') || el.closest('#saf-subnav')) return;
+      if(el.closest('#saf-cloud-bar') || el.closest('#saf-subnav') || el.id === 'bt-cat-filter') return;
       if(el.__safLocked) return;
       el.disabled = true; el.style.opacity = '0.5'; el.title = 'Lecture seule';
       el.__safLocked = true;
