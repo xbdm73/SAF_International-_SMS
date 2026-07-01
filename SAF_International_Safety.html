@@ -7042,15 +7042,17 @@ function _printHTML(title, bodyHTML, autoPrint) {
   const win = window.open('', '_blank');
   if(!win) { showToast('Please allow popups to generate PDF', 'error'); return; }
   const logoSrc = document.querySelector('.logo-box img')?.src || SAF_LOGO_DATA_URI || '';
-  const logoHTML = logoSrc ? `<img src="${logoSrc}" alt="SAF International" style="height:44px;display:block;"/>` : '';
+  const logoHTML = logoSrc ? `<div class="pdf-logo-badge"><img src="${logoSrc}" alt="SAF International"/></div>` : '';
   const printScript = autoPrint ? `<script>window.onload=()=>{window.print();}<\/script>` : '';
   win.document.write(`<!DOCTYPE html><html><head>
     <meta charset="UTF-8"><title>${title}</title>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
-      *{box-sizing:border-box;margin:0;padding:0}
+      *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       body{font-family:'IBM Plex Sans',sans-serif;background:#fff;color:#1a2e42;padding:24px;font-size:11px;}
       .pdf-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;padding-bottom:12px;border-bottom:3px solid #1A2E42;}
+      .pdf-header .pdf-logo-badge{background:#0D1B2A;padding:10px 18px;border-radius:6px;display:flex;align-items:center;}
+      .pdf-header .pdf-logo-badge img{height:38px;display:block;}
       .pdf-header .pdf-header-brand{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8896A0;text-align:right;}
       .pdf-toolbar{position:sticky;top:0;background:#F4F6F8;border-bottom:1px solid #e8ecf0;padding:10px 24px;margin:-24px -24px 20px -24px;display:flex;justify-content:flex-end;gap:10px;}
       .pdf-toolbar button{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:7px 14px;border-radius:6px;border:1px solid #1A2E42;background:#1A2E42;color:#fff;cursor:pointer;}
@@ -11095,7 +11097,7 @@ function renderSavedCSList(){
     .sort(function(a,b){return new Date(b.saved_at||0)-new Date(a.saved_at||0);});
   if(!studies.length){
     el.innerHTML='<div style="color:var(--grey-400);font-family:var(--font-mono);font-size:11px;padding:16px;text-align:center;border:1px dashed rgba(255,255,255,.08);border-radius:8px;">'
-      +(filterStatus?'No change studies with status "'+filterStatus+'".':'No change studies saved yet.')+'</div>';
+      +(filterStatus?'No change studies with status "'+filterStatus+'".':'No change studies saved yet — fill in the form below and click <b>✓ SAVE CHANGE STUDY</b> to see it appear here.')+'</div>';
     return;
   }
   var html='<div style="display:flex;flex-direction:column;gap:10px;">';
@@ -11118,7 +11120,7 @@ function renderSavedCSList(){
           return '<span style="font-family:var(--font-mono);font-size:9px;color:'+vc+';background:'+vc+'22;border:1px solid '+vc+'44;border-radius:3px;padding:1px 5px;">v'+v.version+'</span>';
         }).join('')+'</div>':'')
       +'</div>'
-      +'<div style="display:flex;gap:6px;flex-shrink:0;">'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
       +'<button data-csref="'+cs.ref+'" class="csl-load" style="padding:4px 12px;background:rgba(74,159,224,.2);border:1px solid var(--steel-bright);border-radius:5px;color:var(--steel-bright);font-family:var(--font-mono);font-size:10px;cursor:pointer;">✎ Edit</button>'
       +'<button data-csref="'+cs.ref+'" class="csl-preview" style="padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:5px;color:var(--grey-200);font-family:var(--font-mono);font-size:10px;cursor:pointer;">◎ Preview</button>'
       +'<button data-csref="'+cs.ref+'" class="csl-pdf" style="padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:5px;color:var(--gold-light);font-family:var(--font-mono);font-size:10px;cursor:pointer;">▣ PDF</button>'
