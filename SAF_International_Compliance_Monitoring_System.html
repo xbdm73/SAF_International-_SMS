@@ -1807,9 +1807,9 @@ function safExportPDF() {
 <!-- ── SAF INTER-TOOL NAV ── -->
 <div id="saf-subnav" style="background:#070e1a;border-bottom:1px solid #1a2840;padding:0 28px;position:sticky;top:var(--header-h,118px);z-index:20;margin-left:248px;">
   <div style="display:flex;align-items:center;gap:4px;overflow-x:auto;">
-    <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
+    <a href="ancien.index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
-    <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
+    <a href="SAF_International_Safety%20old.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
     <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
     <a href="SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
   </div>
@@ -19830,7 +19830,7 @@ window.safSmsConfirmImport=safSmsConfirmImport;
 <!-- ===== INTÉGRATION SUPABASE (auto-save / auto-load) — CMS ===== -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  #saf-login-overlay{position:fixed;inset:0;background:rgba(15,23,42,.95);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  #saf-login-overlay{position:fixed;inset:0;background:rgba(15,23,42,.95);z-index:99999;display:none;align-items:center;justify-content:center;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
   #saf-login-box{background:#fff;border-radius:12px;padding:28px;width:340px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.5)}
   #saf-login-box h2{margin:0 0 4px;font-size:18px;color:#0f172a}
   #saf-login-box p{margin:0 0 18px;font-size:13px;color:#667}
@@ -19854,6 +19854,7 @@ window.safSmsConfirmImport=safSmsConfirmImport;
     <label for="saf-pwd">Mot de passe</label>
     <input type="password" id="saf-pwd" autocomplete="current-password">
     <button id="saf-login-btn">Se connecter</button>
+    <button id="saf-login-cancel-btn" type="button" style="width:100%;background:none;color:#667;border:1px solid #c2c9d2;margin-top:8px;padding:10px;border-radius:6px;font-size:13px;cursor:pointer;">Annuler</button>
     <div id="saf-login-msg"></div>
   </div>
 </div>
@@ -19861,7 +19862,8 @@ window.safSmsConfirmImport=safSmsConfirmImport;
 <div id="saf-cloud-bar">
   <span class="dot"></span><span id="saf-cloud-txt">Synchronisé</span>
   <span id="saf-role-badge" style="display:none;font-size:9px;letter-spacing:.1em;padding:2px 7px;border-radius:3px;border:1px solid;"></span>
-  <button id="saf-logout-btn">Déconnexion</button>
+  <button id="saf-login-trigger-btn">Connexion admin</button>
+  <button id="saf-logout-btn" style="display:none">Déconnexion</button>
 </div>
 
 <script>
@@ -19883,6 +19885,9 @@ window.safSmsConfirmImport=safSmsConfirmImport;
   var bar     = document.getElementById('saf-cloud-bar');
   var barTxt  = document.getElementById('saf-cloud-txt');
   var loginMsg= document.getElementById('saf-login-msg');
+  var loginTriggerBtn = document.getElementById('saf-login-trigger-btn');
+  var loginCancelBtn  = document.getElementById('saf-login-cancel-btn');
+  var logoutBtn = document.getElementById('saf-logout-btn');
   var saving  = false, dirty = false, ready = false, saveTimer = null;
 
   function setBar(state, txt){
@@ -19967,43 +19972,6 @@ window.safSmsConfirmImport=safSmsConfirmImport;
     }catch(e){ return null; }
   };
 
-  // ── ACCÈS INVITÉ PAR TOKEN URL ───────────────────────────────────────────
-  // Doit rester strictement identique à celui d'index.html / Safety / OMM.
-  var GUEST_TOKEN = 'SAF-READONLY-2025';
-  function checkGuestToken(){
-    var params = new URLSearchParams(window.location.search);
-    var token  = params.get('token');
-    if(token && token === GUEST_TOKEN){
-      overlay.style.display = 'none';
-      var badge = document.getElementById('saf-role-badge');
-      if(badge){
-        badge.textContent = 'READ ONLY';
-        badge.style.color = '#7dd3fc';
-        badge.style.borderColor = 'rgba(106,130,165,.3)';
-        badge.style.display = 'inline-block';
-      }
-      var logoutBtn = document.getElementById('saf-logout-btn');
-      if(logoutBtn) logoutBtn.style.display = 'none';
-      try { localStorage.setItem('saf_role', 'reader|guest'); } catch(e){}
-      applyReadOnly();
-      propagateGuestTokenToNav(token);
-      cloudLoad().then(function(){ ready = true; attachAutoSave(); });
-      return true;
-    }
-    return false;
-  }
-  // Propage ?token=... aux liens de la sous-nav cross-outils (HOME / SMS / CMS / OMM)
-  function propagateGuestTokenToNav(token){
-    document.querySelectorAll('#saf-subnav a[href]').forEach(function(a){
-      try{
-        var url = new URL(a.getAttribute('href'), window.location.href);
-        url.searchParams.set('token', token);
-        a.setAttribute('href', url.pathname + url.search);
-      }catch(e){}
-    });
-  }
-  // ────────────────────────────────────────────────────────────────────────
-
   // --- Connexion ---
   async function doLogin(){
     var email = document.getElementById('saf-email').value.trim();
@@ -20044,7 +20012,7 @@ window.safSmsConfirmImport=safSmsConfirmImport;
       // Désactive boutons d'écriture
       var WRITE = /ajouter|enregistrer|sauvegarder|supprimer|modifier|valider|créer|générer|importer|add|save|delete|remove|submit|confirm/i;
       document.querySelectorAll('button').forEach(function(el){
-        if(el.id === 'saf-logout-btn') return;
+        if(el.id === 'saf-logout-btn' || el.id === 'saf-login-trigger-btn' || el.id === 'saf-login-cancel-btn') return;
         var label = (el.textContent || el.id || '').trim();
         if(WRITE.test(label) || el.classList.contains('btn-save') || el.classList.contains('btn-delete') || el.classList.contains('btn-add')){
           el.disabled = true; el.style.opacity = '0.35'; el.style.cursor = 'not-allowed'; el.title = 'Lecture seule';
@@ -20061,11 +20029,34 @@ window.safSmsConfirmImport=safSmsConfirmImport;
   async function onAuthenticated(session){
     overlay.style.display='none';
     setBar('ok','Connecté : '+session.user.email);
+    loginTriggerBtn.style.display = 'none';
+    logoutBtn.style.display = '';
     await loadAndApplyRole(session.user.email);
     await cloudLoad();
     ready = true;
     attachAutoSave();
   }
+
+  // ── ACCÈS INVITÉ PAR DÉFAUT ──────────────────────────────────────────────
+  async function applyGuestRole(){
+    overlay.style.display = 'none';
+    logoutBtn.style.display = 'none';
+    loginTriggerBtn.style.display = 'inline-block';
+    SAF_ROLE = 'reader';
+    var badge = document.getElementById('saf-role-badge');
+    if(badge){
+      badge.textContent = 'READ ONLY';
+      badge.style.color = '#7dd3fc';
+      badge.style.borderColor = 'rgba(106,130,165,.3)';
+      badge.style.display = 'inline-block';
+    }
+    try { localStorage.setItem('saf_role', 'reader|guest'); } catch(e){}
+    await cloudLoad();
+    ready = true;
+    setBar('ok','Mode invité — lecture seule');
+    applyReadOnly();
+  }
+  // ────────────────────────────────────────────────────────────────────────
 
   function attachAutoSave(){
     document.addEventListener('input',  scheduleSave, true);
@@ -20077,15 +20068,22 @@ window.safSmsConfirmImport=safSmsConfirmImport;
 
   document.getElementById('saf-login-btn').addEventListener('click', doLogin);
   document.getElementById('saf-pwd').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+  loginTriggerBtn.addEventListener('click', function(){
+    loginMsg.className=''; loginMsg.textContent='';
+    overlay.style.display='flex';
+  });
+  loginCancelBtn.addEventListener('click', function(){
+    overlay.style.display='none';
+  });
   document.getElementById('saf-logout-btn').addEventListener('click', async function(){
     await db.auth.signOut(); location.reload();
   });
 
-  // Session déjà active ?
+  // Session déjà active ? Sinon, accès invité automatique.
   (async function(){
     var res = await db.auth.getSession();
     if(res.data && res.data.session) onAuthenticated(res.data.session);
-    else checkGuestToken();
+    else await applyGuestRole();
   })();
 })();
 </script>

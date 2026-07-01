@@ -1308,7 +1308,7 @@ nav { top: 118px !important; }
 <!-- ── SAF INTER-TOOL NAV ── -->
 <div id="saf-subnav" class="saf-guest-hide" style="background:#070e1a;border-bottom:1px solid #1a2840;padding:0 28px;position:sticky;top:75px;z-index:18;">
   <div style="max-width:1800px;margin:auto;display:flex;align-items:center;gap:4px;overflow-x:auto;">
-    <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
+    <a href="ancien.index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
     <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
     <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
@@ -14111,12 +14111,37 @@ function deleteALoS(id){
   #saf-cloud-bar.ok .dot{background:#1A7A32}
   #saf-cloud-bar.error .dot{background:#CC2200}
   #saf-cloud-bar button{background:none;border:1px solid #2E75B6;color:#9fc4e8;border-radius:4px;font-size:11px;padding:2px 7px;cursor:pointer}
+  #saf-login-overlay{position:fixed;inset:0;background:rgba(4,8,15,.95);z-index:99999;display:none;align-items:center;justify-content:center;font-family:'IBM Plex Sans',system-ui,sans-serif}
+  #saf-login-box{background:#132437;border:1px solid rgba(46,117,182,.4);border-radius:12px;padding:28px;width:340px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  #saf-login-box h2{margin:0 0 4px;font-size:18px;color:#fff}
+  #saf-login-box p{margin:0 0 18px;font-size:13px;color:#9fc4e8}
+  #saf-login-box label{display:block;font-weight:600;font-size:13px;margin-bottom:5px;color:#C8D0D8}
+  #saf-login-box input{width:100%;padding:10px;border:1px solid rgba(255,255,255,.15);background:#0D1B2A;color:#fff;border-radius:6px;font-size:14px;box-sizing:border-box;margin-bottom:12px}
+  #saf-login-box button{width:100%;background:#C9A227;color:#0D1B2A;border:0;padding:11px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer}
+  #saf-login-box #saf-login-cancel-btn{background:none;color:#9fc4e8;border:1px solid rgba(255,255,255,.15);margin-top:8px;font-weight:400;}
+  #saf-login-msg{font-size:13px;margin-top:10px;min-height:18px}
+  #saf-login-msg.err{color:#e07070}#saf-login-msg.ok{color:#70d0a0}
 </style>
 
+
+<div id="saf-login-overlay">
+  <div id="saf-login-box">
+    <h2>SAF International — SMS</h2>
+    <p>Connexion administrateur</p>
+    <label for="saf-email">Email</label>
+    <input type="email" id="saf-email" autocomplete="username" placeholder="prenom.nom@saf-helico.com">
+    <label for="saf-pwd">Mot de passe</label>
+    <input type="password" id="saf-pwd" autocomplete="current-password">
+    <button id="saf-login-btn">Se connecter</button>
+    <button id="saf-login-cancel-btn" type="button">Annuler</button>
+    <div id="saf-login-msg"></div>
+  </div>
+</div>
 
 <div id="saf-cloud-bar">
   <span class="dot"></span><span id="saf-cloud-txt">Chargement...</span>
   <span id="saf-role-badge" style="display:none;font-size:9px;letter-spacing:.1em;padding:2px 7px;border-radius:3px;border:1px solid;"></span>
+  <button id="saf-login-trigger-btn">Connexion admin</button>
   <button id="saf-logout-btn" style="display:none">Déconnexion</button>
 </div>
 <script>
@@ -14163,6 +14188,10 @@ setTimeout(function(){
 
   var bar     = document.getElementById('saf-cloud-bar');
   var barTxt  = document.getElementById('saf-cloud-txt');
+  var overlay = document.getElementById('saf-login-overlay');
+  var loginMsg = document.getElementById('saf-login-msg');
+  var loginTriggerBtn = document.getElementById('saf-login-trigger-btn');
+  var loginCancelBtn  = document.getElementById('saf-login-cancel-btn');
   var saving  = false, dirty = false, ready = false, saveTimer = null, authenticated = false, isGuest = false;
 
   function setBar(state, txt){
@@ -14344,7 +14373,7 @@ setTimeout(function(){
       var WRITE_LABEL = /ajouter|enregistrer|sauvegarder|supprimer|modifier|valider|créer|générer|importer|^add\b|^save\b|^delete\b|^remove\b|^submit\b|^confirm\b|^edit\b|^copy\b|new entry|new event|new occurrence|new lesson|new review|new safety case|nouvelle?\b|nouveau\b/i;
       var WRITE_ONCLICK = /submitEntry|editEntry\(|copyEntry\(|deleteEntry\(|showOccurrenceForm|showLessonForm|showSARForm|showALoSForm|showCAMOSignalForm|saveAndExportE5X|saveOccurrence|saveSRBMeeting|saveSARRecord|saveALoSRecord|saveCAMOSignal|saveChangeStudy|ejsSaveConfig|showAuditForm|saveAudit\(|showView\('form'\)|json-file-input/i;
       document.querySelectorAll('button').forEach(function(el){
-        if(el.id === 'saf-logout-btn') return;
+        if(el.id === 'saf-logout-btn' || el.id === 'saf-login-trigger-btn' || el.id === 'saf-login-cancel-btn') return;
         var label = (el.textContent || el.id || '').trim();
         var onclickAttr = el.getAttribute('onclick') || '';
         if(WRITE_LABEL.test(label)
@@ -14396,6 +14425,8 @@ setTimeout(function(){
 
   async function onAuthenticated(session){
     if(session){
+      overlay.style.display = 'none';
+      loginTriggerBtn.style.display = 'none';
       setBar('ok','Connecté : '+session.user.email);
       document.getElementById('saf-logout-btn').style.display='';
       await loadAndApplyRole(session.user.email);
@@ -14481,6 +14512,24 @@ setTimeout(function(){
       if(e.target && e.target.isContentEditable) scheduleSave();
     }, true);
   }
+
+  async function doLogin(){
+    var email = document.getElementById('saf-email').value.trim();
+    var pwd   = document.getElementById('saf-pwd').value;
+    loginMsg.className=''; loginMsg.textContent='Connexion…';
+    var res = await db.auth.signInWithPassword({ email: email, password: pwd });
+    if(res.error){ loginMsg.className='err'; loginMsg.textContent='Échec : '+res.error.message; return; }
+    onAuthenticated(res.data.session);
+  }
+  document.getElementById('saf-login-btn').addEventListener('click', doLogin);
+  document.getElementById('saf-pwd').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+  loginTriggerBtn.addEventListener('click', function(){
+    loginMsg.className=''; loginMsg.textContent='';
+    overlay.style.display='flex';
+  });
+  loginCancelBtn.addEventListener('click', function(){
+    overlay.style.display='none';
+  });
 
   document.getElementById('saf-logout-btn').addEventListener('click', async function(){
     await db.auth.signOut(); location.reload();
