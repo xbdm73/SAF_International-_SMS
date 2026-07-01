@@ -6327,7 +6327,7 @@ function setChangeVal(key, value) {
   el.value = value || '';
 }
 // collectChangeStudy defined below (full version)
-function saveChangeStudies() { localStorage.setItem('safChangeStudies', JSON.stringify(CHANGE_STUDIES)); updateCounts(); updateLastModified(); }
+function saveChangeStudies() { localStorage.setItem('safChangeStudies', JSON.stringify(CHANGE_STUDIES)); updateCounts(); updateLastModified(); if(typeof window.safCloudScheduleSave==='function') window.safCloudScheduleSave(); }
 function saveChangeStudy() {
   const required = [['title','Title'], ['ref','Internal reference'], ['assessment-type','Safety assessment type'], ['detailed-description','Change detailed description'], ['assessors','Assessors name'], ['conclusions','Assessment conclusions']];
   const missing = required.filter(([id]) => { var v=getChangeVal(id).trim(); if(id==='ref') v=v.replace(/^MOC-?$/,''); return !v; }).map(([,label]) => label);
@@ -7032,12 +7032,16 @@ function importJSON(event) {
 function _printHTML(title, bodyHTML) {
   const win = window.open('', '_blank');
   if(!win) { showToast('Please allow popups to generate PDF', 'error'); return; }
+  const logoSrc = document.querySelector('.logo-box img')?.src || '';
+  const logoHTML = logoSrc ? `<img src="${logoSrc}" alt="SAF International" style="height:44px;display:block;"/>` : '';
   win.document.write(`<!DOCTYPE html><html><head>
     <meta charset="UTF-8"><title>${title}</title>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
       *{box-sizing:border-box;margin:0;padding:0}
       body{font-family:'IBM Plex Sans',sans-serif;background:#fff;color:#1a2e42;padding:24px;font-size:11px;}
+      .pdf-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;padding-bottom:12px;border-bottom:3px solid #1A2E42;}
+      .pdf-header .pdf-header-brand{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8896A0;text-align:right;}
       h1{font-size:20px;font-weight:700;margin-bottom:4px;color:#0D1B2A;}
       h2{font-size:14px;font-weight:600;margin:20px 0 8px;color:#1A2E42;border-bottom:2px solid #2E75B6;padding-bottom:4px;}
       .sub{font-size:10px;color:#8896A0;font-family:'IBM Plex Mono',monospace;margin-bottom:16px;}
@@ -7056,6 +7060,7 @@ function _printHTML(title, bodyHTML) {
       @media print{body{padding:12px}}
     </style>
   </head><body>
+    <div class="pdf-header">${logoHTML}<div class="pdf-header-brand">SAF INTERNATIONAL<br>AS 332 C1 Super Puma · SMS</div></div>
     ${bodyHTML}
     <div class="footer"><span>SAF International · AS 332 C1 Super Puma · SMS Risk Database</span><span>Generated ${new Date().toLocaleString()}</span></div>
     <script>window.onload=()=>{window.print();}<\/script>
@@ -7268,29 +7273,158 @@ function exportRegisterPDF() {
     </table>`);
 }
 
-function exportChangeStudyPDF() {
-  if(!CHANGE_STUDIES.length) { showToast('No change studies saved', 'error'); return; }
-  const cs = CHANGE_STUDIES[CHANGE_STUDIES.length - 1]; // latest
+// ── Helpers for the full Change Study PDF ──────────────────────────
+function _csEsigText(sigStr){
+  if(!sigStr || !sigStr.startsWith('ACK:')) return null;
+  const parts = sigStr.replace('ACK:','').split('|');
+  const name = parts[0]||'';
+  const dt = parts[1] ? new Date(parts[1]) : null;
+  const dtStr = dt ? (dt.toLocaleDateString('en-GB')+' '+dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})) : '';
+  return name + (dtStr ? ' — acknowledged on '+dtStr : '');
+}
+function _csEsigBlock(name, sigStr, fallbackName){
+  const txt = _csEsigText(sigStr);
+  const who = name || fallbackName || '';
+  if(txt) return `<div style="color:#1A7A32;font-weight:600;">☑ ${txt}</div>`;
+  return `<div style="color:#CC2200;">☐ Not yet acknowledged${who?' — pending: '+who:''}</div>`;
+}
+function _csFuStatusLabel(status){
+  return ({'non-debutee':'Not started','en-cours':'In progress','clos':'Closed'})[status] || 'Not set';
+}
+function _csFuStatusColor(status){
+  return ({'non-debutee':'#8896A0','en-cours':'#E05000','clos':'#1A7A32'})[status] || '#8896A0';
+}
+function _csNl2br(txt){ return (txt||'—').toString().replace(/\n/g,'<br>'); }
+
+function exportChangeStudyPDF(ref) {
+  let cs;
+  if(ref){
+    cs = CHANGE_STUDIES.find(x => x.ref === ref);
+    if(!cs){ showToast('Change study not found: ' + ref, 'error'); return; }
+  } else {
+    // Prefer whatever is currently open in the Change Study editor so the
+    // export always matches what's on screen, including unsaved edits.
+    const liveRef = (typeof getChangeVal==='function') ? getChangeVal('ref') : '';
+    const liveTitle = (typeof getChangeVal==='function') ? getChangeVal('title') : '';
+    if((liveRef && liveRef.replace(/^MOC-?$/,'')) || liveTitle){
+      cs = collectChangeStudy();
+    } else if(CHANGE_STUDIES.length){
+      cs = CHANGE_STUDIES[CHANGE_STUDIES.length - 1];
+      showToast('No study currently open — exporting most recent saved: ' + (cs.ref||''), 'success');
+    } else {
+      showToast('No change study to export — open or create one first', 'error');
+      return;
+    }
+  }
+
   const linkedRisks = DB.filter(r => r.linked_change_study === cs.ref);
   const riskRows = linkedRisks.map(r =>
-    `<tr><td style="font-family:monospace">${r.id}</td><td><span class="badge ${riskColor(r.initial_risk)}">${r.initial_risk}</span></td><td><span class="badge ${riskColor(r.residual_risk)}">${r.residual_risk}</span></td><td>${r.event}</td></tr>`).join('');
+    `<tr>
+      <td style="font-family:monospace">${r.id}</td>
+      <td><span class="badge ${riskColor(r.initial_risk)}">${r.initial_risk||'—'}</span></td>
+      <td><span class="badge ${riskColor(r.residual_risk)}">${r.residual_risk||'—'}</span></td>
+      <td>${r.event||'—'}</td>
+      <td style="font-size:9px;">${r.prevention||'—'}</td>
+      <td style="font-size:9px;">${r.mitigation||'—'}</td>
+      <td style="font-size:9px;">${r.recovery||'—'}</td>
+    </tr>`).join('');
+
+  let actions = [];
+  try { actions = cs.c_actions_list ? JSON.parse(cs.c_actions_list) : (cs.actions||[]); } catch(e){ actions = cs.actions||[]; }
+  let fuData = {};
+  try { fuData = cs.c_fu_data ? JSON.parse(cs.c_fu_data) : {}; } catch(e){ fuData = {}; }
+
+  const actionsHTML = actions.length ? actions.map((a,i) => {
+    const fu = fuData[a.id] || {};
+    return `<div style="border:1px solid #e8ecf0;border-radius:6px;padding:10px 12px;margin-bottom:10px;">
+      <div style="font-weight:700;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#2E75B6;margin-bottom:5px;">ACTION #${i+1}</div>
+      <div style="margin-bottom:6px;">${_csNl2br(a.text)}</div>
+      <table style="width:100%;margin-bottom:6px;">
+        <tr>
+          <td style="width:16%;font-weight:600;background:none;border:none;padding:2px 0;">Nominated person</td><td style="background:none;border:none;padding:2px 0;">${a.nominatedPerson||'—'}</td>
+          <td style="width:16%;font-weight:600;background:none;border:none;padding:2px 0;">Email</td><td style="background:none;border:none;padding:2px 0;">${a.email||'—'}</td>
+        </tr>
+        <tr>
+          <td style="font-weight:600;background:none;border:none;padding:2px 0;">Follow-up status</td>
+          <td style="background:none;border:none;padding:2px 0;"><span style="color:${_csFuStatusColor(fu.status)};font-weight:700;">${_csFuStatusLabel(fu.status)}</span></td>
+          <td style="font-weight:600;background:none;border:none;padding:2px 0;">Due / Closing</td>
+          <td style="background:none;border:none;padding:2px 0;">${fu.due||'—'} / ${fu.closing||'—'}</td>
+        </tr>
+      </table>
+      ${fu.notes ? `<div style="font-size:10px;color:#4a5a68;margin-bottom:6px;"><b>Follow-up notes:</b> ${_csNl2br(fu.notes)}</div>` : ''}
+      <div style="font-size:10px;">${_csEsigBlock(null, a.sigData, a.nominatedPerson)}</div>
+    </div>`;
+  }).join('') : '<p style="margin-bottom:12px">No actions defined.</p>';
+
+  const versionRows = (cs.version_history||[]).slice().reverse().map(h => {
+    const cfg = (typeof CS_STATUS_CONFIG!=='undefined' && CS_STATUS_CONFIG[h.status]) ? CS_STATUS_CONFIG[h.status] : {label:h.status||'—'};
+    const dt = h.date ? new Date(h.date).toLocaleDateString('en-GB') : '—';
+    return `<tr><td style="font-family:monospace;font-weight:700;">v${h.version}</td><td>${cfg.label}</td><td>${dt}</td><td>${h.by||'—'}</td><td>${h.note||'—'}</td></tr>`;
+  }).join('');
+
+  const wfCfg = (typeof CS_STATUS_CONFIG!=='undefined' && CS_STATUS_CONFIG[cs.workflow_status]) ? CS_STATUS_CONFIG[cs.workflow_status] : {label:(cs.workflow_status||'draft').toUpperCase()};
+
+  let focaHTML = '';
+  if(cs.foca_approval_data){
+    if(/^data:image\//.test(cs.foca_approval_data)){
+      focaHTML = `<div style="margin-top:6px;"><div style="font-size:10px;color:#8896A0;margin-bottom:4px;">${cs.foca_approval_name||'Attached document'}</div><img src="${cs.foca_approval_data}" style="max-width:100%;max-height:380px;border:1px solid #e8ecf0;border-radius:4px;"/></div>`;
+    } else {
+      focaHTML = `<div style="margin-top:6px;font-size:10px;">Attached: <a href="${cs.foca_approval_data}" download="${cs.foca_approval_name||'FOCA_Approval'}">${cs.foca_approval_name||'document'}</a> (open this PDF and click the link to download the original file)</div>`;
+    }
+  } else {
+    focaHTML = '<div style="font-size:10px;color:#8896A0;">No document attached.</div>';
+  }
+
   _printHTML('Change Study — ' + (cs.ref||''), `
     <h1>CHANGE STUDY / SAFETY ASSESSMENT</h1>
-    <div class="sub">${cs.ref||''} · v${cs.version||'1.0'} · ${cs.version_date||_today()}</div>
+    <div class="sub">${cs.ref||'—'} · v${cs.version_num||cs.version||'1.0'} · ${cs.version_date||_today()} · <b>${wfCfg.label}</b></div>
+
+    <h2>1 — Identification</h2>
     <table style="margin-bottom:12px">
       <tr><th colspan="2">${cs.title||'—'}</th></tr>
-      <tr><td style="width:180px;font-weight:600">Assessment type</td><td>${cs.assessment_type||'—'}</td></tr>
-      <tr><td style="font-weight:600">Decision origin</td><td>${cs.decision_origin||'—'}</td></tr>
-      <tr><td style="font-weight:600">Start date</td><td>${cs.start_date||'—'}</td></tr>
-      <tr><td style="font-weight:600">End date</td><td>${cs.end_date||'—'}</td></tr>
+      <tr><td style="width:200px;font-weight:600">Safety assessment type</td><td>${cs.assessment_type||'—'}</td></tr>
+      <tr><td style="font-weight:600">Change decision origin</td><td>${_csNl2br(cs.decision_origin)}</td></tr>
+      <tr><td style="font-weight:600">Description</td><td>${_csNl2br(cs.description)}</td></tr>
+      <tr><td style="font-weight:600">Duration</td><td>${cs.duration||'—'}${cs.duration==='Temporary'?` (from ${cs.start_date||'—'} to ${cs.end_date||'—'})`:''}</td></tr>
+      <tr><td style="font-weight:600">Influence on documentation / archiving</td><td>${_csNl2br(cs.doc_archiving)}</td></tr>
+      <tr><td style="font-weight:600">Applicable regulations</td><td>${_csNl2br(cs.regulations)}</td></tr>
       <tr><td style="font-weight:600">Assessors</td><td>${cs.assessors||'—'}</td></tr>
-      <tr><td style="font-weight:600">Regulations</td><td>${cs.regulations||'—'}</td></tr>
     </table>
-    <h2>Description</h2><p style="margin-bottom:12px">${cs.detailed_description||'—'}</p>
-    <h2>Impact Assessment</h2><p style="margin-bottom:12px">${cs.impact_assessment||'—'}</p>
-    <h2>Actions Carried Out</h2><p style="margin-bottom:12px">${cs.c_actions_list ? JSON.parse(cs.c_actions_list).map((a,i)=>`<b>Action #${i+1}:</b> ${a.text||'—'} <em>(${a.nominatedPerson||'—'})</em>`).join('<br>') : '—'}</p>
-    <h2>Conclusions</h2><p style="margin-bottom:12px">${cs.conclusions||'—'}</p>
-    ${linkedRisks.length ? `<h2>Linked Risks (${linkedRisks.length})</h2><table><thead><tr><th>ID</th><th>Initial</th><th>Residual</th><th>Event</th></tr></thead><tbody>${riskRows}</tbody></table>` : ''}
+
+    <h2>2 — Detailed Description</h2><p style="margin-bottom:12px">${_csNl2br(cs.detailed_description)}</p>
+
+    <h2>3 — Impact Assessment</h2><p style="margin-bottom:12px">${_csNl2br(cs.impact_assessment)}</p>
+
+    <h2>4 — Actions Carried Out</h2>
+    ${actionsHTML}
+    <div style="margin-top:6px;margin-bottom:12px;">
+      <div style="font-weight:600;font-size:10px;margin-bottom:4px;">ACM acknowledgement (actions defined)</div>
+      ${_csEsigBlock(cs.acm_name, cs.acm_signature)}
+    </div>
+
+    <h2>5 — Follow-up</h2>
+    <p style="margin-bottom:8px;"><b>General follow-up comments:</b> ${_csNl2br(cs.followup_comments)}</p>
+    <div>
+      <div style="font-weight:600;font-size:10px;margin-bottom:4px;">ACM acknowledgement (follow-up)</div>
+      ${_csEsigBlock(cs.fu_acm_name, cs.fu_acm_signature)}
+    </div>
+
+    <h2>6 — Conclusion &amp; Approval</h2>
+    <p style="margin-bottom:8px;"><b>Risk reduction measures summary:</b> ${_csNl2br(cs.risk_reduction_summary)}</p>
+    <p style="margin-bottom:12px;"><b>Assessment conclusions:</b> ${_csNl2br(cs.conclusions)}</p>
+    <table style="margin-bottom:12px">
+      <tr><td style="width:200px;font-weight:600">Assessor read &amp; acknowledged (final)</td><td>${_csEsigBlock(cs.signature||cs.assessors_signature, cs.signature)}</td></tr>
+      <tr><td style="font-weight:600">Assessment approval</td><td>${cs.approval ? '<span style="color:#1A7A32;font-weight:700;">✓ Approved</span>' : '<span style="color:#CC2200;">Not approved</span>'}</td></tr>
+      <tr><td style="font-weight:600">Authority approval required</td><td>${cs.authority_approval ? '<span style="color:#1A7A32;font-weight:700;">✓ Yes</span>' : 'No'}</td></tr>
+      <tr><td style="font-weight:600">Diffusion list</td><td>${cs.diffusion||'—'}</td></tr>
+    </table>
+
+    <h2>Authority (FOCA) approval document</h2>
+    ${focaHTML}
+
+    ${versionRows ? `<h2>Version History</h2><table><thead><tr><th>Version</th><th>Status</th><th>Date</th><th>By</th><th>Note</th></tr></thead><tbody>${versionRows}</tbody></table>` : ''}
+
+    ${linkedRisks.length ? `<h2>Linked Risks (${linkedRisks.length})</h2><table><thead><tr><th>ID</th><th>Initial</th><th>Residual</th><th>Event</th><th>Prevention</th><th>Mitigation</th><th>Recovery</th></tr></thead><tbody>${riskRows}</tbody></table>` : ''}
   `);
 }
 
@@ -10953,6 +11087,7 @@ function renderSavedCSList(){
       +'</div>'
       +'<div style="display:flex;gap:6px;flex-shrink:0;">'
       +'<button data-csref="'+cs.ref+'" class="csl-load" style="padding:4px 12px;background:rgba(74,159,224,.2);border:1px solid var(--steel-bright);border-radius:5px;color:var(--steel-bright);font-family:var(--font-mono);font-size:10px;cursor:pointer;">✎ Edit</button>'
+      +'<button data-csref="'+cs.ref+'" class="csl-pdf" style="padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:5px;color:var(--gold-light);font-family:var(--font-mono);font-size:10px;cursor:pointer;">▣ PDF</button>'
       +'<button data-csref="'+cs.ref+'" class="csl-dup" style="padding:4px 10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:5px;color:var(--grey-400);font-family:var(--font-mono);font-size:10px;cursor:pointer;">⊕ New rev.</button>'
       +'<button data-csref="'+cs.ref+'" class="csl-del" style="padding:4px 8px;background:none;border:none;color:#f85149;cursor:pointer;font-size:13px;">✕</button>'
       +'</div></div></div>';
@@ -10960,6 +11095,7 @@ function renderSavedCSList(){
   html+='</div>';
   el.innerHTML=html;
   el.querySelectorAll('.csl-load').forEach(function(b){b.addEventListener('click',function(){loadCSIntoForm(b.getAttribute('data-csref'));});});
+  el.querySelectorAll('.csl-pdf').forEach(function(b){b.addEventListener('click',function(){exportChangeStudyPDF(b.getAttribute('data-csref'));});});
   el.querySelectorAll('.csl-dup').forEach(function(b){b.addEventListener('click',function(){duplicateCS(b.getAttribute('data-csref'));});});
   el.querySelectorAll('.csl-del').forEach(function(b){b.addEventListener('click',function(){
     var ref=b.getAttribute('data-csref');
