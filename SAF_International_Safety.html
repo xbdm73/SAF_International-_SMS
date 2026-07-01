@@ -14393,33 +14393,16 @@ setTimeout(function(){
 
   // ── MODE INVITÉ ───────────────────────────────────────────────────────
   // Appliqué à toute personne arrivant SANS session authentifiée :
-  // seul le Risk Register (vue "database") est visible. Tous les autres
-  // onglets, la sous-nav inter-outils (SMS/CMS/OMM) et la navigation
-  // libre via showView() sont neutralisés. La protection réelle contre
-  // l'écriture est assurée côté Supabase (RLS) — ceci n'est qu'un confort
-  // d'affichage cohérent avec cette restriction.
+  // l'ensemble du site reste accessible et navigable (tous les onglets,
+  // toute la sous-nav SMS/CMS/OMM), mais en lecture seule uniquement.
+  // La protection contre l'écriture est assurée par applyReadOnly() (désactivation
+  // des boutons/champs) et par les policies RLS côté Supabase.
   function applyGuestMode(){
-    // Masque tout sauf le Risk Register et le bloc "Categories"
-    document.querySelectorAll('.saf-guest-hide').forEach(function(el){
-      el.style.display = 'none';
-    });
-    // Verrouille showView pour qu'aucun appel (même programmatique) ne sorte du Risk Register
-    if(typeof window.showView === 'function' && !window.__safShowViewLocked){
-      var _origShowView = window.showView;
-      window.__safShowViewLocked = true;
-      window.showView = function(name){
-        return _origShowView('database');
-      };
-    }
-    // Force l'affichage initial sur le Risk Register
-    setTimeout(function(){
-      if(typeof window.showView === 'function') window.showView('database');
-      var banner = document.createElement('div');
-      banner.id = 'saf-guest-banner';
-      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(80,60,20,.92);border-bottom:1px solid rgba(201,162,39,.4);padding:5px 16px;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;color:#e8c466;text-align:center;pointer-events:none;';
-      banner.textContent = '👁 ACCÈS INVITÉ — Risk Register en lecture seule uniquement.';
-      document.body.prepend(banner);
-    }, 50);
+    var banner = document.createElement('div');
+    banner.id = 'saf-guest-banner';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(80,60,20,.92);border-bottom:1px solid rgba(201,162,39,.4);padding:5px 16px;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;color:#e8c466;text-align:center;pointer-events:none;';
+    banner.textContent = '👁 ACCÈS INVITÉ — consultation uniquement, aucune modification possible.';
+    document.body.prepend(banner);
   }
 
 
@@ -14556,8 +14539,8 @@ setTimeout(function(){
       onAuthenticated(session);
     } else {
       // Pas de session active — visiteur anonyme : on charge les données
-      // (lecture seule, autorisée par Supabase RLS) et on restreint
-      // l'affichage au seul Risk Register, sans aucune possibilité d'écriture.
+      // (lecture seule, autorisée par Supabase RLS) et on affiche l'ensemble
+      // du site normalement, sans aucune possibilité d'écriture.
       isGuest = true;
       await cloudLoad();
       ready = true;
