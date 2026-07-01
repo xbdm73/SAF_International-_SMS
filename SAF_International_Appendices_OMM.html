@@ -690,12 +690,12 @@ window.generateCertPDF = function() {
 <colgroup>
 <col style="width:130px"/><col style="width:160px"/><col style="width:145px"/>
 <col style="width:130px"/><col style="width:105px"/><col style="width:105px"/>
-<col style="width:110px"/><col style="width:130px"/><col style="width:36px"/>
+<col style="width:110px"/><col style="width:130px"/><col style="width:170px"/><col style="width:36px"/>
 </colgroup>
 <thead><tr>
 <th>Name</th><th>Role / Function</th><th>Training type</th>
 <th>Organisation / Trainer</th><th>Training date</th><th>Valid until</th>
-<th>Reference</th><th>Alarm</th><th style="width:36px"></th>
+<th>Reference</th><th>Alarm</th><th>Certificate</th><th style="width:36px"></th>
 </tr></thead>
 <tbody>
 <tr>
@@ -707,7 +707,7 @@ window.generateCertPDF = function() {
 <td contenteditable="true" data-validity="true">01.01.2026</td>
 <td contenteditable="true">—</td>
 <td contenteditable="true" data-alarm="true">Valid</td>
-<td class="row-actions"><button onclick="this.closest('tr').remove()" title="Delete">✕</button></td>
+<td class="cert-actions" data-cert-pdf="" data-cert-pdf-name="" data-cert-module=""><div style="display:flex;flex-direction:column;gap:4px;"><span class="cert-status" style="font-size:10px;color:var(--grey-400);">— No certificate —</span><div style="display:flex;gap:4px;"><button type="button" class="cert-btn-view" onclick="certRowView(this)" title="View / regenerate certificate" style="padding:3px 7px;background:rgba(46,117,182,.15);border:1px solid rgba(74,159,224,.4);border-radius:4px;color:var(--steel-bright);font-size:10px;cursor:pointer;">🖨️ View</button><button type="button" class="cert-btn-import" onclick="certRowImportClick(this)" title="Import a PDF certificate" style="padding:3px 7px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:4px;color:var(--grey-200);font-size:10px;cursor:pointer;">📤 PDF</button><input type="file" accept="application/pdf" style="display:none;" onchange="certRowFileSelected(this)"/></div></div></td><td class="row-actions"><button onclick="this.closest('tr').remove()" title="Delete">✕</button></td>
 </tr>
 <tr>
 <td contenteditable="true">Thierry BERGERET</td>
@@ -718,7 +718,7 @@ window.generateCertPDF = function() {
 <td contenteditable="true" data-validity="true">01.01.2026</td>
 <td contenteditable="true">—</td>
 <td contenteditable="true" data-alarm="true">Valid</td>
-<td class="row-actions"><button onclick="this.closest('tr').remove()" title="Delete">✕</button></td>
+<td class="cert-actions" data-cert-pdf="" data-cert-pdf-name="" data-cert-module=""><div style="display:flex;flex-direction:column;gap:4px;"><span class="cert-status" style="font-size:10px;color:var(--grey-400);">— No certificate —</span><div style="display:flex;gap:4px;"><button type="button" class="cert-btn-view" onclick="certRowView(this)" title="View / regenerate certificate" style="padding:3px 7px;background:rgba(46,117,182,.15);border:1px solid rgba(74,159,224,.4);border-radius:4px;color:var(--steel-bright);font-size:10px;cursor:pointer;">🖨️ View</button><button type="button" class="cert-btn-import" onclick="certRowImportClick(this)" title="Import a PDF certificate" style="padding:3px 7px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:4px;color:var(--grey-200);font-size:10px;cursor:pointer;">📤 PDF</button><input type="file" accept="application/pdf" style="display:none;" onchange="certRowFileSelected(this)"/></div></div></td><td class="row-actions"><button onclick="this.closest('tr').remove()" title="Delete">✕</button></td>
 </tr>
 <tr>
 <td contenteditable="true">Sacha CARRERE</td>
@@ -729,7 +729,7 @@ window.generateCertPDF = function() {
 <td contenteditable="true" data-validity="true">01.01.2026</td>
 <td contenteditable="true">—</td>
 <td contenteditable="true" data-alarm="true">Valid</td>
-<td class="row-actions"><button onclick="this.closest('tr').remove()" title="Delete">✕</button></td>
+<td class="cert-actions" data-cert-pdf="" data-cert-pdf-name="" data-cert-module=""><div style="display:flex;flex-direction:column;gap:4px;"><span class="cert-status" style="font-size:10px;color:var(--grey-400);">— No certificate —</span><div style="display:flex;gap:4px;"><button type="button" class="cert-btn-view" onclick="certRowView(this)" title="View / regenerate certificate" style="padding:3px 7px;background:rgba(46,117,182,.15);border:1px solid rgba(74,159,224,.4);border-radius:4px;color:var(--steel-bright);font-size:10px;cursor:pointer;">🖨️ View</button><button type="button" class="cert-btn-import" onclick="certRowImportClick(this)" title="Import a PDF certificate" style="padding:3px 7px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:4px;color:var(--grey-200);font-size:10px;cursor:pointer;">📤 PDF</button><input type="file" accept="application/pdf" style="display:none;" onchange="certRowFileSelected(this)"/></div></div></td><td class="row-actions"><button onclick="this.closest('tr').remove()" title="Delete">✕</button></td>
 </tr>
 <tr>
 <td contenteditable="true">Julien METRO</td>
@@ -740,7 +740,7 @@ window.generateCertPDF = function() {
 <td contenteditable="true" data-validity="true">01.01.2026</td>
 <td contenteditable="true">—</td>
 <td contenteditable="true" data-alarm="true">Valid</td>
-<td class="row-actions"><button onclick="this.closest('tr').remove()" title="Delete">✕</button></td>
+<td class="cert-actions" data-cert-pdf="" data-cert-pdf-name="" data-cert-module=""><div style="display:flex;flex-direction:column;gap:4px;"><span class="cert-status" style="font-size:10px;color:var(--grey-400);">— No certificate —</span><div style="display:flex;gap:4px;"><button type="button" class="cert-btn-view" onclick="certRowView(this)" title="View / regenerate certificate" style="padding:3px 7px;background:rgba(46,117,182,.15);border:1px solid rgba(74,159,224,.4);border-radius:4px;color:var(--steel-bright);font-size:10px;cursor:pointer;">🖨️ View</button><button type="button" class="cert-btn-import" onclick="certRowImportClick(this)" title="Import a PDF certificate" style="padding:3px 7px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:4px;color:var(--grey-200);font-size:10px;cursor:pointer;">📤 PDF</button><input type="file" accept="application/pdf" style="display:none;" onchange="certRowFileSelected(this)"/></div></div></td><td class="row-actions"><button onclick="this.closest('tr').remove()" title="Delete">✕</button></td>
 </tr>
 <tr>
 <td contenteditable="true">— To be completed —</td>
@@ -751,7 +751,7 @@ window.generateCertPDF = function() {
 <td contenteditable="true" data-validity="true">—</td>
 <td contenteditable="true">—</td>
 <td contenteditable="true" data-alarm="true">Planned</td>
-<td class="row-actions"><button onclick="this.closest('tr').remove()" title="Delete">✕</button></td>
+<td class="cert-actions" data-cert-pdf="" data-cert-pdf-name="" data-cert-module=""><div style="display:flex;flex-direction:column;gap:4px;"><span class="cert-status" style="font-size:10px;color:var(--grey-400);">— No certificate —</span><div style="display:flex;gap:4px;"><button type="button" class="cert-btn-view" onclick="certRowView(this)" title="View / regenerate certificate" style="padding:3px 7px;background:rgba(46,117,182,.15);border:1px solid rgba(74,159,224,.4);border-radius:4px;color:var(--steel-bright);font-size:10px;cursor:pointer;">🖨️ View</button><button type="button" class="cert-btn-import" onclick="certRowImportClick(this)" title="Import a PDF certificate" style="padding:3px 7px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:4px;color:var(--grey-200);font-size:10px;cursor:pointer;">📤 PDF</button><input type="file" accept="application/pdf" style="display:none;" onchange="certRowFileSelected(this)"/></div></div></td><td class="row-actions"><button onclick="this.closest('tr').remove()" title="Delete">✕</button></td>
 </tr>
 </tbody>
 </table>
@@ -808,11 +808,12 @@ window.generateCertPDF = function() {
 </div>
 
 <script>
-window.upsertSMSTrainingFromCertificate = function(traineeName, trainingType, certDate, traineeRole) {
+window.upsertSMSTrainingFromCertificate = function(traineeName, trainingType, certDate, traineeRole, trainingModule) {
     traineeName = String(traineeName || '').trim();
     trainingType = String(trainingType || '').trim();
     certDate = String(certDate || '').trim();
     traineeRole = String(traineeRole || '').trim();
+    trainingModule = String(trainingModule || '').trim();
     if (!traineeName) return;
 
     var tableBody = document.querySelector('#t-sms-training tbody');
@@ -846,8 +847,9 @@ window.upsertSMSTrainingFromCertificate = function(traineeName, trainingType, ce
             + '<td contenteditable="true" data-validity="true">—</td>'
             + '<td contenteditable="true">—</td>'
             + '<td contenteditable="true" data-alarm="true">Planned</td>'
+            + certCellMarkup()
             + '<td class="row-actions"><button title="Delete">✕</button></td>';
-        var btn = targetRow.querySelector('button');
+        var btn = targetRow.querySelector('.row-actions button');
         if (btn) btn.onclick = function(){
             targetRow.remove();
             if (window.populateCertDropdown) window.populateCertDropdown();
@@ -860,9 +862,154 @@ window.upsertSMSTrainingFromCertificate = function(traineeName, trainingType, ce
     if (cells[1] && traineeRole) cells[1].textContent = traineeRole;
     if (cells[2] && trainingType) cells[2].textContent = trainingType;
     if (cells[4]) cells[4].textContent = toDisplayDate(certDate);
+    /* Associate this row with the certificate just generated: mark it as
+       "generated in-app" and remember which module was used, so the
+       ""View" button can regenerate an identical certificate later on. */
+    targetRow.dataset.certGenerated = 'true';
+    if (trainingModule) targetRow.dataset.certModule = trainingModule;
+    if (typeof certRefreshRowUI === 'function') certRefreshRowUI(targetRow);
     if (window.updateSMSTrainingValidity) window.updateSMSTrainingValidity();
     if (window.populateCertDropdown) window.populateCertDropdown();
 };
+
+/* ── Certificate ↔ Register row association ──────────────────────────
+   Each row of the SMS Training Register can be linked to a certificate,
+   either generated in-app (via the form above) or imported as an
+   external PDF. The link lives on the <tr> as data-cert-* attributes,
+   which are excluded from the generic table text serialization (see
+   dataTds/dataCells) and handled separately so it survives save/reload. */
+function certCellMarkup(certPdf, certPdfName, certModule){
+    certPdf = certPdf || '';
+    certPdfName = certPdfName || '';
+    certModule = certModule || '';
+    return '<td class="cert-actions" data-cert-pdf="' + certPdf.replace(/"/g,'&quot;') + '" data-cert-pdf-name="' + certPdfName.replace(/"/g,'&quot;') + '" data-cert-module="' + certModule.replace(/"/g,'&quot;') + '">'
+        + '<div style="display:flex;flex-direction:column;gap:4px;">'
+        + '<span class="cert-status" style="font-size:10px;color:var(--grey-400);">— No certificate —</span>'
+        + '<div style="display:flex;gap:4px;">'
+        + '<button type="button" class="cert-btn-view" onclick="certRowView(this)" title="View / regenerate certificate" style="padding:3px 7px;background:rgba(46,117,182,.15);border:1px solid rgba(74,159,224,.4);border-radius:4px;color:var(--steel-bright);font-size:10px;cursor:pointer;">🖨️ View</button>'
+        + '<button type="button" class="cert-btn-import" onclick="certRowImportClick(this)" title="Import a PDF certificate" style="padding:3px 7px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:4px;color:var(--grey-200);font-size:10px;cursor:pointer;">📤 PDF</button>'
+        + '<input type="file" accept="application/pdf" style="display:none;" onchange="certRowFileSelected(this)"/>'
+        + '</div></div></td>';
+}
+
+function certRefreshRowUI(tr){
+    if (!tr) return;
+    var cell = tr.querySelector('.cert-actions');
+    if (!cell) return;
+    var statusEl = cell.querySelector('.cert-status');
+    if (!statusEl) return;
+    var hasPdf = !!(cell.dataset.certPdf);
+    var hasGenerated = tr.dataset.certGenerated === 'true';
+    if (hasPdf) {
+        statusEl.textContent = '✓ PDF: ' + (cell.dataset.certPdfName || 'imported.pdf');
+        statusEl.style.color = '#4DB848';
+    } else if (hasGenerated) {
+        statusEl.textContent = '✓ Generated in-app';
+        statusEl.style.color = '#4DB848';
+    } else {
+        statusEl.textContent = '— No certificate —';
+        statusEl.style.color = 'var(--grey-400)';
+    }
+}
+
+window.certRowImportClick = function(btn){
+    var cell = btn.closest('.cert-actions');
+    var input = cell && cell.querySelector('input[type="file"]');
+    if (input) input.click();
+};
+
+window.certRowFileSelected = function(input){
+    var file = input.files && input.files[0];
+    if (!file) return;
+    if (file.type && file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name || '')) {
+        alert('❌ Please choose a PDF file.');
+        input.value = '';
+        return;
+    }
+    var cell = input.closest('.cert-actions');
+    var tr = input.closest('tr');
+    var reader = new FileReader();
+    reader.onload = function(){
+        cell.dataset.certPdf = reader.result;
+        cell.dataset.certPdfName = file.name || 'certificate.pdf';
+        certRefreshRowUI(tr);
+        input.value = '';
+    };
+    reader.onerror = function(){
+        alert('❌ Could not read the selected file.');
+        input.value = '';
+    };
+    reader.readAsDataURL(file);
+};
+
+window.certRowView = function(btn){
+    var cell = btn.closest('.cert-actions');
+    var tr = btn.closest('tr');
+    var certPdf = cell.dataset.certPdf;
+    if (certPdf) {
+        /* Convert the stored data URL back to a Blob URL: more reliable
+           than opening a very large data: URL directly in a new tab. */
+        try {
+            var parts = certPdf.split(',');
+            var mime = (parts[0].match(/data:([^;]+)/) || [,'application/pdf'])[1];
+            var binary = atob(parts[1]);
+            var bytes = new Uint8Array(binary.length);
+            for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            var blob = new Blob([bytes], { type: mime || 'application/pdf' });
+            var url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        } catch (e) {
+            window.open(certPdf, '_blank');
+        }
+        return;
+    }
+    /* No imported PDF: regenerate the in-app certificate from this row's
+       own data, so "View" always reflects what is on record for this person. */
+    var cells = tr.querySelectorAll('td');
+    var name = (cells[0] && cells[0].textContent || '').trim();
+    var role = (cells[1] && cells[1].textContent || '').trim();
+    var type = (cells[2] && cells[2].textContent || '').trim();
+    var dateDisplay = (cells[4] && cells[4].textContent || '').trim();
+    if (!name || name === '—') {
+        alert('❌ Please fill in the Name column for this row first.');
+        return;
+    }
+    var module = cell.dataset.certModule || (document.getElementById('cert-training-module') ? document.getElementById('cert-training-module').options[0].value : '');
+    /* Convert the register's dd.mm.yyyy display date back to yyyy-mm-dd for the generator. */
+    var isoDate = '';
+    if (dateDisplay && dateDisplay.indexOf('.') > -1) {
+        var p = dateDisplay.split('.');
+        if (p.length === 3) isoDate = p[2] + '-' + p[1] + '-' + p[0];
+    }
+    if (typeof generateCertPDF === 'function') {
+        var traineeInput = document.getElementById('cert-trainee');
+        var roleInput = document.getElementById('cert-role');
+        var typeInput = document.getElementById('cert-training-type');
+        var moduleInput = document.getElementById('cert-training-module');
+        var dateInput = document.getElementById('cert-date');
+        var prevValues = {
+            trainee: traineeInput ? traineeInput.value : '',
+            role: roleInput ? roleInput.value : '',
+            type: typeInput ? typeInput.value : '',
+            module: moduleInput ? moduleInput.value : '',
+            date: dateInput ? dateInput.value : ''
+        };
+        if (traineeInput) traineeInput.value = name;
+        if (roleInput) roleInput.value = role;
+        if (typeInput && type) typeInput.value = type;
+        if (moduleInput && module) moduleInput.value = module;
+        if (dateInput && isoDate) dateInput.value = isoDate;
+        generateCertPDF();
+        /* Restore whatever the generator form previously held, so regenerating
+           a certificate from the register doesn't clobber an in-progress entry. */
+        if (traineeInput) traineeInput.value = prevValues.trainee;
+        if (roleInput) roleInput.value = prevValues.role;
+        if (typeInput) typeInput.value = prevValues.type;
+        if (moduleInput) moduleInput.value = prevValues.module;
+        if (dateInput) dateInput.value = prevValues.date;
+    }
+};
+
 
 window.generateCertPDF = function() {
     var traineeInput = document.getElementById('cert-trainee');
@@ -894,7 +1041,7 @@ window.generateCertPDF = function() {
     }
 
     if (window.upsertSMSTrainingFromCertificate) {
-        window.upsertSMSTrainingFromCertificate(traineeName, trainingType, certDate, traineeRole);
+        window.upsertSMSTrainingFromCertificate(traineeName, trainingType, certDate, traineeRole, trainingModule);
     }
 
     var fmtDate = function(d) {
@@ -1398,7 +1545,7 @@ h1{margin:0 0 13mm 0;font-family:Georgia,'Times New Roman',serif;font-size:28pt;
 
   function dataCells(row) {
     return Array.prototype.slice.call(row.querySelectorAll('td')).filter(function(td) {
-      return !td.classList.contains('row-actions');
+      return !td.classList.contains('row-actions') && !td.classList.contains('cert-actions');
     });
   }
 
@@ -1504,6 +1651,37 @@ h1{margin:0 0 13mm 0;font-family:Georgia,'Times New Roman',serif;font-size:28pt;
     return map[code] || '';
   }
 
+  function applyCertificates(view, section){
+    var certTable = view.querySelector('#t-sms-training');
+    if (!certTable || !Array.isArray(section.data)) return;
+    var rows = Array.prototype.slice.call(certTable.querySelectorAll('tbody tr'));
+    /* Clear first: a freshly created row (via makeRow's cloneNode) can inherit
+       stale cert-actions data from whichever row it was cloned from. */
+    rows.forEach(function(tr){
+      var cell = tr.querySelector('.cert-actions');
+      if (!cell) return;
+      cell.dataset.certPdf = '';
+      cell.dataset.certPdfName = '';
+      cell.dataset.certModule = '';
+      delete tr.dataset.certGenerated;
+    });
+    section.data.forEach(function(entry){
+      if (!entry || !entry.name) return;
+      var match = rows.filter(function(tr){
+        var nameCell = tr.querySelector('td');
+        return nameCell && (nameCell.textContent || '').trim().toLowerCase() === String(entry.name).trim().toLowerCase();
+      })[0];
+      if (!match) return;
+      var cell = match.querySelector('.cert-actions');
+      if (!cell) return;
+      cell.dataset.certPdf = entry.certPdf || '';
+      cell.dataset.certPdfName = entry.certPdfName || '';
+      cell.dataset.certModule = entry.certModule || '';
+      if (entry.certGenerated) match.dataset.certGenerated = 'true';
+      if (typeof certRefreshRowUI === 'function') certRefreshRowUI(match);
+    });
+  }
+
   function applyBlock(block) {
     var viewId = viewIdForAppendix(block);
     var view = viewId ? document.getElementById(viewId) : null;
@@ -1520,6 +1698,8 @@ h1{margin:0 0 13mm 0;font-family:Georgia,'Times New Roman',serif;font-size:28pt;
         applyKeyValues(view, section, kvIndex++);
       } else if (section.type === 'list') {
         applyList(view, section, listIndex++);
+      } else if (section.type === 'certificates') {
+        applyCertificates(view, section);
       }
     });
     return true;
@@ -1718,8 +1898,9 @@ function addSMSTrainingRow(){
   tr.innerHTML='<td contenteditable="true">—</td><td contenteditable="true">—</td><td contenteditable="true">Initial training</td>'
     +'<td contenteditable="true">SAF International</td><td contenteditable="true">—</td><td contenteditable="true" data-validity="true">—</td>'
     +'<td contenteditable="true">—</td><td contenteditable="true" data-alarm="true">Planned</td>'
+    +certCellMarkup()
     +'<td class="row-actions"><button title="Delete">✕</button></td>';
-  tr.querySelector('button').onclick=function(){tr.remove(); if(window.populateCertDropdown) populateCertDropdown();};
+  tr.querySelector('.row-actions button').onclick=function(){tr.remove(); if(window.populateCertDropdown) populateCertDropdown();};
   tb.appendChild(tr);
   if (window.updateSMSTrainingValidity) updateSMSTrainingValidity();
   if (window.populateCertDropdown) populateCertDropdown();
@@ -2208,7 +2389,7 @@ var SAF_APP_LOGO_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+UAA
 
   function dataTds(row){
     return Array.prototype.slice.call(row.querySelectorAll('td')).filter(function(td){
-      return !td.classList.contains('row-actions');
+      return !td.classList.contains('row-actions') && !td.classList.contains('cert-actions');
     });
   }
 
@@ -2244,6 +2425,24 @@ var SAF_APP_LOGO_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+UAA
       var items = Array.prototype.slice.call(ul.querySelectorAll('li')).map(function(li){ return li.textContent.trim(); });
       block.sections.push({ type:'list', items: items });
     });
+
+    var certTable = view.querySelector('#t-sms-training');
+    if (certTable){
+      var certs = [];
+      Array.prototype.slice.call(certTable.querySelectorAll('tbody tr')).forEach(function(tr){
+        var nameCell = tr.querySelector('td');
+        var certCell = tr.querySelector('.cert-actions');
+        var name = nameCell ? (nameCell.textContent || '').trim() : '';
+        if (!name || name === '—' || !certCell) return;
+        var certPdf = certCell.dataset.certPdf || '';
+        var certPdfName = certCell.dataset.certPdfName || '';
+        var certModule = certCell.dataset.certModule || '';
+        var certGenerated = tr.dataset.certGenerated === 'true';
+        if (!certPdf && !certModule && !certGenerated) return;
+        certs.push({ name: name, certPdf: certPdf, certPdfName: certPdfName, certModule: certModule, certGenerated: certGenerated });
+      });
+      if (certs.length) block.sections.push({ type:'certificates', data: certs });
+    }
 
     return block;
   }
