@@ -1897,18 +1897,6 @@ function updateOaciDefinitionDropdown(sel) {
 <!-- ─── FORM VIEW – ECCAIRS FLIGHT OPERATION V3 ─────────────────────────── -->
 <div class="view" id="view-form">
 <div class="form-wrap">
-<div id="cs-saved-panel" style="margin-bottom:24px;">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-    <div style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--steel-bright);letter-spacing:.06em;">📋 SAVED CHANGE STUDIES</div>
-    <div style="display:flex;gap:8px;">
-      <select id="cs-filter-status" onchange="renderSavedCSList()" style="font-family:var(--font-mono);font-size:10px;background:var(--navy-mid);border:1px solid rgba(255,255,255,.12);color:var(--white);padding:4px 8px;border-radius:5px;">
-        <option value="" style="background:#0d1b2a;color:#f4f6f8;">All</option><option value="draft" style="background:#0d1b2a;color:#f4f6f8;">Draft</option><option value="review" style="background:#0d1b2a;color:#f4f6f8;">Under Review</option><option value="approved" style="background:#0d1b2a;color:#f4f6f8;">Approved</option><option value="superseded" style="background:#0d1b2a;color:#f4f6f8;">Superseded</option>
-      </select>
-      <button onclick="renderSavedCSList()" class="btn btn-ghost" style="font-size:10px;padding:4px 10px;">↺</button>
-    </div>
-  </div>
-  <div id="cs-saved-list"></div>
-</div>
 <div class="form-header">
 <div class="eccairs-logo">ECCAIRS2</div>
 <div class="form-header-info">
@@ -3723,15 +3711,41 @@ function updateOaciDefinitionDropdown(sel) {
 
 <div class="view" id="view-change">
 <div class="form-wrap">
+
+<div class="dash-header" style="padding:0 0 20px;">
+  <div>
+    <div class="dash-title">MANAGEMENT OF CHANGE</div>
+    <div class="dash-subtitle">Change Study / Safety Assessment · AS 332 C1 Super Puma · SAF International</div>
+  </div>
+  <button class="btn btn-primary" onclick="showChangeStudyForm()">＋ New Change Study</button>
+</div>
+
+<div id="cs-saved-panel" style="margin-bottom:24px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--steel-bright);letter-spacing:.06em;">📋 SAVED CHANGE STUDIES</div>
+    <div style="display:flex;gap:8px;">
+      <select id="cs-filter-status" onchange="renderSavedCSList()" style="font-family:var(--font-mono);font-size:10px;background:var(--navy-mid);border:1px solid rgba(255,255,255,.12);color:var(--white);padding:4px 8px;border-radius:5px;">
+        <option value="" style="background:#0d1b2a;color:#f4f6f8;">All</option><option value="draft" style="background:#0d1b2a;color:#f4f6f8;">Draft</option><option value="review" style="background:#0d1b2a;color:#f4f6f8;">Under Review</option><option value="approved" style="background:#0d1b2a;color:#f4f6f8;">Approved</option><option value="superseded" style="background:#0d1b2a;color:#f4f6f8;">Superseded</option>
+      </select>
+      <button onclick="renderSavedCSList()" class="btn btn-ghost" style="font-size:10px;padding:4px 10px;">↺</button>
+    </div>
+  </div>
+  <div id="cs-saved-list"></div>
+</div>
+
+<div id="cs-form-wrap" style="display:none;">
 <div class="form-header">
 <div class="eccairs-logo">MOC</div>
 <div class="form-header-info">
 <div class="form-header-title">CHANGE STUDY / SAFETY ASSESSMENT</div>
 <div class="form-header-sub">Management of Change · AS 332 C1 Super Puma · SAF International</div>
 </div>
+<div style="display:flex;align-items:flex-start;gap:10px;">
 <div>
 <div class="form-header-badge">CHANGE RISK ASSESSMENT</div><br/>
 <div class="form-header-badge" style="margin-top:4px;">SMS RECORD</div>
+</div>
+<button type="button" onclick="hideChangeStudyForm()" style="padding:5px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:5px;color:var(--grey-200);font-family:var(--font-mono);font-size:10px;cursor:pointer;white-space:nowrap;flex-shrink:0;" title="Replier — retourner à la liste des études sauvegardées">▲ Replier</button>
 </div>
 </div>
 <form id="change-form" onsubmit="return false;">
@@ -4024,6 +4038,7 @@ function updateOaciDefinitionDropdown(sel) {
 <button class="btn btn-ghost" onclick="previewChangeStudy()" title="Ouvre un aperçu complet de l'étude dans un nouvel onglet, avec un bouton pour l'imprimer ou l'enregistrer en PDF.">◎ PREVIEW</button>
 <button class="btn btn-primary" onclick="saveChangeStudy()">✓ SAVE CHANGE STUDY</button>
 </div>
+</div><!-- cs-form-wrap -->
 </div><!-- change form-wrap -->
 </div><!-- view-change -->
 
@@ -6343,6 +6358,7 @@ function saveChangeStudy() {
   saveChangeStudies();
   csRenderWorkflowBar(data.workflow_status||'draft');
   renderSavedCSList();
+  hideChangeStudyForm();
   showToast('✓ Change study saved — ' + (data.workflow_status||'draft').toUpperCase(), 'success');
 }
 // ── Duration dropdown: show/hide date fields ─────────────────────
@@ -6449,6 +6465,22 @@ function csRemoveFocaApproval(){
 }
 
 function resetChangeStudy() { clearAllChangeStudy(true); }
+
+// ── List-first UX (mirrors Occurrence Log): the form stays hidden until
+// the user explicitly opens it, either to create a new study or edit one.
+function showChangeStudyForm(ref){
+  if(ref){
+    loadCSIntoForm(ref);
+  } else {
+    resetChangeStudy();
+  }
+  var w=document.getElementById('cs-form-wrap'); if(w) w.style.display='';
+  document.getElementById('change-form')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function hideChangeStudyForm(){
+  var w=document.getElementById('cs-form-wrap'); if(w) w.style.display='none';
+  document.getElementById('cs-saved-panel')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
 
 
 // ══════════════════════════════════════════════════════════════════
@@ -11097,7 +11129,7 @@ function renderSavedCSList(){
     .sort(function(a,b){return new Date(b.saved_at||0)-new Date(a.saved_at||0);});
   if(!studies.length){
     el.innerHTML='<div style="color:var(--grey-400);font-family:var(--font-mono);font-size:11px;padding:16px;text-align:center;border:1px dashed rgba(255,255,255,.08);border-radius:8px;">'
-      +(filterStatus?'No change studies with status "'+filterStatus+'".':'No change studies saved yet — fill in the form below and click <b>✓ SAVE CHANGE STUDY</b> to see it appear here.')+'</div>';
+      +(filterStatus?'No change studies with status "'+filterStatus+'".':'No change studies saved yet — click <b>＋ New Change Study</b> above to create one.')+'</div>';
     return;
   }
   var html='<div style="display:flex;flex-direction:column;gap:10px;">';
@@ -11130,7 +11162,7 @@ function renderSavedCSList(){
   });
   html+='</div>';
   el.innerHTML=html;
-  el.querySelectorAll('.csl-load').forEach(function(b){b.addEventListener('click',function(){loadCSIntoForm(b.getAttribute('data-csref'));});});
+  el.querySelectorAll('.csl-load').forEach(function(b){b.addEventListener('click',function(){showChangeStudyForm(b.getAttribute('data-csref'));});});
   el.querySelectorAll('.csl-preview').forEach(function(b){b.addEventListener('click',function(){previewChangeStudy(b.getAttribute('data-csref'));});});
   el.querySelectorAll('.csl-pdf').forEach(function(b){b.addEventListener('click',function(){exportChangeStudyPDF(b.getAttribute('data-csref'));});});
   el.querySelectorAll('.csl-dup').forEach(function(b){b.addEventListener('click',function(){duplicateCS(b.getAttribute('data-csref'));});});
@@ -11193,7 +11225,7 @@ function duplicateCS(ref){
   }
   CHANGE_STUDIES.push(newCS);
   saveChangeStudies();
-  loadCSIntoForm(newRef);
+  showChangeStudyForm(newRef);
   renderSavedCSList();
   showToast('✓ New revision: '+newRef,'success');
 }
