@@ -1310,7 +1310,7 @@ nav { top: 118px !important; }
   <div style="max-width:1800px;margin:auto;display:flex;align-items:center;gap:4px;overflow-x:auto;">
     <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
-    <a href="Sauvegarde/SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
+    <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
     <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
     <a href="SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
   </div>
@@ -3740,23 +3740,6 @@ function updateOaciDefinitionDropdown(sel) {
   <div id="cs-saved-list"></div>
 </div>
 
-
-<!-- HESLO VENOM MOC STATIC ACCESS CARD - ensures the study is visible even if browser localStorage already contains older MOC data -->
-<div id="heslo-venom-moc-access" style="margin:0 0 24px;padding:16px 18px;border:1px solid rgba(255,180,0,.45);border-left:5px solid #FFD700;border-radius:10px;background:rgba(255,180,0,.07);">
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
-    <div style="min-width:280px;flex:1;">
-      <div style="font-family:var(--font-mono);font-size:10px;color:#FFD700;letter-spacing:.08em;font-weight:800;text-transform:uppercase;margin-bottom:6px;">PRELOADED MOC STUDY · HESLO HIGH RISK</div>
-      <div style="font-weight:800;color:var(--white);font-size:14px;margin-bottom:4px;">Transport HESLO AS332C1 - de Havilland DH.112 Venom non démonté LSZR-LSGS</div>
-      <div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-300);line-height:1.55;">Réf. MOC-AS332C1-HESLO-VENOM-2026-001 · avion complet non démonté · points d'ancrage propres à l'avion · élingue 80 m · statut UNDER REVIEW</div>
-      <div style="margin-top:8px;color:#ffb3a7;font-size:11px;line-height:1.45;">Décision SMS proposée: non approuvé pour exécution opérationnelle tant que la substantiation des points d'ancrage, les essais de stabilité, l'autorisation FOCA/OFAC, la route et l'ERP ne sont pas clôturés.</div>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <button type="button" class="btn btn-gold" onclick="forceLoadHesloVenomMocStudy(true)" style="font-size:10px;padding:8px 12px;">Open / Load Study</button>
-      <button type="button" class="btn btn-ghost" onclick="forceLoadHesloVenomMocStudy(false)" style="font-size:10px;padding:8px 12px;">Add to saved list</button>
-    </div>
-  </div>
-</div>
-
 <div id="cs-form-wrap" style="display:none;">
 <div class="form-header">
 <div class="eccairs-logo">MOC</div>
@@ -5098,104 +5081,6 @@ let selectedInitRisk = '';
 let selectedResidRisk = '';
 let editingEntryId = null;
 let CHANGE_STUDIES = JSON.parse(localStorage.getItem('safChangeStudies') || '[]');
-
-// ═══ PRELOADED MOC STUDY — HESLO AS332C1 DH.112 VENOM, NON-DISMANTLED AIRCRAFT ═══
-const HESLO_VENOM_MOC_STUDY = {
-  "title": "Transport HESLO AS332C1 - de Havilland DH.112 Venom non démonté LSZR-LSGS",
-  "ref": "MOC-AS332C1-HESLO-VENOM-2026-001",
-  "assessment_type": "Change risk assessment",
-  "workflow_status": "review",
-  "version_num": "1.0",
-  "version_note": "Initial MOC intégrant la contrainte opérationnelle: avion non démonté, élingué sur points d'ancrage propres à l'avion.",
-  "description": "Étude de changement SMS pour une opération HESLO exceptionnelle avec AS332C1: transport d'un de Havilland DH.112 Venom complet, non démonté, depuis Altenrhein Museum / Airport St. Gallen-Altenrhein (LSZR) vers les installations Farner à l'aéroport de Sion (LSGS), avec une élingue de 80 m. La contrainte de changement est explicite: aucune dépose des ailes, empennages ou gouvernes; utilisation des points d'ancrage faisant partie de l'avion.",
-  "detailed_description": "CHANGEMENT ÉVALUÉ\n- Opération HESLO non standard et à haute criticité avec AS332C1.\n- Charge: de Havilland DH.112 Venom complet, non démonté, avec ailes, empennages, gouvernes et forme aérodynamique conservés.\n- Rigging: élingue 80 m, utilisation des points d'ancrage intégrés à l'avion, sans démontage structurel.\n- Trajet: LSZR / Altenrhein Museum vers LSGS / Farner Air Services, route à définir par étude de trajectoire évitant les tiers, obstacles, zones habitées et relief défavorable.\n\nHYPOTHÈSES CRITIQUES À CONFIRMER AVANT ACCEPTATION\n1. Masse réelle de la cellule dans la configuration exacte de transport: pesée certifiée obligatoire.\n2. Centre de gravité suspendu: calcul et vérification par essai de levage statique.\n3. Points d'ancrage faisant partie de l'avion: ils ne doivent pas être considérés comme acceptables sans justification d'ingénierie. Une preuve documentaire ou une substantiation spécifique doit démontrer leur résistance au levage vertical, aux charges obliques et aux charges dynamiques HESLO.\n4. État structural de la cellule: inspection indépendante, corrosion/fatigue, longerons, cadres fuselage, attaches de voilure, train, ancrages, fixation verrière/panneaux.\n5. Absence de carburant, vapeurs, batteries, pyrotechnie, oxygène, armement ou matières dangereuses résiduelles.\n\nÉVÉNEMENT REDOUTÉ CENTRAL\nPerte de contrôle de la charge externe ou perte de la charge entraînant décès de tiers, perte de l'hélicoptère, blessure grave de l'équipage/personnel sol, dommage majeur aux infrastructures aéroportuaires ou au patrimoine aéronautique.\n\nDANGERS SPÉCIFIQUES DU CHANGEMENT\n1. Charge aérodynamique active: l'avion complet peut générer portance, lacet, roulis, autorotation, effet cerf-volant ou variation brutale de traînée.\n2. Absence de démontage: surfaces portantes et empennages exposés augmentent la probabilité d'instabilité en translation, rafales, virage ou descente.\n3. Points d'ancrage avion: risque de rupture locale, arrachement, déformation structurelle, modification d'assiette suspendue ou rupture progressive sur cellule ancienne.\n4. Long-line 80 m: pendule long, retard de réponse, difficulté de stabilisation, charge hors champ visuel direct, dépose complexe en environnement aéroportuaire.\n5. Route longue LSZR-LSGS: météo variable, relief alpin, vent de vallée/foehn, obstacles, zones habitées et zones de largage limitées.\n6. Interaction aéroports actifs: conflits trafic, downwash, FOD, intrusion de tiers, coordination ATC/airport authority.\n7. Facteurs humains: charge cognitive pilote, pression opérationnelle/patrimoniale, biais d'objectif, coordination multi-acteurs.\n\nÉVALUATION INITIALE\n- Gravité: A / Catastrophic, car perte charge ou collision peut entraîner décès multiples et perte hélicoptère.\n- Probabilité initiale: 4 / Occasional à 5 / Frequent tant que la stabilité aérodynamique et la tenue des points d'ancrage ne sont pas démontrées.\n- Risque initial retenu: 5A RED / intolérable sans barrières supplémentaires.\n\nBARRIÈRES PRÉVENTIVES OBLIGATOIRES\n- Autorisation FOCA/OFAC SPO high-risk HESLO avant toute exécution.\n- Revue Accountable Manager + Safety Manager + NPFO + CAMO/maintenance + ingénieur structure externe.\n- Dossier de substantiation des points d'ancrage de l'avion, avec facteurs dynamiques et charges obliques; aucun levage si preuve insuffisante.\n- Pesée certifiée et calcul performance AS332C1 incluant masse rigging, densité altitude, température, vent et marge puissance.\n- Définition d'une vitesse mission maximale par essais progressifs, non par estimation.\n- Essais obligatoires: levage statique, stationnaire bas, stationnaire 5-10 m, translation lente, paliers de vitesse, virages doux, dépose simulée.\n- Neutralisation mécanique positive de toutes gouvernes, verrière, trappes, panneaux, antennes, éléments fragiles; contrôle indépendant.\n- Émerillon dimensionné, spreader/adaptateur si nécessaire, rigging certifié, inspection double indépendante.\n- Route approuvée avec zones de poser/largage d'urgence prédéfinies et interdiction de survol de tiers non maîtrisé.\n- Critères météo conservateurs: pas d'orage, pas de foehn/turbulence modérée ou forte, rafales et vent traversier sous limites issues des essais, visibilité VFR confortable.\n- Coordination ATC, LSZR, LSGS, exploitants aéroport, sécurité sol, pompiers, police si nécessaire, NOTAM/communications selon exigences locales.\n\nBARRIÈRES D'ATTÉNUATION\n- Procédure charge instable: réduire vitesse, éviter virages, revenir au stationnaire, poser sur zone sûre; largage uniquement si la divergence menace l'hélicoptère ou les tiers.\n- Procédure panne moteur/OEI avec charge externe: jettison/poser selon profil et zones sûres; aucun tiers sous trajectoire.\n- Équipe sol avec commandement unique, radio dédiée, phraséologie STOP prioritaire, zone stérile et EPI.\n- Hélicoptère/observateur suiveur seulement si bénéfice net sur surveillance et coordination, sans ajouter de conflit opérationnel.\n\nBARRIÈRES DE RÉCUPÉRATION\n- Emergency Response Plan spécifique mission avec cartes de zones, coordonnées, accès secours, contact ATC/aéroports, pompiers, police, secours médical, plan pollution/incendie.\n- Zones de largage/poser d'urgence validées par segment; pas de segment sans option acceptable.\n- Procédure perte charge, accident, pollution, dommage infrastructure, communication crise, préservation des preuves et notification autorités.\n\nRISQUE RÉSIDUEL CIBLE\nLe risque ne peut être abaissé sous un niveau significatif tant que l'avion reste complet. Après démonstration structurelle, essais de stabilité et route sans tiers, le risque résiduel visé est 3B/4C YELLOW à ORANGE. Si la stabilité aérodynamique ou la tenue des points d'ancrage n'est pas démontrée, le risque demeure RED et la mission doit être refusée.",
-  "decision_origin": "Besoin opérationnel ponctuel de transfert d'un avion de musée de type de Havilland DH.112 Venom entre Altenrhein et Sion. Le changement par rapport aux opérations HESLO habituelles réside dans la nature de la charge: avion complet non démonté, forme aérodynamique conservée, points d'ancrage propres à l'avion, élingue 80 m et transit long entre deux aéroports.",
-  "impact_assessment": "IMPACT OPÉRATIONS: opération SPO/HESLO high-risk, trajectoire spécifique, limitations météo renforcées, coordination ATC/aéroports, interdiction de survol de tiers non contrôlés.\nIMPACT CREW/TRAINING: équipage HESLO long-line lourd requis; briefing spécifique charge aérodynamique; CRM renforcé; task specialists qualifiés.\nIMPACT MAINTENANCE/CAMO: vérification crochet, élingue, émerillon, rigging; calculs performance AS332C1; conformité des équipements de largage.\nIMPACT ENGINEERING: validation structurelle des points d'ancrage de l'avion et de l'assiette suspendue; inspection de la cellule ancienne.\nIMPACT EMERGENCY RESPONSE: ERP dédié avec zones de largage, secours, pollution/incendie, coordination autorités.\nIMPACT COMPLIANCE: autorisation FOCA/OFAC et dossier HESLO spécifique avant mise en œuvre.",
-  "duration": "Temporary",
-  "start_date": "2026-07-02",
-  "end_date": "",
-  "doc_archiving": "Dossier MOC à archiver avec autorisation FOCA/OFAC, pesée, calculs performance, plan de levage, certificats rigging, rapports d'essais, route approuvée, briefings, ERP et décision Go/No-Go signée.",
-  "regulations": "Références à vérifier dans le dossier opérationnel final: EASA Part-SPO / SPO.SPEC.HESLO, AMC/GM applicables HESLO, exigences nationales FOCA/OFAC pour opérations spécialisées à haut risque, OM-A/OM-B/OM-C/OM-D, SOP HESLO SAF International, AFM/RFM AS332C1 et supplément cargo hook/long-line.",
-  "assessors": "Safety Manager / NPFO / Chief Pilot HESLO / Engineering structure / Accountable Manager",
-  "version": "1.0",
-  "version_date": "2026-07-02",
-  "history": "Initial issue created from MOC request: Venom complete, not dismantled, own aircraft anchor points, 80 m sling, LSZR to LSGS.",
-  "followup_comments": "Suivi requis après essais de levage et avant approbation finale: reclasser les risques, joindre preuves structurelles, valider route, joindre autorisation FOCA/OFAC et mettre à jour ERP.",
-  "acm_name": "Jean Louis CAMUS",
-  "acm_signature": "",
-  "assessors_signature": "",
-  "authority_approval": true,
-  "risk_reduction_summary": "Les barrières qui réduisent réellement le risque sont: preuve structurelle des points d'ancrage, neutralisation des éléments mobiles, essais progressifs de stabilité aérodynamique, limitation de vitesse issue des essais, route sans tiers avec zones de poser/largage, critères météo restrictifs, autorisation FOCA/OFAC et Go/No-Go formel. Sans preuve structurelle ou sans essai stable en translation, aucune mesure administrative ne rend le risque acceptable.",
-  "conclusions": "DÉCISION SMS PROPOSÉE: NOT APPROVED FOR OPERATIONAL EXECUTION AT THIS STAGE / UNDER REVIEW.\n\nL'opération peut rester en phase de préparation uniquement. Elle ne doit pas être exécutée tant que les conditions suivantes ne sont pas clôturées: autorisation FOCA/OFAC obtenue, masse réelle et CG suspendu confirmés, points d'ancrage avion substantiés par ingénierie, état structurel accepté, rigging certifié, éléments mobiles sécurisés, essais progressifs concluants sans oscillation divergente, route et zones d'urgence validées, météo dans limites définies, ERP activable, décision Go/No-Go signée par Accountable Manager.\n\nSi l'une des conditions critiques n'est pas satisfaite, le risque résiduel demeure RED / intolérable et la mission doit être refusée ou reconfigurée. La mesure SMS préférée reste le démontage ou un transport alternatif; puisque cette option est exclue par la contrainte opérationnelle, le niveau de preuve exigé augmente fortement.",
-  "signature": "Pending SMS review and Accountable Manager approval",
-  "diffusion": "Accountable Manager; Safety Manager; NPFO; Chief Pilot HESLO; CAMO/Maintenance; Ground Operations; Task Specialists; Airport coordinators LSZR/LSGS; Farner representative; Emergency Response coordinator.",
-  "cyber_risk_flag": "no",
-  "cyber_risk_partis_ref": "",
-  "cyber_risk_description": "No direct Part-IS/cybersecurity impact identified. Operational communications and document control remain standard SMS controls.",
-  "approval": false,
-  "saved_at": "2026-07-02T00:00:00.000Z",
-  "foca_approval_data": "",
-  "foca_approval_name": "",
-  "version_history": [
-    {
-      "version": "1.0",
-      "status": "review",
-      "date": "2026-07-02T00:00:00.000Z",
-      "note": "Initial SMS/MOC risk assessment inserted for HESLO Venom transport.",
-      "by": "ChatGPT-assisted SMS draft"
-    }
-  ],
-  "c_actions_list": "[{\"id\": \"heslo_action_01\", \"text\": \"Obtenir l'autorisation FOCA/OFAC SPO high-risk HESLO et joindre l'approbation dans le champ FOCA Approval avant toute exécution.\", \"nominatedPerson\": \"Safety Manager / NPFO\", \"sigData\": \"\", \"email\": \"\"}, {\"id\": \"heslo_action_02\", \"text\": \"Faire peser le DH.112 Venom complet dans la configuration exacte de transport, incluant tous éléments conservés, et documenter masse, CG et marge performance AS332C1.\", \"nominatedPerson\": \"Engineering / Maintenance\", \"sigData\": \"\", \"email\": \"\"}, {\"id\": \"heslo_action_03\", \"text\": \"Substantier les points d'ancrage faisant partie de l'avion: résistance verticale, charges obliques, facteurs dynamiques, état corrosion/fatigue, inspection NDT si nécessaire. Aucun levage si preuve insuffisante.\", \"nominatedPerson\": \"Engineering structure independent reviewer\", \"sigData\": \"\", \"email\": \"\"}, {\"id\": \"heslo_action_04\", \"text\": \"Neutraliser mécaniquement gouvernes, verrière, trappes, panneaux, antennes et pièces amovibles; réaliser une inspection indépendante et signer une release de configuration charge.\", \"nominatedPerson\": \"Maintenance Manager\", \"sigData\": \"\", \"email\": \"\"}, {\"id\": \"heslo_action_05\", \"text\": \"Confirmer l'absence de carburant, vapeurs, batteries, oxygène, pyrotechnie, armement ou matières dangereuses résiduelles; joindre certificat DG/UXO/fuel vapour free.\", \"nominatedPerson\": \"Maintenance / Safety Manager\", \"sigData\": \"\", \"email\": \"\"}, {\"id\": \"heslo_action_06\", \"text\": \"Valider rigging 80 m: élingue, manilles, émerillon, crochet, éventuel spreader/adaptateur, WLL/SWL, traçabilité, inspection double indépendante et test de largage.\", \"nominatedPerson\": \"Chief Pilot HESLO / Ground Ops\", \"sigData\": \"\", \"email\": \"\"}, {\"id\": \"heslo_action_07\", \"text\": \"Exécuter essais progressifs de stabilité: levage statique, stationnaire bas, stationnaire 5-10 m, translation lente, paliers de vitesse, virages doux, dépose simulée. Définir V mission maximale sur preuves.\", \"nominatedPerson\": \"Chief Pilot HESLO / Safety Manager\", \"sigData\": \"\", \"email\": \"\"}, {\"id\": \"heslo_action_08\", \"text\": \"Établir route LSZR-LSGS évitant zones habitées et tiers, avec cartes obstacles, relief, câbles, zones sensibles, zones de poser/largage d'urgence par segment et coordination ATS.\", \"nominatedPerson\": \"Flight Operations / Dispatch\", \"sigData\": \"\", \"email\": \"\"}, {\"id\": \"heslo_action_09\", \"text\": \"Définir critères météo Go/No-Go spécifiques: pas d'orage, pas de foehn/turbulence modérée ou forte, vent/rafales sous limites d'essais, visibilité/plafond VFR suffisants, stabilité route complète.\", \"nominatedPerson\": \"NPFO / Chief Pilot HESLO\", \"sigData\": \"\", \"email\": \"\"}, {\"id\": \"heslo_action_10\", \"text\": \"Coordonner LSZR, LSGS, Farner, ATC, airport operations, pompiers, sécurité périmètre et éventuel NOTAM; établir zones stériles prise/dépose et phraséologie radio dédiée.\", \"nominatedPerson\": \"Operations Coordinator\", \"sigData\": \"\", \"email\": \"\"}, {\"id\": \"heslo_action_11\", \"text\": \"Mettre à jour l'Emergency Response Plan mission: perte charge, largage, panne moteur/OEI, accident, pollution/incendie, communication crise et notification autorités.\", \"nominatedPerson\": \"ERP Coordinator / Safety Manager\", \"sigData\": \"\", \"email\": \"\"}, {\"id\": \"heslo_action_12\", \"text\": \"Tenir un comité Go/No-Go final avec Accountable Manager, Safety Manager, NPFO, Chief Pilot HESLO et Engineering. Mission refusée si une condition critique reste ouverte.\", \"nominatedPerson\": \"Accountable Manager\", \"sigData\": \"\", \"email\": \"\"}]",
-  "c_fu_data": "{}",
-  "fu_acm_name": "Jean Louis CAMUS",
-  "fu_acm_signature": ""
-};
-(function seedHesloVenomMocStudy(){
-  try {
-    if (Array.isArray(CHANGE_STUDIES) && !CHANGE_STUDIES.some(function(cs){ return cs && cs.ref === HESLO_VENOM_MOC_STUDY.ref; })) {
-      CHANGE_STUDIES.push(HESLO_VENOM_MOC_STUDY);
-      localStorage.setItem('safChangeStudies', JSON.stringify(CHANGE_STUDIES));
-    }
-  } catch(e) {
-    console.warn('Unable to seed HESLO Venom MOC study', e);
-  }
-})();
-
-// Robust visible loader for the preloaded HESLO Venom MOC study.
-// It upserts the study every time the user clicks the yellow card, preventing stale browser localStorage from hiding it.
-function forceLoadHesloVenomMocStudy(openStudy) {
-  try {
-    if (typeof HESLO_VENOM_MOC_STUDY === 'undefined') {
-      showToast('HESLO Venom MOC study is not available in this file', 'error');
-      return;
-    }
-    if (!Array.isArray(CHANGE_STUDIES)) CHANGE_STUDIES = [];
-    var idx = CHANGE_STUDIES.findIndex(function(cs){ return cs && cs.ref === HESLO_VENOM_MOC_STUDY.ref; });
-    var fresh = JSON.parse(JSON.stringify(HESLO_VENOM_MOC_STUDY));
-    fresh.saved_at = new Date().toISOString();
-    if (idx >= 0) { CHANGE_STUDIES[idx] = fresh; } else { CHANGE_STUDIES.unshift(fresh); }
-    localStorage.setItem('safChangeStudies', JSON.stringify(CHANGE_STUDIES));
-    if (typeof updateCounts === 'function') updateCounts();
-    if (typeof renderSavedCSList === 'function') renderSavedCSList();
-    if (openStudy && typeof showChangeStudyForm === 'function') showChangeStudyForm(HESLO_VENOM_MOC_STUDY.ref);
-    if (typeof showToast === 'function') showToast('MOC HESLO Venom loaded in Management of Change', 'success');
-  } catch(e) {
-    console.error(e);
-    if (typeof showToast === 'function') showToast('Unable to load HESLO Venom MOC: '+e.message, 'error');
-  }
-}
-
-// On first open of this file, force an upsert into the saved list so the study is visible without clearing browser storage.
-try {
-  if (typeof HESLO_VENOM_MOC_STUDY !== 'undefined') {
-    var _hvIdx = Array.isArray(CHANGE_STUDIES) ? CHANGE_STUDIES.findIndex(function(cs){ return cs && cs.ref === HESLO_VENOM_MOC_STUDY.ref; }) : -1;
-    if (!Array.isArray(CHANGE_STUDIES)) CHANGE_STUDIES = [];
-    if (_hvIdx >= 0) CHANGE_STUDIES[_hvIdx] = Object.assign({}, CHANGE_STUDIES[_hvIdx], HESLO_VENOM_MOC_STUDY);
-    else CHANGE_STUDIES.unshift(HESLO_VENOM_MOC_STUDY);
-    localStorage.setItem('safChangeStudies', JSON.stringify(CHANGE_STUDIES));
-  }
-} catch(e) { console.warn('HESLO Venom MOC startup upsert failed', e); }
-
 
 // ══════════════════════════════════════════════════════════════════
 // NAVIGATION
@@ -14886,26 +14771,24 @@ setTimeout(function(){
       }
       if(data.safLessons!=null)     data.safLessons     = mergeHeavy(data.safLessons, localLes, 'id', ['image']);
 
-      // Risk Register consolidé: ne jamais restaurer l'ancien registre cloud à 47 entrées.
-      try{
-        var __cloudRiskDB = JSON.parse(data.safRiskDB || 'null');
-        if(!__isSmsConsolidatedDB(__cloudRiskDB)){
-          data.safRiskDB = JSON.stringify(INITIAL_DATA);
-          data.safRiskDBVersion = _DB_VERSION;
-        }
-      }catch(e){ data.safRiskDB = JSON.stringify(INITIAL_DATA); data.safRiskDBVersion = _DB_VERSION; }
+      // Risk Register consolidé: le registre embarqué (INITIAL_DATA) fait toujours foi.
+      // On n'accepte plus JAMAIS le registre stocké côté cloud, même s'il est au format
+      // SMS-XX valide, car un ancien registre valide-mais-obsolète (ex. 24 entrées avant
+      // une mise à jour) passait auparavant le contrôle de format et écrasait la mise à jour.
+      data.safRiskDB = JSON.stringify(INITIAL_DATA);
+      data.safRiskDBVersion = _DB_VERSION;
 
       // Réécrit les clés dans localStorage (mêmes clés que l'import natif)
       KEYS.forEach(function(k){ if(k==='safRiskDB'){ return; } if(data[k]!=null){ try{ localStorage.setItem(k, data[k]); }catch(e){} } });
       try{ localStorage.setItem('safRiskDB', JSON.stringify(INITIAL_DATA)); localStorage.setItem('safRiskDBVersion', _DB_VERSION); }catch(e){}
       if(data.saf_header!=null){ try{ localStorage.setItem('saf_international_safety_management_header_v1', data.saf_header); }catch(e){} }
 
-      // Recharge les variables en mémoire (DB et CHANGE_STUDIES sont mises en cache au parse)
+      // Recharge les variables en mémoire — toujours depuis le registre embarqué (INITIAL_DATA),
+      // jamais depuis une copie cloud potentiellement obsolète.
       try{
-        var savedDB = JSON.parse(data.safRiskDB||'null');
-        if(__isSmsConsolidatedDB(savedDB) && typeof DB!=='undefined'){ DB = savedDB; filteredDB = DB.slice(); }
-        else if(typeof DB!=='undefined'){ __forceSmsConsolidatedDB('cloudLoad'); }
-      }catch(e){}
+        DB = JSON.parse(JSON.stringify(INITIAL_DATA));
+        filteredDB = DB.slice();
+      }catch(e){ if(typeof DB!=='undefined') __forceSmsConsolidatedDB('cloudLoad'); }
       try{
         var savedCS = JSON.parse(data.safChangeStudies||'[]');
         if(Array.isArray(savedCS) && typeof CHANGE_STUDIES!=='undefined'){ CHANGE_STUDIES.length=0; savedCS.forEach(function(s){ CHANGE_STUDIES.push(s); }); }
