@@ -17528,13 +17528,13 @@ function ap2Show(id,btn){
 <button type="button" class="cmsx-btn" style="padding:4px 10px;font-size:11px;" onclick="cmsxToggle5Whys()" id="cmsx-5w-togglebtn">Hide ▲</button>
 </div>
 <div id="cmsx-5w-body">
-<div class="cmsx-note">Start from the finding above and ask "Why?" repeatedly (usually 5 times) until the underlying root cause is reached. Leave a "Why" blank if the chain stops earlier.</div>
-<div class="cmsx-field"><label>Why 1 — Why did this deviation occur?</label><textarea id="cmsx-f-why1" placeholder="e.g. The checklist item was not completed before departure"></textarea></div>
-<div class="cmsx-field"><label>Why 2</label><textarea id="cmsx-f-why2" placeholder="e.g. The checklist was not accessible to the crew at that stage"></textarea></div>
-<div class="cmsx-field"><label>Why 3</label><textarea id="cmsx-f-why3" placeholder="e.g. The document management procedure does not define its location"></textarea></div>
-<div class="cmsx-field"><label>Why 4</label><textarea id="cmsx-f-why4" placeholder="e.g. The procedure was never updated after the latest OMM revision"></textarea></div>
-<div class="cmsx-field"><label>Why 5</label><textarea id="cmsx-f-why5" placeholder="e.g. No review cycle exists to keep procedures aligned with OMM revisions"></textarea></div>
-<div class="cmsx-field"><label>Root cause identified</label><textarea id="cmsx-f-rootcause" placeholder="Summarise the root cause(s) resulting from the 5 Whys — this should drive the corrective action plan below"></textarea></div>
+<div class="cmsx-note">Start from the finding above and answer "Why?" — each next question appears once you've answered the previous one.</div>
+<div class="cmsx-field" id="cmsx-why-wrap-1"><label>Why 1 — Why did this deviation occur?</label><textarea id="cmsx-f-why1" oninput="cmsx5WhysCascade()" placeholder="e.g. The checklist item was not completed before departure"></textarea></div>
+<div class="cmsx-field" id="cmsx-why-wrap-2" style="display:none;"><label>Why 2</label><textarea id="cmsx-f-why2" oninput="cmsx5WhysCascade()" placeholder="e.g. The checklist was not accessible to the crew at that stage"></textarea></div>
+<div class="cmsx-field" id="cmsx-why-wrap-3" style="display:none;"><label>Why 3</label><textarea id="cmsx-f-why3" oninput="cmsx5WhysCascade()" placeholder="e.g. The document management procedure does not define its location"></textarea></div>
+<div class="cmsx-field" id="cmsx-why-wrap-4" style="display:none;"><label>Why 4</label><textarea id="cmsx-f-why4" oninput="cmsx5WhysCascade()" placeholder="e.g. The procedure was never updated after the latest OMM revision"></textarea></div>
+<div class="cmsx-field" id="cmsx-why-wrap-5" style="display:none;"><label>Why 5</label><textarea id="cmsx-f-why5" oninput="cmsx5WhysCascade()" placeholder="e.g. No review cycle exists to keep procedures aligned with OMM revisions"></textarea></div>
+<div class="cmsx-field" id="cmsx-why-wrap-rc" style="display:none;"><label>Root cause identified</label><textarea id="cmsx-f-rootcause" placeholder="Summarise the root cause(s) resulting from the 5 Whys — this should drive the corrective action plan below"></textarea></div>
 </div>
 </div>
 <div class="cmsx-grid2">
@@ -17841,6 +17841,18 @@ function cmsxToggle5Whys(){
   body.style.display=hidden?'block':'none';
   if(btn) btn.textContent=hidden?'Hide ▲':'Show ▼';
 }
+// Reveal each "Why" box only once the previous one is filled in; reveal
+// the Root cause box once Why 1 has an answer (chain can stop earlier).
+function cmsx5WhysCascade(){
+  var keys=['why1','why2','why3','why4','why5'];
+  var vals=keys.map(function(k){ var el=document.getElementById('cmsx-f-'+k); return el?el.value.trim():''; });
+  for(var i=2;i<=5;i++){
+    var wrap=document.getElementById('cmsx-why-wrap-'+i);
+    if(wrap) wrap.style.display = vals[i-2] ? 'flex' : 'none';
+  }
+  var rcWrap=document.getElementById('cmsx-why-wrap-rc');
+  if(rcWrap) rcWrap.style.display = vals[0] ? 'flex' : 'none';
+}
 // Reveal the "Other…" free-text input for nominated person / email
 function cmsxToggleOther(which){
   var sel=document.getElementById('cmsx-f-'+which);
@@ -17999,6 +18011,7 @@ function cmsxOpenFindingModal(id){
   document.getElementById('cmsx-f-rootcause').value=f?(f.rootCause||''):'';
   document.getElementById('cmsx-5w-body').style.display='block';
   document.getElementById('cmsx-5w-togglebtn').textContent='Hide ▲';
+  cmsx5WhysCascade();
   // Nominated person dropdown (+ other)
   var npList=['NPFO','NPCT','NPGO','NPCA','SM','CMM','ACM'];
   var npSel=document.getElementById('cmsx-f-np'), npOther=document.getElementById('cmsx-f-np-other');
@@ -18130,6 +18143,7 @@ window.cmsxToggleOther=cmsxToggleOther;
 window.cmsxOriginStyle=cmsxOriginStyle;
 window.cmsxToggleFocaRef=cmsxToggleFocaRef;
 window.cmsxToggle5Whys=cmsxToggle5Whys;
+window.cmsx5WhysCascade=cmsx5WhysCascade;
 
 // ═══════════════════════════════════════════════════════════════════
 // 2. ORDRES DE MISSION
