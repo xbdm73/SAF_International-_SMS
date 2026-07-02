@@ -1310,7 +1310,7 @@ nav { top: 118px !important; }
   <div style="max-width:1800px;margin:auto;display:flex;align-items:center;gap:4px;overflow-x:auto;">
     <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
-    <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
+    <a href="Sauvegarde/SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
     <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
     <a href="SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
   </div>
@@ -1563,6 +1563,10 @@ nav { top: 118px !important; }
 <span class="icon">◈</span> Opérations Spécialisées
       <span class="count" id="cnt-SPO">0</span>
 </div>
+<div class="nav-item" onclick="filterByCategory('Cybersécurité (Part-IS)')">
+<span class="icon">◈</span> Cybersécurité (Part-IS)
+      <span class="count" id="cnt-PIS">0</span>
+</div>
 </div>
 <div class="version-tag">
     ECCAIRS2 · Flight Operation V3<br/>
@@ -1650,6 +1654,7 @@ nav { top: 118px !important; }
           <option value="Facteurs Humains &amp; Opérations" style="background:#0d1b2a;color:#f4f6f8;">Facteurs Humains &amp; Opérations</option>
           <option value="EFB &amp; Systèmes Numériques" style="background:#0d1b2a;color:#f4f6f8;">EFB &amp; Systèmes Numériques</option>
           <option value="Opérations Spécialisées" style="background:#0d1b2a;color:#f4f6f8;">Opérations Spécialisées</option>
+          <option value="Cybersécurité (Part-IS)" style="background:#0d1b2a;color:#f4f6f8;">Cybersécurité (Part-IS)</option>
           <option>HESLO Specialized</option><option>HESLO Platform</option><option>MCF</option>
           <option>Aerial Photography</option><option>Diver Deployment</option><option>CAMO</option>
         </select>
@@ -1780,7 +1785,7 @@ nav { top: 118px !important; }
 <div class="dash-header">
 <div>
 <div class="dash-title">RISK REGISTER</div>
-<div class="dash-subtitle">Risk register consolidé · 9 évènements SMS · Barrières sources conservées</div>
+<div class="dash-subtitle">Risk register consolidé · 35 évènements SMS · Barrières sources conservées</div>
 </div>
 <button class="btn btn-gold" onclick="showView('form')">＋ NEW ENTRY</button>
 </div>
@@ -1796,6 +1801,7 @@ nav { top: 118px !important; }
 <option value="Facteurs Humains &amp; Opérations" style="background:#0d1b2a;color:#f4f6f8;">Facteurs Humains &amp; Opérations</option>
 <option value="EFB &amp; Systèmes Numériques" style="background:#0d1b2a;color:#f4f6f8;">EFB &amp; Systèmes Numériques</option>
 <option value="Opérations Spécialisées" style="background:#0d1b2a;color:#f4f6f8;">Opérations Spécialisées</option>
+<option value="Cybersécurité (Part-IS)" style="background:#0d1b2a;color:#f4f6f8;">Cybersécurité (Part-IS)</option>
 </select>
 <select id="filter-risk" onchange="applyFilters()">
 <option value="" style="background:#0d1b2a;color:#f4f6f8;">All risk levels</option>
@@ -2255,6 +2261,7 @@ function updateOaciDefinitionDropdown(sel) {
           <option value="Facteurs Humains & Opérations" style="background:#0d1b2a;color:#f4f6f8;">Facteurs Humains & Opérations</option>
           <option value="EFB & Systèmes Numériques" style="background:#0d1b2a;color:#f4f6f8;">EFB & Systèmes Numériques</option>
           <option value="Opérations Spécialisées" style="background:#0d1b2a;color:#f4f6f8;">Opérations Spécialisées — PDV / LDP</option>
+          <option value="Cybersécurité (Part-IS)" style="background:#0d1b2a;color:#f4f6f8;">Cybersécurité (Part-IS)</option>
         </select>
 </div>
 <div class="form-field">
@@ -3867,6 +3874,7 @@ function updateOaciDefinitionDropdown(sel) {
         <option value="Facteurs Humains &amp; Opérations" style="background:#0d1b2a;color:#f4f6f8;">Facteurs Humains &amp; Opérations</option>
         <option value="EFB &amp; Systèmes Numériques" style="background:#0d1b2a;color:#f4f6f8;">EFB &amp; Systèmes Numériques</option>
         <option value="Opérations Spécialisées" style="background:#0d1b2a;color:#f4f6f8;">Opérations Spécialisées</option>
+        <option value="Cybersécurité (Part-IS)" style="background:#0d1b2a;color:#f4f6f8;">Cybersécurité (Part-IS)</option>
         <option>HESLO Specialized</option><option>HESLO Platform</option><option>MCF</option>
         <option>Aerial Photography</option><option>Diver Deployment</option><option>CAMO</option>
       </select></div>
@@ -3881,6 +3889,32 @@ function updateOaciDefinitionDropdown(sel) {
   </div>
   <div id="cs-import-feedback" style="margin-top:8px;font-family:var(--font-mono);font-size:10px;min-height:14px;"></div>
 </div>
+<div style="margin-bottom:18px;padding:16px 18px;background:rgba(192,68,0,.08);border:1px solid rgba(192,68,0,.3);border-radius:10px;">
+  <div style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:#e0824a;letter-spacing:.06em;margin-bottom:10px;">◈ CYBERSECURITY RISK IDENTIFICATION — EASA PART-IS</div>
+  <div style="font-size:11px;color:var(--grey-400);font-family:var(--font-mono);margin-bottom:14px;line-height:1.6;">Conformément au Règlement (UE) 2023/203 (Part-IS), évaluer si le changement étudié introduit, modifie ou expose un risque de sécurité de l'information (accès aux systèmes, données, interfaces numériques, prestataires IT).</div>
+  <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:14px;">
+    <div class="form-field" style="margin:0;"><label class="field-label">Risque cybersécurité identifié dans l'étude ?</label>
+      <select id="c-cyber-risk-flag" onchange="csCyberRiskToggle()">
+        <option value="" style="background:#0d1b2a;color:#f4f6f8;">Non évalué</option>
+        <option value="no" style="background:#0d1b2a;color:#f4f6f8;">Non — aucun risque de sécurité de l'information identifié</option>
+        <option value="yes" style="background:#0d1b2a;color:#f4f6f8;">Oui — risque de sécurité de l'information identifié</option>
+      </select>
+    </div>
+    <div class="form-field" style="margin:0;"><label class="field-label">Référence Part-IS / action SGSI</label>
+      <input id="c-cyber-risk-partis-ref" type="text" placeholder="e.g. IS.I.OR.205 / IS.I.OR.230 / registre SGSI réf…"/>
+    </div>
+  </div>
+  <div id="c-cyber-risk-detail-wrap" style="display:none;margin-top:14px;">
+    <div class="form-field form-full" style="margin:0;"><label class="field-label">Description du risque cybersécurité identifié</label>
+      <textarea id="c-cyber-risk-description" placeholder="Systèmes/données concernés, vecteur de menace, impact potentiel sur la sécurité des vols ou la navigabilité, mesures Part-IS applicables (SGSI, contrôle d'accès, sous-traitants, plan de contingence)…"></textarea>
+    </div>
+    <button type="button"
+      onclick="var s=document.getElementById('c-risk-cat-select'); if(s){s.value='Cybersécurité (Part-IS)'; csOnCategoryChange();} document.getElementById('c-risk-cat-select')?.scrollIntoView({behavior:'smooth',block:'center'});"
+      style="margin-top:10px;display:inline-flex;align-items:center;gap:8px;padding:7px 14px;background:rgba(27,108,168,.2);border:1px solid rgba(27,108,168,.45);border-radius:6px;color:var(--steel-bright);font-family:var(--font-mono);font-size:11px;cursor:pointer;">
+      ↑ Importer depuis le registre — catégorie Cybersécurité (Part-IS)
+    </button>
+  </div>
+</div>
 <div style="margin-bottom:18px;">
   <button type="button"
     onclick="showView('occurrences'); setTimeout(function(){ showOccurrenceForm(); }, 80);"
@@ -3889,7 +3923,7 @@ function updateOaciDefinitionDropdown(sel) {
     <span style="font-size:18px;font-weight:700;">+</span> Add new occurrence
   </button>
 </div></div>
-</div></div>
+</div>
 <div class="form-section">
 <div class="section-header" onclick="toggleSection(this)">
 <span class="section-num">5</span><span class="section-icon">✓</span><span class="section-title">ACTIONS & FEEDBACK</span><span class="section-chevron">▾</span>
@@ -4203,48 +4237,48 @@ const INITIAL_DATA = [
   {
     "id": "SMS-01",
     "category": "LOC-I",
-    "event": "Perte de portance (VRS) et stress thermique aéronef",
-    "dangers": "Sources regroupées (2 risques):\n1-[LOC-1] Perte de portance / effet de vortex (VRS)\n2-[LOC-3] Stress thermique aéronef (haute température)\n\nDangers identifiés:\n1-[LOC-1] Uncommanded descent or sink rate\n2-[LOC-1] Pilot disorientation or overcontro\n3-[LOC-3] Flame proximity",
+    "event": "Perte de portance / effet de vortex (VRS)",
+    "dangers": "Source unique:\n[LOC-1] Perte de portance / effet de vortex (VRS)\n\nDangers identifiés:\n1-[LOC-1] Uncommanded descent or sink rate\n2-[LOC-1] Pilot disorientation or overcontro",
     "initial_risk": "4B",
-    "prevention": "1-[LOC-1] Avoid descent rates >300–500 ft/min with a light tailwind and a heavy aircraft\n2-[LOC-1] Use constant angle approaches instead of \"high-hover-descend\" profiles\n3-[LOC-1] FSTD training.\n4-[LOC-3] Minimum altitudes, indirect drops\n5-[LOC-3] Escape manoeuvre",
-    "mitigation": "1-[LOC-1] Increase collective and accelerate forward — standard VRS recovery technique\n2-[LOC-1] Avoid adding power abruptly; use aft cyclic to exit the vortex ring state\n3-[LOC-3] Escape manoeuvre — immediate climb and lateral departure from heat source\n4-[LOC-3] Reduce hover time and frequency of passes over the heat source\n5-[LOC-3] Monitor engine/transmission temperature trend; abort approach if exceedance trend detected",
-    "recovery": "1-[LOC-1] If VRS is fully developed: push forward cyclic to gain airspeed, reduce collective momentarily to exit the vortex\n2-[LOC-3] If engine/airframe overheat damage is suspected after escape: abort the mission, climb to a safe altitude and return to base for inspection before further flight",
+    "prevention": "1-[LOC-1] Avoid descent rates >300–500 ft/min with a light tailwind and a heavy aircraft\n2-[LOC-1] Use constant angle approaches instead of \"high-hover-descend\" profiles\n3-[LOC-1] FSTD training.",
+    "mitigation": "1-[LOC-1] Increase collective and accelerate forward — standard VRS recovery technique\n2-[LOC-1] Avoid adding power abruptly; use aft cyclic to exit the vortex ring state",
+    "recovery": "1-[LOC-1] If VRS is fully developed: push forward cyclic to gain airspeed, reduce collective momentarily to exit the vortex",
     "residual_risk": "2B",
-    "doc_ref": "[LOC-1] OM-A § 8.3.5.5\n[LOC-3] 1-Mini SOP – Fire Fighting § 0,7.1\n2-TM28-OMD - Pilot-TSOP - Firefighting Training",
-    "eccairs_cat": "LOC-I / F-NI",
+    "doc_ref": "[LOC-1] OM-A § 8.3.5.5",
+    "eccairs_cat": "LOC-I",
     "event_type": "SMS consolidated event",
     "phase": "All phases",
     "control_status": "",
     "last_control_date": "",
     "control_comment": "",
     "barrier_failure_suspected": false,
-    "timestamp": "2026-06-30",
+    "timestamp": "2026-07-02",
     "linked_change_study": "",
-    "source_risk_ids": "LOC-1, LOC-3",
-    "source_risk_count": 2
+    "source_risk_ids": "LOC-1",
+    "source_risk_count": 1
   },
   {
     "id": "SMS-02",
     "category": "LOC-I",
-    "event": "Panne moteur / perte de puissance (vol normal et HOGE sur eau)",
-    "dangers": "Sources regroupées (2 risques):\n1-[LOC-2] Panne moteur / perte de puissance\n2-[SPO-3] Panne moteur / dérive en HOGE sur eau (dépose plongeurs)\n\nDangers identifiés:\n1-[LOC-2] Engine failure\n2-[LOC-2] Helicopter in the H/V diagram\n3-[LOC-2] Insufficient power margin due to heat\n4-[LOC-2] Smoke/ash ingestion\n5-[SPO-3] Loss of control\n6-[SPO-3] Contact with water\n7-[SPO-3] Sinking dynamics",
+    "event": "Panne moteur / perte de puissance (vol normal, HOGE sur eau, gestion carburant)",
+    "dangers": "Sources regroupées (3 risques):\n1-[LOC-2] Panne moteur / perte de puissance\n2-[SPO-3] Panne moteur / dérive en HOGE sur eau (dépose plongeurs)\n3-[HF-6] Qualité et gestion du carburant\n\nDangers identifiés:\n1-[LOC-2] Engine failure\n2-[LOC-2] Helicopter in the H/V diagram\n3-[LOC-2] Insufficient power margin due to heat\n4-[LOC-2] Smoke/ash ingestion\n5-[SPO-3] Loss of control\n6-[SPO-3] Contact with water\n7-[SPO-3] Sinking dynamics\n8-[HF-6] Engine failure",
     "initial_risk": "4B",
-    "prevention": "1-[LOC-2] Load Emergency jettison\n2-[LOC-2] Safe flight path minimizes the risk of injuries to third party,\n3-[LOC-2] No other persons may be on board the helicopter during HESLO\n4-[LOC-2] Use fuel from securised drums\n5-[LOC-2] Check each drum for the presence of water or pollutants before use\n6-[LOC-2] Minimise time in the H/V diagram area\n7-[LOC-2] Check helicopter performance before operation\n8-[LOC-2] Use twin engine helicopter\n9-[LOC-2] Perf calcs, weight limits\n10-[LOC-2] Reduced bucket load\n11-[LOC-2] Jettison load\n12-[LOC-2] Bambi Bucket  attached to a 30 m longline minimum\n13-[LOC-2] Drop height; at least 10m above the highest obstacle\n14-[LOC-2] Engine monitoring\n15-[LOC-2] OEI procedure",
-    "mitigation": "1-[LOC-2] OEI procedure — immediate transition to single-engine flight and secure the failed engine\n2-[LOC-2] Reduce or jettison bucket/sling load to restore climb performance margin\n3-[LOC-2] Bambi bucket attached to minimum 30 m longline to allow safe emergency jettison\n4-[LOC-2] Minimise time in the H/V diagram avoid-area to preserve a safe escape option\n5-[SPO-3] Maintain minimum safe altitude over water to allow a controlled approach if power loss occurs\n6-[SPO-3] Immediate engine failure procedure — transition to single-engine flight or autorotation",
-    "recovery": "1-[LOC-2] Autorotation — initiate immediately on confirmed total power loss\n2-[LOC-2] Select best available forced-landing area; transmit MAYDAY and squawk 7700\n3-[LOC-2] No other persons on board confirmed before single-engine emergency landing during HESLO\n4-[SPO-3] Ditching procedure if power loss over water is unrecoverable\n5-[SPO-3] Activate ELT/PLBs; crew and diver flotation equipment donned before flight; coordinate SAR response\n6-[SPO-3] Transmit MAYDAY before ditching to maximise SAR response time",
+    "prevention": "1-[LOC-2] Load Emergency jettison\n2-[LOC-2] Safe flight path minimizes the risk of injuries to third party,\n3-[LOC-2] No other persons may be on board the helicopter during HESLO\n4-[LOC-2] Use fuel from securised drums\n5-[LOC-2] Check each drum for the presence of water or pollutants before use\n6-[LOC-2] Minimise time in the H/V diagram area\n7-[LOC-2] Check helicopter performance before operation\n8-[LOC-2] Use twin engine helicopter\n9-[LOC-2] Perf calcs, weight limits\n10-[LOC-2] Reduced bucket load\n11-[LOC-2] Jettison load\n12-[LOC-2] Bambi Bucket  attached to a 30 m longline minimum\n13-[LOC-2] Drop height; at least 10m above the highest obstacle\n14-[LOC-2] Engine monitoring\n15-[LOC-2] OEI procedure\n16-[HF-6] TSOPs training for fueling\n17-[HF-6] Monitoring fuel-related equipment",
+    "mitigation": "1-[LOC-2] OEI procedure — immediate transition to single-engine flight and secure the failed engine\n2-[LOC-2] Reduce or jettison bucket/sling load to restore climb performance margin\n3-[LOC-2] Bambi bucket attached to minimum 30 m longline to allow safe emergency jettison\n4-[LOC-2] Minimise time in the H/V diagram avoid-area to preserve a safe escape option\n5-[SPO-3] Maintain minimum safe altitude over water to allow a controlled approach if power loss occurs\n6-[SPO-3] Immediate engine failure procedure — transition to single-engine flight or autorotation\n7-[HF-6] If fuel quality or quantity anomaly is detected: divert to nearest suitable refuelling point before continuing the mission",
+    "recovery": "1-[LOC-2] Autorotation — initiate immediately on confirmed total power loss\n2-[LOC-2] Select best available forced-landing area; transmit MAYDAY and squawk 7700\n3-[LOC-2] No other persons on board confirmed before single-engine emergency landing during HESLO\n4-[SPO-3] Ditching procedure if power loss over water is unrecoverable\n5-[SPO-3] Activate ELT/PLBs; crew and diver flotation equipment donned before flight; coordinate SAR response\n6-[SPO-3] Transmit MAYDAY before ditching to maximise SAR response time\n7-[HF-6] If fuel contamination/quality issue is confirmed after landing: ground the aircraft, quarantine the fuel source, and report to maintenance/NPFO",
     "residual_risk": "3B",
-    "doc_ref": "[LOC-2] SOP HESLO \n1-§ 3.4.4\n2-§ 3.2\n[SPO-3] SOP MCF § 5.1 / 5.8 / 6.1 / 9.1",
-    "eccairs_cat": "SCF-PP / LOC-I",
+    "doc_ref": "[LOC-2] SOP HESLO \n1-§ 3.4.4\n2-§ 3.2\n[SPO-3] SOP MCF § 5.1 / 5.8 / 6.1 / 9.1\n[HF-6] 1- OM-D\n2-SOP HESLO § 6.4",
+    "eccairs_cat": "SCF-PP / LOC-I / FUEL",
     "event_type": "SMS consolidated event",
     "phase": "All phases",
     "control_status": "",
     "last_control_date": "",
     "control_comment": "",
     "barrier_failure_suspected": false,
-    "timestamp": "2026-06-30",
+    "timestamp": "2026-07-02",
     "linked_change_study": "",
-    "source_risk_ids": "LOC-2, SPO-3",
-    "source_risk_count": 2
+    "source_risk_ids": "HF-6, LOC-2, SPO-3",
+    "source_risk_count": 3
   },
   {
     "id": "SMS-03",
@@ -4294,7 +4328,7 @@ const INITIAL_DATA = [
   },
   {
     "id": "SMS-05",
-    "category": "CFIT",
+    "category": "LOC-I",
     "event": "Sortie non contrôlée du vol stationnaire (hover exit / dynamic rollover)",
     "dangers": "Sources regroupées (1 risques):\n1-[CFIT-2] Sortie non contrôlée du vol stationnaire (hover exit)\n\nDangers identifiés:\n1-[CFIT-2] Helicopter dynamic roll-over\n2-[CFIT-2] Injuries",
     "initial_risk": "3A",
@@ -4341,14 +4375,14 @@ const INITIAL_DATA = [
   {
     "id": "SMS-07",
     "category": "Collisions",
-    "event": "Contact rotor / parties tournantes et chute de personnel embarqué",
-    "dangers": "Sources regroupées (2 risques):\n1-[COL-2] Contact rotor / parties tournantes avec obstacle ou personnel\n2-[COL-4] Chute / projection de personnel depuis l'hélicoptère\n\nDangers identifiés:\n1-[COL-2] Death\n2-[COL-2] Rotors turning\n3-[COL-2] Sling too short\n4-[COL-2] Load too light\n5-[COL-2] Loss of rotor tail\n6-[COL-4] Injuries",
+    "event": "Contact rotor / parties tournantes avec obstacle ou personnel",
+    "dangers": "Source unique:\n[COL-2] Contact rotor / parties tournantes avec obstacle ou personnel\n\nDangers identifiés:\n1-[COL-2] Death\n2-[COL-2] Rotors turning\n3-[COL-2] Sling too short\n4-[COL-2] Load too light\n5-[COL-2] Loss of rotor tail",
     "initial_risk": "2A",
-    "prevention": "1-[COL-2] Select a suitable and safe landing site\n2-[COL-2] Perform briefing for TST\n3-[COL-2] Define safety areas\n4-[COL-2] Safety briefing for TST\n5-[COL-2] Use of a sling of 20 m or more\n6-[COL-2] Training pilots in the different load release systems depending on the helicopter\n7-[COL-2] Recognition of an Imminent Tail Rotor Strike\n8-[COL-2] Bambi Bucket  attached to a 30 m longline minimum\n9-[COL-2] Follow flying techniques procedures\n10-[COL-4] PPE\n11-[COL-4] In-depth material inspection before use\n12-[COL-4] Check the attachement points\n13-[COL-4] Use only approved harenesses and safety material",
-    "mitigation": "1-[COL-2] If load swing or imminent tail rotor strike recognised: pilot increases altitude / repositions immediately\n2-[COL-2] TST/TSOP immediately signals STOP and clears the danger zone on any uncommanded load or rotor movement\n3-[COL-4] Immediate command to fasten harness / cease task if improper attachment or imbalance observed in flight",
-    "recovery": "1-[COL-2] If contact with rotor/tail rotor occurs: shut down immediately, do not attempt further flight, evacuate personnel from the danger area\n2-[COL-4] If personnel fall or are projected from the helicopter: land immediately, render first aid, and activate emergency medical response",
+    "prevention": "1-[COL-2] Select a suitable and safe landing site\n2-[COL-2] Perform briefing for TST\n3-[COL-2] Define safety areas\n4-[COL-2] Safety briefing for TST\n5-[COL-2] Use of a sling of 20 m or more\n6-[COL-2] Training pilots in the different load release systems depending on the helicopter\n7-[COL-2] Recognition of an Imminent Tail Rotor Strike\n8-[COL-2] Bambi Bucket  attached to a 30 m longline minimum\n9-[COL-2] Follow flying techniques procedures",
+    "mitigation": "1-[COL-2] If load swing or imminent tail rotor strike recognised: pilot increases altitude / repositions immediately\n2-[COL-2] TST/TSOP immediately signals STOP and clears the danger zone on any uncommanded load or rotor movement",
+    "recovery": "1-[COL-2] If contact with rotor/tail rotor occurs: shut down immediately, do not attempt further flight, evacuate personnel from the danger area",
     "residual_risk": "2B",
-    "doc_ref": "[COL-2] SOP HESLO \n1-§ 4.2.4\n2-§ 2.3.5.3\n[COL-4] OM-A § 8.2.6.4",
+    "doc_ref": "[COL-2] SOP HESLO \n1-§ 4.2.4\n2-§ 2.3.5.3",
     "eccairs_cat": "RAMP",
     "event_type": "SMS consolidated event",
     "phase": "All phases",
@@ -4356,33 +4390,33 @@ const INITIAL_DATA = [
     "last_control_date": "",
     "control_comment": "",
     "barrier_failure_suspected": false,
-    "timestamp": "2026-06-30",
+    "timestamp": "2026-07-02",
     "linked_change_study": "",
-    "source_risk_ids": "COL-2, COL-4",
-    "source_risk_count": 2
+    "source_risk_ids": "COL-2",
+    "source_risk_count": 1
   },
   {
     "id": "SMS-08",
     "category": "Collisions",
-    "event": "Choc aviaire et collision au sol équipements / personnel",
-    "dangers": "Sources regroupées (2 risques):\n1-[COL-3] Choc aviaire (bird strike)\n2-[COL-5] Collision au sol entre équipements / engins et personnel\n\nDangers identifiés:\n1-[COL-3] Pilot injuries\n2-[COL-3] Loss of control\n3-[COL-3] Aircraft structural damage\n4-[COL-5] Injuries\n5-[COL-5] Machinery slipping\n6-[COL-5] Reduced attention due to helicopter noise\n7-[COL-5] Poor coordination or communication",
+    "event": "Choc aviaire (bird strike)",
+    "dangers": "Source unique:\n[COL-3] Choc aviaire (bird strike)\n\nDangers identifiés:\n1-[COL-3] Pilot injuries\n2-[COL-3] Loss of control\n3-[COL-3] Aircraft structural damage",
     "initial_risk": "4B",
-    "prevention": "1-[COL-3] Consult bird activity NOTAMs\n2-[COL-3] Flight path and altitude strategies\n3-[COL-3] bird-resistant windshields\n4-[COL-5] TSs watch for approaching and balancing hook\n5-[COL-5] PPE :  Maximize visibility of ground personnel\n6-[COL-5] Clear zoning and visual marking",
-    "mitigation": "1-[COL-3] If bird strike occurs: maintain control, assess instruments/structure, reduce speed if vibration detected\n2-[COL-5] Immediate STOP call from TS/TSOP to halt all ground machinery movement on loss of coordination or visibility",
-    "recovery": "1-[COL-3] After a bird strike: land as soon as practicable for inspection; declare emergency if control or instrument readings are affected\n2-[COL-5] After a ground collision: stop all operations, secure the area, render first aid, and report to NPFO before resuming",
+    "prevention": "1-[COL-3] Consult bird activity NOTAMs\n2-[COL-3] Flight path and altitude strategies\n3-[COL-3] bird-resistant windshields",
+    "mitigation": "1-[COL-3] If bird strike occurs: maintain control, assess instruments/structure, reduce speed if vibration detected",
+    "recovery": "1-[COL-3] After a bird strike: land as soon as practicable for inspection; declare emergency if control or instrument readings are affected",
     "residual_risk": "3B",
-    "doc_ref": "[COL-3] OM-B § 3.12\n[COL-5] Mini SOP HESLO 3 Logging \n§ 0.8.4",
-    "eccairs_cat": "BIRD / GCOL",
+    "doc_ref": "[COL-3] OM-B § 3.12",
+    "eccairs_cat": "BIRD",
     "event_type": "SMS consolidated event",
     "phase": "All phases",
     "control_status": "",
     "last_control_date": "",
     "control_comment": "",
     "barrier_failure_suspected": false,
-    "timestamp": "2026-06-30",
+    "timestamp": "2026-07-02",
     "linked_change_study": "",
-    "source_risk_ids": "COL-3, COL-5",
-    "source_risk_count": 2
+    "source_risk_ids": "COL-3",
+    "source_risk_count": 1
   },
   {
     "id": "SMS-09",
@@ -4502,25 +4536,25 @@ const INITIAL_DATA = [
   {
     "id": "SMS-14",
     "category": "HESLO & Aerial work",
-    "event": "Hover instable (hélitreuillage), charge grumière et risques de plateforme",
-    "dangers": "Sources regroupées (3 risques):\n1-[HESLO-10] Hover instable / ingestion produit (hélitreuillage pompier)\n2-[HESLO-11] Charge grumière incontrôlée (grumes, tas de bois)\n3-[HESLO-12] Risques de plateforme (chute, coincement, effondrement)\n\nDangers identifiés:\n1-[HESLO-10] Water pickup hazards\n2-[HESLO-10] Low water deepness, less then 3 meters\n3-[HESLO-10] Shocks on the Bambi bucket\n4-[HESLO-11] Loss of helicopter control\n5-[HESLO-11] Collision with trees\n6-[HESLO-12] Injuries for ground staff\n7-[HESLO-12] Drop of the load\n8-[HESLO-12] Helicopter collapse\n9-[HESLO-12] Height\n10-[HESLO-12] Load inertia\n11-[HESLO-12] Dammage to the load or structure\n12-[HESLO-12] Falling or crushing personnel\n13-[HESLO-12] Crushing personnel\n14-[HESLO-12] Damage to load or structure\n15-[HESLO-12] Destabilisation of the helicopter\n16-[HESLO-12] Obligation to drop the load",
+    "event": "Instabilité en vol stationnaire / ingestion de produit lors du remplissage (Bambi bucket)",
+    "dangers": "Source unique:\n[HESLO-10] Hover instable / ingestion produit (hélitreuillage pompier)\n\nDangers identifiés:\n1-[HESLO-10] Water pickup hazards\n2-[HESLO-10] Low water deepness, less then 3 meters\n3-[HESLO-10] Shocks on the Bambi bucket",
     "initial_risk": "4B",
-    "prevention": "1-[HESLO-10] Bambi Bucket  attached to a 30 m longline minimum\n2-[HESLO-10] Proper site selection\n3-[HESLO-10] Go-around\n4-[HESLO-10] Training\n5-[HESLO-10] Recognize low water level\n6-[HESLO-10] Use of vertical references to control the bambi bucket\n7-[HESLO-10] Check electrical release before each mission.\n8-[HESLO-11] Prepare a level, compact surface for log placement\n9-[HESLO-11] Use ground supports or chocks (cross logs, wedges) to prevent logs from rolling\n10-[HESLO-11] On sloped terrain, install physical barriers (earth berms, logs) uphill of the drop point.\n11-[HESLO-11] Define a safety perimeter prohibit personnel from standing in potential roll paths.\n12-[HESLO-11] Assign a drop-off zone supervisor\n13-[HESLO-11] In case of uncertainty, plan one extra rotation\n14-[HESLO-11] Observe HOGE limits - 10%\n15-[HESLO-12] Secure all objects carried by TS to prevent them from falling.\n16-[HESLO-12] PPE\n17-[HESLO-12] Professional preparation by assembly-dismantling company\n18-[HESLO-12] Observe HOGE limits - 10%\n19-[HESLO-12] Training for working at height\n20-[HESLO-12] Exclusion zone defined around the load\n21-[HESLO-12] No personnel under the load (strict rule)\n22-[HESLO-12] Clear communication with the pilot before the approach\n23-[HESLO-12] Ensure that loads are of the correct weight, especially when dismantling.\n24-[HESLO-12] Site reconnaissance (terrain, structure, access)\n25-[HESLO-12] Precise briefing on lifting/lowering sequence\n26-[HESLO-12] Always start lifting at a safe distance before adjusting slowly\n27-[HESLO-12] Only employ people trained for this type of rescue\n28-[HESLO-12] Provide suitable and maintained safety and rescue equipment\n29-[HESLO-12] Rescue equipment is ready to use at the working site",
-    "mitigation": "1-[HESLO-10] Go-around if hover becomes unstable during bambi bucket fill\n2-[HESLO-10] Use vertical references (trees, structures) to control bucket position during an unstable hover\n3-[HESLO-11] If log roll or instability is detected, lay the load down immediately at the safest available point\n4-[HESLO-12] Lower the load gently to a safe surface as soon as instability or platform damage is detected\n5-[HESLO-12] Pilot maintains a stable hover and awaits clear TSOP communication before any further movement if a platform incident occurs",
-    "recovery": "1-[HESLO-10] Emergency jettison if the bambi bucket is snagged and the aircraft is being pulled down; climb immediately after jettison and inspect before resuming\n2-[HESLO-11] If logs roll into the safety perimeter: stop all ground operations, clear personnel, and reassess the drop zone before resuming\n3-[HESLO-12] If a platform incident occurs (collapse, falling load): activate the site rescue equipment immediately and evacuate personnel from the load path",
+    "prevention": "1-[HESLO-10] Bambi Bucket  attached to a 30 m longline minimum\n2-[HESLO-10] Proper site selection\n3-[HESLO-10] Go-around\n4-[HESLO-10] Training\n5-[HESLO-10] Recognize low water level\n6-[HESLO-10] Use of vertical references to control the bambi bucket\n7-[HESLO-10] Check electrical release before each mission.",
+    "mitigation": "1-[HESLO-10] Go-around if hover becomes unstable during bambi bucket fill\n2-[HESLO-10] Use vertical references (trees, structures) to control bucket position during an unstable hover",
+    "recovery": "1-[HESLO-10] Emergency jettison if the bambi bucket is snagged and the aircraft is being pulled down; climb immediately after jettison and inspect before resuming",
     "residual_risk": "3B",
-    "doc_ref": "[HESLO-10] 1-Mini SOP – Fire Fighting § 0,7.1\n2-TM28-OMD - Pilot-TSOP - Firefighting Training\n[HESLO-11] Mini SOP HESLO 3 Logging \n§ 0.8.6\n[HESLO-12] Mini SOP HESLO 4 On platform \n1-2-§ 0.11",
-    "eccairs_cat": "EXTL / RAMP",
+    "doc_ref": "[HESLO-10] 1-Mini SOP – Fire Fighting § 0,7.1\n2-TM28-OMD - Pilot-TSOP - Firefighting Training",
+    "eccairs_cat": "EXTL",
     "event_type": "SMS consolidated event",
     "phase": "All phases",
     "control_status": "",
     "last_control_date": "",
     "control_comment": "",
     "barrier_failure_suspected": false,
-    "timestamp": "2026-06-30",
+    "timestamp": "2026-07-02",
     "linked_change_study": "",
-    "source_risk_ids": "HESLO-10, HESLO-11, HESLO-12",
-    "source_risk_count": 3
+    "source_risk_ids": "HESLO-10",
+    "source_risk_count": 1
   },
   {
     "id": "SMS-15",
@@ -4571,14 +4605,14 @@ const INITIAL_DATA = [
   {
     "id": "SMS-17",
     "category": "Facteurs Humains & Opérations",
-    "event": "Passagers / personnel non coopératifs et portes non verrouillées",
-    "dangers": "Sources regroupées (2 risques):\n1-[HF-5] Passagers / personnel non coopératifs\n2-[HF-8] Portes non verrouillées en vol\n\nDangers identifiés:\n1-[HF-5] Inappropriate reaction\n2-[HF-5] Vomiting\n3-[HF-5] Panic\n4-[HF-5] Interference with flight controls\n5-[HF-5] Loss of pilot situational awareness\n6-[HF-5] Unintentional activation of safety equipment\n7-[HF-5] Verbal or physical aggression\n8-[HF-5] Injuries\n9-[HF-8] Falling personnel\n10-[HF-8] Falling objects",
+    "event": "Passagers / personnel non coopératifs",
+    "dangers": "Source unique:\n[HF-5] Passagers / personnel non coopératifs\n\nDangers identifiés:\n1-[HF-5] Inappropriate reaction\n2-[HF-5] Vomiting\n3-[HF-5] Panic\n4-[HF-5] Interference with flight controls\n5-[HF-5] Loss of pilot situational awareness\n6-[HF-5] Unintentional activation of safety equipment\n7-[HF-5] Verbal or physical aggression\n8-[HF-5] Injuries",
     "initial_risk": "3A",
-    "prevention": "1-[HF-5] Brief passengers about behavior in the helicopter\n2-[HF-5] Provide safety instructions and discuss emergency procedures\n3-[HF-5] Address the passenger calmly and assertively,\n4-[HF-5] Clearly state that non-compliance will not be tolerated,\n5-[HF-5] Explain that behavior may result in diversion or reporting to authorities.\n6-[HF-8] Check that doors close properly\n7-[HF-8] Briefing with all participants",
-    "mitigation": "1-[HF-5] Address the passenger calmly and assertively; state clearly that non-compliant behaviour will not be tolerated\n2-[HF-5] If interference with flight controls is attempted: restrain or isolate the passenger as far as safely possible and prioritise aircraft control\n3-[HF-8] If a door is found unlocked or ajar in flight: reduce airspeed and divert attention of unsecured personnel/objects away from the opening",
-    "recovery": "1-[HF-5] If the situation cannot be de-escalated: divert to the nearest suitable landing site and hand the passenger over to local authorities\n2-[HF-8] If a door opens in flight: land as soon as practicable; account for all personnel and any items that may have fallen before continuing",
+    "prevention": "1-[HF-5] Brief passengers about behavior in the helicopter\n2-[HF-5] Provide safety instructions and discuss emergency procedures\n3-[HF-5] Address the passenger calmly and assertively,\n4-[HF-5] Clearly state that non-compliance will not be tolerated,\n5-[HF-5] Explain that behavior may result in diversion or reporting to authorities.",
+    "mitigation": "1-[HF-5] Address the passenger calmly and assertively; state clearly that non-compliant behaviour will not be tolerated\n2-[HF-5] If interference with flight controls is attempted: restrain or isolate the passenger as far as safely possible and prioritise aircraft control",
+    "recovery": "1-[HF-5] If the situation cannot be de-escalated: divert to the nearest suitable landing site and hand the passenger over to local authorities",
     "residual_risk": "2A",
-    "doc_ref": "[HF-5] OM-A § 8.2.3\n[HF-8] OM-A 8.2.7.3",
+    "doc_ref": "[HF-5] OM-A § 8.2.3",
     "eccairs_cat": "CABIN",
     "event_type": "SMS consolidated event",
     "phase": "All phases",
@@ -4586,33 +4620,33 @@ const INITIAL_DATA = [
     "last_control_date": "",
     "control_comment": "",
     "barrier_failure_suspected": false,
-    "timestamp": "2026-06-30",
+    "timestamp": "2026-07-02",
     "linked_change_study": "",
-    "source_risk_ids": "HF-5, HF-8",
-    "source_risk_count": 2
+    "source_risk_ids": "HF-5",
+    "source_risk_count": 1
   },
   {
     "id": "SMS-18",
     "category": "Facteurs Humains & Opérations",
-    "event": "Qualité / gestion carburant et accidents au sol (exposition environnementale)",
-    "dangers": "Sources regroupées (2 risques):\n1-[HF-6] Qualité et gestion du carburant\n2-[HF-7] Accidents au sol / exposition environnementale\n\nDangers identifiés:\n1-[HF-6] Engine failure\n2-[HF-7] Slippery ground\n3-[HF-7] Sloping ground\n4-[HF-7] High and low temperatures\n5-[HF-7] Wind\n6-[HF-7] Rain\n7-[HF-7] Snow\n8-[HF-7] SunMist\n9-[HF-7] Road trafic\n10-[HF-7] Mountain roads\n11-[HF-7] Weather conditions (rain, snow)\n12-[HF-7] Fuel or oil spillage\n13-[HF-7] Noise pollution",
-    "initial_risk": "4A",
-    "prevention": "1-[HF-6] TSOPs training for fueling\n2-[HF-6] Monitoring fuel-related equipment\n3-[HF-7] Wear good shoes\n4-[HF-7] PPE\n5-[HF-7] Allow sufficient trip planning time\n6-[HF-7] Vehicle controls, maintenance, inspection\n7-[HF-7] Pre-flight planning\n8-[HF-7] Use spill containment systems during refueling\n9-[HF-7] Apply Noise Abatement Departure and Arrival Procedures",
-    "mitigation": "1-[HF-6] If fuel quality or quantity anomaly is detected: divert to nearest suitable refuelling point before continuing the mission\n2-[HF-7] Immediate use of spill containment if a fuel/oil spillage occurs during ground operations",
-    "recovery": "1-[HF-6] If fuel contamination/quality issue is confirmed after landing: ground the aircraft, quarantine the fuel source, and report to maintenance/NPFO\n2-[HF-7] Treat any ground-accident injury immediately and report the environmental/ground hazard for corrective action before further operations at the site",
-    "residual_risk": "2A",
-    "doc_ref": "[HF-6] 1- OM-D\n2-SOP HESLO § 6.4\n[HF-7] OM-A 8.4.3",
-    "eccairs_cat": "FUEL / GCOL",
+    "event": "Aléas terrain / météo pour le personnel au sol",
+    "dangers": "Source unique:\n[HF-7A] Aléas terrain / conditions météorologiques pour le personnel au sol\n\nDangers identifiés:\n1-[HF-7A] Slippery ground\n2-[HF-7A] Sloping ground\n3-[HF-7A] High and low temperatures\n4-[HF-7A] Wind\n5-[HF-7A] Rain\n6-[HF-7A] Snow\n7-[HF-7A] SunMist\n8-[HF-7A] Weather conditions (rain, snow)",
+    "initial_risk": "3C",
+    "prevention": "1-[HF-7A] Wear good shoes\n2-[HF-7A] PPE\n3-[HF-7A] Pre-flight planning (anticipate ground conditions and weather at the site)",
+    "mitigation": "1-[HF-7A] Reduce pace and use handrails/support points immediately if slippery or sloping ground is encountered",
+    "recovery": "1-[HF-7A] Treat any ground-accident injury immediately (slip, fall, weather exposure) and ensure the casualty receives appropriate care before resuming ground operations",
+    "residual_risk": "2D",
+    "doc_ref": "[HF-7A] OM-A 8.4.3",
+    "eccairs_cat": "GCOL",
     "event_type": "SMS consolidated event",
     "phase": "All phases",
     "control_status": "",
     "last_control_date": "",
     "control_comment": "",
     "barrier_failure_suspected": false,
-    "timestamp": "2026-06-30",
+    "timestamp": "2026-07-02",
     "linked_change_study": "",
-    "source_risk_ids": "HF-6, HF-7",
-    "source_risk_count": 2
+    "source_risk_ids": "HF-7A",
+    "source_risk_count": 1
   },
   {
     "id": "SMS-19",
@@ -4640,14 +4674,14 @@ const INITIAL_DATA = [
   {
     "id": "SMS-20",
     "category": "EFB & Systèmes Numériques",
-    "event": "Données EFB obsolètes / incorrectes et information non certifiée perçue comme fiable",
-    "dangers": "Sources regroupées (2 risques):\n1-[EFB-2] Données obsolètes ou incorrectes (charts, NOTAMs, profils)\n2-[EFB-5] Information perçue comme certifiée / temps réel (non certifié)\n\nDangers identifiés:\n1-[EFB-2] Out-of-date charts, procedures, NOTAM packs\n2-[EFB-2] Wrong aircraft profile, performance inputs\n3-[EFB-2] Corruption or unauthorized access\n4-[EFB-2] Manual input errors\n5-[EFB-2] Performance outputs must remain consistent with certified AFM tables\n6-[EFB-5] Alerts (terrain/obstacle/traffic)\n7-[EFB-5] Tactical weather (latency)\n8-[EFB-5] Incorrect scale, declutter, or moving-map reliance causes track/airspace errors.",
+    "event": "Données EFB obsolètes / incorrectes, information non certifiée et perte/corruption de données",
+    "dangers": "Sources regroupées (3 risques):\n1-[EFB-2] Données obsolètes ou incorrectes (charts, NOTAMs, profils)\n2-[EFB-5] Information perçue comme certifiée / temps réel (non certifié)\n3-[EFB-8] Perte ou corruption de données (offline, sync, manipulation)\n\nDangers identifiés:\n1-[EFB-2] Out-of-date charts, procedures, NOTAM packs\n2-[EFB-2] Wrong aircraft profile, performance inputs\n3-[EFB-2] Corruption or unauthorized access\n4-[EFB-2] Manual input errors\n5-[EFB-2] Performance outputs must remain consistent with certified AFM tables\n6-[EFB-5] Alerts (terrain/obstacle/traffic)\n7-[EFB-5] Tactical weather (latency)\n8-[EFB-5] Incorrect scale, declutter, or moving-map reliance causes track/airspace errors.\n9-[EFB-8] Data integrity and currency risks\n10-[EFB-8] APP or device becomes unavailable in flight.\n11-[EFB-8] Version conflicts\n12-[EFB-8] Lack of discipline\n13-[EFB-8] No regular export",
     "initial_risk": "4B",
-    "prevention": "1-[EFB-2] Before departure, download and verify al Regions / Chart/Plate / NOTAM packs\n2-[EFB-2] Ipad associated with each helicopter\n3-[EFB-2] Security: Device passcode/MDM, restricted sharing, periodic profile audits; checksum or sign-off for aircraft profiles.\n4-[EFB-2] Clear input fields with unit labels.\n5-[EFB-2] Built-in plausibility checks (e.g., limits on weight, fuel, temperature).\n6-[EFB-2] Visual exceedance warnings if values exceed AFM limitations.\n7-[EFB-2] Reset functions to restore default values.\n8-[EFB-2] All performance algorithms are based exclusively on user defined AFM / RFM data.\n9-[EFB-2] No extrapolation beyond AFM data; only interpolation between approved data points.\n10-[EFB-5] Route EFB audio to intercom\n11-[EFB-5] Keep terrain/obstacle DB current, CFIT SOP (alert ⇒ immediate lookout + altitude).\n12-[EFB-5] Display timestamps, define “stale data” thresholds\n13-[EFB-5] Cross-check with official METAR/TAF/SIGMET\n14-[EFB-5] No sole reliance on mosaics.\n15-[EFB-5] Initial & recurrent training on ForeFlight features/limits, layer presets, weather caveats, W&B/perf workflows, data hygiene.",
-    "mitigation": "1-[EFB-2] Visual exceedance warning triggers immediate cross-check against the certified AFM/RFM before acting on the EFB output\n2-[EFB-2] Reset function used to restore default values if a manual input error is suspected mid-flight\n3-[EFB-5] Cross-check any non-certified EFB alert (terrain/obstacle/traffic, tactical weather) against certified sources before altering the flight path",
-    "recovery": "1-[EFB-2] If incorrect or corrupted data is confirmed: revert immediately to paper AFM/RFM and re-enter data from source documents\n2-[EFB-5] If a non-certified alert proves unreliable: cross-check with a certified source immediately and apply the more conservative flight decision",
+    "prevention": "1-[EFB-2] Before departure, download and verify al Regions / Chart/Plate / NOTAM packs\n2-[EFB-2] Ipad associated with each helicopter\n3-[EFB-2] Security: Device passcode/MDM, restricted sharing, periodic profile audits; checksum or sign-off for aircraft profiles.\n4-[EFB-2] Clear input fields with unit labels.\n5-[EFB-2] Built-in plausibility checks (e.g., limits on weight, fuel, temperature).\n6-[EFB-2] Visual exceedance warnings if values exceed AFM limitations.\n7-[EFB-2] Reset functions to restore default values.\n8-[EFB-2] All performance algorithms are based exclusively on user defined AFM / RFM data.\n9-[EFB-2] No extrapolation beyond AFM data; only interpolation between approved data points.\n10-[EFB-5] Route EFB audio to intercom\n11-[EFB-5] Keep terrain/obstacle DB current, CFIT SOP (alert ⇒ immediate lookout + altitude).\n12-[EFB-5] Display timestamps, define “stale data” thresholds\n13-[EFB-5] Cross-check with official METAR/TAF/SIGMET\n14-[EFB-5] No sole reliance on mosaics.\n15-[EFB-5] Initial & recurrent training on ForeFlight features/limits, layer presets, weather caveats, W&B/perf workflows, data hygiene.\n16-[EFB-8] Use of password\n17-[EFB-8] App is designed for offline use; no internet connection is required.\n18-[EFB-8] Operators advised to follow EFB regulations (secondary device).\n19-[EFB-8] CIRRO sync protocol\n20-[EFB-8] Operator backup\n21-[EFB-8] Export routine",
+    "mitigation": "1-[EFB-2] Visual exceedance warning triggers immediate cross-check against the certified AFM/RFM before acting on the EFB output\n2-[EFB-2] Reset function used to restore default values if a manual input error is suspected mid-flight\n3-[EFB-5] Cross-check any non-certified EFB alert (terrain/obstacle/traffic, tactical weather) against certified sources before altering the flight path\n4-[EFB-8] Operator backup and CIRRO sync protocol prevent loss of critical data if the primary device becomes unavailable",
+    "recovery": "1-[EFB-2] If incorrect or corrupted data is confirmed: revert immediately to paper AFM/RFM and re-enter data from source documents\n2-[EFB-5] If a non-certified alert proves unreliable: cross-check with a certified source immediately and apply the more conservative flight decision\n3-[EFB-8] Restore from the last verified backup if data corruption is confirmed; revert to paper source documents if data integrity cannot be confirmed",
     "residual_risk": "4C",
-    "doc_ref": "",
+    "doc_ref": "[EFB-8] Not use in flight",
     "eccairs_cat": "SCF-NP / CFIT",
     "event_type": "SMS consolidated event",
     "phase": "All phases",
@@ -4655,79 +4689,79 @@ const INITIAL_DATA = [
     "last_control_date": "",
     "control_comment": "",
     "barrier_failure_suspected": false,
-    "timestamp": "2026-06-30",
+    "timestamp": "2026-07-02",
     "linked_change_study": "",
-    "source_risk_ids": "EFB-2, EFB-5",
-    "source_risk_count": 2
+    "source_risk_ids": "EFB-2, EFB-5, EFB-8",
+    "source_risk_count": 3
   },
   {
     "id": "SMS-21",
     "category": "EFB & Systèmes Numériques",
-    "event": "Distraction / ergonomie IHM EFB et interférence avec instruments de bord",
-    "dangers": "Sources regroupées (2 risques):\n1-[EFB-4] Distraction / ergonomie IHM (taps, tunnel visuel, lisibilité)\n2-[EFB-6] Interférence EFB avec instruments de bord\n\nDangers identifiés:\n1-[EFB-4] Loss of references\n2-[EFB-4] Readability & contrast (sun/night)\n3-[EFB-4] Vibration/turbulence\n4-[EFB-4] Information hierarchy / declutter\n5-[EFB-4] Color coding & symbology\n6-[EFB-4] Workload & head-down time\n7-[EFB-4] Mode awareness (layers, North-Up/Track-Up, IFR/VFR)\n8-[EFB-4] Gesture navigation\n9-[EFB-6] Flight instrument malfunction",
+    "event": "Distraction / ergonomie IHM EFB",
+    "dangers": "Source unique:\n[EFB-4] Distraction / ergonomie IHM (taps, tunnel visuel, lisibilité)\n\nDangers identifiés:\n1-[EFB-4] Loss of references\n2-[EFB-4] Readability & contrast (sun/night)\n3-[EFB-4] Vibration/turbulence\n4-[EFB-4] Information hierarchy / declutter\n5-[EFB-4] Color coding & symbology\n6-[EFB-4] Workload & head-down time\n7-[EFB-4] Mode awareness (layers, North-Up/Track-Up, IFR/VFR)\n8-[EFB-4] Gesture navigation",
     "initial_risk": "4B",
-    "prevention": "1-[EFB-4] Prechecked and documented viewable stowage devices\n2-[EFB-4] Newer iPad\n3-[EFB-4] Max brightness\n4-[EFB-4] Anti-glare film\n5-[EFB-4] Auto night mode\n6-[EFB-4] Zoom/font tuning\n7-[EFB-4] Mount angle to reduce reflections.\n8-[EFB-4] Rigid mount\n9-[EFB-4] Stylus, zoom in before edits\n10-[EFB-4] Limit interactions in critical phases\n11-[EFB-4] Standard map presets by phase (Mountain / HESLO)\n12-[EFB-4] Standard declutter levels\n13-[EFB-4] High-contrast palettes\n14-[EFB-4] Always show data age on weather layers\n15-[EFB-4] Formal training on ForeFlight symbology.\n16-[EFB-6] Use certified or pre-assessed tablets\n17-[EFB-6] Backup availability",
-    "mitigation": "1-[EFB-4] If distraction or loss of references is noticed: shift to high-contrast/declutter preset and limit interactions to non-critical phases\n2-[EFB-6] If an EFB-related instrument anomaly is suspected: switch off the EFB and cross-check affected instruments against standby gauges",
-    "recovery": "1-[EFB-4] If distraction causes spatial disorientation or loss of references: focus on primary flight instruments and stabilise the aircraft before resuming EFB use\n2-[EFB-6] If EFB interference with flight instruments is confirmed: remove the EFB from the aircraft, land, investigate and file an occurrence report referring to maintenance for EMI investigation",
+    "prevention": "1-[EFB-4] Prechecked and documented viewable stowage devices\n2-[EFB-4] Newer iPad\n3-[EFB-4] Max brightness\n4-[EFB-4] Anti-glare film\n5-[EFB-4] Auto night mode\n6-[EFB-4] Zoom/font tuning\n7-[EFB-4] Mount angle to reduce reflections.\n8-[EFB-4] Rigid mount\n9-[EFB-4] Stylus, zoom in before edits\n10-[EFB-4] Limit interactions in critical phases\n11-[EFB-4] Standard map presets by phase (Mountain / HESLO)\n12-[EFB-4] Standard declutter levels\n13-[EFB-4] High-contrast palettes\n14-[EFB-4] Always show data age on weather layers\n15-[EFB-4] Formal training on ForeFlight symbology.",
+    "mitigation": "1-[EFB-4] If distraction or loss of references is noticed: shift to high-contrast/declutter preset and limit interactions to non-critical phases",
+    "recovery": "1-[EFB-4] If distraction causes spatial disorientation or loss of references: focus on primary flight instruments and stabilise the aircraft before resuming EFB use",
     "residual_risk": "3B",
-    "doc_ref": "[EFB-6] OM-E § 4.1.1",
-    "eccairs_cat": "HF / SCF-NP",
+    "doc_ref": "",
+    "eccairs_cat": "HF",
     "event_type": "SMS consolidated event",
     "phase": "All phases",
     "control_status": "",
     "last_control_date": "",
     "control_comment": "",
     "barrier_failure_suspected": false,
-    "timestamp": "2026-06-30",
+    "timestamp": "2026-07-02",
     "linked_change_study": "",
-    "source_risk_ids": "EFB-4, EFB-6",
-    "source_risk_count": 2
+    "source_risk_ids": "EFB-4",
+    "source_risk_count": 1
   },
   {
     "id": "SMS-22",
     "category": "EFB & Systèmes Numériques",
-    "event": "Matériel non approuvé, perte/corruption de données, cyberattaque et flight-following",
-    "dangers": "Sources regroupées (4 risques):\n1-[EFB-7] Matériel / logiciel non approuvé ou connectivité défaillante\n2-[EFB-8] Perte ou corruption de données (offline, sync, manipulation)\n3-[EFB-9] Cyberattaque / fuite de données / usage hors scope\n4-[EFB-10] Perte de flight-following / alerte retard passager\n\nDangers identifiés:\n1-[EFB-7] Loss of critical information in-flight\n2-[EFB-7] Distraction or loss of situational awareness\n3-[EFB-7] Display readability issues\n4-[EFB-7] Data integrity and currency risks\n5-[EFB-7] Unauthorized access\n6-[EFB-7] External sensors (GPS/ADS-B/AHRS)\n7-[EFB-7] Documents/plates\n8-[EFB-8] Data integrity and currency risks\n9-[EFB-8] APP or device becomes unavailable in flight.\n10-[EFB-8] Version conflicts\n11-[EFB-8] Lack of discipline\n12-[EFB-8] No regular export\n13-[EFB-9] Use of the app for non-supported aircraft models or outside defined limits\n14-[EFB-9] Compromised credentials,\n15-[EFB-9] Phishing\n16-[EFB-9] Confidential information exfiltration\n17-[EFB-10] Connectivity gaps\n18-[EFB-10] mis-configured alerts",
+    "event": "Matériel ou logiciel EFB non approuvé, connectivité défaillante",
+    "dangers": "Source unique:\n[EFB-7] Matériel / logiciel non approuvé ou connectivité défaillante\n\nDangers identifiés:\n1-[EFB-7] Loss of critical information in-flight\n2-[EFB-7] Distraction or loss of situational awareness\n3-[EFB-7] Display readability issues\n4-[EFB-7] Data integrity and currency risks\n5-[EFB-7] Unauthorized access\n6-[EFB-7] External sensors (GPS/ADS-B/AHRS)\n7-[EFB-7] Documents/plates",
     "initial_risk": "3B",
-    "prevention": "1-[EFB-7] List of authorized applications\n2-[EFB-7] List of authorized hardware\n3-[EFB-7] Use of password\n4-[EFB-7] Brief status icons,\n5-[EFB-7] SOP for sensor loss (revert to FMS/paper)\n6-[EFB-7] Verify sensor battery/firmware.\n7-[EFB-7] Offline download + verify in Airplane Mode\n8-[EFB-7] Folder favorites\n9-[EFB-7] Annotate in advance.\n10-[EFB-8] Use of password\n11-[EFB-8] App is designed for offline use; no internet connection is required.\n12-[EFB-8] Operators advised to follow EFB regulations (secondary device).\n13-[EFB-8] CIRRO sync protocol\n14-[EFB-8] Operator backup\n15-[EFB-8] Export routine\n16-[EFB-9] Aircraft-specific versions delivered only on operator request.\n17-[EFB-9] Built-in limitations to prevent entry of unsupported data ranges.\n18-[EFB-9] CIRRO cloud security\n19-[EFB-9] Operator IT policy\n20-[EFB-10] CIRRO real-time tracking + overdue alert\n21-[EFB-10] Company dispatch monitor",
-    "mitigation": "1-[EFB-7] SOP for sensor loss — revert immediately to FMS or paper navigation if external sensor data becomes unreliable\n2-[EFB-8] Operator backup and CIRRO sync protocol prevent loss of critical data if the primary device becomes unavailable\n3-[EFB-9] Isolate and revoke access immediately on any suspected compromised credentials or phishing attempt\n4-[EFB-10] Company dispatch monitor cross-checks CIRRO tracking and attempts radio contact on any connectivity gap before declaring overdue",
-    "recovery": "1-[EFB-7] If connectivity is lost in flight: use pre-downloaded data and revert to paper as required; replace any non-compliant device with authorised equipment after landing\n2-[EFB-8] Restore from the last verified backup if data corruption is confirmed; revert to paper source documents if data integrity cannot be confirmed\n3-[EFB-9] Notify the data protection officer immediately, assess the scope of the breach, and notify affected parties as required\n4-[EFB-10] Initiate the overdue procedure if a scheduled check-in is missed — attempt radio contact and alert SAR if no response is received",
+    "prevention": "1-[EFB-7] List of authorized applications\n2-[EFB-7] List of authorized hardware\n3-[EFB-7] Use of password\n4-[EFB-7] Brief status icons,\n5-[EFB-7] SOP for sensor loss (revert to FMS/paper)\n6-[EFB-7] Verify sensor battery/firmware.\n7-[EFB-7] Offline download + verify in Airplane Mode\n8-[EFB-7] Folder favorites\n9-[EFB-7] Annotate in advance.",
+    "mitigation": "1-[EFB-7] SOP for sensor loss — revert immediately to FMS or paper navigation if external sensor data becomes unreliable",
+    "recovery": "1-[EFB-7] If connectivity is lost in flight: use pre-downloaded data and revert to paper as required; replace any non-compliant device with authorised equipment after landing",
     "residual_risk": "2B",
-    "doc_ref": "[EFB-7] OM-E § 2.3 / 2.5\n[EFB-8] Not use in flight",
-    "eccairs_cat": "SCF-NP / COM",
+    "doc_ref": "[EFB-7] OM-E § 2.3 / 2.5",
+    "eccairs_cat": "SCF-NP",
     "event_type": "SMS consolidated event",
     "phase": "All phases",
     "control_status": "",
     "last_control_date": "",
     "control_comment": "",
     "barrier_failure_suspected": false,
-    "timestamp": "2026-06-30",
+    "timestamp": "2026-07-02",
     "linked_change_study": "",
-    "source_risk_ids": "EFB-7, EFB-8, EFB-9, EFB-10",
-    "source_risk_count": 4
+    "source_risk_ids": "EFB-7",
+    "source_risk_count": 1
   },
   {
     "id": "SMS-23",
     "category": "Opérations Spécialisées",
-    "event": "Distraction équipage cinéma (PDV) et incendie équipements Li-Ion",
-    "dangers": "Sources regroupées (2 risques):\n1-[SPO-1] Distraction / interférence équipage cinéma (PDV)\n2-[SPO-2] Incendie équipements Li-Ion / non sécurisé TS porte ouverte\n\nDangers identifiés:\n",
+    "event": "Distraction / interférence équipage cinéma (PDV)",
+    "dangers": "Source unique:\n[SPO-1] Distraction / interférence équipage cinéma (PDV)\n\nDangers identifiés:\n",
     "initial_risk": "4B",
     "prevention": "",
-    "mitigation": "1-[SPO-1] Crew immediately re-establishes standard task discipline and stops non-essential camera-crew interaction during critical flight phases\n2-[SPO-2] Immediate isolation of any Li-Ion equipment showing signs of overheating; door secured and TS repositioned away from the opening",
-    "recovery": "1-[SPO-1] If equipment/crew interference compromises flight safety: brief the customer crew to stand down and resume the standardised flight profile before continuing\n2-[SPO-2] If a Li-Ion fire is not controlled by isolation: evacuate the cabin area, use the onboard fire extinguisher, and land as soon as possible",
+    "mitigation": "1-[SPO-1] Crew immediately re-establishes standard task discipline and stops non-essential camera-crew interaction during critical flight phases",
+    "recovery": "1-[SPO-1] If equipment/crew interference compromises flight safety: brief the customer crew to stand down and resume the standardised flight profile before continuing",
     "residual_risk": "3B",
-    "doc_ref": "[SPO-1] SOP PDV §\n[SPO-2] SOP PDV §",
-    "eccairs_cat": "HF / F-NI",
+    "doc_ref": "[SPO-1] SOP PDV §",
+    "eccairs_cat": "HF",
     "event_type": "SMS consolidated event",
     "phase": "All phases",
     "control_status": "",
     "last_control_date": "",
     "control_comment": "",
     "barrier_failure_suspected": false,
-    "timestamp": "2026-06-30",
+    "timestamp": "2026-07-02",
     "linked_change_study": "",
-    "source_risk_ids": "SPO-1, SPO-2",
-    "source_risk_count": 2
+    "source_risk_ids": "SPO-1",
+    "source_risk_count": 1
   },
   {
     "id": "SMS-24",
@@ -4751,6 +4785,259 @@ const INITIAL_DATA = [
     "linked_change_study": "",
     "source_risk_ids": "SPO-4, SPO-5",
     "source_risk_count": 2
+  },
+  {
+    "id": "SMS-25",
+    "category": "Cybersécurité (Part-IS)",
+    "event": "Cyberattaque / atteinte à la sécurité de l'information affectant les systèmes critiques et l'EFB (SGSI Part-IS)",
+    "dangers": "Sources regroupées (2 risques):\n1-[PIS-1] Cyberattaque / atteinte à la confidentialité, intégrité ou disponibilité des systèmes d'information de SAF International\n2-[EFB-9] Cyberattaque / fuite de données / usage hors scope\n\nDangers identifiés:\n1-[PIS-1] Accès non autorisé aux systèmes IT (toolsuite SMS/CMS/OMM, Supabase, messagerie, partage documentaire)\n2-[PIS-1] Compromission ou perte d'intégrité des données de sécurité, de navigabilité (CAMO) ou d'exploitation\n3-[PIS-1] Rançongiciel / déni de service affectant la disponibilité des systèmes critiques au sol\n4-[PIS-1] Compromission via un prestataire ou sous-traitant IT externe (chaîne d'approvisionnement numérique)\n5-[PIS-1] Hameçonnage (phishing) ou ingénierie sociale visant le personnel\n6-[PIS-1] Menace interne (accès mal maîtrisé, comptes partagés, absence de traçabilité)\n7-[PIS-1] Absence ou insuffisance de gouvernance formelle de la sécurité de l'information (SGSI)\n8-[PIS-1] Interconnexion avec des systèmes embarqués ou de flight-following (interface EFB/CIRRO)\n9-[EFB-9] Use of the app for non-supported aircraft models or outside defined limits\n10-[EFB-9] Compromised credentials,\n11-[EFB-9] Phishing\n12-[EFB-9] Confidential information exfiltration",
+    "initial_risk": "4B",
+    "prevention": "1-[PIS-1] Mise en place d'un système de gestion de la sécurité de l'information (SGSI) conforme au Règlement (UE) 2023/203 (Part-IS) — politique de sécurité de l'information formalisée et approuvée\n2-[PIS-1] Processus documenté d'identification et d'évaluation des risques de sécurité de l'information (IS.I.OR.205)\n3-[PIS-1] Contrôle d'accès renforcé (authentification forte / MFA), gestion des comptes nominatifs, principe du moindre privilège\n4-[PIS-1] Segmentation réseau et séparation des systèmes critiques (SMS/CAMO) des systèmes bureautiques\n5-[PIS-1] Politique de gestion des correctifs (patch management) et mises à jour de sécurité régulières\n6-[PIS-1] Évaluation et contractualisation de la sécurité de l'information avec les prestataires et sous-traitants externes (IS.I.OR.235)\n7-[PIS-1] Sensibilisation et formation périodique du personnel à la sécurité de l'information (IS.I.OR.230)\n8-[PIS-1] Sauvegardes régulières, testées et isolées (offline / air-gapped) des données critiques\n9-[PIS-1] Schéma interne de signalement des événements de sécurité de l'information (internal reporting scheme)\n10-[PIS-1] Plan de continuité et de contingence documenté en cas d'incident de sécurité de l'information\n11-[EFB-9] Aircraft-specific versions delivered only on operator request.\n12-[EFB-9] Built-in limitations to prevent entry of unsupported data ranges.\n13-[EFB-9] CIRRO cloud security\n14-[EFB-9] Operator IT policy",
+    "mitigation": "1-[PIS-1] Détection et isolement immédiat de tout système suspecté compromis (déconnexion réseau, désactivation des comptes concernés)\n2-[PIS-1] Activation du plan de contingence / continuité pour maintenir les fonctions critiques de sécurité et de navigabilité\n3-[PIS-1] Bascule sur procédures dégradées / support papier pour les fonctions SMS/CAMO le temps du rétablissement\n4-[EFB-9] Isolate and revoke access immediately on any suspected compromised credentials or phishing attempt",
+    "recovery": "1-[PIS-1] Notification de l'événement de sécurité de l'information à l'autorité compétente (OFAC/FOCA) conformément à IS.I.OR.230 dans les délais réglementaires\n2-[PIS-1] Restauration des systèmes et données à partir des dernières sauvegardes vérifiées\n3-[PIS-1] Analyse des causes (root cause analysis), documentation de l'incident et mise à jour du plan d'actions correctives (suivi CMS)\n4-[PIS-1] Revue post-incident du SGSI et, si nécessaire, révision de la politique de sécurité de l'information\n5-[EFB-9] Notify the data protection officer immediately, assess the scope of the breach, and notify affected parties as required",
+    "residual_risk": "2B",
+    "doc_ref": "Part-IS (Règlement d'exécution (UE) 2023/203 / Règlement délégué (UE) 2022/1645) — Politique de sécurité de l'information / Manuel SGSI (à intégrer OM-A)",
+    "eccairs_cat": "SCF-NP / COM",
+    "event_type": "SMS consolidated event",
+    "phase": "All phases (systèmes sol & interfaces embarquées)",
+    "control_status": "",
+    "last_control_date": "",
+    "control_comment": "",
+    "barrier_failure_suspected": false,
+    "timestamp": "2026-07-02",
+    "linked_change_study": "",
+    "source_risk_ids": "EFB-9, PIS-1",
+    "source_risk_count": 2
+  },
+  {
+    "id": "SMS-26",
+    "category": "HESLO & Aerial work",
+    "event": "Stress thermique aéronef / proximité des flammes (opérations de lutte incendie)",
+    "dangers": "Source unique:\n[LOC-3] Stress thermique aéronef (haute température)\n\nDangers identifiés:\n1-[LOC-3] Flame proximity",
+    "initial_risk": "4B",
+    "prevention": "1-[LOC-3] Minimum altitudes, indirect drops\n2-[LOC-3] Escape manoeuvre",
+    "mitigation": "1-[LOC-3] Escape manoeuvre — immediate climb and lateral departure from heat source\n2-[LOC-3] Reduce hover time and frequency of passes over the heat source\n3-[LOC-3] Monitor engine/transmission temperature trend; abort approach if exceedance trend detected",
+    "recovery": "1-[LOC-3] If engine/airframe overheat damage is suspected after escape: abort the mission, climb to a safe altitude and return to base for inspection before further flight",
+    "residual_risk": "2B",
+    "doc_ref": "[LOC-3] 1-Mini SOP – Fire Fighting § 0,7.1\n2-TM28-OMD - Pilot-TSOP - Firefighting Training",
+    "eccairs_cat": "F-NI",
+    "event_type": "SMS consolidated event",
+    "phase": "All phases (opérations de lutte incendie)",
+    "control_status": "",
+    "last_control_date": "",
+    "control_comment": "",
+    "barrier_failure_suspected": false,
+    "timestamp": "2026-07-02",
+    "linked_change_study": "",
+    "source_risk_ids": "LOC-3",
+    "source_risk_count": 1
+  },
+  {
+    "id": "SMS-27",
+    "category": "HESLO & Aerial work",
+    "event": "Charge grumière incontrôlée (débardage / grumes)",
+    "dangers": "Source unique:\n[HESLO-11] Charge grumière incontrôlée (grumes, tas de bois)\n\nDangers identifiés:\n1-[HESLO-11] Loss of helicopter control\n2-[HESLO-11] Collision with trees",
+    "initial_risk": "4B",
+    "prevention": "1-[HESLO-11] Prepare a level, compact surface for log placement\n2-[HESLO-11] Use ground supports or chocks (cross logs, wedges) to prevent logs from rolling\n3-[HESLO-11] On sloped terrain, install physical barriers (earth berms, logs) uphill of the drop point.\n4-[HESLO-11] Define a safety perimeter prohibit personnel from standing in potential roll paths.\n5-[HESLO-11] Assign a drop-off zone supervisor\n6-[HESLO-11] In case of uncertainty, plan one extra rotation\n7-[HESLO-11] Observe HOGE limits - 10%",
+    "mitigation": "1-[HESLO-11] If log roll or instability is detected, lay the load down immediately at the safest available point",
+    "recovery": "1-[HESLO-11] If logs roll into the safety perimeter: stop all ground operations, clear personnel, and reassess the drop zone before resuming",
+    "residual_risk": "3B",
+    "doc_ref": "[HESLO-11] Mini SOP HESLO 3 Logging \n§ 0.8.6",
+    "eccairs_cat": "EXTL",
+    "event_type": "SMS consolidated event",
+    "phase": "All phases",
+    "control_status": "",
+    "last_control_date": "",
+    "control_comment": "",
+    "barrier_failure_suspected": false,
+    "timestamp": "2026-07-02",
+    "linked_change_study": "",
+    "source_risk_ids": "HESLO-11",
+    "source_risk_count": 1
+  },
+  {
+    "id": "SMS-28",
+    "category": "HESLO & Aerial work",
+    "event": "Risques de plateforme HESLO (chute, coincement, effondrement)",
+    "dangers": "Source unique:\n[HESLO-12] Risques de plateforme (chute, coincement, effondrement)\n\nDangers identifiés:\n1-[HESLO-12] Injuries for ground staff\n2-[HESLO-12] Drop of the load\n3-[HESLO-12] Helicopter collapse\n4-[HESLO-12] Height\n5-[HESLO-12] Load inertia\n6-[HESLO-12] Dammage to the load or structure\n7-[HESLO-12] Falling or crushing personnel\n8-[HESLO-12] Crushing personnel\n9-[HESLO-12] Damage to load or structure\n10-[HESLO-12] Destabilisation of the helicopter\n11-[HESLO-12] Obligation to drop the load",
+    "initial_risk": "4B",
+    "prevention": "1-[HESLO-12] Secure all objects carried by TS to prevent them from falling.\n2-[HESLO-12] PPE\n3-[HESLO-12] Professional preparation by assembly-dismantling company\n4-[HESLO-12] Observe HOGE limits - 10%\n5-[HESLO-12] Training for working at height\n6-[HESLO-12] Exclusion zone defined around the load\n7-[HESLO-12] No personnel under the load (strict rule)\n8-[HESLO-12] Clear communication with the pilot before the approach\n9-[HESLO-12] Ensure that loads are of the correct weight, especially when dismantling.\n10-[HESLO-12] Site reconnaissance (terrain, structure, access)\n11-[HESLO-12] Precise briefing on lifting/lowering sequence\n12-[HESLO-12] Always start lifting at a safe distance before adjusting slowly\n13-[HESLO-12] Only employ people trained for this type of rescue\n14-[HESLO-12] Provide suitable and maintained safety and rescue equipment\n15-[HESLO-12] Rescue equipment is ready to use at the working site",
+    "mitigation": "1-[HESLO-12] Lower the load gently to a safe surface as soon as instability or platform damage is detected\n2-[HESLO-12] Pilot maintains a stable hover and awaits clear TSOP communication before any further movement if a platform incident occurs",
+    "recovery": "1-[HESLO-12] If a platform incident occurs (collapse, falling load): activate the site rescue equipment immediately and evacuate personnel from the load path",
+    "residual_risk": "3B",
+    "doc_ref": "[HESLO-12] Mini SOP HESLO 4 On platform \n1-2-§ 0.11",
+    "eccairs_cat": "RAMP",
+    "event_type": "SMS consolidated event",
+    "phase": "All phases",
+    "control_status": "",
+    "last_control_date": "",
+    "control_comment": "",
+    "barrier_failure_suspected": false,
+    "timestamp": "2026-07-02",
+    "linked_change_study": "",
+    "source_risk_ids": "HESLO-12",
+    "source_risk_count": 1
+  },
+  {
+    "id": "SMS-29",
+    "category": "Collisions",
+    "event": "Chute / projection de personnel depuis l'hélicoptère",
+    "dangers": "Source unique:\n[COL-4] Chute / projection de personnel depuis l'hélicoptère\n\nDangers identifiés:\n1-[COL-4] Injuries",
+    "initial_risk": "3B",
+    "prevention": "1-[COL-4] PPE\n2-[COL-4] In-depth material inspection before use\n3-[COL-4] Check the attachement points\n4-[COL-4] Use only approved harenesses and safety material",
+    "mitigation": "1-[COL-4] Immediate command to fasten harness / cease task if improper attachment or imbalance observed in flight",
+    "recovery": "1-[COL-4] If personnel fall or are projected from the helicopter: land immediately, render first aid, and activate emergency medical response",
+    "residual_risk": "2C",
+    "doc_ref": "[COL-4] OM-A § 8.2.6.4",
+    "eccairs_cat": "CABIN",
+    "event_type": "SMS consolidated event",
+    "phase": "All phases",
+    "control_status": "",
+    "last_control_date": "",
+    "control_comment": "",
+    "barrier_failure_suspected": false,
+    "timestamp": "2026-07-02",
+    "linked_change_study": "",
+    "source_risk_ids": "COL-4",
+    "source_risk_count": 1
+  },
+  {
+    "id": "SMS-30",
+    "category": "Collisions",
+    "event": "Collision au sol entre équipements / engins et personnel",
+    "dangers": "Source unique:\n[COL-5] Collision au sol entre équipements / engins et personnel\n\nDangers identifiés:\n1-[COL-5] Injuries\n2-[COL-5] Machinery slipping\n3-[COL-5] Reduced attention due to helicopter noise\n4-[COL-5] Poor coordination or communication",
+    "initial_risk": "4B",
+    "prevention": "1-[COL-5] TSs watch for approaching and balancing hook\n2-[COL-5] PPE :  Maximize visibility of ground personnel\n3-[COL-5] Clear zoning and visual marking",
+    "mitigation": "1-[COL-5] Immediate STOP call from TS/TSOP to halt all ground machinery movement on loss of coordination or visibility",
+    "recovery": "1-[COL-5] After a ground collision: stop all operations, secure the area, render first aid, and report to NPFO before resuming",
+    "residual_risk": "3B",
+    "doc_ref": "[COL-5] Mini SOP HESLO 3 Logging \n§ 0.8.4",
+    "eccairs_cat": "GCOL",
+    "event_type": "SMS consolidated event",
+    "phase": "All phases",
+    "control_status": "",
+    "last_control_date": "",
+    "control_comment": "",
+    "barrier_failure_suspected": false,
+    "timestamp": "2026-07-02",
+    "linked_change_study": "",
+    "source_risk_ids": "COL-5",
+    "source_risk_count": 1
+  },
+  {
+    "id": "SMS-31",
+    "category": "Facteurs Humains & Opérations",
+    "event": "Porte non verrouillée ou mal sécurisée en vol",
+    "dangers": "Source unique:\n[HF-8] Portes non verrouillées en vol\n\nDangers identifiés:\n1-[HF-8] Falling personnel\n2-[HF-8] Falling objects",
+    "initial_risk": "3B",
+    "prevention": "1-[HF-8] Check that doors close properly\n2-[HF-8] Briefing with all participants",
+    "mitigation": "1-[HF-8] If a door is found unlocked or ajar in flight: reduce airspeed and divert attention of unsecured personnel/objects away from the opening",
+    "recovery": "1-[HF-8] If a door opens in flight: land as soon as practicable; account for all personnel and any items that may have fallen before continuing",
+    "residual_risk": "2B",
+    "doc_ref": "[HF-8] OM-A 8.2.7.3",
+    "eccairs_cat": "CABIN",
+    "event_type": "SMS consolidated event",
+    "phase": "All phases",
+    "control_status": "",
+    "last_control_date": "",
+    "control_comment": "",
+    "barrier_failure_suspected": false,
+    "timestamp": "2026-07-02",
+    "linked_change_study": "",
+    "source_risk_ids": "HF-8",
+    "source_risk_count": 1
+  },
+  {
+    "id": "SMS-32",
+    "category": "Facteurs Humains & Opérations",
+    "event": "Circulation routière, déversements et nuisances environnementales au sol",
+    "dangers": "Source unique:\n[HF-7B] Circulation routière et impacts environnementaux des opérations au sol\n\nDangers identifiés:\n1-[HF-7B] Road trafic\n2-[HF-7B] Mountain roads\n3-[HF-7B] Fuel or oil spillage\n4-[HF-7B] Noise pollution",
+    "initial_risk": "3C",
+    "prevention": "1-[HF-7B] Allow sufficient trip planning time\n2-[HF-7B] Vehicle controls, maintenance, inspection\n3-[HF-7B] Use spill containment systems during refueling\n4-[HF-7B] Apply Noise Abatement Departure and Arrival Procedures",
+    "mitigation": "1-[HF-7B] Immediate use of spill containment if a fuel/oil spillage occurs during ground operations",
+    "recovery": "1-[HF-7B] Report any environmental/ground hazard (spillage, noise complaint, road incident) for corrective action before further operations at the site",
+    "residual_risk": "2D",
+    "doc_ref": "",
+    "eccairs_cat": "ENVT",
+    "event_type": "SMS consolidated event",
+    "phase": "All phases",
+    "control_status": "",
+    "last_control_date": "",
+    "control_comment": "",
+    "barrier_failure_suspected": false,
+    "timestamp": "2026-07-02",
+    "linked_change_study": "",
+    "source_risk_ids": "HF-7B",
+    "source_risk_count": 1
+  },
+  {
+    "id": "SMS-33",
+    "category": "EFB & Systèmes Numériques",
+    "event": "Interférence électromagnétique EFB avec les instruments de bord",
+    "dangers": "Source unique:\n[EFB-6] Interférence EFB avec instruments de bord\n\nDangers identifiés:\n1-[EFB-6] Flight instrument malfunction",
+    "initial_risk": "3B",
+    "prevention": "1-[EFB-6] Use certified or pre-assessed tablets\n2-[EFB-6] Backup availability",
+    "mitigation": "1-[EFB-6] If an EFB-related instrument anomaly is suspected: switch off the EFB and cross-check affected instruments against standby gauges",
+    "recovery": "1-[EFB-6] If EFB interference with flight instruments is confirmed: remove the EFB from the aircraft, land, investigate and file an occurrence report referring to maintenance for EMI investigation",
+    "residual_risk": "2B",
+    "doc_ref": "[EFB-6] OM-E § 4.1.1",
+    "eccairs_cat": "SCF-NP",
+    "event_type": "SMS consolidated event",
+    "phase": "All phases",
+    "control_status": "",
+    "last_control_date": "",
+    "control_comment": "",
+    "barrier_failure_suspected": false,
+    "timestamp": "2026-07-02",
+    "linked_change_study": "",
+    "source_risk_ids": "EFB-6",
+    "source_risk_count": 1
+  },
+  {
+    "id": "SMS-34",
+    "category": "EFB & Systèmes Numériques",
+    "event": "Perte de flight-following / alerte retard passager",
+    "dangers": "Source unique:\n[EFB-10] Perte de flight-following / alerte retard passager\n\nDangers identifiés:\n1-[EFB-10] Connectivity gaps\n2-[EFB-10] mis-configured alerts",
+    "initial_risk": "3B",
+    "prevention": "1-[EFB-10] CIRRO real-time tracking + overdue alert\n2-[EFB-10] Company dispatch monitor",
+    "mitigation": "1-[EFB-10] Company dispatch monitor cross-checks CIRRO tracking and attempts radio contact on any connectivity gap before declaring overdue",
+    "recovery": "1-[EFB-10] Initiate the overdue procedure if a scheduled check-in is missed — attempt radio contact and alert SAR if no response is received",
+    "residual_risk": "2B",
+    "doc_ref": "",
+    "eccairs_cat": "COM",
+    "event_type": "SMS consolidated event",
+    "phase": "All phases",
+    "control_status": "",
+    "last_control_date": "",
+    "control_comment": "",
+    "barrier_failure_suspected": false,
+    "timestamp": "2026-07-02",
+    "linked_change_study": "",
+    "source_risk_ids": "EFB-10",
+    "source_risk_count": 1
+  },
+  {
+    "id": "SMS-35",
+    "category": "Opérations Spécialisées",
+    "event": "Incendie équipements Li-Ion embarqués (portes ouvertes, PDV)",
+    "dangers": "Source unique:\n[SPO-2] Incendie équipements Li-Ion / non sécurisé TS porte ouverte\n\nDangers identifiés:\n",
+    "initial_risk": "4B",
+    "prevention": "",
+    "mitigation": "1-[SPO-2] Immediate isolation of any Li-Ion equipment showing signs of overheating; door secured and TS repositioned away from the opening",
+    "recovery": "1-[SPO-2] If a Li-Ion fire is not controlled by isolation: evacuate the cabin area, use the onboard fire extinguisher, and land as soon as possible",
+    "residual_risk": "3B",
+    "doc_ref": "[SPO-2] SOP PDV §",
+    "eccairs_cat": "F-NI",
+    "event_type": "SMS consolidated event",
+    "phase": "All phases",
+    "control_status": "",
+    "last_control_date": "",
+    "control_comment": "",
+    "barrier_failure_suspected": false,
+    "timestamp": "2026-07-02",
+    "linked_change_study": "",
+    "source_risk_ids": "SPO-2",
+    "source_risk_count": 1
   }
 ];
 
@@ -4759,7 +5046,7 @@ const ECCAIRS_ID_MAP = {"GEN-1": "RAMP", "GEN-2": "RAMP", "GEN-3": "GCOL", "GEN-
 const ECCAIRS_DESC = {"RAMP": "RAMP — Ground handling / ramp operations: handling, servicing, loading, refuelling, towing or ramp activity.", "GCOL": "GCOL — Ground collision: collision while the aircraft is moving on the ground.", "CABIN": "CABIN — Cabin safety event affecting occupants, doors, cabin procedures or emergency equipment.", "COM": "COM — Communication failure, loss, misunderstanding or inappropriate communication.", "HF": "HF — Human factors: fatigue, workload, communication, decision-making, training or organisational contribution.", "AMAN": "AMAN — Abrupt manoeuvre: intentional abrupt manoeuvre to avoid an unsafe situation.", "BIRD": "BIRD — Bird/wildlife strike or near strike.", "ENVT": "ENVT — Environmental issue affecting safety.", "LOC-I": "LOC-I — Loss of control in flight: loss of aircraft control or deviation from intended flight path while airborne.", "F-NI": "F-NI — Fire/smoke non-impact: fire or smoke not resulting from impact.", "SCF-NP": "SCF-NP — System/component failure or malfunction, non-powerplant.", "SCF-PP": "SCF-PP — System/component failure or malfunction, powerplant.", "NAV": "NAV — Navigation error, route deviation, position error or incorrect navigation data/use.", "CFIT": "CFIT — Controlled flight into terrain: collision or near collision with terrain, water or obstacle while aircraft is under control.", "WSTRW": "WSTRW — Windshear/thunderstorm or related severe convective weather/turbulence.", "EXTL": "EXTL — External/slung load: operator mapping for HESLO and aerial-work external-load events.", "FUEL": "FUEL — Fuel related: fuel exhaustion, starvation, contamination, incorrect fuel or fuel management issue.", "MAC": "MAC — Mid-air collision / airprox / ACAS alert / loss of separation."};
 
 var _savedDB = null;
-var _DB_VERSION = '5.0-sms-24-grouped';
+var _DB_VERSION = '6.0-sms-35-regrouped';
 var _storedVersion = null;
 try { _storedVersion = localStorage.getItem('safRiskDBVersion'); } catch(e) {}
 try { _savedDB = JSON.parse(localStorage.getItem('safRiskDB')); } catch(e) {}
@@ -5025,7 +5312,8 @@ function updateCounts() {
     'HESLO & Aerial work':'cnt-HESLO',
     'Facteurs Humains & Opérations':'cnt-HF',
     'EFB & Systèmes Numériques':'cnt-EFB',
-    'Opérations Spécialisées':'cnt-SPO'
+    'Opérations Spécialisées':'cnt-SPO',
+    'Cybersécurité (Part-IS)':'cnt-PIS'
   };
   const el = id => document.getElementById(id);
   if(el('total-count')) el('total-count').textContent = DB.length;
@@ -6306,7 +6594,7 @@ function previewEntry() {
 // ══════════════════════════════════════════════════════════════════
 // CHANGE STUDY / MANAGEMENT OF CHANGE
 // ══════════════════════════════════════════════════════════════════
-const CHANGE_FIELDS = ['title','ref','assessment-type','workflow-status','version-num','version-note','description','detailed-description','decision-origin','impact-assessment','duration','start-date','end-date','doc-archiving','regulations','assessors','version','version-date','history','followup-comments','acm-name','acm-signature','assessors-signature','authority-approval','risk-reduction-summary','conclusions','signature','diffusion'];
+const CHANGE_FIELDS = ['title','ref','assessment-type','workflow-status','version-num','version-note','description','detailed-description','decision-origin','impact-assessment','duration','start-date','end-date','doc-archiving','regulations','assessors','version','version-date','history','followup-comments','acm-name','acm-signature','assessors-signature','authority-approval','risk-reduction-summary','conclusions','signature','diffusion','cyber-risk-flag','cyber-risk-partis-ref','cyber-risk-description'];
 // ── Assessor name list (shared dropdown) ──
 const ASSESSOR_NAMES = ['Thierry BERGERET','Xavier BOUVET','Sacha CARRERE','Julien METRO','Jean Louis CAMUS'];
 const CS_NAME_PICKERS = ['assessors','assessors-signature','signature']; // fields using the name picker
@@ -6375,6 +6663,14 @@ function csDurationChange(val) {
   if (typeof saveState === 'function') saveState();
 }
 
+// ── Cybersecurity risk block (Part-IS): show/hide description sub-field ──
+function csCyberRiskToggle() {
+  const flag = document.getElementById('c-cyber-risk-flag')?.value;
+  const wrap = document.getElementById('c-cyber-risk-detail-wrap');
+  if (wrap) wrap.style.display = (flag === 'yes') ? '' : 'none';
+  if (typeof saveState === 'function') saveState();
+}
+
 // ── Clear All — wipe entire change study + actions ────────────────
 function clearAllChangeStudy(startNew) {
   if (!startNew && !confirm('Clear all data in this change study? This will remove all actions, signatures and fields.')) return;
@@ -6391,6 +6687,10 @@ function clearAllChangeStudy(startNew) {
 
   // Reset duration UI
   csDurationChange('');
+
+  // Reset cybersecurity risk block (Part-IS)
+  var _cyf=document.getElementById('c-cyber-risk-flag'); if(_cyf) _cyf.value='';
+  if(typeof csCyberRiskToggle==='function') csCyberRiskToggle();
 
   // Clear actions
   CS_ACTIONS = [];
@@ -10662,7 +10962,7 @@ function csImportRiskData(){const riskId=document.getElementById('c-risk-event-s
 
 function _buildCsNrMatrix(containerId,previewId,labelId,type){const el=document.getElementById(containerId);if(!el)return;let html='<div class="icao-ms-label" style="width:80px;height:36px;"></div>';SEV_LABELS.forEach(s=>{html+=`<div class="icao-ms-head" style="width:44px;height:36px;">${SEV_NAMES[s]?.split(' ')[0]||s}<br><small style="font-size:8px">(${s})</small></div>`;});PROB_LABELS.forEach(p=>{html+=`<div class="icao-ms-label">${PROB_NAMES[p]||p}</div>`;SEV_LABELS.forEach(s=>{const code=p+s;const bg=ICAO_CELL_COLORS[code]||'#333';const fg=readableTextColor(bg);html+=`<div class="icao-ms-cell" id="${containerId}-${code}" style="background:${bg};border:1px solid ${bg};color:${fg};font-weight:800;" onclick="_csNrSelectRisk('${containerId}','${previewId}','${labelId}','${code}','${type}')">${code}</div>`;});});el.innerHTML=html;}
 function _csNrSelectRisk(containerId,previewId,labelId,code,type){document.querySelectorAll('#'+containerId+' .icao-ms-cell').forEach(c=>c.classList.remove('selected'));const cell=document.getElementById(containerId+'-'+code);if(cell)cell.classList.add('selected');const bg=ICAO_CELL_COLORS[code]||'#333';const fg=readableTextColor(bg);const preview=document.getElementById(previewId);if(preview){preview.textContent=code;preview.style.background=bg;preview.style.color=fg;}const prob=code.charAt(0);const sev=code.charAt(1);const lbl=document.getElementById(labelId);if(lbl)lbl.textContent=(PROB_NAMES[prob]||prob)+' × '+(SEV_NAMES[sev]||sev);if(type==='init'){_csNrInitRisk=code;document.getElementById('cs-nr-initial-risk').value=code;}else{_csNrResidRisk=code;document.getElementById('cs-nr-residual-risk').value=code;}}
-function csSaveNewRisk(){const fb=document.getElementById('cs-nr-feedback');const s=id=>(document.getElementById(id)?.value||'').trim();const category=s('cs-nr-category'),event_=s('cs-nr-event'),dangers=s('cs-nr-dangers'),prevention=s('cs-nr-prevention'),mitigation=s('cs-nr-mitigation'),recovery=s('cs-nr-recovery'),initRisk=s('cs-nr-initial-risk'),residRisk=s('cs-nr-residual-risk'),docRef=s('cs-nr-doc-ref');const missing=[];if(!category)missing.push('Risk Category');if(!event_)missing.push('Undesirable Event');if(!dangers)missing.push('Dangers');if(!prevention)missing.push('Prevention Measures');if(!initRisk)missing.push('Initial Risk (click a matrix cell)');if(!residRisk)missing.push('Residual Risk (click a matrix cell)');if(!docRef)missing.push('Document Reference');if(missing.length){if(fb){fb.textContent='✗ Missing: '+missing.join(', ');fb.style.color='#ff8080';}return;}const pm={'LOC-I':'LOC','CFIT':'CFIT','Collisions':'COL','HESLO & Aerial work':'HESLO','Facteurs Humains & Opérations':'HF','EFB & Systèmes Numériques':'EFB','Opérations Spécialisées':'SPO'};const prefix=pm[category]||'CS';const existing=DB.filter(r=>r.id.startsWith(prefix+'-'));const nextNum=existing.length>0?Math.max(...existing.map(r=>parseInt(r.id.split('-').pop())||0))+1:1;const newId=prefix+'-'+nextNum;const newRecord={id:newId,category,event:event_,dangers,initial_risk:initRisk,prevention,mitigation,recovery,residual_risk:residRisk,doc_ref:docRef,eccairs_cat:'',event_type:'',phase:'',control_status:'',last_control_date:'',control_comment:'',barrier_failure_suspected:false,timestamp:new Date().toISOString(),linked_change_study:getChangeVal('ref')||'',risk_acceptance:'',risk_acceptance_date:'',risk_acceptance_by:'',control_effectiveness:'',history:[]};DB.push(newRecord);filteredDB=[...DB];saveDB();if(fb){fb.textContent='✓ Risk '+newId+' added to database.';fb.style.color='#5cc990';}const catSel=document.getElementById('c-risk-cat-select');if(catSel){catSel.value=category;csOnCategoryChange();}setTimeout(()=>{const evtSel=document.getElementById('c-risk-event-select');if(evtSel){const opt=Array.from(evtSel.options).find(o=>o.value===newId);if(opt){evtSel.value=newId;csOnEventChange();}}},50);const ed=getChangeVal('description');setChangeVal('description',ed?ed+'\n'+category+' — '+newId+': '+event_:category+' — '+newId+': '+event_);const ib='PREVENTION MEASURES:\n'+prevention+(mitigation?'\n\nMITIGATION MEASURES:\n'+mitigation:'')+(recovery?'\n\nRECOVERY MEASURES:\n'+recovery:'');const ei=getChangeVal('impact-assessment');setChangeVal('impact-assessment',ei?ei+'\n\n'+ib:ib);if(docRef&&!getChangeVal('doc-archiving'))setChangeVal('doc-archiving',docRef);[{label:'Prevention',text:prevention},{label:'Mitigation',text:mitigation},{label:'Recovery',text:recovery}].filter(b=>b.text).forEach(b=>{const id='a'+Date.now()+Math.random().toString(36).slice(2,6);const action={id,text:'['+b.label+' — '+newId+']\n'+b.text,nominatedPerson:'',sigData:'',email:''};CS_ACTIONS.push(action);const list=document.getElementById('cs-action-list');if(list){const card=csRenderAction(action);list.appendChild(card);setTimeout(()=>_initSigPad('cs-sig-canvas-'+id,'cs-sig-hidden-'+id,'cs-sig-ph-'+id),20);}});csRenumber();showToast('✓ Risk '+newId+' saved and imported into change study','success');setTimeout(()=>{['cs-nr-category','cs-nr-event','cs-nr-dangers','cs-nr-prevention','cs-nr-mitigation','cs-nr-recovery','cs-nr-doc-ref','cs-nr-initial-risk','cs-nr-residual-risk'].forEach(i=>{const e=document.getElementById(i);if(e)e.value='';});_csNrInitRisk='';_csNrResidRisk='';['cs-nr-init-preview','cs-nr-resid-preview'].forEach(id=>{const e=document.getElementById(id);if(e){e.textContent='–';e.style.background='#333';e.style.color='#fff';}});['cs-nr-init-label','cs-nr-resid-label'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='';});document.querySelectorAll('#cs-nr-init-matrix .icao-ms-cell,#cs-nr-resid-matrix .icao-ms-cell').forEach(c=>c.classList.remove('selected'));if(fb)fb.textContent='';},1500);if(typeof saveState==='function')saveState();}
+function csSaveNewRisk(){const fb=document.getElementById('cs-nr-feedback');const s=id=>(document.getElementById(id)?.value||'').trim();const category=s('cs-nr-category'),event_=s('cs-nr-event'),dangers=s('cs-nr-dangers'),prevention=s('cs-nr-prevention'),mitigation=s('cs-nr-mitigation'),recovery=s('cs-nr-recovery'),initRisk=s('cs-nr-initial-risk'),residRisk=s('cs-nr-residual-risk'),docRef=s('cs-nr-doc-ref');const missing=[];if(!category)missing.push('Risk Category');if(!event_)missing.push('Undesirable Event');if(!dangers)missing.push('Dangers');if(!prevention)missing.push('Prevention Measures');if(!initRisk)missing.push('Initial Risk (click a matrix cell)');if(!residRisk)missing.push('Residual Risk (click a matrix cell)');if(!docRef)missing.push('Document Reference');if(missing.length){if(fb){fb.textContent='✗ Missing: '+missing.join(', ');fb.style.color='#ff8080';}return;}const pm={'LOC-I':'LOC','CFIT':'CFIT','Collisions':'COL','HESLO & Aerial work':'HESLO','Facteurs Humains & Opérations':'HF','EFB & Systèmes Numériques':'EFB','Opérations Spécialisées':'SPO','Cybersécurité (Part-IS)':'PIS'};const prefix=pm[category]||'CS';const existing=DB.filter(r=>r.id.startsWith(prefix+'-'));const nextNum=existing.length>0?Math.max(...existing.map(r=>parseInt(r.id.split('-').pop())||0))+1:1;const newId=prefix+'-'+nextNum;const newRecord={id:newId,category,event:event_,dangers,initial_risk:initRisk,prevention,mitigation,recovery,residual_risk:residRisk,doc_ref:docRef,eccairs_cat:'',event_type:'',phase:'',control_status:'',last_control_date:'',control_comment:'',barrier_failure_suspected:false,timestamp:new Date().toISOString(),linked_change_study:getChangeVal('ref')||'',risk_acceptance:'',risk_acceptance_date:'',risk_acceptance_by:'',control_effectiveness:'',history:[]};DB.push(newRecord);filteredDB=[...DB];saveDB();if(fb){fb.textContent='✓ Risk '+newId+' added to database.';fb.style.color='#5cc990';}const catSel=document.getElementById('c-risk-cat-select');if(catSel){catSel.value=category;csOnCategoryChange();}setTimeout(()=>{const evtSel=document.getElementById('c-risk-event-select');if(evtSel){const opt=Array.from(evtSel.options).find(o=>o.value===newId);if(opt){evtSel.value=newId;csOnEventChange();}}},50);const ed=getChangeVal('description');setChangeVal('description',ed?ed+'\n'+category+' — '+newId+': '+event_:category+' — '+newId+': '+event_);const ib='PREVENTION MEASURES:\n'+prevention+(mitigation?'\n\nMITIGATION MEASURES:\n'+mitigation:'')+(recovery?'\n\nRECOVERY MEASURES:\n'+recovery:'');const ei=getChangeVal('impact-assessment');setChangeVal('impact-assessment',ei?ei+'\n\n'+ib:ib);if(docRef&&!getChangeVal('doc-archiving'))setChangeVal('doc-archiving',docRef);[{label:'Prevention',text:prevention},{label:'Mitigation',text:mitigation},{label:'Recovery',text:recovery}].filter(b=>b.text).forEach(b=>{const id='a'+Date.now()+Math.random().toString(36).slice(2,6);const action={id,text:'['+b.label+' — '+newId+']\n'+b.text,nominatedPerson:'',sigData:'',email:''};CS_ACTIONS.push(action);const list=document.getElementById('cs-action-list');if(list){const card=csRenderAction(action);list.appendChild(card);setTimeout(()=>_initSigPad('cs-sig-canvas-'+id,'cs-sig-hidden-'+id,'cs-sig-ph-'+id),20);}});csRenumber();showToast('✓ Risk '+newId+' saved and imported into change study','success');setTimeout(()=>{['cs-nr-category','cs-nr-event','cs-nr-dangers','cs-nr-prevention','cs-nr-mitigation','cs-nr-recovery','cs-nr-doc-ref','cs-nr-initial-risk','cs-nr-residual-risk'].forEach(i=>{const e=document.getElementById(i);if(e)e.value='';});_csNrInitRisk='';_csNrResidRisk='';['cs-nr-init-preview','cs-nr-resid-preview'].forEach(id=>{const e=document.getElementById(id);if(e){e.textContent='–';e.style.background='#333';e.style.color='#fff';}});['cs-nr-init-label','cs-nr-resid-label'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='';});document.querySelectorAll('#cs-nr-init-matrix .icao-ms-cell,#cs-nr-resid-matrix .icao-ms-cell').forEach(c=>c.classList.remove('selected'));if(fb)fb.textContent='';},1500);if(typeof saveState==='function')saveState();}
 
 
 // ════════════════════════════════════════════════════════════════
@@ -11033,7 +11333,7 @@ function exportAuditTrailCSV() {
 }
 
 function resetToInitialData() {
-  if (!confirm('Réinitialiser la base aux 9 évènements SMS consolidés ?\nToute modification locale sera effacée.')) return;
+  if (!confirm('Réinitialiser la base aux 35 évènements SMS consolidés ?\nToute modification locale sera effacée.')) return;
   DB = JSON.parse(JSON.stringify(INITIAL_DATA));
   filteredDB = [...DB];
   saveDB();
@@ -11206,6 +11506,7 @@ function loadCSIntoForm(ref){
     csRenumber();
   }
   if(typeof csDurationChange==='function') csDurationChange();
+  if(typeof csCyberRiskToggle==='function') csCyberRiskToggle();
   document.getElementById('change-form')?.scrollIntoView({behavior:'smooth',block:'start'});
   showToast('✓ Loaded: '+cs.title,'success');
 }
