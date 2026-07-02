@@ -17528,12 +17528,23 @@ function ap2Show(id,btn){
 <button type="button" class="cmsx-btn" style="padding:4px 10px;font-size:11px;" onclick="cmsxToggle5Whys()" id="cmsx-5w-togglebtn">Hide ▲</button>
 </div>
 <div id="cmsx-5w-body">
-<div class="cmsx-note">Start from the finding above and answer "Why?" — each next question appears once you've answered the previous one.</div>
-<div class="cmsx-field" id="cmsx-why-wrap-1"><label>Why 1 — Why did this deviation occur?</label><textarea id="cmsx-f-why1" oninput="cmsx5WhysCascade()" placeholder="e.g. The checklist item was not completed before departure"></textarea></div>
-<div class="cmsx-field" id="cmsx-why-wrap-2" style="display:none;"><label>Why 2</label><textarea id="cmsx-f-why2" oninput="cmsx5WhysCascade()" placeholder="e.g. The checklist was not accessible to the crew at that stage"></textarea></div>
-<div class="cmsx-field" id="cmsx-why-wrap-3" style="display:none;"><label>Why 3</label><textarea id="cmsx-f-why3" oninput="cmsx5WhysCascade()" placeholder="e.g. The document management procedure does not define its location"></textarea></div>
-<div class="cmsx-field" id="cmsx-why-wrap-4" style="display:none;"><label>Why 4</label><textarea id="cmsx-f-why4" oninput="cmsx5WhysCascade()" placeholder="e.g. The procedure was never updated after the latest OMM revision"></textarea></div>
-<div class="cmsx-field" id="cmsx-why-wrap-5" style="display:none;"><label>Why 5</label><textarea id="cmsx-f-why5" oninput="cmsx5WhysCascade()" placeholder="e.g. No review cycle exists to keep procedures aligned with OMM revisions"></textarea></div>
+<div class="cmsx-note">Write "Why 1" (the question), then its answer below. Once answered, "Why 2" opens, and so on — the chain stops whenever you leave a "Why" empty.</div>
+
+<div class="cmsx-field" id="cmsx-why-wrap-1"><label>Why 1</label><textarea id="cmsx-f-why1" oninput="cmsx5WhysCascade()" placeholder="e.g. Why was the checklist item not completed before departure?"></textarea></div>
+<div class="cmsx-field" id="cmsx-ans-wrap-1" style="display:none;"><label>Answer 1</label><textarea id="cmsx-f-ans1" oninput="cmsx5WhysCascade()" placeholder="e.g. Because the checklist was not accessible to the crew at that stage"></textarea></div>
+
+<div class="cmsx-field" id="cmsx-why-wrap-2" style="display:none;"><label>Why 2</label><textarea id="cmsx-f-why2" oninput="cmsx5WhysCascade()" placeholder="e.g. Why was the checklist not accessible to the crew?"></textarea></div>
+<div class="cmsx-field" id="cmsx-ans-wrap-2" style="display:none;"><label>Answer 2</label><textarea id="cmsx-f-ans2" oninput="cmsx5WhysCascade()" placeholder="e.g. Because the document management procedure does not define its location"></textarea></div>
+
+<div class="cmsx-field" id="cmsx-why-wrap-3" style="display:none;"><label>Why 3</label><textarea id="cmsx-f-why3" oninput="cmsx5WhysCascade()" placeholder="e.g. Why does the procedure not define its location?"></textarea></div>
+<div class="cmsx-field" id="cmsx-ans-wrap-3" style="display:none;"><label>Answer 3</label><textarea id="cmsx-f-ans3" oninput="cmsx5WhysCascade()" placeholder="e.g. Because the procedure was never updated after the latest OMM revision"></textarea></div>
+
+<div class="cmsx-field" id="cmsx-why-wrap-4" style="display:none;"><label>Why 4</label><textarea id="cmsx-f-why4" oninput="cmsx5WhysCascade()" placeholder="e.g. Why was the procedure never updated after the OMM revision?"></textarea></div>
+<div class="cmsx-field" id="cmsx-ans-wrap-4" style="display:none;"><label>Answer 4</label><textarea id="cmsx-f-ans4" oninput="cmsx5WhysCascade()" placeholder="e.g. Because no review cycle exists to keep procedures aligned with OMM revisions"></textarea></div>
+
+<div class="cmsx-field" id="cmsx-why-wrap-5" style="display:none;"><label>Why 5</label><textarea id="cmsx-f-why5" oninput="cmsx5WhysCascade()" placeholder="e.g. Why does no review cycle exist for procedure updates?"></textarea></div>
+<div class="cmsx-field" id="cmsx-ans-wrap-5" style="display:none;"><label>Answer 5</label><textarea id="cmsx-f-ans5" oninput="cmsx5WhysCascade()" placeholder="e.g. Because responsibility for triggering the review was never assigned"></textarea></div>
+
 <div class="cmsx-field" id="cmsx-why-wrap-rc" style="display:none;"><label>Root cause identified</label><textarea id="cmsx-f-rootcause" placeholder="Summarise the root cause(s) resulting from the 5 Whys — this should drive the corrective action plan below"></textarea></div>
 </div>
 </div>
@@ -17841,17 +17852,28 @@ function cmsxToggle5Whys(){
   body.style.display=hidden?'block':'none';
   if(btn) btn.textContent=hidden?'Hide ▲':'Show ▼';
 }
-// Reveal each "Why" box only once the previous one is filled in; reveal
-// the Root cause box once Why 1 has an answer (chain can stop earlier).
+// Reveal each "Why" / "Answer" box progressively:
+// Why 1 always shown -> its Answer appears once Why 1 is filled ->
+// Why 2 appears once Answer 1 is filled -> its Answer once Why 2 is filled, etc.
+// Root cause appears once the first answer is given (chain can stop early).
+function cmsx5WhysVal(key){ var el=document.getElementById('cmsx-f-'+key); return el?el.value.trim():''; }
+function cmsx5WhysShow(wrapId, cond){ var el=document.getElementById(wrapId); if(el) el.style.display = cond?'flex':'none'; }
 function cmsx5WhysCascade(){
-  var keys=['why1','why2','why3','why4','why5'];
-  var vals=keys.map(function(k){ var el=document.getElementById('cmsx-f-'+k); return el?el.value.trim():''; });
-  for(var i=2;i<=5;i++){
-    var wrap=document.getElementById('cmsx-why-wrap-'+i);
-    if(wrap) wrap.style.display = vals[i-2] ? 'flex' : 'none';
-  }
-  var rcWrap=document.getElementById('cmsx-why-wrap-rc');
-  if(rcWrap) rcWrap.style.display = vals[0] ? 'flex' : 'none';
+  var w1=cmsx5WhysVal('why1'), a1=cmsx5WhysVal('ans1');
+  var w2=cmsx5WhysVal('why2'), a2=cmsx5WhysVal('ans2');
+  var w3=cmsx5WhysVal('why3'), a3=cmsx5WhysVal('ans3');
+  var w4=cmsx5WhysVal('why4'), a4=cmsx5WhysVal('ans4');
+  var w5=cmsx5WhysVal('why5');
+  cmsx5WhysShow('cmsx-ans-wrap-1', w1);
+  cmsx5WhysShow('cmsx-why-wrap-2', a1);
+  cmsx5WhysShow('cmsx-ans-wrap-2', w2);
+  cmsx5WhysShow('cmsx-why-wrap-3', a2);
+  cmsx5WhysShow('cmsx-ans-wrap-3', w3);
+  cmsx5WhysShow('cmsx-why-wrap-4', a3);
+  cmsx5WhysShow('cmsx-ans-wrap-4', w4);
+  cmsx5WhysShow('cmsx-why-wrap-5', a4);
+  cmsx5WhysShow('cmsx-ans-wrap-5', w5);
+  cmsx5WhysShow('cmsx-why-wrap-rc', a1);
 }
 // Reveal the "Other…" free-text input for nominated person / email
 function cmsxToggleOther(which){
@@ -17911,7 +17933,7 @@ function cmsxRenderFindings(){
       var notif=f.notified?('<span class="cmsx-badge ontime" title="'+esc(f.notified)+'">✉ sent</span>'):'—';
       var org=f.origin==='foca'?'foca':'internal';
       var orgLabel=org==='foca'?('🟣 FOCA'+(f.focaRef?(' <span class="cmsx-ref" title="FOCA reference">'+esc(f.focaRef)+'</span>'):'')):'🔵 Internal';
-      var whyCount=['why1','why2','why3','why4','why5'].filter(function(k){return f[k]&&f[k].trim();}).length;
+      var whyCount=['ans1','ans2','ans3','ans4','ans5'].filter(function(k){return f[k]&&f[k].trim();}).length;
       var rc;
       if(f.rootCause && f.rootCause.trim()){
         rc='<span class="cmsx-badge verified" title="'+esc(f.rootCause)+'">✓ '+whyCount+'/5 Whys</span>';
@@ -18004,10 +18026,15 @@ function cmsxOpenFindingModal(id){
   cmsxToggleFocaRef();
   // 5 Whys root cause analysis
   document.getElementById('cmsx-f-why1').value=f?(f.why1||''):'';
+  document.getElementById('cmsx-f-ans1').value=f?(f.ans1||''):'';
   document.getElementById('cmsx-f-why2').value=f?(f.why2||''):'';
+  document.getElementById('cmsx-f-ans2').value=f?(f.ans2||''):'';
   document.getElementById('cmsx-f-why3').value=f?(f.why3||''):'';
+  document.getElementById('cmsx-f-ans3').value=f?(f.ans3||''):'';
   document.getElementById('cmsx-f-why4').value=f?(f.why4||''):'';
+  document.getElementById('cmsx-f-ans4').value=f?(f.ans4||''):'';
   document.getElementById('cmsx-f-why5').value=f?(f.why5||''):'';
+  document.getElementById('cmsx-f-ans5').value=f?(f.ans5||''):'';
   document.getElementById('cmsx-f-rootcause').value=f?(f.rootCause||''):'';
   document.getElementById('cmsx-5w-body').style.display='block';
   document.getElementById('cmsx-5w-togglebtn').textContent='Hide ▲';
@@ -18041,10 +18068,15 @@ function cmsxReadModal(){
     ref: document.getElementById('cmsx-f-ref').value.trim(),
     desc: document.getElementById('cmsx-f-desc').value.trim(),
     why1: document.getElementById('cmsx-f-why1').value.trim(),
+    ans1: document.getElementById('cmsx-f-ans1').value.trim(),
     why2: document.getElementById('cmsx-f-why2').value.trim(),
+    ans2: document.getElementById('cmsx-f-ans2').value.trim(),
     why3: document.getElementById('cmsx-f-why3').value.trim(),
+    ans3: document.getElementById('cmsx-f-ans3').value.trim(),
     why4: document.getElementById('cmsx-f-why4').value.trim(),
+    ans4: document.getElementById('cmsx-f-ans4').value.trim(),
     why5: document.getElementById('cmsx-f-why5').value.trim(),
+    ans5: document.getElementById('cmsx-f-ans5').value.trim(),
     rootCause: document.getElementById('cmsx-f-rootcause').value.trim(),
     level: document.getElementById('cmsx-f-level').value,
     np: np,
@@ -18520,8 +18552,8 @@ function dlCSV(name, rows){
 }
 function cmsxExportFindingsCSV(){
   var f=load(CMSX_KEYS.findings);
-  var rows=[['Audit N°','Audit title','Origin','FOCA reference','Level','Reg. reference','Finding description','Why 1','Why 2','Why 3','Why 4','Why 5','Root cause','Nominated Person','Email notified','Finding date','Corrective action','Deadline','Status','Completion date','Effectiveness date','Verification note']];
-  f.forEach(function(x){rows.push([x.auditNum||'',x.auditTitle||'',x.origin==='foca'?'FOCA':'Internal',x.focaRef||'',CMSX_LEVEL_LABEL[x.level]||x.level||'',x.ref||'',x.desc||'',x.why1||'',x.why2||'',x.why3||'',x.why4||'',x.why5||'',x.rootCause||'',x.np||'',x.email||'',x.detected||'',x.action||'',x.deadline||'',CMSX_STATUS_LABEL[x.status]||x.status||'',x.closed||'',x.verified||'',x.verifnote||'']);});
+  var rows=[['Audit N°','Audit title','Origin','FOCA reference','Level','Reg. reference','Finding description','Why 1','Answer 1','Why 2','Answer 2','Why 3','Answer 3','Why 4','Answer 4','Why 5','Answer 5','Root cause','Nominated Person','Email notified','Finding date','Corrective action','Deadline','Status','Completion date','Effectiveness date','Verification note']];
+  f.forEach(function(x){rows.push([x.auditNum||'',x.auditTitle||'',x.origin==='foca'?'FOCA':'Internal',x.focaRef||'',CMSX_LEVEL_LABEL[x.level]||x.level||'',x.ref||'',x.desc||'',x.why1||'',x.ans1||'',x.why2||'',x.ans2||'',x.why3||'',x.ans3||'',x.why4||'',x.ans4||'',x.why5||'',x.ans5||'',x.rootCause||'',x.np||'',x.email||'',x.detected||'',x.action||'',x.deadline||'',CMSX_STATUS_LABEL[x.status]||x.status||'',x.closed||'',x.verified||'',x.verifnote||'']);});
   dlCSV('corrective_action_plan.csv',rows);
 }
 function cmsxExportMissionsCSV(){
