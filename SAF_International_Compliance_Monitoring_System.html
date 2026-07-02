@@ -17370,8 +17370,17 @@ function ap2Show(id,btn){
   .cmsx-badge.ontime{background:rgba(0,196,140,.15);color:#00c48c;}
   .cmsx-badge.origin-internal{background:rgba(0,212,255,.15);color:#4ad0ff;}
   .cmsx-badge.origin-foca{background:rgba(168,85,247,.20);color:#c084fc;}
+  .cmsx-badge.warn30{background:rgba(245,166,35,.18);color:#f5b54a;}
   select.origin-internal{background:rgba(0,212,255,.12) !important;border-color:#00d4ff !important;color:#c8d8f0 !important;}
   select.origin-foca{background:rgba(168,85,247,.15) !important;border-color:#a855f7 !important;color:#c8d8f0 !important;}
+  .cmsx-deadline-alert{border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:12px;line-height:1.7;}
+  .cmsx-deadline-alert.due14{background:rgba(255,26,26,.10);border:1px solid rgba(255,68,68,.35);}
+  .cmsx-deadline-alert.due30{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.30);}
+  .cmsx-deadline-alert-title{font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:11px;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+  .cmsx-deadline-alert.due14 .cmsx-deadline-alert-title{color:#ff8888;}
+  .cmsx-deadline-alert.due30 .cmsx-deadline-alert-title{color:#f5b54a;}
+  .cmsx-deadline-alert-item{cursor:pointer;color:#c8d8f0;text-decoration:underline dotted;text-underline-offset:3px;}
+  .cmsx-deadline-alert-item:hover{color:#fff;}
   .cmsx-empty{text-align:center;padding:40px;color:#4a5f80;font-size:14px;}
   .cmsx-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px;}
   .cmsx-kpi{background:#0b1628;border:1px solid #1a2840;border-radius:12px;padding:16px;position:relative;overflow:hidden;}
@@ -17416,6 +17425,7 @@ function ap2Show(id,btn){
 </select>
 </div>
 <div class="cmsx-note">⚠ EASA reference deadlines (GM1 ORO.GEN.150): Level 1 → corrective action within <strong>30 days</strong>; Level 2 → accepted action plan, then closure within the agreed deadline (usually max. <strong>90 days</strong>). A completed corrective action should be subject to <strong>effectiveness verification</strong> before the finding is considered closed.</div>
+<div id="cmsx-deadline-alerts"></div>
 <div class="cmsx-card" style="padding:0;overflow:hidden;">
 <div style="overflow-x:auto;max-height:600px;">
 <table class="cmsx-table" id="cmsx-findings-table">
@@ -17896,7 +17906,9 @@ function findingDelayInfo(f){
     var rem=daysBetween(today(),f.deadline);
     if(rem!=null){
       if(rem<0) return {label:'+'+Math.abs(rem)+'d late',cls:'overdue'};
-      return {label:'D-'+rem,cls:rem<=7?'late':'ontime'};
+      if(rem<=14) return {label:'D-'+rem,cls:'late'};
+      if(rem<=30) return {label:'D-'+rem,cls:'warn30'};
+      return {label:'D-'+rem,cls:'ontime'};
     }
   }
   return {label:'—',cls:''};
@@ -17961,6 +17973,7 @@ function cmsxRenderFindings(){
     }).join('');
   }
   cmsxRenderRegKpis(findings);
+  cmsxRenderDeadlineAlerts(findings);
 }
 
 // ── KPI cards ──
@@ -18000,6 +18013,36 @@ function cmsxRenderRegKpis(findings){
     k(avgN1!=null?(COL[eDelay.cls]||'#8b5cf6'):'#8b5cf6', avgN1!=null?avgN1+'d':'—', 'Average N1 closure time', cmsxTargetLabel('delayN1')) +
     k(capRate!=null?(COL[eCap.cls]||'#6a82a5'):'#6a82a5', capRate!=null?capRate+'%':'—', 'On-time completion', cmsxTargetLabel('cap')) +
     k(rcaRate!=null?(rcaRate>=80?'#00c48c':(rcaRate>=50?'#f5a623':'#ff4444')):'#6a82a5', rcaRate!=null?rcaRate+'%':'—', 'Root cause analysis done', '5 Whys completed');
+}
+
+// ── Deadline alert banner: warns 1 month (D-30) and 2 weeks (D-14) before ──
+// the corrective action deadline, for any open (not completed) finding.
+function cmsxRenderDeadlineAlerts(findings){
+  var box=document.getElementById('cmsx-deadline-alerts'); if(!box) return;
+  var due14=[], due30=[];
+  findings.forEach(function(f){
+    if(f.status==='completed' || !f.deadline) return;
+    var rem=daysBetween(today(), f.deadline);
+    if(rem==null || rem<0) return; // overdue already shown elsewhere
+    if(rem<=14) due14.push({f:f, rem:rem});
+    else if(rem<=30) due30.push({f:f, rem:rem});
+  });
+  function label(f){
+    return esc(f.auditNum || f.ref || 'Corrective action') + (f.desc ? (' — ' + esc(f.desc.slice(0,60)) + (f.desc.length>60?'…':'')) : '');
+  }
+  function itemsHtml(list){
+    return list.sort(function(a,b){return a.rem-b.rem;}).map(function(x){
+      return '<div><span class="cmsx-deadline-alert-item" onclick="cmsxOpenFindingModal(\''+x.f.id+'\')">'+label(x.f)+'</span> — <strong>D-'+x.rem+'</strong> ('+(CMSX_LEVEL_LABEL[x.f.level]||x.f.level)+')</div>';
+    }).join('');
+  }
+  var html='';
+  if(due14.length){
+    html+='<div class="cmsx-deadline-alert due14"><div class="cmsx-deadline-alert-title">🔴 Due within 2 weeks — '+due14.length+' corrective action'+(due14.length>1?'s':'')+'</div>'+itemsHtml(due14)+'</div>';
+  }
+  if(due30.length){
+    html+='<div class="cmsx-deadline-alert due30"><div class="cmsx-deadline-alert-title">🟠 Due within 1 month — '+due30.length+' corrective action'+(due30.length>1?'s':'')+'</div>'+itemsHtml(due30)+'</div>';
+  }
+  box.innerHTML=html;
 }
 
 // ── Modal ──
@@ -18590,6 +18633,7 @@ function cmsxToast(msg){
 
 // Expose les fonctions appelées par onclick
 window.cmsxRenderFindings=cmsxRenderFindings;
+window.cmsxRenderDeadlineAlerts=cmsxRenderDeadlineAlerts;
 window.cmsxOpenFindingModal=cmsxOpenFindingModal;
 window.cmsxSaveFinding=cmsxSaveFinding;
 window.cmsxDeleteFinding=cmsxDeleteFinding;
@@ -20029,7 +20073,8 @@ window.safSmsConfirmImport=safSmsConfirmImport;
   // Toutes les clés de données du CMS à synchroniser
   var KEYS = ['audit_ORO','audit_CAT', SPA_KEY,'audit_SPO',
               'cmsx_findings','saf_findings_cmsx','kpiv2_kpi5_days',
-              'saf_trainers'];
+              'saf_trainers',
+              'cmsx_findings_v1','cmsx_missions_v1','cmsx_reports_v1','cmsx_auth_v1','cmsx_targets_v1'];
 
   var overlay = document.getElementById('saf-login-overlay');
   var bar     = document.getElementById('saf-cloud-bar');
