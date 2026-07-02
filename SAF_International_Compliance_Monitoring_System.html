@@ -1809,7 +1809,7 @@ function safExportPDF() {
   <div style="display:flex;align-items:center;gap:4px;overflow-x:auto;">
     <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
-    <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
+    <a href="Sauvegarde/SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
     <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
     <a href="SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
   </div>
@@ -17368,6 +17368,10 @@ function ap2Show(id,btn){
   @keyframes cmsxpulse{0%,100%{opacity:1}50%{opacity:.55}}
   .cmsx-badge.late{background:rgba(255,68,68,.25);color:#ff8888;}
   .cmsx-badge.ontime{background:rgba(0,196,140,.15);color:#00c48c;}
+  .cmsx-badge.origin-internal{background:rgba(0,212,255,.15);color:#4ad0ff;}
+  .cmsx-badge.origin-foca{background:rgba(168,85,247,.20);color:#c084fc;}
+  select.origin-internal{background:rgba(0,212,255,.12) !important;border-color:#00d4ff !important;color:#c8d8f0 !important;}
+  select.origin-foca{background:rgba(168,85,247,.15) !important;border-color:#a855f7 !important;color:#c8d8f0 !important;}
   .cmsx-empty{text-align:center;padding:40px;color:#4a5f80;font-size:14px;}
   .cmsx-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px;}
   .cmsx-kpi{background:#0b1628;border:1px solid #1a2840;border-radius:12px;padding:16px;position:relative;overflow:hidden;}
@@ -17405,6 +17409,11 @@ function ap2Show(id,btn){
 <option value="completed">Completed</option>
 <option value="overdue">Overdue</option>
 </select>
+<select id="cmsx-reg-origin-filter" onchange="cmsxRenderFindings()" style="background:#0e1a2c;border:1px solid #1e3a5f;border-radius:8px;color:#c8d8f0;padding:8px 12px;font-size:13px;">
+<option value="all">Internal + FOCA</option>
+<option value="internal">🔵 Internal only</option>
+<option value="foca">🟣 FOCA only</option>
+</select>
 </div>
 <div class="cmsx-note">⚠ EASA reference deadlines (GM1 ORO.GEN.150): Level 1 → corrective action within <strong>30 days</strong>; Level 2 → accepted action plan, then closure within the agreed deadline (usually max. <strong>90 days</strong>). A completed corrective action should be subject to <strong>effectiveness verification</strong> before the finding is considered closed.</div>
 <div class="cmsx-card" style="padding:0;overflow:hidden;">
@@ -17412,7 +17421,8 @@ function ap2Show(id,btn){
 <table class="cmsx-table" id="cmsx-findings-table">
 <thead>
 <tr>
-<th>Audit N°</th><th>Audit title</th><th>Level</th><th>Finding description</th>
+<th>Audit N°</th><th>Audit title</th><th>Origin</th><th>Level</th><th>Finding description</th>
+<th>Root cause (5 Whys)</th>
 <th>Nominated Person</th><th>Date</th><th>Corrective action</th><th>Deadline</th>
 <th>Status</th><th>Notified</th><th>Effectiveness</th><th></th>
 </tr>
@@ -17491,6 +17501,15 @@ function ap2Show(id,btn){
 <div class="cmsx-field"><label>Audit N°</label><input id="cmsx-f-auditnum" placeholder="e.g. AUD-2026-014"/></div>
 <div class="cmsx-field"><label>Audit title</label><input id="cmsx-f-audittitle" placeholder="e.g. Annual ORO.GEN compliance audit"/></div>
 </div>
+<div class="cmsx-grid2">
+<div class="cmsx-field"><label>Finding origin</label>
+<select id="cmsx-f-origin" onchange="cmsxOriginStyle(this);cmsxToggleFocaRef()">
+<option value="internal">🔵 Internal — SAF audit / self-inspection</option>
+<option value="foca">🟣 FOCA — Authority audit / oversight finding</option>
+</select>
+</div>
+<div class="cmsx-field" id="cmsx-f-focaref-wrap" style="display:none;"><label>FOCA reference (letter / finding N°)</label><input id="cmsx-f-focaref" placeholder="e.g. FOCA-2026-0112"/></div>
+</div>
 <div class="cmsx-grid3">
 <div class="cmsx-field"><label>Finding level</label>
 <select id="cmsx-f-level" onchange="cmsxLevelStyle(this)">
@@ -17503,6 +17522,21 @@ function ap2Show(id,btn){
 <div class="cmsx-field"><label>Finding date</label><input id="cmsx-f-detected" type="date"/></div>
 </div>
 <div class="cmsx-field"><label>Finding description (deviation)</label><textarea id="cmsx-f-desc" placeholder="Description of the non-compliance identified during the audit"></textarea></div>
+<div class="cmsx-card" style="background:#08111f;margin-top:0;margin-bottom:14px;">
+<div class="cmsx-card-title" style="font-size:12px;display:flex;justify-content:space-between;align-items:center;">
+<span>🔍 5 Whys — Root cause analysis</span>
+<button type="button" class="cmsx-btn" style="padding:4px 10px;font-size:11px;" onclick="cmsxToggle5Whys()" id="cmsx-5w-togglebtn">Hide ▲</button>
+</div>
+<div id="cmsx-5w-body">
+<div class="cmsx-note">Start from the finding above and ask "Why?" repeatedly (usually 5 times) until the underlying root cause is reached. Leave a "Why" blank if the chain stops earlier.</div>
+<div class="cmsx-field"><label>Why 1 — Why did this deviation occur?</label><textarea id="cmsx-f-why1" placeholder="e.g. The checklist item was not completed before departure"></textarea></div>
+<div class="cmsx-field"><label>Why 2</label><textarea id="cmsx-f-why2" placeholder="e.g. The checklist was not accessible to the crew at that stage"></textarea></div>
+<div class="cmsx-field"><label>Why 3</label><textarea id="cmsx-f-why3" placeholder="e.g. The document management procedure does not define its location"></textarea></div>
+<div class="cmsx-field"><label>Why 4</label><textarea id="cmsx-f-why4" placeholder="e.g. The procedure was never updated after the latest OMM revision"></textarea></div>
+<div class="cmsx-field"><label>Why 5</label><textarea id="cmsx-f-why5" placeholder="e.g. No review cycle exists to keep procedures aligned with OMM revisions"></textarea></div>
+<div class="cmsx-field"><label>Root cause identified</label><textarea id="cmsx-f-rootcause" placeholder="Summarise the root cause(s) resulting from the 5 Whys — this should drive the corrective action plan below"></textarea></div>
+</div>
+</div>
 <div class="cmsx-grid2">
 <div class="cmsx-field"><label>Nominated Person responsible</label>
 <select id="cmsx-f-np" onchange="cmsxToggleOther('np')">
@@ -17742,6 +17776,7 @@ function cmsxPushGridFinding(info){
     rec.auditNum = info.auditNum || rec.auditNum;
     rec.auditTitle = info.auditTitle || rec.auditTitle;
     rec.ref = info.ref || rec.ref;
+    if(!rec.origin) rec.origin = info.origin || 'internal';
     if(info.desc && (!rec.desc || rec.autoFromGrid)) rec.desc = info.desc;
     if(info.action && !rec.action) rec.action = info.action;
     if(info.np && !rec.np) rec.np = info.np;
@@ -17755,6 +17790,8 @@ function cmsxPushGridFinding(info){
       autoFromGrid: true,
       auditNum: info.auditNum||'',
       auditTitle: info.auditTitle||'',
+      origin: info.origin||'internal',
+      focaRef: info.focaRef||'',
       level: info.level,
       ref: info.ref||'',
       desc: info.desc||'',
@@ -17783,6 +17820,26 @@ var CMSX_STATUS_LABEL= {notstarted:'Not started', progress:'In progress', comple
 function cmsxLevelStyle(sel){
   sel.classList.remove('lvl1','lvl2','lvl3');
   sel.classList.add(CMSX_LEVEL_CLS[sel.value]||'lvl2');
+}
+// Colour the origin <select> in the modal (internal = blue, FOCA = purple)
+function cmsxOriginStyle(sel){
+  sel.classList.remove('origin-internal','origin-foca');
+  sel.classList.add(sel.value==='foca'?'origin-foca':'origin-internal');
+}
+// Show the "FOCA reference" field only when the origin is FOCA
+function cmsxToggleFocaRef(){
+  var sel=document.getElementById('cmsx-f-origin');
+  var wrap=document.getElementById('cmsx-f-focaref-wrap');
+  if(wrap) wrap.style.display=(sel && sel.value==='foca')?'flex':'none';
+}
+// Collapse/expand the 5 Whys root-cause analysis block
+function cmsxToggle5Whys(){
+  var body=document.getElementById('cmsx-5w-body');
+  var btn=document.getElementById('cmsx-5w-togglebtn');
+  if(!body) return;
+  var hidden=body.style.display==='none';
+  body.style.display=hidden?'block':'none';
+  if(btn) btn.textContent=hidden?'Hide ▲':'Show ▼';
 }
 // Reveal the "Other…" free-text input for nominated person / email
 function cmsxToggleOther(which){
@@ -17821,14 +17878,16 @@ function isOverdue(f){
 function cmsxRenderFindings(){
   var findings=load(CMSX_KEYS.findings);
   var filter=(document.getElementById('cmsx-reg-filter')||{}).value||'all';
+  var originFilter=(document.getElementById('cmsx-reg-origin-filter')||{}).value||'all';
   var body=document.getElementById('cmsx-findings-body'); if(!body) return;
   var list=findings.filter(function(f){
+    if(originFilter!=='all' && (f.origin||'internal')!==originFilter) return false;
     if(filter==='all') return true;
     if(filter==='overdue') return isOverdue(f);
     return f.status===filter;
   });
   if(list.length===0){
-    body.innerHTML='<tr><td colspan="12" class="cmsx-empty">No corrective actions'+(filter!=='all'?' for this filter':'')+'. Click "Add corrective action" to create one.</td></tr>';
+    body.innerHTML='<tr><td colspan="14" class="cmsx-empty">No corrective actions'+(filter!=='all'||originFilter!=='all'?' for this filter':'')+'. Click "Add corrective action" to create one.</td></tr>';
   } else {
     body.innerHTML=list.map(function(f){
       var stCls=f.status==='completed'?'completed':(f.status==='progress'?'progress':'notstarted');
@@ -17838,11 +17897,24 @@ function cmsxRenderFindings(){
       var verif=f.verified?('<span class="cmsx-badge verified">✓ '+esc(f.verified)+'</span>')
                 :(f.status==='completed'?'<span class="cmsx-badge late">to verify</span>':'—');
       var notif=f.notified?('<span class="cmsx-badge ontime" title="'+esc(f.notified)+'">✉ sent</span>'):'—';
+      var org=f.origin==='foca'?'foca':'internal';
+      var orgLabel=org==='foca'?('🟣 FOCA'+(f.focaRef?(' <span class="cmsx-ref" title="FOCA reference">'+esc(f.focaRef)+'</span>'):'')):'🔵 Internal';
+      var whyCount=['why1','why2','why3','why4','why5'].filter(function(k){return f[k]&&f[k].trim();}).length;
+      var rc;
+      if(f.rootCause && f.rootCause.trim()){
+        rc='<span class="cmsx-badge verified" title="'+esc(f.rootCause)+'">✓ '+whyCount+'/5 Whys</span>';
+      } else if(whyCount>0){
+        rc='<span class="cmsx-badge late" title="Root cause not yet summarised">'+whyCount+'/5 Whys</span>';
+      } else {
+        rc='<span class="cmsx-badge notstarted">Not started</span>';
+      }
       return '<tr>'+
         '<td><span class="cmsx-ref">'+esc(f.auditNum||'—')+'</span></td>'+
         '<td style="max-width:180px;">'+esc(f.auditTitle||'—')+'</td>'+
+        '<td><span class="cmsx-badge origin-'+org+'">'+orgLabel+'</span></td>'+
         '<td><span class="cmsx-badge '+(CMSX_LEVEL_CLS[f.level]||'lvl2')+'">'+(CMSX_LEVEL_LABEL[f.level]||f.level)+'</span></td>'+
         '<td style="max-width:260px;">'+esc(f.desc||'—')+'</td>'+
+        '<td style="max-width:150px;">'+rc+'</td>'+
         '<td>'+esc(f.np||'—')+'</td>'+
         '<td>'+esc(f.detected||'—')+'</td>'+
         '<td style="max-width:200px;">'+esc(f.action||'—')+'</td>'+
@@ -17863,6 +17935,10 @@ function cmsxRenderRegKpis(findings){
   var total=findings.length;
   var openCount=findings.filter(function(f){return f.status!=='completed';}).length;
   var overdue=findings.filter(isOverdue).length;
+  var internalCount=findings.filter(function(f){return (f.origin||'internal')==='internal';}).length;
+  var focaCount=findings.filter(function(f){return f.origin==='foca';}).length;
+  var rcaDone=findings.filter(function(f){return f.rootCause && f.rootCause.trim();}).length;
+  var rcaRate=total?Math.round(rcaDone/total*100):null;
   var n1open=findings.filter(function(f){return f.level==='N1'&&f.status!=='completed';}).length;
   var n1closed=findings.filter(function(f){return f.level==='N1'&&f.status==='completed'&&f.closed&&f.detected;});
   var avgN1=null;
@@ -17882,11 +17958,14 @@ function cmsxRenderRegKpis(findings){
   var eCap=cmsxEvalTarget('cap',capRate);
   box.innerHTML=
     k('#00d4ff', total, 'Corrective actions', 'Cumulative total') +
+    k('#4ad0ff', internalCount, '🔵 Internal findings', 'SAF audits / self-inspection') +
+    k('#c084fc', focaCount, '🟣 FOCA findings', 'Authority audits / oversight') +
     k(openCount>0?'#f5a623':'#00c48c', openCount, 'Open actions', 'Not yet completed') +
     k(COL[eOverdue.cls]||'#00c48c', overdue, 'Overdue actions', cmsxTargetLabel('overdue')) +
     k(COL[eN1.cls]||'#00c48c', n1open, 'Open Level 1', cmsxTargetLabel('n1')) +
     k(avgN1!=null?(COL[eDelay.cls]||'#8b5cf6'):'#8b5cf6', avgN1!=null?avgN1+'d':'—', 'Average N1 closure time', cmsxTargetLabel('delayN1')) +
-    k(capRate!=null?(COL[eCap.cls]||'#6a82a5'):'#6a82a5', capRate!=null?capRate+'%':'—', 'On-time completion', cmsxTargetLabel('cap'));
+    k(capRate!=null?(COL[eCap.cls]||'#6a82a5'):'#6a82a5', capRate!=null?capRate+'%':'—', 'On-time completion', cmsxTargetLabel('cap')) +
+    k(rcaRate!=null?(rcaRate>=80?'#00c48c':(rcaRate>=50?'#f5a623':'#ff4444')):'#6a82a5', rcaRate!=null?rcaRate+'%':'—', 'Root cause analysis done', '5 Whys completed');
 }
 
 // ── Modal ──
@@ -17906,6 +17985,20 @@ function cmsxOpenFindingModal(id){
   document.getElementById('cmsx-f-status').value=f?(f.status||'notstarted'):'notstarted';
   document.getElementById('cmsx-f-verified').value=f?(f.verified||''):'';
   document.getElementById('cmsx-f-verifnote').value=f?(f.verifnote||''):'';
+  // Origin (internal / FOCA)
+  var origin=f?(f.origin||'internal'):'internal';
+  var originSel=document.getElementById('cmsx-f-origin'); originSel.value=origin; cmsxOriginStyle(originSel);
+  document.getElementById('cmsx-f-focaref').value=f?(f.focaRef||''):'';
+  cmsxToggleFocaRef();
+  // 5 Whys root cause analysis
+  document.getElementById('cmsx-f-why1').value=f?(f.why1||''):'';
+  document.getElementById('cmsx-f-why2').value=f?(f.why2||''):'';
+  document.getElementById('cmsx-f-why3').value=f?(f.why3||''):'';
+  document.getElementById('cmsx-f-why4').value=f?(f.why4||''):'';
+  document.getElementById('cmsx-f-why5').value=f?(f.why5||''):'';
+  document.getElementById('cmsx-f-rootcause').value=f?(f.rootCause||''):'';
+  document.getElementById('cmsx-5w-body').style.display='block';
+  document.getElementById('cmsx-5w-togglebtn').textContent='Hide ▲';
   // Nominated person dropdown (+ other)
   var npList=['NPFO','NPCT','NPGO','NPCA','SM','CMM','ACM'];
   var npSel=document.getElementById('cmsx-f-np'), npOther=document.getElementById('cmsx-f-np-other');
@@ -17930,8 +18023,16 @@ function cmsxReadModal(){
   return {
     auditNum: document.getElementById('cmsx-f-auditnum').value.trim(),
     auditTitle: document.getElementById('cmsx-f-audittitle').value.trim(),
+    origin: document.getElementById('cmsx-f-origin').value||'internal',
+    focaRef: document.getElementById('cmsx-f-focaref').value.trim(),
     ref: document.getElementById('cmsx-f-ref').value.trim(),
     desc: document.getElementById('cmsx-f-desc').value.trim(),
+    why1: document.getElementById('cmsx-f-why1').value.trim(),
+    why2: document.getElementById('cmsx-f-why2').value.trim(),
+    why3: document.getElementById('cmsx-f-why3').value.trim(),
+    why4: document.getElementById('cmsx-f-why4').value.trim(),
+    why5: document.getElementById('cmsx-f-why5').value.trim(),
+    rootCause: document.getElementById('cmsx-f-rootcause').value.trim(),
     level: document.getElementById('cmsx-f-level').value,
     np: np,
     email: email,
@@ -18026,6 +18127,9 @@ window.cmsxClearFindings=cmsxClearFindings;
 window.cmsxNotifyFinding=cmsxNotifyFinding;
 window.cmsxLevelStyle=cmsxLevelStyle;
 window.cmsxToggleOther=cmsxToggleOther;
+window.cmsxOriginStyle=cmsxOriginStyle;
+window.cmsxToggleFocaRef=cmsxToggleFocaRef;
+window.cmsxToggle5Whys=cmsxToggle5Whys;
 
 // ═══════════════════════════════════════════════════════════════════
 // 2. ORDRES DE MISSION
@@ -18402,8 +18506,8 @@ function dlCSV(name, rows){
 }
 function cmsxExportFindingsCSV(){
   var f=load(CMSX_KEYS.findings);
-  var rows=[['Audit N°','Audit title','Level','Reg. reference','Finding description','Nominated Person','Email notified','Finding date','Corrective action','Deadline','Status','Completion date','Effectiveness date','Verification note']];
-  f.forEach(function(x){rows.push([x.auditNum||'',x.auditTitle||'',CMSX_LEVEL_LABEL[x.level]||x.level||'',x.ref||'',x.desc||'',x.np||'',x.email||'',x.detected||'',x.action||'',x.deadline||'',CMSX_STATUS_LABEL[x.status]||x.status||'',x.closed||'',x.verified||'',x.verifnote||'']);});
+  var rows=[['Audit N°','Audit title','Origin','FOCA reference','Level','Reg. reference','Finding description','Why 1','Why 2','Why 3','Why 4','Why 5','Root cause','Nominated Person','Email notified','Finding date','Corrective action','Deadline','Status','Completion date','Effectiveness date','Verification note']];
+  f.forEach(function(x){rows.push([x.auditNum||'',x.auditTitle||'',x.origin==='foca'?'FOCA':'Internal',x.focaRef||'',CMSX_LEVEL_LABEL[x.level]||x.level||'',x.ref||'',x.desc||'',x.why1||'',x.why2||'',x.why3||'',x.why4||'',x.why5||'',x.rootCause||'',x.np||'',x.email||'',x.detected||'',x.action||'',x.deadline||'',CMSX_STATUS_LABEL[x.status]||x.status||'',x.closed||'',x.verified||'',x.verifnote||'']);});
   dlCSV('corrective_action_plan.csv',rows);
 }
 function cmsxExportMissionsCSV(){
