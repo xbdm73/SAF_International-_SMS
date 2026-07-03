@@ -6,6 +6,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>SAFETY MANAGEMENT SYSTEM</title>
 <!-- SAF ECCAIRS OCCLOG PATCH V2 TESTED 2026-06-18 | BOWTIE SMS DROPDOWN FIX -->
+<!-- SAF E5X RIT REBUILD V1 2026-07-03 | REAL FOCA 7.2.0.1 SCHEMA + ENTITY NESTING + JSZIP -->
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&amp;family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&amp;family=Bebas+Neue&amp;display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -4092,6 +4093,7 @@ window._nativeLocalStorage = window.localStorage;
 // Nouveauté v3 : recharge window.storage au démarrage pour reconstruire _cache
 // avant que le reste du code s'exécute (évite données perdues à chaque ouverture).
 window.__SAF_ECCAIRS_OCCLOG_PATCH='V3_2026-06-19';
+window.__SAF_E5X_RIT_PATCH='V1_2026-07-03';
 (function() {
   'use strict';
   var _cache = {};
