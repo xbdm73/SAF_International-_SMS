@@ -17410,6 +17410,7 @@ function ap2Show(id,btn){
 <button class="cmsx-btn green" onclick="cmsxOpenFindingModal()">＋ Add corrective action</button>
 <button class="cmsx-btn" onclick="cmsxExportFindingsCSV()">⬇ Export CSV</button>
 <button class="cmsx-btn" onclick="cmsxPrintRegistre()">🖨 Print register</button>
+<button class="cmsx-btn" id="cmsx-pdf-selected-btn" onclick="cmsxPrintSelectedFindings()" disabled style="opacity:.5;">📄 Export selected to PDF (<span id="cmsx-sel-count">0</span>)</button>
 <button class="cmsx-btn danger" onclick="cmsxClearFindings()">🗑 Clear register</button>
 <select id="cmsx-reg-filter" onchange="cmsxRenderFindings()" style="background:#0e1a2c;border:1px solid #1e3a5f;border-radius:8px;color:#c8d8f0;padding:8px 12px;font-size:13px;">
 <option value="all">All statuses</option>
@@ -17431,6 +17432,7 @@ function ap2Show(id,btn){
 <table class="cmsx-table" id="cmsx-findings-table">
 <thead>
 <tr>
+<th style="width:26px;"><input type="checkbox" id="cmsx-sel-all" onchange="cmsxToggleSelectAll(this.checked)" title="Select all"/></th>
 <th>Audit N°</th><th>Audit title</th><th>Origin</th><th>Level</th><th>Finding description</th>
 <th>Root cause (5 Whys)</th>
 <th>Nominated Person</th><th>Date</th><th>Corrective action</th><th>Deadline</th>
@@ -17699,6 +17701,7 @@ function ap2Show(id,btn){
 // STOCKAGE
 // ═══════════════════════════════════════════════════════════════════
 var CMSX_KEYS = { findings:'cmsx_findings_v1', missions:'cmsx_missions_v1', reports:'cmsx_reports_v1', auth:'cmsx_auth_v1', targets:'cmsx_targets_v1' };
+var CMSX_SELECTED = new Set(); // finding ids selected for combined PDF export
 var CMSX_CLOSED_NA_BASELINE_KEY = 'cmsx_closed_na_baseline_v1';
 
 // ═══════════════════════════════════════════════════════════════════
@@ -17933,7 +17936,7 @@ function cmsxRenderFindings(){
     return f.status===filter;
   });
   if(list.length===0){
-    body.innerHTML='<tr><td colspan="14" class="cmsx-empty">No corrective actions'+(filter!=='all'||originFilter!=='all'?' for this filter':'')+'. Click "Add corrective action" to create one.</td></tr>';
+    body.innerHTML='<tr><td colspan="15" class="cmsx-empty">No corrective actions'+(filter!=='all'||originFilter!=='all'?' for this filter':'')+'. Click "Add corrective action" to create one.</td></tr>';
   } else {
     body.innerHTML=list.map(function(f){
       var stCls=f.status==='completed'?'completed':(f.status==='progress'?'progress':'notstarted');
@@ -17955,6 +17958,7 @@ function cmsxRenderFindings(){
         rc='<span class="cmsx-badge notstarted">Not started</span>';
       }
       return '<tr>'+
+        '<td><input type="checkbox" class="cmsx-sel-row" data-id="'+f.id+'" '+(CMSX_SELECTED.has(f.id)?'checked':'')+' onchange="cmsxToggleSelect(\''+f.id+'\',this.checked)"/></td>'+
         '<td><span class="cmsx-ref">'+esc(f.auditNum||'—')+'</span></td>'+
         '<td style="max-width:180px;">'+esc(f.auditTitle||'—')+'</td>'+
         '<td><span class="cmsx-badge origin-'+org+'">'+orgLabel+'</span></td>'+
@@ -17968,10 +17972,11 @@ function cmsxRenderFindings(){
         '<td><span class="cmsx-badge '+stCls+'">'+stLabel+'</span></td>'+
         '<td>'+notif+'</td>'+
         '<td>'+verif+'</td>'+
-        '<td style="white-space:nowrap;"><button class="cmsx-del-row" title="Edit" onclick="cmsxOpenFindingModal(\''+f.id+'\')">✎</button><button class="cmsx-del-row" title="Delete" onclick="cmsxDeleteFinding(\''+f.id+'\')">🗑</button></td>'+
+        '<td style="white-space:nowrap;"><button class="cmsx-del-row" title="Edit" onclick="cmsxOpenFindingModal(\''+f.id+'\')">✎</button><button class="cmsx-del-row" title="Export to PDF" onclick="cmsxPrintFinding(\''+f.id+'\')">📄</button><button class="cmsx-del-row" title="Delete" onclick="cmsxDeleteFinding(\''+f.id+'\')">🗑</button></td>'+
         '</tr>';
     }).join('');
   }
+  cmsxUpdateSelCount();
   cmsxRenderRegKpis(findings);
   cmsxRenderDeadlineAlerts(findings);
 }
@@ -18432,6 +18437,81 @@ function cmsxPrintWindow(title, inner){
   w.document.close();
   setTimeout(function(){ w.focus(); w.print(); },350);
 }
+
+// ── Selection tracking for combined PDF export ──
+function cmsxUpdateSelCount(){
+  var n=CMSX_SELECTED.size;
+  var span=document.getElementById('cmsx-sel-count'); if(span) span.textContent=n;
+  var btn=document.getElementById('cmsx-pdf-selected-btn');
+  if(btn){ btn.disabled=(n===0); btn.style.opacity=(n===0?'.5':'1'); }
+  var all=document.getElementById('cmsx-sel-all');
+  if(all){
+    var boxes=document.querySelectorAll('.cmsx-sel-row');
+    all.checked = boxes.length>0 && Array.prototype.every.call(boxes,function(b){return b.checked;});
+  }
+}
+function cmsxToggleSelect(id, checked){
+  if(checked) CMSX_SELECTED.add(id); else CMSX_SELECTED.delete(id);
+  cmsxUpdateSelCount();
+}
+function cmsxToggleSelectAll(checked){
+  document.querySelectorAll('.cmsx-sel-row').forEach(function(b){
+    b.checked=checked;
+    if(checked) CMSX_SELECTED.add(b.getAttribute('data-id')); else CMSX_SELECTED.delete(b.getAttribute('data-id'));
+  });
+  cmsxUpdateSelCount();
+}
+
+// ── Corrective action : shared HTML block (used by single & combined PDF export) ──
+function cmsxFindingPrintBlock(f){
+  var org = f.origin==='foca' ? ('FOCA (Authority)'+(f.focaRef?' — ref. '+esc(f.focaRef):'')) : 'Internal (SAF audit / self-inspection)';
+  var stMap={notstarted:'Not started',progress:'In progress',completed:'Completed'};
+  var whys='';
+  [1,2,3,4,5].forEach(function(i){
+    var w=f['why'+i], a=f['ans'+i];
+    if(w||a){ whys+='<div style="margin:6px 0;"><b>Why '+i+':</b> '+esc(w||'—')+'<br><b>Answer '+i+':</b> '+esc(a||'—')+'</div>'; }
+  });
+  return '<h1>Corrective Action — '+esc(f.auditNum||'—')+'</h1>'+
+    '<div class="meta">'+
+    '<div><b>Audit N° :</b> '+esc(f.auditNum||'—')+'</div>'+
+    '<div><b>Audit title :</b> '+esc(f.auditTitle||'—')+'</div>'+
+    '<div><b>Origin :</b> '+org+'</div>'+
+    '<div><b>Finding level :</b> '+esc(CMSX_LEVEL_LABEL[f.level]||f.level||'—')+'</div>'+
+    '<div><b>Regulatory reference :</b> '+esc(f.ref||'—')+'</div>'+
+    '<div><b>Finding date :</b> '+esc(f.detected||'—')+'</div>'+
+    '<div><b>Nominated Person :</b> '+esc(f.np||'—')+'</div>'+
+    '<div><b>Deadline :</b> '+esc(f.deadline||'—')+'</div>'+
+    '<div><b>Status :</b> '+esc(stMap[f.status]||f.status||'—')+'</div>'+
+    '<div><b>Notified :</b> '+esc(f.notified||'—')+'</div>'+
+    '<div><b>Effectiveness verified by :</b> '+esc(f.verified||'—')+(f.verifnote?(' — '+esc(f.verifnote)):'')+'</div>'+
+    '</div>'+
+    '<h2>Finding description (deviation)</h2><p>'+esc(f.desc||'—')+'</p>'+
+    (whys?('<h2>5 Whys — Root cause analysis</h2>'+whys+'<div style="margin-top:8px;"><b>Root cause identified:</b> '+esc(f.rootCause||'—')+'</div>'):'')+
+    '<h2>Corrective action plan (CAP)</h2><p>'+esc(f.action||'—')+'</p>';
+}
+// ── Export ONE corrective action to PDF (print dialog) ──
+function cmsxPrintFinding(id){
+  var f=load(CMSX_KEYS.findings).find(function(x){return x.id===id;});
+  if(!f){ alert('Corrective action not found.'); return; }
+  var inner=cmsxLetterhead('Corrective Action — AMC1 ORO.GEN.200(a)(6)')+cmsxFindingPrintBlock(f);
+  cmsxPrintWindow('Corrective Action '+(f.auditNum||''), inner);
+}
+// ── Export SEVERAL selected corrective actions into ONE combined PDF ──
+function cmsxPrintSelectedFindings(){
+  if(CMSX_SELECTED.size===0){ cmsxToast('Select at least one corrective action first.'); return; }
+  var all=load(CMSX_KEYS.findings);
+  var chosen=all.filter(function(f){return CMSX_SELECTED.has(f.id);});
+  if(!chosen.length){ cmsxToast('Selected corrective action(s) not found.'); return; }
+  var inner=cmsxLetterhead('Corrective Action Plan — selection — AMC1 ORO.GEN.200(a)(6)')+
+    '<h1>Corrective Action Plan — Selected entries</h1>'+
+    '<p style="font-size:12px;color:#555;">'+chosen.length+' corrective action(s) selected — edited on '+new Date().toLocaleDateString('fr-CH')+'</p>'+
+    chosen.map(function(f,i){ return (i>0?'<div style="page-break-before:always;"></div>':'')+cmsxFindingPrintBlock(f); }).join('');
+  cmsxPrintWindow('Corrective Action Plan — selection', inner);
+}
+window.cmsxToggleSelect=cmsxToggleSelect;
+window.cmsxToggleSelectAll=cmsxToggleSelectAll;
+window.cmsxPrintFinding=cmsxPrintFinding;
+window.cmsxPrintSelectedFindings=cmsxPrintSelectedFindings;
 
 // ── Ordre de mission : PDF individuel ──
 function cmsxPrintMission(id){
