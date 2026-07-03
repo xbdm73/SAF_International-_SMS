@@ -1077,6 +1077,7 @@ select[id$="-status"].status-clos{border-left-color:#3fb950;}
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <!-- Integrated SPO HESLO/MCF regulatory update: SPO.SPEC.HESLO.100/.105/.110 and SPO.SPEC.MCF.100-.145, EASA Part-SPO Mar 2026 -->
 
 <!-- SAF Compliance dashboard header copied for Safety Management -->
@@ -9657,53 +9658,120 @@ function occUpdateJustCultureResult(){
 function occClassificationLabel(k){return k==='ind'?'Indiscipline':(k==='vio'?'Violation':(k==='err'?'Error':'—'));}
 
 // ECCAIRS2 Flight Operation V3 fields integrated in Occurrence Log
+// Ordre et périmètre alignés sur le formulaire officiel ECCAIRS 2 "Flight Operation"
+// (Taxonomy Version 7.2.0.1 (C0), aviationreporting.eu). Les champs hors périmètre
+// de ce formulaire (taxonomie étendue / ERCS) sont regroupés en fin de liste.
+// ── RIT / E5X REAL SCHEMA METADATA ──────────────────────────────────
+// Sourced from the FOCA ECCAIRS Aviation 7.2.0.1 (1.1.4) RIT package
+// (Schema.xsd, dataTypes.xsd, mappings/Attributes.csv, mappings/Entities.csv,
+// mappings/VLxxx.csv) provided by the SAF ECCAIRS2 organisation account.
+// entity: real RIT parent entity synonym | eid: entity taxonomy ID
+// dtype: 1 Alphanumeric | 2 Code | 3 Code+AdditionalText | 5 Date | 7 Decimal
+//        13 Number | 14 Text(long) | 15 Time
+const RIT_ENTITY_ORDER = ['Occurrence','Aerodrome_General','Aircraft','Dangerous_Goods','Reporting_History'];
+const RIT_ENTITY_ID = {Occurrence:'24', Aerodrome_General:'1', Aircraft:'4', Dangerous_Goods:'43', Reporting_History:'53'};
+// Real value-list codes (label -> numeric code) for strict "Code" (dtype 2) attributes.
+// Option arrays below use these exact authoritative labels so mapping is 1:1 and lossless.
+const RIT_VALUE_CODES = {
+  highest_damage: {Destroyed:'1', Substantial:'2', Minor:'3', None:'98', Unknown:'99'},
+  injury_level: {Fatal:'1', Serious:'2', Minor:'3', None:'98', Unknown:'99'},
+  weather_relevant: {Yes:'1', No:'2', Unknown:'99'},
+  dangerous_goods: {Yes:'1', No:'2', Unknown:'99'},
+  report_status: {Preliminary:'1', Open:'2', Closed:'3', Data:'4', 'Initial notification':'5', Factual:'6', Draft:'7', 'Closed on issue':'8'},
+  stsb_info: {YES:'1', NO:'2'},
+  flight_phase: {Standing:'1', Taxi:'2', 'Take-off':'3', 'En route':'4', Manoeuvring:'5', Approach:'6', Landing:'7', 'Post-impact':'8', Unknown:'99', Tow:'100', 'Not Applicable':'101'},
+  birds_seen: {'1':'1', '2-10':'2', '11-100':'3', More:'4', Unknown:'5'},
+  birds_struck: {'1':'1', '2-10':'2', '11-100':'3', More:'4', Unknown:'5'},
+  bird_size: {Small:'1', Medium:'2', Large:'3', Unknown:'4'},
+  pilot_advised_birds: {Yes:'1', No:'2', Unknown:'4'},
+  // State_Area_Of_Occ (VL454) — common subset; full list has 280+ countries (see Taxonomy Browser)
+  state_area: {Switzerland:'229', France:'82', Italy:'122', Austria:'16', Germany:'95', Other:'998'},
+  // Operation_Type (VL214) is a large multi-branch list; codes below map the RIT's
+  // top-level / most common entries. Verify against the Taxonomy Browser for edge cases.
+  operation_type: {'Commercial Air Transport':'1','Passenger':'2','Cargo':'3','Unknown':'4','Airline':'5','Air Ambulance':'6','Air Taxi':'7','HEMS':'8','Offshore':'9','Sightseeing':'10','Other':'11','Specialised Operations (Aerial Work)':'17','Aerial Advertising':'18','Aerial Observation':'19','Aerial Patrol':'20','Aerial Survey':'21','Agricultural':'22','Airshow/Race':'23','Construction/Sling load':'24','Logging':'25','Parachute drop':'26','Photography':'27','Towing':'28','Non-Commercial Operations':'31','Business':'32','Demonstration':'33','Relocation':'35','Flight Training/Instructional':'36','Pleasure':'37','Test Flight':'38','Nationally Regulated Operations':'59','Illegal':'60','Coast Guard':'62','Customs':'63','Government':'64','Firefighting':'65','Military':'66','Police':'67','Search and Rescue':'68','Animal Herding/Mustering':'71','Calibration':'72','Not Applicable':'73'},
+  // Reporter_S_Language (VL1091) — full ICAO/ADREP language list
+  reporter_language: {Afrikaans:'1',Albanian:'2',Arabic:'3',Armenian:'4',Azerbaijani:'5',Basque:'6',Belarusian:'7',Bulgarian:'8',Catalan:'9',Chinese:'10',Croatian:'11',Czech:'12',Danish:'13',Divehi:'14',Dutch:'15',English:'16',Estonian:'17',Faroese:'18',Finnish:'19',French:'20',Galician:'21',Georgian:'22',German:'23',Greek:'24',Gujarati:'25',Hebrew:'26',Hindi:'27',Hungarian:'28',Icelandic:'29',Indonesian:'30',Italian:'31',Japanese:'32',Kannada:'33',Kazakh:'34',Kirghiz:'35',Korean:'36',Latvian:'37',Lithuanian:'38',Macedonian:'39',Malay:'40',Marathi:'41',Mongolian:'42',Norwegian:'43',Persian:'44',Polish:'45',Portuguese:'46',Punjabi:'47',Romanian:'48',Russian:'49',Sanskrit:'50',Serbian:'51',Slovak:'52',Slovenian:'53',Spanish:'54',Swedish:'55',Tamil:'56',Tatar:'57',Telugu:'58',Thai:'59',Turkish:'60',Ukrainian:'61',Unknown:'62',Urdu:'63',Uzbek:'64',Vietnamese:'65',Other:'66'}
+};
+
 const ECCAIRS_OCC_FIELDS = [
-  {key:'headline', code:'601', label:'Headline', type:'text', req:true, fallback:function(o){return o.description||'';}},
-  {key:'utc_date', code:'477', label:'UTC Date', type:'date', req:true, fallback:function(o){return o.date||'';}},
-  {key:'utc_time', code:'478', label:'UTC Time', type:'time', fallback:function(o){return o.utc_time||'';}},
-  {key:'local_date', code:'433', label:'Local Date', type:'date', fallback:function(o){return o.date||'';}},
-  {key:'local_time', code:'457', label:'Local Time', type:'time', fallback:function(o){return o.time_local||'';}},
-  {key:'location_name', code:'440', label:'Location Name', type:'text', req:true, fallback:function(o){return o.location||'';}},
-  {key:'state_area', code:'454', label:'State / Area of Occurrence', type:'select', req:true, options:['Switzerland','France','Italy','Austria','Germany','Other']},
+  // ── OCCURRENCE (entity: Occurrence, ID 24) ────────────────────────
+  {key:'headline', code:'601', label:'Headline', type:'text', req:true, entity:'Occurrence', dtype:1, fallback:function(o){return o.description||'';}},
+  // ── WHEN/WHERE ─────────────────────────────────────────────────────
+  {key:'utc_date', code:'477', label:'UTC Date', type:'date', req:true, entity:'Occurrence', dtype:5, fallback:function(o){return o.date||'';}},
+  {key:'utc_time', code:'478', label:'UTC Time', type:'time', req:true, entity:'Occurrence', dtype:15, fallback:function(o){return o.utc_time||'';}},
+  {key:'state_area', code:'454', label:'State / Area of Occurrence', type:'select', req:true, entity:'Occurrence', dtype:3, options:['Switzerland','France','Italy','Austria','Germany','Other']},
+  {key:'location_name', code:'440', label:'Location Name', type:'text', req:true, entity:'Occurrence', dtype:1, fallback:function(o){return o.location||'';}},
+  // ── OCCURRENCE CLASSIFICATION ──────────────────────────────────────
+  {key:'highest_damage', code:'432', label:'Highest Damage', type:'select', req:true, entity:'Occurrence', dtype:2, options:['Destroyed','Substantial','Minor','None','Unknown']},
+  {key:'injury_level', code:'451', label:'Injury Level', type:'select', req:true, entity:'Occurrence', dtype:2, options:['Fatal','Serious','Minor','None','Unknown']},
+  {key:'weather_relevant', code:'606', label:'Weather Relevant', type:'select', req:true, entity:'Occurrence', dtype:2, options:['Yes','No','Unknown']},
+  {key:'dangerous_goods', code:'129', label:'Dangerous Goods Involved', type:'select', req:true, entity:'Occurrence', dtype:2, options:['Yes','No','Unknown']},
+  // ── REPORTING HISTORY (entity: Reporting_History, ID 53) ──────────
+  {key:'reporting_entity', code:'447', label:'Reporting Entity', type:'select', req:true, entity:'Reporting_History', dtype:3, options:['SAF International','FOCA','EASA','Other operator'], fallback:function(o){return o.entity||'SAF International';}},
+  {key:'report_identification', code:'438', label:'Report Identification', type:'text', req:true, entity:'Reporting_History', dtype:1, fallback:function(o){return o.id||'';}},
+  {key:'parties_informed', code:'1064', label:'Parties Informed', type:'multiselect', entity:'Reporting_History', dtype:3, options:['Aerodrome','ANSP','CAMO','Competent Authority','Design Approval Holder','Operator','Other'], fallback:function(o){return o.maintenance_concern==='Oui'?['CAMO','Operator']:['Operator'];}},
+  {key:'report_status', code:'800', label:'Report Status', type:'select', req:true, entity:'Reporting_History', dtype:2, options:['Preliminary','Open','Closed','Data','Initial notification','Factual','Draft','Closed on issue'], fallback:function(o){return o.status==='pending_review'?'Draft':'Closed';}},
+  {key:'reporter_language', code:'1091', label:"Reporter's Language", type:'select', req:true, entity:'Reporting_History', dtype:2, options:['Afrikaans','Albanian','Arabic','Armenian','Azerbaijani','Basque','Belarusian','Bulgarian','Catalan','Chinese','Croatian','Czech','Danish','Divehi','Dutch','English','Estonian','Faroese','Finnish','French','Galician','Georgian','German','Greek','Gujarati','Hebrew','Hindi','Hungarian','Icelandic','Indonesian','Italian','Japanese','Kannada','Kazakh','Kirghiz','Korean','Latvian','Lithuanian','Macedonian','Malay','Marathi','Mongolian','Norwegian','Persian','Polish','Portuguese','Punjabi','Romanian','Russian','Sanskrit','Serbian','Slovak','Slovenian','Spanish','Swedish','Tamil','Tatar','Telugu','Thai','Turkish','Ukrainian','Unknown','Urdu','Uzbek','Vietnamese','Other'], fallback:function(o){return 'French';}},
+  {key:'stsb_info', code:'1134', label:'STSB Information by Reporter', type:'select', entity:'Reporting_History', dtype:2, options:['YES','NO']},
+  {key:'reporter_description', code:'1092', label:"Reporter's Description", type:'textarea', req:true, entity:'Reporting_History', dtype:14, fallback:function(o){return o.description||'';}},
+  {key:'analysis_follow_up', code:'1067', label:'Analysis / Follow-up', type:'textarea', entity:'Reporting_History', dtype:14},
+  {key:'risk_mitigation_action', code:'1069', label:'Risk Mitigation Action', type:'textarea', entity:'Reporting_History', dtype:14},
+  {key:'conclusions', code:'1070', label:'Conclusions', type:'textarea', entity:'Reporting_History', dtype:14},
+  {key:'risk_classification', code:'1065', label:'Risk Classification', type:'select', req:true, entity:'Reporting_History', dtype:1, options:['5 – Intolerable','4 – Tolerable but undesirable','3 – Tolerable','2 – Acceptable','1 – Negligible']},
+  {key:'risk_methodology', code:'1066', label:'Risk Methodology', type:'text', entity:'Reporting_History', dtype:1, fallback:function(o){return 'ICAO Doc 9859 Safety Management Manual';}},
+  // ── AIRCRAFT & FLIGHT DETAILS (entity: Aircraft, ID 4) ────────────
+  {key:'aircraft_registration', code:'244', label:'Aircraft Registration', type:'text', req:true, entity:'Aircraft', dtype:1, fallback:function(o){return o.aircraft_reg||'';}},
+  {key:'operator', code:'215', label:'Operator', type:'text', req:true, entity:'Aircraft', dtype:3, fallback:function(o){return 'SAF International';}},
+  {key:'operation_type', code:'214', label:'Operation Type', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Specialised Operations (Aerial Work)','Commercial Air Transport','Non-Commercial Operations','Nationally Regulated Operations','Other','Unknown']},
+  {key:'call_sign', code:'54', label:'Call Sign', type:'text', req:true, entity:'Aircraft', dtype:1},
+  {key:'flight_phase', code:'121', label:'Flight Phase', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Standing','Taxi','Take-off','En route','Manoeuvring','Approach','Landing','Post-impact','Tow','Not Applicable','Unknown'], fallback:function(o){return o.phase||'';}},
+  {key:'last_departure', code:'167', label:'Last Departure Point', type:'text', req:true, entity:'Aircraft', dtype:3},
+  {key:'planned_destination', code:'228', label:'Planned Destination', type:'text', req:true, entity:'Aircraft', dtype:3},
+  // ── BIRD/WILDLIFE INFORMATION ──────────────────────────────────────
+  {key:'birds_seen', code:'646', label:'Birds/Wildlife Seen', type:'select', req:true, entity:'Aircraft', dtype:2, options:['1','2-10','11-100','More','Unknown']},
+  {key:'birds_struck', code:'647', label:'Birds/Wildlife Struck', type:'select', entity:'Aircraft', dtype:2, options:['1','2-10','11-100','More','Unknown']},
+  {key:'bird_size', code:'648', label:'Bird Size', type:'select', entity:'Aircraft', dtype:2, options:['Small','Medium','Large','Unknown']},
+  {key:'species_description', code:'645', label:'Species Description', type:'text', entity:'Aircraft', dtype:3},
+  {key:'speed_first_event', code:'273', label:'Speed (First Event)', type:'number', entity:'Aircraft', dtype:7, unit:'kt'},
+  {key:'parts_struck', code:'644', label:'Parts Struck', type:'multiselect', entity:'Aircraft', dtype:3, options:['Engine 1','Engine 2','Engine 3','Engine 4','Fuselage','Landing gear','Lights','Other']},
+  {key:'pilot_advised_birds', code:'649', label:'Pilot Advised of Birds', type:'select', entity:'Aircraft', dtype:2, options:['Yes','No','Unknown']},
+  {key:'parts_damaged', code:'643', label:'Parts Damaged', type:'multiselect', entity:'Aircraft', dtype:3, options:['Engine 1','Engine 2','Engine 3','Engine 4','Fuselage','Landing gear','Lights','Other']},
+  // ── AERODROME IDENTIFICATION (entity: Aerodrome_General, ID 1) ────
+  {key:'location_indicator', code:'5', label:'Location Indicator (Aerodrome)', type:'text', entity:'Aerodrome_General', dtype:3},
+  // ── DANGEROUS GOODS (entity: Dangerous_Goods, ID 43) ──────────────
+  {key:'dangerous_good_detail', code:'688', label:'Dangerous Good', type:'text', entity:'Dangerous_Goods', dtype:3},
+  {key:'origin_of_goods', code:'1051', label:'Origin of Goods', type:'text', entity:'Dangerous_Goods', dtype:1},
+  {key:'shipper_name', code:'1053', label:'Shipper Name', type:'text', entity:'Dangerous_Goods', dtype:1},
+  {key:'air_waybill', code:'1052', label:'Air Waybill / Consignment', type:'text', entity:'Dangerous_Goods', dtype:1},
+  // ── INJURIES (entity: Occurrence, ID 24) ──────────────────────────
+  {key:'total_fatalities', code:'458', label:'Total Fatalities', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
+  {key:'fatalities_aircraft', code:'459', label:'Total Fatalities – Aircraft', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
+  {key:'fatalities_ground', code:'460', label:'Total Fatalities – Ground', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
+  {key:'serious_injuries', code:'470', label:'Total Serious Injuries', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
+  {key:'serious_injuries_aircraft', code:'471', label:'Total Serious Injuries – Aircraft', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
+  {key:'serious_injuries_ground', code:'472', label:'Total Serious Injuries – Ground', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
+  {key:'minor_injuries', code:'467', label:'Total Minor Injuries', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
+  {key:'minor_injuries_aircraft', code:'468', label:'Total Minor Injuries – Aircraft', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
+  {key:'minor_injuries_ground', code:'469', label:'Total Minor Injuries – Ground', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
+
+  // ══════════════════════════════════════════════════════════════════
+  // Champs additionnels — hors périmètre du PDF "Flight Operation" V3
+  // (taxonomie ECCAIRS étendue / ERCS / infos internes SAF)
+  // ══════════════════════════════════════════════════════════════════
   {key:'occurrence_category', code:'430', label:'Occurrence Category', type:'select', req:true, options:['ADRM: Aerodrome','AMAN: Abrupt manoeuvre','ARC: Abnormal runway contact','ATM: ATM/CNS','BIRD: Birdstrike','CABIN: Cabin safety events','CFIT: Controlled flight into terrain','FUEL: Fuel related','HESLO: Helicopter HESLO','LALT: Low altitude operations','MAC: Mid-air collision','RAMP: Ground handling','RE: Runway excursion','RI: Runway incursion','SCF-NP: System/component failure – non-powerplant','SCF-PP: System/component failure – powerplant','USOS: Undershoot/overshoot','UNK: Unknown','Other'], fallback:function(o){return o.eccairs_cat||'';}},
   {key:'occurrence_class', code:'431', label:'Occurrence Class', type:'select', req:true, options:['Accident','Serious incident','Incident'], fallback:function(o){return o.severity==='accident'?'Accident':(o.severity==='serious'?'Serious incident':(o.severity?'Incident':''));}},
-  {key:'dangerous_goods', code:'129', label:'Dangerous Goods Involved', type:'select', req:true, options:['No','Yes','Unknown']},
-  {key:'injury_level', code:'451', label:'Injury Level', type:'select', req:true, options:['None','Minor','Serious','Fatal']},
-  {key:'highest_damage', code:'432', label:'Highest Damage', type:'select', req:true, options:['None','Minor','Substantial','Destroyed','Unknown']},
-  {key:'weather_relevant', code:'606', label:'Weather Relevant', type:'select', options:['No','Yes','Unknown']},
   {key:'responsible_entity', code:'453', label:'Responsible Entity', type:'select', req:true, options:['Switzerland – FOCA','France – DSAC','EASA','Operator','Other']},
   {key:'atm_contribution', code:'428', label:'ATM Contribution', type:'select', options:['No','Yes','Unknown']},
-  {key:'reporter_description', code:'1092', label:"Reporter's Description", type:'textarea', req:true, fallback:function(o){return o.description||'';}},
-  {key:'report_identification', code:'438', label:'Report Identification', type:'text', req:true, fallback:function(o){return o.id||'';}},
-  {key:'reporter_language', code:'1091', label:"Reporter's Language", type:'select', req:true, options:['English','French','German','Italian'], fallback:function(o){return 'French';}},
-  {key:'report_status', code:'800', label:'Report Status', type:'select', req:true, options:['Draft','Final','Corrected'], fallback:function(o){return o.status==='pending_review'?'Draft':'Final';}},
-  {key:'reporting_entity', code:'447', label:'Reporting Entity', type:'select', req:true, options:['SAF International','FOCA','EASA','Other operator'], fallback:function(o){return o.entity||'SAF International';}},
   {key:'event_type', code:'390', label:'Event Type', type:'select', req:true, options:['System/component failure or malfunction (non-powerplant)','System/component failure or malfunction (powerplant)','Abnormal runway contact','Bird strike','Cabin safety events','Controlled flight into terrain','Fire/smoke (non-impact)','Fuel related','Ground events','HESLO – External load','Icing','Loss of control – in-flight','Loss of control – ground','Mid-air collision','Near collision with obstacle','Runway excursion','Runway incursion','Undershoot/overshoot','Unintended flight in IMC','Windshear/turbulence encounter','Other'], fallback:function(o){return (o.event_type || (o.event_types_avi&&o.event_types_avi[0]) || (o.event_types_cyber&&o.event_types_cyber[0]) || 'Other');}},
-  {key:'flight_phase', code:'391', label:'Flight Phase', type:'select', options:['Standing','Pushback / towing','Taxi','Take-off','Initial climb','En-route','Manoeuvring','Hover','Approach','Landing','Parked','Unknown'], fallback:function(o){return o.phase||'';}},
   {key:'state_registry', code:'281', label:'State of Registry', type:'select', req:true, options:['Switzerland','France','Italy','Austria','Other']},
-  {key:'aircraft_registration', code:'244', label:'Aircraft Registration', type:'text', req:true, fallback:function(o){return o.aircraft_reg||'';}},
   {key:'aircraft_category', code:'32', label:'Aircraft Category', type:'select', req:true, options:['Helicopter','Aeroplane','Glider','Other'], fallback:function(o){return 'Helicopter';}},
   {key:'manufacturer_model', code:'21', label:'Manufacturer / Model', type:'select', req:true, options:['Airbus Helicopters / AS 332 C1 Super Puma','Airbus Helicopters / H125','Airbus Helicopters / H135','Airbus Helicopters / H145','Other'], fallback:function(o){return o.aircraft_type?('Airbus Helicopters / '+o.aircraft_type):'Airbus Helicopters / AS 332 C1 Super Puma';}},
   {key:'serial_number', code:'254', label:'Serial Number', type:'text', req:true},
   {key:'propulsion_type', code:'232', label:'Propulsion Type', type:'select', req:true, options:['Turbine – shaft','Piston','Electric','Other']},
   {key:'mass_group', code:'319', label:'Mass Group', type:'select', req:true, options:['Over 5 700 kg','1 501 – 5 700 kg','751 – 1 500 kg','Up to 750 kg']},
-  {key:'operation_type', code:'214', label:'Operation Type', type:'select', req:true, options:['SPO – Specialised operations','CAT – Commercial air transport','NCC – Non-commercial with complex a/c','NCO – Non-commercial operations']},
-  {key:'operator', code:'215', label:'Operator', type:'text', req:true, fallback:function(o){return 'SAF International';}},
-  {key:'last_departure', code:'167', label:'Last Departure', type:'text', req:true},
-  {key:'planned_destination', code:'228', label:'Planned Destination', type:'text', req:true},
-  {key:'call_sign', code:'54', label:'Call Sign', type:'text', req:true},
-  {key:'risk_classification', code:'1065', label:'Risk Classification', type:'select', req:true, options:['5 – Intolerable','4 – Tolerable but undesirable','3 – Tolerable','2 – Acceptable','1 – Negligible']},
-  {key:'parties_informed', code:'1064', label:'Parties Informed', type:'multiselect', options:['Aerodrome','ANSP','CAMO','Competent Authority','Design Approval Holder','Operator','Other'], fallback:function(o){return o.maintenance_concern==='Oui'?['CAMO','Operator']:['Operator'];}},
-  {key:'risk_methodology', code:'1066', label:'Risk Methodology', type:'text', fallback:function(o){return 'ICAO Doc 9859 Safety Management Manual';}},
-  {key:'risk_mitigation_action', code:'1069', label:'Risk Mitigation Action', type:'textarea'},
   {key:'risk_assessment', code:'1068', label:'Risk Assessment', type:'textarea'},
-  {key:'analysis_follow_up', code:'1067', label:'Analysis / Follow-up', type:'textarea'},
-  {key:'conclusions', code:'1070', label:'Conclusions', type:'textarea'},
-  {key:'total_fatalities', code:'458', label:'Total Fatalities', type:'number', req:true, fallback:function(o){return '0';}},
-  {key:'fatalities_aircraft', code:'459', label:'Fatalities – Aircraft', type:'number', req:true, fallback:function(o){return '0';}},
-  {key:'fatalities_ground', code:'460', label:'Fatalities – Ground', type:'number', req:true, fallback:function(o){return '0';}},
-  {key:'serious_injuries', code:'470', label:'Serious Injuries', type:'number', req:true, fallback:function(o){return '0';}},
-  {key:'minor_injuries', code:'467', label:'Minor Injuries', type:'number', req:true, fallback:function(o){return '0';}},
+  {key:'local_date', code:'433', label:'Local Date', type:'date', fallback:function(o){return o.date||'';}},
+  {key:'local_time', code:'457', label:'Local Time', type:'time', fallback:function(o){return o.time_local||'';}},
   {key:'ercs_1098', code:'1098', label:'ERCS 1. Aircraft/Equip/Infr. Design', type:'select', options:['0','1','2','3','4','5']},
   {key:'ercs_1099', code:'1099', label:'ERCS 2. Tactical Planning', type:'select', options:['0','1','2','3','4','5']},
   {key:'ercs_1100', code:'1100', label:'ERCS 3. Regulations / Procedures', type:'select', options:['0','1','2','3','4','5']},
@@ -13693,83 +13761,162 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ════════════════════════════════════════════════════════════════
 // OCCURRENCE EXPORT — E5X / PDF / CSV
-// EU 376/2014 · ECCAIRS2 Taxonomy 7.1.0.1
+// Real RIT/E5X structure sourced from FOCA ECCAIRS Aviation 7.2.0.1 (1.1.4)
+// Schema.xsd (namespace https://e2.aviationreporting.eu/data.xsd)
 // ════════════════════════════════════════════════════════════════
 
 function _xmlEsc(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
 }
-
-function _buildE5XFromOcc(occ){
-  var fw=occ.five_whys||{};
-  var jc=occ.just_culture||{};
-  var whys=fw.whys||['','','','',''];
-  var now=new Date().toISOString();
-  var jcLabel=occ.classification?(occ.classification==='err'?'Error':occ.classification==='vio'?'Violation':'Indiscipline'):'';
-  var nameMap={
-    headline:'Headline', utc_date:'UTC_Date', utc_time:'UTC_Time', local_date:'Local_Date', local_time:'Local_Time', location_name:'Location_Name', state_area:'State_Area_of_Occurrence', occurrence_category:'Occurrence_Category', occurrence_class:'Occurrence_Class', dangerous_goods:'Dangerous_Goods_Involved', injury_level:'Injury_Level', highest_damage:'Highest_Damage', weather_relevant:'Weather_Relevant', responsible_entity:'Responsible_Entity', atm_contribution:'ATM_Contribution', reporter_description:'Reporter_Description', report_identification:'Report_Identification', reporter_language:'Reporter_Language', report_status:'Report_Status', reporting_entity:'Reporting_Entity', event_type:'Event_Type', flight_phase:'Flight_Phase', state_registry:'State_of_Registry', aircraft_registration:'Aircraft_Registration', aircraft_category:'Aircraft_Category', manufacturer_model:'Manufacturer_Model', serial_number:'Serial_Number', propulsion_type:'Propulsion_Type', mass_group:'Mass_Group', operation_type:'Operation_Type', operator:'Operator', last_departure:'Last_Departure', planned_destination:'Planned_Destination', call_sign:'Call_Sign', risk_classification:'Risk_Classification', parties_informed:'Parties_Informed', risk_methodology:'Risk_Methodology', risk_mitigation_action:'Risk_Mitigation_Action', risk_assessment:'Risk_Assessment', analysis_follow_up:'Analysis_Follow_Up', conclusions:'Conclusions', total_fatalities:'Total_Fatalities', fatalities_aircraft:'Fatalities_Aircraft', fatalities_ground:'Fatalities_Ground', serious_injuries:'Serious_Injuries', minor_injuries:'Minor_Injuries', ercs_1098:'ERCS_Aircraft_Equip_Infr_Design', ercs_1099:'ERCS_Tactical_Planning', ercs_1100:'ERCS_Regulations_Procedures', ercs_1101:'ERCS_Situational_Awareness', ercs_1102:'ERCS_Warning_Systems', ercs_1103:'ERCS_Late_Recovery', ercs_1104:'ERCS_Protections', ercs_1105:'ERCS_Low_Energy_Occurrence', safety_risk_score:'Safety_Risk_Score', risk_method_939:'Risk_Method', risk_grade:'Risk_Grade', ercs_comments:'ERCS_Comments'
-  };
-  var xml='<?xml version="1.0" encoding="UTF-8"?>\n'
-    +'<e5x:E5XReport xmlns:e5x="http://www.eccairs.com/E5X/2.0"\n'
-    +'  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n'
-    +'  xsi:schemaLocation="http://www.eccairs.com/E5X/2.0 E5X.xsd"\n'
-    +'  ReportVersion="1.0" GeneratedBy="SAF International SMS" GeneratedAt="'+now+'">\n'
-    +'  <e5x:Occurrence>\n'
-    +'    <!-- ECCAIRS2 Flight Operation V3 fields -->\n';
-  ECCAIRS_OCC_FIELDS.forEach(function(f){
-    var v=occGetEccairsValue(occ,f.key); if(Array.isArray(v)) v=v.join(' | ');
-    xml+='    <e5x:Field id="'+_xmlEsc(f.code)+'" name="'+_xmlEsc(nameMap[f.key]||f.key)+'">'+_xmlEsc(v)+'</e5x:Field>\n';
+function _ritDate(v){ // -> YYYY-MM-DD
+  if(!v) return '';
+  var m=String(v).match(/(\d{4})-(\d{2})-(\d{2})/); return m?m[0]:'';
+}
+function _ritTime(v){ // -> HH:MM:SS
+  if(!v) return '';
+  var m=String(v).match(/^(\d{1,2}):(\d{2})(:(\d{2}))?/);
+  if(!m) return '';
+  return (m[1].length===1?'0'+m[1]:m[1])+':'+m[2]+':'+(m[4]||'00');
+}
+// Renders one RIT attribute as an XML element, or '' if it cannot be
+// represented with a valid code (dtype 2/3 without a known mapping) —
+// such values are instead collected into the SAF companion notes file.
+function _ritAttrXml(f, occ, uncoded){
+  var raw=occGetEccairsValue(occ,f.key);
+  var isMulti=Array.isArray(raw);
+  var vals=isMulti?raw:[raw];
+  vals=vals.filter(function(v){return v!==undefined && v!==null && v!=='';});
+  if(!vals.length) return '';
+  var codeMap=RIT_VALUE_CODES[f.key];
+  var out='';
+  vals.forEach(function(v){
+    if(f.dtype===1){ // Alphanumeric
+      out+='      <'+f.label_synonym+' attributeId="'+f.code+'">'+_xmlEsc(v)+'</'+f.label_synonym+'>\n';
+    } else if(f.dtype===2){ // Code (mandatory numeric)
+      var c=codeMap?codeMap[v]:null;
+      if(c) out+='      <'+f.label_synonym+' attributeId="'+f.code+'">'+c+'</'+f.label_synonym+'>\n';
+      else uncoded.push(f.label+': '+v+' (code VL inconnu — à vérifier via Taxonomy Browser)');
+    } else if(f.dtype===3){ // Code + optional additional text
+      var c3=codeMap?codeMap[v]:null;
+      if(c3) out+='      <'+f.label_synonym+' attributeId="'+f.code+'" AdditionalText="'+_xmlEsc(v)+'" AdditionalTextEncoding="xs:string">'+c3+'</'+f.label_synonym+'>\n';
+      else uncoded.push(f.label+': '+v+' (liste de valeurs officielle non mappée — saisir manuellement dans ECCAIRS)');
+    } else if(f.dtype===5){ // Date
+      var d=_ritDate(v); if(d) out+='      <'+f.label_synonym+' attributeId="'+f.code+'">'+d+'</'+f.label_synonym+'>\n';
+    } else if(f.dtype===15){ // Time
+      var t=_ritTime(v); if(t) out+='      <'+f.label_synonym+' attributeId="'+f.code+'">'+t+'</'+f.label_synonym+'>\n';
+    } else if(f.dtype===7){ // Decimal (with unit)
+      out+='      <'+f.label_synonym+' attributeId="'+f.code+'"'+(f.unit?' Unit="'+f.unit+'"':'')+'>'+_xmlEsc(v)+'</'+f.label_synonym+'>\n';
+    } else if(f.dtype===13){ // Number
+      out+='      <'+f.label_synonym+' attributeId="'+f.code+'">'+(parseInt(v,10)||0)+'</'+f.label_synonym+'>\n';
+    } else if(f.dtype===14){ // Long text
+      out+='      <'+f.label_synonym+' attributeId="'+f.code+'"><dt:PlainText>'+_xmlEsc(v)+'</dt:PlainText></'+f.label_synonym+'>\n';
+    }
   });
-  xml+='    <!-- SAF SMS extension fields -->\n'
-    +'    <e5x:Field name="SAF_Occurrence_ID">'+_xmlEsc(occ.id)+'</e5x:Field>\n'
-    +'    <e5x:Field name="SAF_Linked_Risk_ID">'+_xmlEsc(occ.risk_link||'None')+'</e5x:Field>\n'
-    +'    <e5x:Field name="SAF_Source">'+_xmlEsc(occ.source||'safety_management')+'</e5x:Field>\n'
-    +'    <e5x:Field name="SAF_Status">'+_xmlEsc(occ.status||'')+'</e5x:Field>\n'
-    +'    <e5x:Field name="SAF_Mobile_Reporter">'+_xmlEsc(occ.reporter||'')+'</e5x:Field>\n'
-    +'    <e5x:Field name="SAF_Mobile_Reporter_Email">'+_xmlEsc(occ.reporter_email||'')+'</e5x:Field>\n'
-    +'    <e5x:Field name="SAF_Immediate_Actions">'+_xmlEsc((occ.actions||[]).map(occActionTextForInput).join(' | '))+'</e5x:Field>\n'
-    +'    <e5x:Field name="SAF_Contributing_Factors">'+_xmlEsc((occ.contributing_factors||[]).join(' | '))+'</e5x:Field>\n'
-    +'    <e5x:JustCultureAnalysis>\n'
-    +'      <e5x:Field name="ActionIntended">'+_xmlEsc(jc.intended||'')+'</e5x:Field>\n'
-    +'      <e5x:Field name="ConsequenceIntended">'+_xmlEsc(jc.consequence||'')+'</e5x:Field>\n'
-    +'      <e5x:Field name="UnauthorizedSubstance">'+_xmlEsc(jc.unauth||'')+'</e5x:Field>\n'
-    +'      <e5x:Field name="MedicalCondition">'+_xmlEsc(jc.medical||'')+'</e5x:Field>\n'
-    +'      <e5x:Field name="KnowinglyViolated">'+_xmlEsc(jc.knowingly||'')+'</e5x:Field>\n'
-    +'      <e5x:Field name="ProcedureAvailable">'+_xmlEsc(jc.procedure||'')+'</e5x:Field>\n'
-    +'      <e5x:Field name="SubstitutionTest">'+_xmlEsc(jc.substitution||'')+'</e5x:Field>\n'
-    +'      <e5x:Field name="TrainingDeficiency">'+_xmlEsc(jc.deficiency||'')+'</e5x:Field>\n'
-    +'      <e5x:Field name="UnsafeHistory">'+_xmlEsc(jc.unsafeHistory||'')+'</e5x:Field>\n'
-    +'      <e5x:Field name="Notes">'+_xmlEsc(jc.notes||'')+'</e5x:Field>\n'
-    +'      <e5x:Field name="Classification">'+_xmlEsc(jcLabel)+'</e5x:Field>\n'
-    +'    </e5x:JustCultureAnalysis>\n'
-    +'    <e5x:RootCauseAnalysis method="5Whys">\n';
-  whys.forEach(function(w,i){ if(w) xml+='      <e5x:Why number="'+(i+1)+'">'+_xmlEsc(w)+'</e5x:Why>\n'; });
-  xml+='      <e5x:RootCause>'+_xmlEsc(fw.root_cause||'')+'</e5x:RootCause>\n'
-    +'      <e5x:CorrectiveActions>'+_xmlEsc(occFWActionDisplayList(fw.corrective_actions||[]).join(' | '))+'</e5x:CorrectiveActions>\n'
-    +'      <e5x:Notes>'+_xmlEsc(fw.notes||'')+'</e5x:Notes>\n'
-    +'    </e5x:RootCauseAnalysis>\n'
-    +'    <e5x:Metadata>\n'
-    +'      <e5x:CreatedAt>'+_xmlEsc(occ.created_at||occ.date)+'</e5x:CreatedAt>\n'
-    +'      <e5x:UpdatedAt>'+_xmlEsc(occ.updated_at||'')+'</e5x:UpdatedAt>\n'
-    +'      <e5x:ExportedAt>'+now+'</e5x:ExportedAt>\n'
-    +'      <e5x:Tool>SAF International Safety Management</e5x:Tool>\n'
-    +'      <e5x:Regulation>EU 376/2014 - ECCAIRS2 Taxonomy 7.1.0.1 - EASA Flight Operation V3</e5x:Regulation>\n'
-    +'    </e5x:Metadata>\n'
-    +'  </e5x:Occurrence>\n'
-    +'</e5x:E5XReport>';
+  return out;
+}
+// RIT attribute synonym (XML element name) per field key — matches Schema.xsd element names.
+const RIT_SYNONYM={headline:'Headline',utc_date:'UTC_Date',utc_time:'UTC_Time',state_area:'State_Area_Of_Occ',location_name:'Location_Name',highest_damage:'Highest_Damage',injury_level:'Injury_Level',weather_relevant:'Weather_Relevant',dangerous_goods:'Dang_Goods_Involved',reporting_entity:'Reporting_Entity',report_identification:'Report_Identification',parties_informed:'Parties_Informed',report_status:'Report_Status',reporter_language:'Reporter_S_Language',stsb_info:'STSB_information_by_reporter',reporter_description:'Reporter_S_Description',analysis_follow_up:'Description_Investigation',risk_mitigation_action:'Corrective_Actions',conclusions:'Conclusions',risk_classification:'Risk_Classification',risk_methodology:'Risk_Methodology',aircraft_registration:'Aircraft_Registration',operator:'Operator',operation_type:'Operation_Type',call_sign:'Call_Sign',flight_phase:'Flight_Phase',last_departure:'Last_Departure_Point',planned_destination:'Planned_Destination',birds_seen:'Birds_Wildlife_Seen',birds_struck:'Birds_Wildlife_Struck',bird_size:'Bird_Size',species_description:'Species_Description',speed_first_event:'Speed_First_Event',parts_struck:'Parts_Struck',pilot_advised_birds:'Pilot_Advised_Of_Birds',parts_damaged:'Parts_Damaged',location_indicator:'Location_Indicator',dangerous_good_detail:'Dangerous_Good',origin_of_goods:'Origin_Of_Goods',shipper_name:'Shipper_Name',air_waybill:'Air_Waybill_Consignment_Tracking_Number',total_fatalities:'Total_Fatalities',fatalities_aircraft:'Total_Fatalities_Aircraft',fatalities_ground:'Total_Fatalities_Ground',serious_injuries:'Total_Serious_Injuries',serious_injuries_aircraft:'Total_Serious_Injuries-Aircraft',serious_injuries_ground:'Total_Serious_Injuries-Ground',minor_injuries:'Total_Minor_Injuries',minor_injuries_aircraft:'Total_Minor_Injuries-Aircraft',minor_injuries_ground:'Total_Minor_Injuries-Ground'};
+
+function _buildRitOccurrenceXml(occ, uncoded){
+  var ritFields=ECCAIRS_OCC_FIELDS.filter(function(f){return f.entity;}).map(function(f){
+    var g=Object.assign({}, f); g.label_synonym=RIT_SYNONYM[f.key]||f.key; return g;
+  });
+  var byEntity={}; RIT_ENTITY_ORDER.forEach(function(e){byEntity[e]=[];});
+  ritFields.forEach(function(f){ (byEntity[f.entity]=byEntity[f.entity]||[]).push(f); });
+  var rootAttrsXml=''; byEntity['Occurrence'].forEach(function(f){ rootAttrsXml+=_ritAttrXml(f, occ, uncoded); });
+  var entitiesXml='';
+  ['Aerodrome_General','Aircraft','Dangerous_Goods','Reporting_History'].forEach(function(ent){
+    var fields=byEntity[ent]||[]; if(!fields.length) return;
+    var body=''; fields.forEach(function(f){ body+=_ritAttrXml(f, occ, uncoded); });
+    if(!body) return; // skip empty entity blocks
+    entitiesXml+='      <'+ent+' entityId="'+RIT_ENTITY_ID[ent]+'">\n        <ATTRIBUTES>\n'+body+'        </ATTRIBUTES>\n      </'+ent+'>\n';
+  });
+  var xml='<?xml version="1.0" encoding="UTF-8"?>\n'
+    +'<SET xmlns="https://e2.aviationreporting.eu/data.xsd"\n'
+    +'     xmlns:dt="https://e2.aviationreporting.eu/dataTypes.xsd"\n'
+    +'     TaxonomyName="FOCA ECCAIRS Aviation 7.0.0.0 (1.1.4)"\n'
+    +'     TaxonomyVersion="7.0.0.0 (C0)" Domain="" Version="1.0.0.0">\n'
+    +'  <Occurrence entityId="24">\n'
+    +'    <ATTRIBUTES>\n'+rootAttrsXml+'    </ATTRIBUTES>\n'
+    +(entitiesXml?'    <ENTITIES>\n'+entitiesXml+'    </ENTITIES>\n':'')
+    +'  </Occurrence>\n'
+    +'</SET>';
   return xml;
 }
 
-function exportOccurrenceE5X(id){
+// Human-readable companion file: SAF-specific data that has no equivalent
+// RIT attribute (Just Culture, 5 Whys, immediate actions...) plus any value
+// that could not be safely coded against the official value lists. This file
+// is NOT part of the ECCAIRS-validated XML — it travels alongside it in the
+// .e5x zip purely for the safety team's / FOCA reviewer's manual reference.
+function _buildSafNotes(occ, uncoded){
+  var fw=occ.five_whys||{}; var jc=occ.just_culture||{}; var whys=fw.whys||[];
+  var jcLabel=occ.classification?(occ.classification==='err'?'Error':occ.classification==='vio'?'Violation':'Indiscipline'):'';
+  var L=[];
+  L.push('SAF INTERNATIONAL — SAF-specific companion notes for '+occ.id);
+  L.push('This file is NOT validated ECCAIRS data. It is provided for manual completion / reference only.');
+  L.push('');
+  if(uncoded.length){
+    L.push('=== Champs à coder manuellement dans ECCAIRS (Taxonomy Browser) ===');
+    uncoded.forEach(function(u){ L.push('- '+u); });
+    L.push('');
+  }
+  L.push('=== SAF metadata ===');
+  L.push('Occurrence ID: '+occ.id);
+  L.push('Linked Risk ID: '+(occ.risk_link||'None'));
+  L.push('Source: '+(occ.source||'safety_management'));
+  L.push('Status: '+(occ.status||''));
+  L.push('Mobile Reporter: '+(occ.reporter||''));
+  L.push('Mobile Reporter Email: '+(occ.reporter_email||''));
+  L.push('Immediate Actions: '+((occ.actions||[]).map(occActionTextForInput).join(' | ')));
+  L.push('Contributing Factors: '+((occ.contributing_factors||[]).join(' | ')));
+  L.push('');
+  L.push('=== Just Culture Analysis ===');
+  L.push('Classification: '+jcLabel);
+  L.push('Action Intended: '+(jc.intended||''));
+  L.push('Consequence Intended: '+(jc.consequence||''));
+  L.push('Unauthorized Substance: '+(jc.unauth||''));
+  L.push('Medical Condition: '+(jc.medical||''));
+  L.push('Knowingly Violated: '+(jc.knowingly||''));
+  L.push('Procedure Available: '+(jc.procedure||''));
+  L.push('Substitution Test: '+(jc.substitution||''));
+  L.push('Training Deficiency: '+(jc.deficiency||''));
+  L.push('Unsafe History: '+(jc.unsafeHistory||''));
+  L.push('Notes: '+(jc.notes||''));
+  L.push('');
+  L.push('=== 5 Whys Root Cause Analysis ===');
+  whys.forEach(function(w,i){ if(w) L.push('Why '+(i+1)+': '+w); });
+  L.push('Root Cause: '+(fw.root_cause||''));
+  L.push('Corrective Actions: '+(occFWActionDisplayList(fw.corrective_actions||[]).join(' | ')));
+  L.push('Notes: '+(fw.notes||''));
+  L.push('');
+  L.push('Generated: '+new Date().toISOString());
+  return L.join('\n');
+}
+
+function _buildE5XFromOcc(occ){
+  var uncoded=[];
+  var xml=_buildRitOccurrenceXml(occ, uncoded);
+  var notes=_buildSafNotes(occ, uncoded);
+  return {xml:xml, notes:notes, uncoded:uncoded};
+}
+
+async function exportOccurrenceE5X(id){
   var occ=getOccurrences().find(function(o){return o.id===id;});
   if(!occ){showToast('Occurrence not found','error');return;}
-  var xml=_buildE5XFromOcc(occ);
-  var blob=new Blob([xml],{type:'application/xml;charset=utf-8'});
+  if(typeof JSZip==='undefined'){showToast('JSZip unavailable — check internet connection','error');return;}
+  var built=_buildE5XFromOcc(occ);
+  var base='Occurrence_'+occ.id;
+  var zip=new JSZip();
+  zip.file(base+'.xml', built.xml);
+  zip.file(base+'_SAF_notes.txt', built.notes);
+  var blob=await zip.generateAsync({type:'blob', compression:'DEFLATE', compressionOptions:{level:6}});
   var fname='SAF_E5X_'+occ.id+'_'+occ.date+'.e5x';
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;
   document.body.appendChild(a);a.click();
   setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1000);
-  showToast('E5X exported: '+fname,'success');
+  if(built.uncoded.length) showToast('E5X exported: '+fname+' — '+built.uncoded.length+' champ(s) à coder manuellement (voir notes)','warning');
+  else showToast('E5X exported: '+fname,'success');
 }
 
 function saveAndExportE5X(){
