@@ -17509,8 +17509,9 @@ function ap2Show(id,btn){
 <div class="cmsx-modal" style="max-height:92vh;overflow-y:auto;">
 <div class="cmsx-modal-head"><h3>Corrective Action</h3><button class="cmsx-x" onclick="cmsxCloseModal('cmsx-finding-modal')">×</button></div>
 <input id="cmsx-f-id" type="hidden"/>
-<div class="cmsx-grid2">
+<div class="cmsx-grid3">
 <div class="cmsx-field"><label>Audit N°</label><input id="cmsx-f-auditnum" placeholder="e.g. AUD-2026-014"/></div>
+<div class="cmsx-field"><label>Audit date</label><input id="cmsx-f-auditdate" type="date"/></div>
 <div class="cmsx-field"><label>Audit title</label><input id="cmsx-f-audittitle" placeholder="e.g. Annual ORO.GEN compliance audit"/></div>
 </div>
 <div class="cmsx-grid2">
@@ -18055,6 +18056,7 @@ function cmsxOpenFindingModal(id){
   var f=id?load(CMSX_KEYS.findings).find(function(x){return x.id===id;}):null;
   document.getElementById('cmsx-f-id').value=f?f.id:'';
   document.getElementById('cmsx-f-auditnum').value=f?(f.auditNum||''):'';
+  document.getElementById('cmsx-f-auditdate').value=f?(f.auditDate||''):'';
   document.getElementById('cmsx-f-audittitle').value=f?(f.auditTitle||''):'';
   document.getElementById('cmsx-f-ref').value=f?(f.ref||''):'';
   document.getElementById('cmsx-f-desc').value=f?(f.desc||''):'';
@@ -18110,6 +18112,7 @@ function cmsxReadModal(){
   if(email==='__other') email=document.getElementById('cmsx-f-email-other').value.trim();
   return {
     auditNum: document.getElementById('cmsx-f-auditnum').value.trim(),
+    auditDate: document.getElementById('cmsx-f-auditdate').value,
     auditTitle: document.getElementById('cmsx-f-audittitle').value.trim(),
     origin: document.getElementById('cmsx-f-origin').value||'internal',
     focaRef: document.getElementById('cmsx-f-focaref').value.trim(),
