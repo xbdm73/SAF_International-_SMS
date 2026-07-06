@@ -10220,6 +10220,7 @@ function saveOccurrence(){
     saveOccurrences(occs);
     document.getElementById('occ-form-wrap').style.display='none';
     renderOccurrenceList();
+    if(typeof updatePendingBadge==='function') updatePendingBadge();
     showToast('✓ Occurrence '+newId+' updated','success');
   } else {
     // ── CREATE new occurrence ─────────────────────────────────────
@@ -10250,6 +10251,7 @@ function saveOccurrence(){
     saveOccurrences(occs);
     document.getElementById('occ-form-wrap').style.display='none';
     renderOccurrenceList();
+    if(typeof updatePendingBadge==='function') updatePendingBadge();
     showToast('✓ Occurrence '+occ.id+' saved','success');
     if(occ.risk_link){
       var r=DB.find(function(x){return x.id===occ.risk_link;});
