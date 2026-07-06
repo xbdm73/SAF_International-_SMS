@@ -10212,7 +10212,10 @@ function saveOccurrence(){
       eccairs:      occGetEccairsFields(),
       investigation: occGetInvestigation(),
       hfacs:        occGetHFACS(),
-      arms:         occGetARMS()
+      arms:         occGetARMS(),
+      // Dès qu'un rapport "À instruire" (importé du mobile) est ouvert et
+      // sauvegardé une première fois, on le sort de la file d'attente.
+      status:       existing.status==='pending_review' ? 'reviewed' : existing.status
     };
     saveOccurrences(occs);
     document.getElementById('occ-form-wrap').style.display='none';
