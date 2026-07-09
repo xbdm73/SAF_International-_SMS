@@ -15442,6 +15442,29 @@ setTimeout(function(){
         if(Array.isArray(savedCS) && typeof CHANGE_STUDIES!=='undefined'){ CHANGE_STUDIES.length=0; savedCS.forEach(function(s){ CHANGE_STUDIES.push(s); }); }
       }catch(e){}
 
+      // Réinjecte les études de changement embarquées (seeds) si le cloud ne les contient pas encore.
+      // Sans cela, un chargement cloud écrase silencieusement les MOC embarqués tant qu'ils n'ont
+      // pas été synchronisés une première fois vers Supabase.
+      try{
+        if(typeof CHANGE_STUDIES!=='undefined'){
+          var _seedsToCheck = [];
+          if(typeof _seedMocCargohook!=='undefined' && _seedMocCargohook) _seedsToCheck.push(_seedMocCargohook);
+          if(typeof _seedMocFuelTanks!=='undefined' && _seedMocFuelTanks) _seedsToCheck.push(_seedMocFuelTanks);
+          if(typeof _seedMocReorg!=='undefined' && _seedMocReorg) _seedsToCheck.push(_seedMocReorg);
+          var _seedsAdded = false;
+          _seedsToCheck.forEach(function(seed){
+            if(!CHANGE_STUDIES.some(function(cs){ return cs && cs.ref === seed.ref; })){
+              CHANGE_STUDIES.push(seed);
+              _seedsAdded = true;
+            }
+          });
+          if(_seedsAdded){
+            try{ localStorage.setItem('safChangeStudies', JSON.stringify(CHANGE_STUDIES)); }catch(e){}
+            try{ if(typeof window.safCloudScheduleSave==='function') window.safCloudScheduleSave(); }catch(e){}
+          }
+        }
+      }catch(e){ console.warn('Seed MOC reinjection after cloud load failed:', e); }
+
       // Importe les rapports mobiles pending_review avant le rendu
       try{ await importMobileReports(); }catch(e){}
 
