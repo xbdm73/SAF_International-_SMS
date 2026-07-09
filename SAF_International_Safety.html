@@ -3773,7 +3773,7 @@ function updateOaciDefinitionDropdown(sel) {
 </div>
 <div class="section-body"><div class="form-grid">
 <div class="form-field form-full"><label class="field-label">Title <span class="req">*</span></label><input id="c-title" placeholder="Change study title…" type="text" required/></div>
-<div class="form-field"><label class="field-label">Internal reference <span class="req">*</span></label><input id="c-ref" value="MOC-" placeholder="MOC-AS332-2026-001" type="text" required oninput="csEnforceMocPrefix(this)" onfocus="csEnforceMocPrefix(this)"/></div>
+<div class="form-field"><label class="field-label">Internal reference <span class="req">*</span></label><input id="c-ref" value="MOC-" placeholder="MOC-2026-07-01" type="text" required oninput="csEnforceMocPrefix(this)" onfocus="csEnforceMocPrefix(this)"/></div>
 <div class="form-field"><label class="field-label">Safety assessment type <span class="req">*</span></label><select id="c-assessment-type" required><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option><option>Change risk assessment</option><option>Safety risk management</option></select></div>
 <div class="form-field form-full" style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,180,0,.07);border:1px solid rgba(255,180,0,.25);border-radius:8px;margin-top:4px;">
   <input id="c-authority-approval" type="checkbox" style="width:18px;height:18px;accent-color:#e3b341;flex-shrink:0;cursor:pointer;"/>
@@ -7179,7 +7179,7 @@ function clearAllChangeStudy(startNew) {
   csRefreshBlock6();
   csResetNamePickers();
   if(typeof csRemoveFocaApproval==='function') csRemoveFocaApproval();
-  var _rf=document.getElementById('c-ref'); if(_rf){_rf.value='MOC-';}
+  var _rf=document.getElementById('c-ref'); if(_rf){_rf.value=csGenerateMocRef();}
   if(startNew){
     showToast('✓ Formulaire vide prêt pour une nouvelle étude — vos études sauvegardées restent modifiables dans la liste ci-dessous (✎ Edit)', 'success');
   } else {
@@ -7202,6 +7202,23 @@ function csEnforceMocPrefix(el){
     var rest=el.value.replace(/^M?O?C?-?/,'');
     el.value='MOC-'+rest;
   }
+}
+
+// Auto-generate the next Internal reference as MOC-YYYY-MM-NN (sequence resets each month)
+function csGenerateMocRef(){
+  var now=new Date();
+  var yyyy=now.getFullYear();
+  var mm=String(now.getMonth()+1).padStart(2,'0');
+  var prefix='MOC-'+yyyy+'-'+mm+'-';
+  var studies=(typeof CHANGE_STUDIES!=='undefined'&&Array.isArray(CHANGE_STUDIES))?CHANGE_STUDIES:[];
+  var maxNum=0;
+  studies.forEach(function(cs){
+    if(cs&&cs.ref&&cs.ref.indexOf(prefix)===0){
+      var n=parseInt(cs.ref.slice(prefix.length),10);
+      if(!isNaN(n)&&n>maxNum) maxNum=n;
+    }
+  });
+  return prefix+String(maxNum+1).padStart(2,'0');
 }
 
 // FOCA approval / authorisation upload (stored as base64)
