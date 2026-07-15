@@ -9254,8 +9254,15 @@ const DEFAULT_SPI_TARGETS = [
   {id:'spi7', name:'Residual RED risks', formula:'res_red', objective:'No residual risk remains in RED after mitigation', target:0, green:0, amber:1, red:2, unit:'risks', direction:'down'},
   {id:'spi8', name:'Lessons learned published', formula:'ll_count', objective:'Keep safety communication active and traceable', target:4, green:4, amber:2, red:1, unit:'bulletins', direction:'up'},
   {id:'capa1', name:'Open actions >30 days', formula:'capa_open_gt30', objective:'Corrective actions are progressed without excessive ageing', target:0, green:0, amber:2, red:3, unit:'actions', direction:'down'},
-  {id:'capa2', name:'Repeat findings', formula:'capa_repeat_findings', objective:'Avoid repeated non-conformities and recurring weak controls', target:0, green:0, amber:1, red:2, unit:'repeat groups', direction:'down'},
-  {id:'capa3', name:'Closure effectiveness', formula:'capa_closure_effectiveness', objective:'Closed findings remain effective without recurrence', target:90, green:90, amber:70, red:69, unit:'%', direction:'up'}
+  {id:'capa2', name:'Repeat findings (SMS/CAPA register)', formula:'capa_repeat_findings', objective:'Avoid repeated non-conformities and recurring weak controls across SMS audits, change studies and change-control items. Note: distinct from the "Repeat findings (regulatory audits)" KPI in the Compliance Monitoring module, which tracks recurrence within the formal Part-ORO/CAT/SPO/SPA audit grids only.', target:0, green:0, amber:1, red:2, unit:'repeat groups', direction:'down'},
+  {id:'capa3', name:'Closure effectiveness', formula:'capa_closure_effectiveness', objective:'Closed findings remain effective without recurrence', target:90, green:90, amber:70, red:69, unit:'%', direction:'up'},
+  // ── FOCA APPxxx-CAMO SPIs — added to align with BAZL/FOCA email 25Jun2026 (C. Einwiller) + attachment v1.0 02Dec2025 ──
+  {id:'spi9', name:'CAMO voluntary reports (/100 WO)', formula:'maint_report_rate', objective:'FOCA APPxxx-CAMO SPI — voluntary maintenance / continuing-airworthiness safety reports, normalised per 100 issued workorders (real picture of organisation hazards)', target:2, green:2, amber:1, red:0.9, unit:'rep/100WO', direction:'up'},
+  {id:'spi10', name:'Independent check inspections (/100 WO)', formula:'indep_check_rate', objective:'FOCA APPxxx-CAMO SPI — independent check inspections, normalised per 100 issued workorders (prevent safety-related maintenance errors)', target:5, green:5, amber:3, red:2.9, unit:'insp/100WO', direction:'up'},
+  {id:'spi11', name:'Technical communication (manufacturer/SUST)', formula:'tech_comm_quarter', objective:'FOCA APPxxx-CAMO SPI — manufacturer / SUST technical communications handled', target:1, green:1, amber:0.5, red:0.4, unit:'reports/qtr', direction:'up'},
+  {id:'spi12', name:'FOD training completed', formula:'fod_training_rate', objective:'FOCA APPxxx-CAMO SPI — internal FOD training coverage (SPI-1 of the FOD objective)', target:1, green:1, amber:0.7, red:0.69, unit:'per employee/yr', direction:'up'},
+  {id:'spi13', name:'FOD surveillance inspections', formula:'fod_inspections_year', objective:'FOCA APPxxx-CAMO SPI — FOD surveillance inspections carried out (SPI-2 of the FOD objective)', target:1, green:1, amber:0, red:-1, unit:'insp/yr', direction:'up'},
+  {id:'spi14', name:'Hazard identification meetings', formula:'hazard_meetings_year', objective:'FOCA guidance (email 25Jun2026) — hazard-ID meetings held with staff updates, to get the real picture of organisation hazards; target to be confirmed with FOCA', target:4, green:4, amber:2, red:1, unit:'meetings/yr', direction:'up'}
 ];
 
 function getSPITargets(){
@@ -9281,6 +9288,23 @@ function saveSPITargets(t){ localStorage.setItem('safSPITargets', JSON.stringify
 // Annual flight-hour exposure used to normalise the reporting-rate SPI.
 function getFlightHours(){ var v=parseFloat(localStorage.getItem('safFlightHours')); return isNaN(v)?0:v; }
 function setFlightHours(v){ localStorage.setItem('safFlightHours', String(parseFloat(v)||0)); }
+// ── FOCA APPxxx-CAMO exposure counters (SPI-9 to SPI-14) — manual entry, same pattern as flight hours ──
+function getWorkOrders(){ var v=parseFloat(localStorage.getItem('safWorkOrders')); return isNaN(v)?0:v; }
+function setWorkOrders(v){ localStorage.setItem('safWorkOrders', String(parseFloat(v)||0)); }
+function getMaintReports(){ var v=parseFloat(localStorage.getItem('safMaintReports')); return isNaN(v)?0:v; }
+function setMaintReports(v){ localStorage.setItem('safMaintReports', String(parseFloat(v)||0)); }
+function getIndepChecks(){ var v=parseFloat(localStorage.getItem('safIndepChecks')); return isNaN(v)?0:v; }
+function setIndepChecks(v){ localStorage.setItem('safIndepChecks', String(parseFloat(v)||0)); }
+function getTechComms(){ var v=parseFloat(localStorage.getItem('safTechComms')); return isNaN(v)?0:v; }
+function setTechComms(v){ localStorage.setItem('safTechComms', String(parseFloat(v)||0)); }
+function getFODTraining(){ var v=parseFloat(localStorage.getItem('safFODTraining')); return isNaN(v)?0:v; }
+function setFODTraining(v){ localStorage.setItem('safFODTraining', String(parseFloat(v)||0)); }
+function getFODInspections(){ var v=parseFloat(localStorage.getItem('safFODInspections')); return isNaN(v)?0:v; }
+function setFODInspections(v){ localStorage.setItem('safFODInspections', String(parseFloat(v)||0)); }
+function getEmployeeCount(){ var v=parseFloat(localStorage.getItem('safEmployeeCount')); return isNaN(v)?0:v; }
+function setEmployeeCount(v){ localStorage.setItem('safEmployeeCount', String(parseFloat(v)||0)); }
+function getHazardMeetings(){ var v=parseFloat(localStorage.getItem('safHazardMeetings')); return isNaN(v)?0:v; }
+function setHazardMeetings(v){ localStorage.setItem('safHazardMeetings', String(parseFloat(v)||0)); }
 function needsControlReview(r){ if(!r.last_control_date)return true; const d=new Date(r.last_control_date); return(new Date()-d)>(365*24*3600*1000); }
 function _sptNow(){ return new Date(); }
 function _daysBetween(a,b){ return Math.floor((b-a)/86400000); }
@@ -9374,6 +9398,15 @@ function computeSPI(){
   const barrierPct=DB.length?Math.round(DB.filter(r=>r.prevention&&r.mitigation&&r.recovery).length/DB.length*100):0;
   const ll=_getLSArray('safLessons').length;
   const capa=computeCAPAKPI();
+  // ── FOCA APPxxx-CAMO Safety Performance Indicators (email BAZL/FOCA 25Jun2026 + attachment v1.0 02Dec2025) ──
+  const workOrders=getWorkOrders();
+  const maintReportRate=workOrders>0?Math.round((getMaintReports()/workOrders*100)*10)/10:0;      // SPI-9  target >=2 /100 WO
+  const indepCheckRate=workOrders>0?Math.round((getIndepChecks()/workOrders*100)*10)/10:0;        // SPI-10 target >=5 /100 WO
+  const techCommQuarter=Math.round((getTechComms()/4)*10)/10;                                     // SPI-11 target >=1 /quarter (annual count / 4)
+  const empCount=getEmployeeCount();
+  const fodTrainingRate=empCount>0?Math.round((getFODTraining()/empCount)*10)/10:0;                // SPI-12 target >=1 /employee/year
+  const fodInspectionsYear=getFODInspections();                                                    // SPI-13 target >=1 /year
+  const hazardMeetingsYear=getHazardMeetings();                                                    // SPI-14 target (FOCA: "to be defined" — default 4/year)
   return {
     red_count:red,
     reduction_pct:reductionPct,
@@ -9386,7 +9419,13 @@ function computeSPI(){
     ll_count:ll,
     capa_open_gt30:capa.open_gt30,
     capa_repeat_findings:capa.repeat_findings,
-    capa_closure_effectiveness:capa.closure_effectiveness
+    capa_closure_effectiveness:capa.closure_effectiveness,
+    maint_report_rate:maintReportRate,
+    indep_check_rate:indepCheckRate,
+    tech_comm_quarter:techCommQuarter,
+    fod_training_rate:fodTrainingRate,
+    fod_inspections_year:fodInspectionsYear,
+    hazard_meetings_year:hazardMeetingsYear
   };
 }
 
@@ -9444,6 +9483,25 @@ function renderSPIView(){
       +'<span style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">FH/year · used to normalise SPI-5</span>'
       +'<button class="btn btn-ghost" style="margin-left:auto;font-size:10px;" onclick="spiResetDefaults()">↺ Reset to EASA defaults</button>'
     +'</div>'
+    +'<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:12px 14px;background:rgba(232,179,65,.06);border:1px solid rgba(232,179,65,.25);border-radius:8px;">'
+      +'<span style="font-family:var(--font-mono);font-size:10px;color:var(--amber,#e3b341);text-transform:uppercase;letter-spacing:.05em;font-weight:700;width:100%;">FOCA APPxxx-CAMO exposure counters — annual manual entry (SPI-9 to SPI-14)</span>'
+      +'<label style="font-family:var(--font-mono);font-size:11px;color:var(--grey-200);">Workorders issued/yr:</label>'
+      +'<input type="number" min="0" step="1" value="'+getWorkOrders()+'" onchange="spiUpdateManual(this,\'workorders\')" style="width:90px;text-align:center;font-family:var(--font-mono);font-size:12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);border-radius:5px;color:#fff;padding:5px 8px;"/>'
+      +'<label style="font-family:var(--font-mono);font-size:11px;color:var(--grey-200);">CAMO voluntary reports/yr:</label>'
+      +'<input type="number" min="0" step="1" value="'+getMaintReports()+'" onchange="spiUpdateManual(this,\'maintreports\')" style="width:90px;text-align:center;font-family:var(--font-mono);font-size:12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);border-radius:5px;color:#fff;padding:5px 8px;"/>'
+      +'<label style="font-family:var(--font-mono);font-size:11px;color:var(--grey-200);">Independent check inspections/yr:</label>'
+      +'<input type="number" min="0" step="1" value="'+getIndepChecks()+'" onchange="spiUpdateManual(this,\'indepchecks\')" style="width:90px;text-align:center;font-family:var(--font-mono);font-size:12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);border-radius:5px;color:#fff;padding:5px 8px;"/>'
+      +'<label style="font-family:var(--font-mono);font-size:11px;color:var(--grey-200);">Tech. comm. (mfr/SUST)/yr:</label>'
+      +'<input type="number" min="0" step="1" value="'+getTechComms()+'" onchange="spiUpdateManual(this,\'techcomms\')" style="width:90px;text-align:center;font-family:var(--font-mono);font-size:12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);border-radius:5px;color:#fff;padding:5px 8px;"/>'
+      +'<label style="font-family:var(--font-mono);font-size:11px;color:var(--grey-200);">FOD trainings/yr:</label>'
+      +'<input type="number" min="0" step="1" value="'+getFODTraining()+'" onchange="spiUpdateManual(this,\'fodtraining\')" style="width:90px;text-align:center;font-family:var(--font-mono);font-size:12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);border-radius:5px;color:#fff;padding:5px 8px;"/>'
+      +'<label style="font-family:var(--font-mono);font-size:11px;color:var(--grey-200);">FOD surveillance inspections/yr:</label>'
+      +'<input type="number" min="0" step="1" value="'+getFODInspections()+'" onchange="spiUpdateManual(this,\'fodinspections\')" style="width:90px;text-align:center;font-family:var(--font-mono);font-size:12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);border-radius:5px;color:#fff;padding:5px 8px;"/>'
+      +'<label style="font-family:var(--font-mono);font-size:11px;color:var(--grey-200);">Headcount (for FOD/employee):</label>'
+      +'<input type="number" min="0" step="1" value="'+getEmployeeCount()+'" onchange="spiUpdateManual(this,\'employeecount\')" style="width:70px;text-align:center;font-family:var(--font-mono);font-size:12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);border-radius:5px;color:#fff;padding:5px 8px;"/>'
+      +'<label style="font-family:var(--font-mono);font-size:11px;color:var(--grey-200);">Hazard-ID meetings/yr:</label>'
+      +'<input type="number" min="0" step="1" value="'+getHazardMeetings()+'" onchange="spiUpdateManual(this,\'hazardmeetings\')" style="width:90px;text-align:center;font-family:var(--font-mono);font-size:12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);border-radius:5px;color:#fff;padding:5px 8px;"/>'
+    +'</div>'
     +'<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;min-width:980px;">'
     +'<thead><tr style="border-bottom:1px solid rgba(255,255,255,.1);">'
     +'<th style="text-align:left;padding:7px 10px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">SPI / SPT</th>'
@@ -9464,7 +9522,7 @@ function renderSPIView(){
     var colour=_statusColour(status);
     var trend=_sptTrend(t,val);
     html+='<tr style="border-bottom:1px solid rgba(255,255,255,.055);">'
-      +'<td style="padding:9px 10px;"><input type="text" value="'+String(t.name).replace(/"/g,"&quot;")+'" data-spi="'+i+'" data-field="name" onchange="spiUpdateText(this)" style="width:100%;min-width:150px;font-family:var(--font-display);font-size:11px;font-weight:600;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.12);border-radius:4px;color:var(--grey-200);padding:4px 6px;"/><div style="font-size:9px;color:var(--grey-600);font-family:var(--font-mono);margin-top:3px;">'+t.formula+' · '
+      +'<td style="padding:9px 10px;"><input type="text" value="'+String(t.name).replace(/"/g,"&quot;")+'" data-spi="'+i+'" data-field="name" onchange="spiUpdateText(this)" style="width:100%;min-width:150px;font-family:var(--font-body);font-size:12.5px;font-weight:500;letter-spacing:0;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.12);border-radius:4px;color:var(--grey-200);padding:5px 7px;"/><div style="font-size:9px;color:var(--grey-600);font-family:var(--font-mono);margin-top:3px;">'+t.formula+' · '
       +'<select data-spi="'+i+'" data-field="direction" onchange="spiUpdateText(this)" style="font-family:var(--font-mono);font-size:9px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.12);border-radius:3px;color:var(--grey-400);padding:1px 3px;"><option value="up"'+(t.direction==='up'?' selected':'')+'>↑ higher=better</option><option value="down"'+(t.direction==='down'?' selected':'')+'>↓ lower=better</option></select></div></td>'
       +'<td style="padding:9px 10px;"><textarea data-spi="'+i+'" data-field="objective" onchange="spiUpdateText(this)" rows="2" style="width:100%;min-width:200px;font-family:inherit;font-size:11px;line-height:1.35;background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.1);border-radius:4px;color:var(--grey-400);padding:4px 6px;resize:vertical;">'+(t.objective||'')+'</textarea></td>'
       +'<td style="padding:9px 10px;text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--steel-bright);white-space:nowrap;">'+val+' <input type="text" value="'+String(t.unit||'').replace(/"/g,"&quot;")+'" data-spi="'+i+'" data-field="unit" onchange="spiUpdateText(this)" style="width:64px;text-align:center;font-family:var(--font-mono);font-size:9px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.12);border-radius:3px;color:var(--grey-400);padding:2px 4px;margin-top:3px;"/></td>'
@@ -9523,6 +9581,14 @@ function spiUpdateText(input){
 function spiUpdateFlightHours(input){
   setFlightHours(input.value);
   renderSPIView();
+}
+function spiUpdateManual(input, key){
+  var setters={
+    workorders:setWorkOrders, maintreports:setMaintReports, indepchecks:setIndepChecks,
+    techcomms:setTechComms, fodtraining:setFODTraining, fodinspections:setFODInspections,
+    employeecount:setEmployeeCount, hazardmeetings:setHazardMeetings
+  };
+  if(setters[key]){ setters[key](input.value); renderSPIView(); }
 }
 function spiResetDefaults(){
   if(!confirm('Reset all SPI/SPT names, objectives, units, directions and thresholds to the EASA default values? Your custom edits will be lost.')) return;

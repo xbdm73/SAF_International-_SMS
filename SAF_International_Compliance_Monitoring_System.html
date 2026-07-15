@@ -1809,7 +1809,7 @@ function safExportPDF() {
   <div style="display:flex;align-items:center;gap:4px;overflow-x:auto;">
     <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
-    <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
+    <a href="Archives/SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
     <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
     <a href="SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
   </div>
@@ -1874,6 +1874,7 @@ function safExportPDF() {
 <div class="card note">
 <h2>KPI Indicators — EASA Audit Compliance</h2>
 <p class="muted">Compliance performance indicators (KPIs) required by EASA in accordance with Regulation (EU) 965/2012, ORO.GEN.200, ORO.AOC.130 and ORO.GEN.150. These indicators measure the quality and effectiveness of the internal audit programme and the handling of regulatory findings.</p>
+<p class="muted" style="font-size:11px;border-left:3px solid #f5a623;padding-left:10px;">Note — Scope: KPI-6 "Repeat findings" here tracks recurrence <b>within the formal Part-ORO/CAT/SPO/SPA audit grids only</b>. A separate "Repeat findings (SMS/CAPA register)" indicator exists in the Safety Management module — it tracks recurrence across the wider SMS audit, change-study and change-control record, and is not the same dataset.</p>
 <div class="badges">
 <span class="badge">EASA ref.: ORO.AOC.130</span>
 <span class="badge">EASA ref.: ORO.GEN.150</span>
@@ -2132,8 +2133,8 @@ function safExportPDF() {
   <div class="kpiv2-body">
     <div class="kpiv2-header">
       <div class="kpiv2-title-block">
-        <div class="kpiv2-name" id="kpiv2-name-kpi6">Repeat findings</div>
-        <div class="kpiv2-unit" id="kpiv2-unit-kpi6">% findings occurring 2+ times</div>
+        <div class="kpiv2-name" id="kpiv2-name-kpi6">Repeat findings (regulatory audits)</div>
+        <div class="kpiv2-unit" id="kpiv2-unit-kpi6">% of Part-ORO/CAT/SPO/SPA audit-grid findings occurring 2+ times</div>
       </div>
       <button class="kpiv2-edit-btn" onclick="kpiv2ToggleEdit('kpi6')">✏ Edit</button>
     </div>
@@ -2150,8 +2151,8 @@ function safExportPDF() {
     </div>
   </div>
   <div class="kpiv2-edit-panel" id="kpiv2-edit-kpi6">
-    <div class="kpiv2-edit-row"><label>Indicator name</label><input type="text" id="kpiv2-ename-kpi6" placeholder="Repeat findings" oninput="kpiv2LiveEdit('kpi6')"/></div>
-    <div class="kpiv2-edit-row"><label>Unit / description</label><input type="text" id="kpiv2-eunit-kpi6" placeholder="% findings occurring 2+ times" oninput="kpiv2LiveEdit('kpi6')"/></div>
+    <div class="kpiv2-edit-row"><label>Indicator name</label><input type="text" id="kpiv2-ename-kpi6" placeholder="Repeat findings (regulatory audits)" oninput="kpiv2LiveEdit('kpi6')"/></div>
+    <div class="kpiv2-edit-row"><label>Unit / description</label><input type="text" id="kpiv2-eunit-kpi6" placeholder="% of Part-ORO/CAT/SPO/SPA audit-grid findings occurring 2+ times" oninput="kpiv2LiveEdit('kpi6')"/></div>
     <div class="kpiv2-edit-row"><label>EASA target label</label><input type="text" id="kpiv2-etarget-kpi6" placeholder="≤ 5%" oninput="kpiv2LiveEdit('kpi6')"/></div>
     <div class="kpiv2-edit-row"><label>Manual value override</label><input type="text" id="kpi6-ovr" placeholder="ex : 4%" oninput="cmsxApplyOverride('kpi6', this.value); kpiv2LiveEdit('kpi6')"/></div>
     <div class="kpiv2-edit-actions">
