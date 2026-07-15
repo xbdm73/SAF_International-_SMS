@@ -10011,7 +10011,8 @@ function btExportPDF(){
     '.bt-sub{font-size:10px;color:#8896A0;font-family:"IBM Plex Mono",monospace;margin-top:4px;}',
     '.bt-badges{margin-top:8px;font-family:"IBM Plex Mono",monospace;font-size:10px;}',
     '.bt-badges span{display:inline-block;padding:2px 8px;border-radius:4px;font-weight:700;margin-right:6px;}',
-    '.bt-flow{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:22px 0;min-width:1100px;}',
+    '.bt-flow-wrap{overflow:hidden;}',
+    '.bt-flow{display:inline-flex;align-items:stretch;gap:0;padding:22px 0;}',
     '.bt-arrow{display:flex;align-items:center;justify-content:center;color:#C8D0D8;font-size:20px;flex-shrink:0;width:26px;}',
     '.bt-riskbox{flex-shrink:0;min-width:110px;border:1px solid #C8D0D8;border-radius:8px;padding:10px 12px;text-align:center;background:#F4F6F8;}',
     '.bt-riskbox-lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:700;letter-spacing:.06em;color:#8896A0;margin-bottom:6px;}',
@@ -10029,7 +10030,7 @@ function btExportPDF(){
     '.bt-event-lbl{font-family:"IBM Plex Mono",monospace;font-size:8.5px;font-weight:700;color:#CC2200;margin-bottom:8px;}',
     '.bt-event-txt{font-size:11px;font-weight:600;color:#1a2e42;line-height:1.4;}',
     '.bt-footer{margin-top:16px;padding-top:8px;border-top:1px solid #e8ecf0;font-size:9px;color:#8896A0;font-family:"IBM Plex Mono",monospace;display:flex;justify-content:space-between;}',
-    '@media print{body{padding:10px}@page{margin:12mm;size:A4 landscape}}'
+    '@media print{body{padding:8px}@page{margin:8mm;size:A4 landscape}.bt-flow-wrap{page-break-inside:avoid;}}'
   ].join('');
 
   const win = window.open('', '_blank');
@@ -10040,9 +10041,23 @@ function btExportPDF(){
     '<div class="bt-sub">AS 332 C1 Super Puma · SAF International · ICAO Doc 9859 §6 · '+(r.category||'')+' · '+_today()+'</div>' +
     '<div class="bt-badges"><span style="background:'+irBg+';color:'+irFg+';">Initial: '+(r.initial_risk||'—')+'</span><span style="background:'+rrBg+';color:'+rrFg+';">Residual: '+(r.residual_risk||'—')+'</span></div></div>'
   );
-  win.document.write('<div class="bt-flow">'+flow+'</div>');
+  win.document.write('<div class="bt-flow-wrap"><div class="bt-flow" id="btFlowEl">'+flow+'</div></div>');
   win.document.write('<div class="bt-footer"><span>SAF International · Bow-Tie Analysis · Doc ref: '+(r.doc_ref||'—')+'</span><span>Généré le '+new Date().toLocaleString()+'</span></div>');
-  win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>');
+  win.document.write(
+    '<script>window.onload=function(){' +
+      'var el=document.getElementById("btFlowEl");' +
+      'var wrap=el.parentElement;' +
+      'var target=1060;' + // usable width (px) inside an A4 landscape page with 8mm margins
+      'var w=el.scrollWidth;' +
+      'if(w>target){' +
+        'var scale=target/w;' +
+        'el.style.transform="scale("+scale+")";' +
+        'el.style.transformOrigin="left top";' +
+        'wrap.style.height=(el.offsetHeight*scale)+"px";' +
+      '}' +
+      'window.print();' +
+    '}<\/script></body></html>'
+  );
   win.document.close();
   showToast('✓ PDF bow-tie généré — ' + r.id, 'success');
 }
