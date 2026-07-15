@@ -2800,6 +2800,16 @@ function updateOaciDefinitionDropdown(sel) {
       </select></div>
     <button type="button" id="bt-toggle-btn" class="btn btn-ghost bt-collapse-btn" onclick="toggleBowtiePanel()" title="Replier ou afficher le Bow-Tie sélectionné">▾ Replier le Bow-Tie</button>
   </div>
+  <div id="bt-export-bar" style="display:flex;align-items:center;gap:8px;padding:0 0 14px 0;flex-wrap:wrap;">
+    <span style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);letter-spacing:.08em;margin-right:4px;">EXPORT</span>
+    <button onclick="btExportPDF()" style="display:flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(204,34,0,.12);border:1px solid rgba(204,34,0,.4);border-radius:5px;color:#ff8080;font-family:var(--font-mono);font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;" onmouseover="this.style.background='rgba(204,34,0,.22)'" onmouseout="this.style.background='rgba(204,34,0,.12)'">
+      ◉ PDF — Fiche barrières
+    </button>
+    <button onclick="btExportCSV()" style="display:flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(82,196,120,.12);border:1px solid rgba(82,196,120,.4);border-radius:5px;color:#7adfa0;font-family:var(--font-mono);font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;" onmouseover="this.style.background='rgba(82,196,120,.22)'" onmouseout="this.style.background='rgba(82,196,120,.12)'">
+      ↓ CSV
+    </button>
+    <span style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-left:4px;">Exporte l'évènement SMS actuellement sélectionné ci-dessus</span>
+  </div>
   <div id="bowtie-diagram"></div>
   <div class="bt-collapsed-note">Bow-Tie replié — sélectionnez un autre évènement SMS ou cliquez sur “Afficher le Bow-Tie”.</div>
 </div></div>
@@ -9941,6 +9951,35 @@ function renderBowtie(selectedId){
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);">
       <div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">Doc ref: ${r.doc_ref||'—'}</div>
     </div>`;
+}
+
+// ── Bow-Tie Analysis — export (PDF / CSV) of the currently selected SMS event ──
+function btGetSelectedRisk(){
+  const sel = document.getElementById('bt-cat-filter');
+  const id = sel ? sel.value : null;
+  if(!id){ showToast('Aucun évènement SMS sélectionné', 'error'); return null; }
+  const r = DB.find(x => x.id === id);
+  if(!r){ showToast('Évènement introuvable dans le registre', 'error'); return null; }
+  return r;
+}
+
+// Reuses the exact same landscape bow-tie "fiche barrières" PDF as the Risk Register,
+// scoped down to only the SMS event currently selected in the Bow-Tie Analysis dropdown.
+function btExportPDF(){
+  const r = btGetSelectedRisk();
+  if(!r) return;
+  const saved = filteredDB;
+  filteredDB = [r];
+  try { rrExportPDF(); } finally { filteredDB = saved; }
+}
+
+// Reuses the exact same CSV column layout as the Risk Register export,
+// scoped down to only the SMS event currently selected in the Bow-Tie Analysis dropdown.
+function btExportCSV(){
+  const r = btGetSelectedRisk();
+  if(!r) return;
+  _download('SAF_BowTie_' + r.id + '_' + _today() + '.csv', '\uFEFF' + _dbToCSV([r]), 'text/csv;charset=utf-8');
+  showToast('✓ ' + r.id + ' exporté en CSV', 'success');
 }
 
 // ════════════════════════════════════════════════════════════════
