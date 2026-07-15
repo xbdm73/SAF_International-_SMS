@@ -2803,7 +2803,7 @@ function updateOaciDefinitionDropdown(sel) {
   <div id="bt-export-bar" style="display:flex;align-items:center;gap:8px;padding:0 0 14px 0;flex-wrap:wrap;">
     <span style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);letter-spacing:.08em;margin-right:4px;">EXPORT</span>
     <button onclick="btExportPDF()" style="display:flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(204,34,0,.12);border:1px solid rgba(204,34,0,.4);border-radius:5px;color:#ff8080;font-family:var(--font-mono);font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;" onmouseover="this.style.background='rgba(204,34,0,.22)'" onmouseout="this.style.background='rgba(204,34,0,.12)'">
-      ◉ PDF — Fiche barrières
+      ◉ PDF — Structure Bow-Tie
     </button>
     <button onclick="btExportCSV()" style="display:flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(82,196,120,.12);border:1px solid rgba(82,196,120,.4);border-radius:5px;color:#7adfa0;font-family:var(--font-mono);font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;" onmouseover="this.style.background='rgba(82,196,120,.22)'" onmouseout="this.style.background='rgba(82,196,120,.12)'">
       ↓ CSV
@@ -9963,14 +9963,88 @@ function btGetSelectedRisk(){
   return r;
 }
 
-// Reuses the exact same landscape bow-tie "fiche barrières" PDF as the Risk Register,
-// scoped down to only the SMS event currently selected in the Bow-Tie Analysis dropdown.
+// Renders the true bow-tie flow for print/PDF — Initial Risk → Causes → Prevention →
+// Undesirable Event → Mitigation → Recovery → Residual Risk — mirroring the on-screen
+// renderBowtie() layout instead of the flat 3-column register fiche.
 function btExportPDF(){
   const r = btGetSelectedRisk();
   if(!r) return;
-  const saved = filteredDB;
-  filteredDB = [r];
-  try { rrExportPDF(); } finally { filteredDB = saved; }
+
+  const parse = txt => (txt||'').split(/\d+[-–]/).map(s=>s.trim()).filter(Boolean);
+  const causes = parse(r.dangers);
+  const prevs  = parse(r.prevention);
+  const mits   = parse(r.mitigation);
+  const recs   = parse(r.recovery);
+
+  const irColors = { red:'#CC2200', orange:'#E05000', yellow:'#C9A227', green:'#1A7A32' };
+  const ir = riskColor(r.initial_risk), rr = riskColor(r.residual_risk);
+  const irBg = irColors[ir] || '#888', rrBg = irColors[rr] || '#888';
+  const irFg = ir === 'yellow' ? '#000' : '#fff', rrFg = rr === 'yellow' ? '#000' : '#fff';
+
+  const riskBox = (label, code, bg, fg, sub) =>
+    '<div class="bt-riskbox"><div class="bt-riskbox-lbl">'+label+'</div>' +
+    '<div class="bt-riskbox-val" style="background:'+bg+';color:'+fg+';">'+(code||'—')+'</div>' +
+    '<div class="bt-riskbox-sub">'+sub+'</div></div>';
+
+  const listBox = (items, cls, label) => items.length
+    ? '<div class="bt-list '+cls+'"><div class="bt-list-lbl">'+label+'</div>' +
+        items.map(function(i){ return '<div class="bt-list-item">▸ '+i+'</div>'; }).join('') + '</div>'
+    : '<div class="bt-list bt-list-empty"><div class="bt-list-lbl">'+label+'</div><div class="bt-list-item bt-none">No barrier / cause listed</div></div>';
+
+  const arrow = '<div class="bt-arrow">→</div>';
+
+  const flow =
+    riskBox('INITIAL RISK', r.initial_risk, irBg, irFg, 'before barriers') + arrow +
+    listBox(causes, 'bt-causes', 'CAUSES / DANGERS') + arrow +
+    listBox(prevs, 'bt-prevention', '🛡 PREVENTION') + arrow +
+    '<div class="bt-event"><div class="bt-event-lbl">UNDESIRABLE EVENT</div><div class="bt-event-txt">'+(r.event||'—')+'</div></div>' + arrow +
+    listBox(mits, 'bt-mitigation', '⚖ MITIGATION') + arrow +
+    listBox(recs, 'bt-recovery', '🩺 RECOVERY') + arrow +
+    riskBox('RESIDUAL RISK', r.residual_risk, rrBg, rrFg, 'after barriers');
+
+  const css = [
+    '@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap");',
+    '*{box-sizing:border-box;margin:0;padding:0}',
+    'body{font-family:"IBM Plex Sans",sans-serif;background:#fff;color:#1a2e42;padding:22px;font-size:11px;}',
+    '.bt-header{background:#0D1B2A;color:#F4F6F8;padding:16px 20px;border-radius:6px;margin-bottom:8px;}',
+    '.bt-title{font-size:16px;font-weight:700;}',
+    '.bt-sub{font-size:10px;color:#8896A0;font-family:"IBM Plex Mono",monospace;margin-top:4px;}',
+    '.bt-badges{margin-top:8px;font-family:"IBM Plex Mono",monospace;font-size:10px;}',
+    '.bt-badges span{display:inline-block;padding:2px 8px;border-radius:4px;font-weight:700;margin-right:6px;}',
+    '.bt-flow{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:22px 0;min-width:1100px;}',
+    '.bt-arrow{display:flex;align-items:center;justify-content:center;color:#C8D0D8;font-size:20px;flex-shrink:0;width:26px;}',
+    '.bt-riskbox{flex-shrink:0;min-width:110px;border:1px solid #C8D0D8;border-radius:8px;padding:10px 12px;text-align:center;background:#F4F6F8;}',
+    '.bt-riskbox-lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:700;letter-spacing:.06em;color:#8896A0;margin-bottom:6px;}',
+    '.bt-riskbox-val{font-size:24px;font-weight:800;border-radius:6px;padding:6px 10px;font-family:"IBM Plex Mono",monospace;line-height:1;}',
+    '.bt-riskbox-sub{font-size:8px;color:#8896A0;margin-top:6px;font-family:"IBM Plex Mono",monospace;}',
+    '.bt-list{flex-shrink:0;min-width:170px;max-width:210px;border:1px solid #C8D0D8;border-radius:8px;padding:10px 12px;}',
+    '.bt-list-lbl{font-family:"IBM Plex Mono",monospace;font-size:8.5px;font-weight:700;letter-spacing:.05em;margin-bottom:7px;padding-bottom:5px;border-bottom:2px solid;}',
+    '.bt-list-item{font-size:9.5px;line-height:1.5;color:#1a2e42;padding:2px 0;}',
+    '.bt-none{color:#CC2200;font-style:italic;}',
+    '.bt-causes{background:rgba(27,108,168,.06);} .bt-causes .bt-list-lbl{color:#1B6CA8;border-bottom-color:#1B6CA8;}',
+    '.bt-prevention{background:rgba(74,159,224,.06);} .bt-prevention .bt-list-lbl{color:#2E75B6;border-bottom-color:#2E75B6;}',
+    '.bt-mitigation{background:rgba(201,162,39,.06);} .bt-mitigation .bt-list-lbl{color:#9A7A17;border-bottom-color:#9A7A17;}',
+    '.bt-recovery{background:rgba(26,122,74,.06);} .bt-recovery .bt-list-lbl{color:#1A7A4A;border-bottom-color:#1A7A4A;}',
+    '.bt-event{flex-shrink:0;min-width:170px;max-width:200px;background:rgba(204,34,0,.08);border:2px solid #CC2200;border-radius:10px;padding:14px 16px;text-align:center;}',
+    '.bt-event-lbl{font-family:"IBM Plex Mono",monospace;font-size:8.5px;font-weight:700;color:#CC2200;margin-bottom:8px;}',
+    '.bt-event-txt{font-size:11px;font-weight:600;color:#1a2e42;line-height:1.4;}',
+    '.bt-footer{margin-top:16px;padding-top:8px;border-top:1px solid #e8ecf0;font-size:9px;color:#8896A0;font-family:"IBM Plex Mono",monospace;display:flex;justify-content:space-between;}',
+    '@media print{body{padding:10px}@page{margin:12mm;size:A4 landscape}}'
+  ].join('');
+
+  const win = window.open('', '_blank');
+  if(!win){ showToast('Autorisez les popups pour générer le PDF', 'error'); return; }
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Bow-Tie — '+r.id+'</title><style>'+css+'</style></head><body>');
+  win.document.write(
+    '<div class="bt-header"><div class="bt-title">BOW-TIE ANALYSIS — '+r.id+' — '+(r.event||'')+'</div>' +
+    '<div class="bt-sub">AS 332 C1 Super Puma · SAF International · ICAO Doc 9859 §6 · '+(r.category||'')+' · '+_today()+'</div>' +
+    '<div class="bt-badges"><span style="background:'+irBg+';color:'+irFg+';">Initial: '+(r.initial_risk||'—')+'</span><span style="background:'+rrBg+';color:'+rrFg+';">Residual: '+(r.residual_risk||'—')+'</span></div></div>'
+  );
+  win.document.write('<div class="bt-flow">'+flow+'</div>');
+  win.document.write('<div class="bt-footer"><span>SAF International · Bow-Tie Analysis · Doc ref: '+(r.doc_ref||'—')+'</span><span>Généré le '+new Date().toLocaleString()+'</span></div>');
+  win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>');
+  win.document.close();
+  showToast('✓ PDF bow-tie généré — ' + r.id, 'success');
 }
 
 // Reuses the exact same CSV column layout as the Risk Register export,
