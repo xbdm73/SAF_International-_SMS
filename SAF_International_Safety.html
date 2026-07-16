@@ -1672,6 +1672,10 @@ nav { top: 118px !important; }
 <div class="chart-title">SAF International · ICAO Safety Risk Matrix — Reference</div>
 <div id="icao-ref-matrix"></div>
 </div>
+<div class="chart-card" style="grid-column:1/-1;">
+<div class="chart-title">Seuils de probabilité — recalibrage dynamique sur les heures de vol annuelles (OMM §4.2.4.2)</div>
+<div id="prob-threshold-panel"></div>
+</div>
 <div class="chart-card">
 <div class="chart-title">Top 10 most critical risks (initial)</div>
 <div id="top-risks-list" style="font-size:11px;"></div>
@@ -5899,6 +5903,7 @@ function renderDashboard() {
   renderCategoryChart();
   renderLevelChart();
   renderRefMatrix();
+  renderProbabilityThresholds();
   renderTopRisks();
   renderUncontrolledMeasures();
   renderSafetyIndicators();
@@ -6120,6 +6125,153 @@ function renderRefMatrix() {
   html += `</div>`;
 
   el.innerHTML = html;
+}
+
+// ── OMM §4.2.4.2 — Dynamic recalibration of qualitative probability thresholds ──
+// The quantitative bands (per operational hour, from OMM §4.2.4.2 / ICAO Doc 9859) are
+// multiplied by the fleet's actual annual flight hours to obtain, for each probability
+// class, the expected number of occurrences per rolling 12 months. This must be
+// recalculated whenever the annual flight hours figure is updated (at minimum once a
+// year, at the annual risk register review — OMM §4.2.4.2 / §4.3).
+const PROBABILITY_RATE_BANDS = {
+  '5': { label:'Frequent',             lower:1e-3, upper:null,  descr:'> 1×10⁻³ per operational hour' },
+  '4': { label:'Occasional',           lower:1e-5, upper:1e-3,  descr:'1×10⁻³ to 1×10⁻⁵ per operational hour' },
+  '3': { label:'Remote',               lower:1e-7, upper:1e-5,  descr:'1×10⁻⁵ to 1×10⁻⁷ per operational hour' },
+  '2': { label:'Improbable',           lower:1e-9, upper:1e-7,  descr:'1×10⁻⁷ to 1×10⁻⁹ per operational hour' },
+  '1': { label:'Extremely improbable', lower:0,    upper:1e-9,  descr:'< 1×10⁻⁹ per operational hour' },
+};
+
+function formatOccPerYear(n) {
+  if (n === null) return '—';
+  if (n >= 100) return Math.round(n).toString();
+  if (n >= 1) return n.toFixed(1);
+  return n.toFixed(3);
+}
+
+function renderProbabilityThresholds() {
+  const el = document.getElementById('prob-threshold-panel');
+  if (!el) return;
+
+  const fh = getFlightHours();
+
+  let html = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">`;
+  html += `<label style="font-family:var(--font-mono);font-size:11px;color:var(--grey-200);">Annual flight hours (fleet exposure, shared with SPI reporting-rate):</label>`;
+  html += `<input type="number" min="0" step="1" id="prob-thresh-fh-input" value="${fh}" onchange="probThreshUpdateFlightHours(this)" style="width:120px;text-align:center;font-family:var(--font-mono);font-size:12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.2);border-radius:5px;color:#fff;padding:5px 8px;"/>`;
+  html += `</div>`;
+
+  if (!fh || fh <= 0) {
+    html += `<div style="font-family:var(--font-mono);font-size:11px;color:var(--grey-400);">Enter the fleet's actual annual flight hours to calculate the expected-occurrences-per-year thresholds for each probability class.</div>`;
+    el.innerHTML = html;
+    return;
+  }
+
+  html += `<div style="overflow-x:auto;">`;
+  html += `<table style="border-collapse:collapse;font-family:var(--font-mono);width:100%;max-width:900px;">`;
+  html += `<thead><tr>`;
+  html += `<th style="background:#D4A000;color:#000;font-size:10px;font-weight:800;border:2px solid #000;padding:5px 8px;text-align:left;">Probability class</th>`;
+  html += `<th style="background:#D4A000;color:#000;font-size:10px;font-weight:800;border:2px solid #000;padding:5px 8px;text-align:center;">Rate band (per op. hour)</th>`;
+  html += `<th style="background:#D4A000;color:#000;font-size:10px;font-weight:800;border:2px solid #000;padding:5px 8px;text-align:center;">Expected occurrences / 12 months</th>`;
+  html += `</tr></thead><tbody>`;
+  ['5','4','3','2','1'].forEach(p => {
+    const band = PROBABILITY_RATE_BANDS[p];
+    const upperCount = band.upper === null ? null : band.upper * fh;
+    const lowerCount = band.lower * fh;
+    let countLabel;
+    if (band.upper === null) {
+      countLabel = '> ' + formatOccPerYear(lowerCount);
+    } else if (band.lower === 0) {
+      countLabel = '< ' + formatOccPerYear(upperCount);
+    } else {
+      countLabel = formatOccPerYear(lowerCount) + ' – ' + formatOccPerYear(upperCount);
+    }
+    html += `<tr>`;
+    html += `<td style="background:rgba(255,255,255,.05);border:2px solid #000;color:var(--white);font-size:10px;font-weight:700;padding:5px 10px;white-space:nowrap;">${p} — ${band.label}</td>`;
+    html += `<td style="background:rgba(255,255,255,.05);border:2px solid #000;color:var(--grey-300);font-size:10px;padding:5px 10px;text-align:center;">${band.descr}</td>`;
+    html += `<td style="background:rgba(255,255,255,.05);border:2px solid #000;color:var(--gold-light);font-size:12px;font-weight:800;padding:5px 10px;text-align:center;">${countLabel}</td>`;
+    html += `</tr>`;
+  });
+  html += `</tbody></table></div>`;
+  html += `<div style="margin-top:10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);line-height:1.6;">Thresholds = (rate per operational hour, OMM §4.2.4.2) × (annual flight hours above). Recalculated live whenever the annual flight hours figure is updated; the Safety Manager confirms this figure at least once a year during the annual risk register review (OMM §4.3).</div>`;
+
+  html += renderRiskProbabilitySuggestions(fh);
+
+  el.innerHTML = html;
+}
+
+function probThreshUpdateFlightHours(input) {
+  setFlightHours(input.value);
+  renderProbabilityThresholds();
+  // Keep the SPI reporting-rate flight-hours field in sync if it is rendered elsewhere on screen
+  const spiInput = document.querySelector('input[onchange^="spiUpdateFlightHours"]');
+  if (spiInput) spiInput.value = input.value;
+}
+
+// ── Link occurrence counts (register) to a suggested probability class ──
+function occurrencesForRisk(riskId) {
+  return getOccurrences().filter(o => o.risk_link === riskId);
+}
+
+function occurrencesForRiskLast12Months(riskId) {
+  const cutoff = new Date();
+  cutoff.setFullYear(cutoff.getFullYear() - 1);
+  return occurrencesForRisk(riskId).filter(o => {
+    const d = new Date(o.date);
+    return !isNaN(d.getTime()) && d >= cutoff;
+  });
+}
+
+function suggestProbabilityClassFromCount(countPerYear, fh) {
+  if (!fh || fh <= 0) return null;
+  const order = ['5','4','3','2','1'];
+  for (const p of order) {
+    const lowerCount = PROBABILITY_RATE_BANDS[p].lower * fh;
+    if (countPerYear >= lowerCount) return p;
+  }
+  return '1';
+}
+
+function renderRiskProbabilitySuggestions(fh) {
+  if (!fh || fh <= 0) return '';
+  if (typeof DB === 'undefined' || !Array.isArray(DB)) return '';
+
+  const rows = DB.map(r => {
+    const occ12 = occurrencesForRiskLast12Months(r.id);
+    return { risk: r, count: occ12.length };
+  }).filter(x => x.count > 0)
+    .sort((a,b) => b.count - a.count);
+
+  if (rows.length === 0) {
+    return `<div style="margin-top:18px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">No risk currently has occurrences linked (risk_link) within the last 12 months — no probability suggestion to display.</div>`;
+  }
+
+  let html = `<div style="margin-top:20px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;">Suggested probability class vs. assigned class (based on occurrences linked to each risk over the last 12 months)</div>`;
+  html += `<div style="overflow-x:auto;">`;
+  html += `<table style="border-collapse:collapse;font-family:var(--font-mono);width:100%;max-width:1000px;">`;
+  html += `<thead><tr>`;
+  ['Risk ID','Event','Occ. (12 mo)','Suggested class','Assigned class (initial)','Status'].forEach(h => {
+    html += `<th style="background:#D4A000;color:#000;font-size:9px;font-weight:800;border:2px solid #000;padding:5px 8px;text-align:left;">${h}</th>`;
+  });
+  html += `</tr></thead><tbody>`;
+
+  rows.forEach(({risk, count}) => {
+    const suggested = suggestProbabilityClassFromCount(count, fh);
+    const assigned = (risk.initial_risk || '').charAt(0) || '—';
+    const match = suggested === assigned;
+    const statusColor = match ? '#1A7A32' : '#CC7A00';
+    const statusLabel = match ? '✓ Consistent' : '⚠ Review suggested';
+    html += `<tr>`;
+    html += `<td style="background:rgba(255,255,255,.05);border:2px solid #000;color:var(--steel-bright);padding:5px 8px;white-space:nowrap;">${risk.id || '—'}</td>`;
+    html += `<td style="background:rgba(255,255,255,.05);border:2px solid #000;color:var(--grey-200);padding:5px 8px;">${(risk.event || '').slice(0,60)}</td>`;
+    html += `<td style="background:rgba(255,255,255,.05);border:2px solid #000;color:var(--white);text-align:center;padding:5px 8px;">${count}</td>`;
+    html += `<td style="background:rgba(255,255,255,.05);border:2px solid #000;color:var(--gold-light);font-weight:800;text-align:center;padding:5px 8px;">${suggested} — ${PROBABILITY_RATE_BANDS[suggested].label}</td>`;
+    html += `<td style="background:rgba(255,255,255,.05);border:2px solid #000;color:var(--grey-300);text-align:center;padding:5px 8px;">${assigned}</td>`;
+    html += `<td style="background:rgba(255,255,255,.05);border:2px solid #000;color:${statusColor};font-weight:800;text-align:center;padding:5px 8px;">${statusLabel}</td>`;
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  html += `<div style="margin-top:8px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);line-height:1.6;">Suggestion only — the Safety Manager reviews and validates any change to a risk's assigned probability class in the Risk register (APP08-OMM) before applying it.</div>`;
+  return html;
 }
 
 
@@ -9581,6 +9733,9 @@ function spiUpdateText(input){
 function spiUpdateFlightHours(input){
   setFlightHours(input.value);
   renderSPIView();
+  if (typeof renderProbabilityThresholds === 'function') renderProbabilityThresholds();
+  const probInput = document.getElementById('prob-thresh-fh-input');
+  if (probInput) probInput.value = input.value;
 }
 function spiUpdateManual(input, key){
   var setters={
