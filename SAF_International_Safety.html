@@ -3921,6 +3921,14 @@ function updateOaciDefinitionDropdown(sel) {
 <div class="form-field form-full"><label class="field-label">Description</label><div id="c-description" class="rte" contenteditable="true" data-placeholder="Short description of the change…"></div></div>
 <div class="form-field form-full"><label class="field-label">Change detailed description <span class="req">*</span></label><div id="c-detailed-description" class="rte" contenteditable="true" data-placeholder="Detailed description: scope, systems, aircraft, crews, procedures, interfaces, assumptions…"></div></div>
 <div class="form-field form-full"><label class="field-label">Change decision origin</label><div id="c-decision-origin" class="rte" contenteditable="true" data-placeholder="Reason for change: regulation, audit, occurrence, operational need, supplier change, maintenance feedback…"></div></div>
+<div class="form-field form-full">
+  <label class="field-label">Root cause reference <span style="color:var(--grey-400);font-weight:400;text-transform:none;">(if this MOC stems from an occurrence 5 Whys or a CMS/CAP finding)</span></label>
+  <div style="display:flex;gap:8px;align-items:flex-start;">
+    <input id="c-root-cause-ref" type="text" placeholder="e.g. OCC-APP055 (Occurrence Log) or CAP-2026-03 (CMS finding)" style="flex:1;"/>
+    <button type="button" onclick="csLookupRootCause()" style="flex-shrink:0;padding:8px 14px;background:rgba(74,159,224,.15);border:1px solid var(--steel-bright);border-radius:6px;color:var(--steel-bright);font-family:var(--font-mono);font-size:11px;cursor:pointer;white-space:nowrap;">🔍 Look up</button>
+  </div>
+  <div id="c-root-cause-preview" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(232,160,32,.06);border:1px solid rgba(232,160,32,.25);border-radius:6px;font-size:12px;line-height:1.5;color:var(--grey-200);"></div>
+</div>
 <div class="form-field form-full"><label class="field-label">Change impact other assessment description</label><div id="c-impact-assessment" class="rte" contenteditable="true" data-placeholder="Impact on operations, training, maintenance, documentation, compliance, human factors, subcontractors…"></div></div>
 </div>
 <div class="form-grid" style="margin-top:14px;grid-template-columns:1fr 1fr 1fr;gap:14px;">
@@ -7306,7 +7314,7 @@ function previewEntry() {
 // ══════════════════════════════════════════════════════════════════
 // CHANGE STUDY / MANAGEMENT OF CHANGE
 // ══════════════════════════════════════════════════════════════════
-const CHANGE_FIELDS = ['title','ref','assessment-type','workflow-status','version-num','version-note','description','detailed-description','decision-origin','impact-assessment','duration','start-date','end-date','doc-archiving','regulations','assessors','version','version-date','history','followup-comments','acm-name','acm-signature','assessors-signature','authority-approval','risk-reduction-summary','conclusions','signature','diffusion','cyber-risk-flag','cyber-risk-partis-ref','cyber-risk-description'];
+const CHANGE_FIELDS = ['title','ref','assessment-type','workflow-status','version-num','version-note','description','detailed-description','decision-origin','root-cause-ref','impact-assessment','duration','start-date','end-date','doc-archiving','regulations','assessors','version','version-date','history','followup-comments','acm-name','acm-signature','assessors-signature','authority-approval','risk-reduction-summary','conclusions','signature','diffusion','cyber-risk-flag','cyber-risk-partis-ref','cyber-risk-description'];
 // ── Assessor name list (shared dropdown) ──
 const ASSESSOR_NAMES = ['Thierry BERGERET','Xavier BOUVET','Sacha CARRERE','Julien METRO','Jean Louis CAMUS'];
 const CS_NAME_PICKERS = ['assessors','assessors-signature','signature']; // fields using the name picker
@@ -7403,6 +7411,75 @@ function csCyberRiskToggle() {
   if (wrap) wrap.style.display = (flag === 'yes') ? '' : 'none';
   if (typeof saveState === 'function') saveState();
 }
+
+// ── Root cause reference lookup (Occurrence Log 5 Whys / CMS CAP finding) ──
+async function csLookupRootCause(){
+  const refInput = document.getElementById('c-root-cause-ref');
+  const preview = document.getElementById('c-root-cause-preview');
+  if(!refInput || !preview) return;
+  const ref = (refInput.value || '').trim();
+  if(!ref){ preview.style.display='none'; preview.innerHTML=''; return; }
+
+  // 1) Try to match an Occurrence Log entry in this same file (5 Whys root cause)
+  let occ = null;
+  try {
+    const occs = (typeof getOccurrences === 'function') ? getOccurrences() : [];
+    occ = occs.find(o => o && o.id && o.id.toLowerCase() === ref.toLowerCase());
+  } catch(e) {}
+
+  if(occ){
+    const fw = occ.five_whys || {};
+    if(fw.root_cause){
+      preview.style.display='block';
+      preview.innerHTML =
+        '<div style="font-family:var(--font-mono);font-size:10px;color:#e3b341;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">✓ Found — Occurrence Log · '+esc(occ.id)+' · '+esc(occ.date||'')+'</div>'+
+        '<div style="margin-bottom:6px;"><strong>Event:</strong> '+esc(occ.description||'—')+'</div>'+
+        '<div><strong>Root cause (5 Whys):</strong> '+esc(fw.root_cause)+'</div>';
+      return;
+    } else {
+      preview.style.display='block';
+      preview.innerHTML = '<div style="color:#e3b341;">⚠ Occurrence '+esc(occ.id)+' found, but its 5 Whys root cause analysis has not been completed yet. Complete it in the Occurrence Log before relying on it here.</div>';
+      return;
+    }
+  }
+
+  // 2) Not an Occurrence Log ID — try the CMS Register & CAP (cross-file, read-only,
+  //    via the shared Supabase 'saf_data' table — same pattern the CMS already uses
+  //    to read this file's 'sms_data'). Never writes anything to the CMS.
+  preview.style.display='block';
+  preview.innerHTML = '<div style="color:var(--grey-300);">🔄 Checking CMS Register &amp; CAP…</div>';
+  try{
+    if(typeof window.safCloudReadModule === 'function'){
+      const cmsData = await window.safCloudReadModule('cms_data');
+      if(cmsData){
+        let findings = [];
+        try{ findings = JSON.parse(cmsData.cmsx_findings_v1 || cmsData.cmsx_findings || '[]'); }catch(e){ findings = []; }
+        const f = Array.isArray(findings) ? findings.find(x => x && (
+          (x.auditNum && x.auditNum.toLowerCase() === ref.toLowerCase()) ||
+          (x.ref && x.ref.toLowerCase() === ref.toLowerCase()) ||
+          (x.id && String(x.id).toLowerCase() === ref.toLowerCase())
+        )) : null;
+        if(f){
+          if(f.rootCause && f.rootCause.trim()){
+            preview.innerHTML =
+              '<div style="font-family:var(--font-mono);font-size:10px;color:#e3b341;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">✓ Found — CMS Register &amp; CAP · '+esc(f.auditNum||f.ref||ref)+'</div>'+
+              '<div style="margin-bottom:6px;"><strong>Finding:</strong> '+esc(f.desc||'—')+'</div>'+
+              '<div><strong>Root cause (5 Whys):</strong> '+esc(f.rootCause)+'</div>';
+          } else {
+            preview.innerHTML = '<div style="color:#e3b341;">⚠ CMS finding '+esc(f.auditNum||f.ref||ref)+' found, but its 5 Whys root cause has not been completed yet in the CMS.</div>';
+          }
+          return;
+        }
+      }
+    }
+  }catch(e){}
+
+  // 3) No match anywhere
+  preview.innerHTML =
+    '<div style="color:var(--grey-300);">ℹ No match found for "'+esc(ref)+'" in the Occurrence Log or the CMS Register &amp; CAP. '+
+    'Double-check the reference, or open it manually in the relevant tool.</div>';
+}
+function esc(s){ return (s||'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // ── Clear All — wipe entire change study + actions ────────────────
 function clearAllChangeStudy(startNew) {
@@ -8468,6 +8545,7 @@ function _buildChangeStudyReport(cs) {
       <tr><th colspan="2">${cs.title||'—'}</th></tr>
       <tr><td style="width:200px;font-weight:600">Safety assessment type</td><td>${cs.assessment_type||'—'}</td></tr>
       <tr><td style="font-weight:600">Change decision origin</td><td>${_csNl2br(cs.decision_origin)}</td></tr>
+      <tr><td style="font-weight:600">Root cause reference</td><td>${_csNl2br(cs.root_cause_ref) || '—'}</td></tr>
       <tr><td style="font-weight:600">Description</td><td>${_csNl2br(cs.description)}</td></tr>
       <tr><td style="font-weight:600">Duration</td><td>${cs.duration||'—'}${cs.duration==='Temporary'?` (from ${cs.start_date||'—'} to ${cs.end_date||'—'})`:''}</td></tr>
       <tr><td style="font-weight:600">Influence on documentation / archiving</td><td>${_csNl2br(cs.doc_archiving)}</td></tr>
@@ -15976,6 +16054,21 @@ setTimeout(function(){
     saveTimer = setTimeout(cloudSave, 1500);
   }
   window.safCloudScheduleSave = scheduleSave;
+
+  // ── Lecture cross-fichier en lecture seule (utilisé par le MOC pour retrouver
+  //    la root cause d'un CAP/finding enregistré dans la CMS — module 'cms_data').
+  //    Symétrique à window.safCloudReadModule déjà présent côté CMS pour lire 'sms_data'.
+  //    N'écrit jamais rien — uniquement .select().
+  window.safCloudReadModule = async function(moduleName){
+    try{
+      var res = await Promise.race([
+        db.from('saf_data').select('data').eq('module', moduleName).single(),
+        new Promise(function(_, reject){ setTimeout(function(){ reject(new Error('timeout réseau')); }, 6000); })
+      ]);
+      if(res.error) return null;
+      return res.data ? res.data.data : null;
+    }catch(e){ return null; }
+  };
 
   // ── RÔLE UTILISATEUR ────────────────────────────────────────────────────
   var SAF_ROLE = 'reader';
