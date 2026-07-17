@@ -169,7 +169,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
   <p class="section-label">Accès aux outils</p>
   <div class="tools-grid">
 
-    <a class="tool-card" href="SAF_International_Safety.html">
+    <a class="tool-card" href="Archives/SAF_International_Safety.html">
       <div class="tool-header">
         <div class="tool-icon icon-sms">🛡️</div>
         <span class="tool-name">Safety Management</span>
@@ -179,7 +179,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
       <span class="tool-tag tag-sms">SMS</span>
     </a>
 
-    <a class="tool-card" href="SAF_International_Compliance_Monitoring_System.html">
+    <a class="tool-card" href="Archives/SAF_International_Compliance_Monitoring_System.html">
       <div class="tool-header">
         <div class="tool-icon icon-cms">📋</div>
         <span class="tool-name">Compliance Monitoring</span>
@@ -351,7 +351,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     status.textContent = 'Génération du fichier…';
     var json = JSON.stringify(bundle, null, 2);
     var date = new Date().toISOString().slice(0,10);
-    var filename = 'SAF_International_backup_' + date + '.json';
+    var filename = 'SAF_FullBackup_' + date + '.json';
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([json], {type:'application/json'}));
     a.download = filename;
