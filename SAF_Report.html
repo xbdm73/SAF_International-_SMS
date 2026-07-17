@@ -170,7 +170,8 @@ body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
 <body class="L-fr">
 
 <!-- LANG BAR -->
-<div id="lang-bar">
+<div id="lang-bar" style="position:relative;">
+  <a href="index.html" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--grey-400);font-family:var(--font-m);font-size:11px;letter-spacing:.5px;text-decoration:none;display:flex;align-items:center;gap:4px;transition:color .15s;" onmouseover="this.style.color='var(--gold-light)'" onmouseout="this.style.color='var(--grey-400)'">&#8592; Accueil</a>
   <button class="lb on" id="lb-fr" onclick="setLang('fr')">&#127467;&#127479; Fran&#231;ais</button>
   <button class="lb"    id="lb-en" onclick="setLang('en')">&#127468;&#127463; English</button>
 </div>
