@@ -2715,6 +2715,12 @@ function updateOaciDefinitionDropdown(sel) {
 </div>
 <div class="view" id="view-spi">
 <div class="dash-header"><div><div class="dash-title">SAFETY PERFORMANCE — SPT & CAPA KPI</div><div class="dash-subtitle">AMC1 ORO.GEN.200(a)(3) & AMC1 ORO.GEN.200(a)(6) — targets, thresholds, trends, corrective action effectiveness</div></div><button class="btn btn-ghost" onclick="renderSPIView()">↺ Refresh</button></div>
+<div style="margin:0 28px 18px;padding:14px 16px;background:rgba(74,159,224,.06);border:1px solid rgba(74,159,224,.25);border-radius:8px;font-size:11.5px;line-height:1.6;color:var(--grey-200);">
+  <div style="font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:8px;">What do SPI, SPT and CAPA mean?</div>
+  <div style="margin-bottom:6px;"><b>SPI — Safety Performance Indicator:</b> a measurable value tracked over time that reflects the actual state of safety performance (e.g. number of intolerable risks, reporting rate, barrier coverage).</div>
+  <div style="margin-bottom:6px;"><b>SPT — Safety Performance Target:</b> the acceptable value (and green/amber/red thresholds) set for each SPI. Comparing the current SPI value against its SPT is what drives the automatic status shown in the table below.</div>
+  <div><b>CAPA — Corrective Action / Preventive Action:</b> the actions raised to fix a finding (corrective) or to stop a potential issue before it occurs (preventive). Here CAPA are pulled automatically from audit records, MOC change studies and change-control items, and tracked through three indicators: actions open &gt;30 days, repeat findings, and closure effectiveness (closed without recurrence).</div>
+</div>
 <div id="spi-content"></div></div>
 <div class="view" id="view-safetypolicy">
 <div class="dash-header"><div><div class="dash-title">🔒 SAFETY POLICY &amp; OBJECTIVES</div><div class="dash-subtitle">ORO.GEN.200(a)(1) &amp; AMC1 ORO.GEN.200(a)(1) — Politique de sécurité signée par l'Accountable Manager, diffusée, versionnée et revue annuellement</div></div></div>
