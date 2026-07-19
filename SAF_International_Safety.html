@@ -14998,6 +14998,34 @@ function exportOccurrencePDF(id){
       +'</div>'
       +(arms.notes?'<div style="margin-top:8px;padding:7px 10px;background:#f8fbfd;border-radius:4px;font-size:11px;color:#475569;"><strong>Notes:</strong> '+arms.notes+'</div>':'')
     : '<p style="color:#8896a0;font-size:11px;">No ARMS classification recorded.</p>';
+  // ── ECCAIRS2 fields (only non-empty values) ──────────────────────
+  var eccairsRows=ECCAIRS_OCC_FIELDS.map(function(f){
+    var v=occGetEccairsValue(occ,f.key);
+    var vStr=Array.isArray(v)?v.join(', '):String(v||'').trim();
+    if(!vStr) return '';
+    return '<tr><td style="padding:5px 10px;color:#475569;width:280px;">'+occHtmlEsc(f.label)+' <span style="color:#8896a0;font-family:monospace;font-size:9px;">('+occHtmlEsc(f.code)+')</span></td><td style="padding:5px 10px;font-weight:600;">'+occHtmlEsc(vStr)+'</td></tr>';
+  }).join('');
+  var eccairsHTML=eccairsRows?'<table>'+eccairsRows+'</table>':'<p style="color:#8896a0;font-size:11px;">No ECCAIRS2 fields completed.</p>';
+  // ── Investigations & Comments ─────────────────────────────────────
+  var inv=occ.investigation||{};
+  var invStatusLabel={open:'🔴 Ouvert',ongoing:'🟡 En cours',closed:'🟢 Clos'}[inv.status]||'—';
+  var invComments=(inv.comments||[]).map(function(c){
+    var ts=c.ts?new Date(c.ts).toLocaleString('en-GB'):'';
+    return '<div style="padding:7px 10px;background:#f8fbfd;border-left:3px solid #4A9FE0;border-radius:0 4px 4px 0;margin-bottom:6px;"><div style="font-size:9px;color:#8896a0;font-family:monospace;margin-bottom:3px;">'+occHtmlEsc(c.author||'')+(ts?' — '+ts:'')+'</div><div style="font-size:11px;color:#1a2535;">'+occHtmlEsc(c.text||'')+'</div></div>';
+  }).join('');
+  var investigationHTML='<p style="margin:0 0 8px;"><strong>Status:</strong> '+invStatusLabel+'</p>'
+    +(invComments?invComments:'<p style="color:#8896a0;font-size:11px;">No comments recorded.</p>');
+  // ── HFACS ──────────────────────────────────────────────────────────
+  var hfacs=occ.hfacs||{};
+  var hfacsLevels=[['L4','Organizational Influences'],['L3','Unsafe Supervision'],['L2','Preconditions for Unsafe Acts'],['L1','Unsafe Acts']];
+  var hfacsAny=hfacsLevels.some(function(l){return (hfacs[l[0]]||[]).length;}) || (hfacs.narrative||'').trim();
+  var hfacsHTML=hfacsAny
+    ? hfacsLevels.map(function(l){
+        var vals=hfacs[l[0]]||[];
+        if(!vals.length) return '';
+        return '<div style="margin-bottom:8px;"><div style="font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">'+l[0]+' — '+l[1]+'</div><ul style="margin:0;padding-left:18px;">'+vals.map(function(v){return '<li>'+occHtmlEsc(v)+'</li>';}).join('')+'</ul></div>';
+      }).join('') + (hfacs.narrative?'<div style="margin-top:8px;padding:7px 10px;background:#f8fbfd;border-radius:4px;font-size:11px;color:#475569;"><strong>Narrative:</strong> '+occHtmlEsc(hfacs.narrative)+'</div>':'')
+    : '<p style="color:#8896a0;font-size:11px;">No HFACS assessment recorded.</p>';
 
   var css='body{font-family:"Segoe UI",Arial,sans-serif;max-width:900px;margin:0 auto;padding:22px 28px;color:#1a2535;font-size:12px;}'
     +'.hdr{background:#0D1B2A;color:#F4F6F8;padding:14px 20px;border-radius:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-start;}'
@@ -15029,20 +15057,26 @@ function exportOccurrencePDF(id){
     +'<div class="box">'+cfHtml+'</div>'
     +'<h2>4 · Immediate Actions Taken</h2>'
     +'<div class="box">'+actHtml+'</div>'
-    +'<h2>5 · Just Culture — Decision Tree Analysis</h2>'
+    +'<h2>5 · ECCAIRS2 Fields</h2>'
+    +'<div class="box">'+eccairsHTML+'</div>'
+    +'<h2>6 · Just Culture — Decision Tree Analysis</h2>'
     +'<div class="box"><table>'+jcRows+'</table>'
     +'<div style="margin-top:10px;"><span style="font-size:10px;font-family:monospace;color:#8896a0;text-transform:uppercase;letter-spacing:.06em;">Conclusion: </span>'
     +'<strong style="font-size:14px;color:'+jcC+';">'+jcLabel+'</strong>'
     +(jc.notes?'<div style="margin-top:6px;padding:7px 10px;background:#f8fbfd;border-radius:4px;font-size:11px;color:#475569;"><strong>Notes:</strong> '+jc.notes+'</div>':'')
     +'</div></div>'
-    +'<h2>6 · ARMS — Event Risk Classification</h2>'
+    +'<h2>7 · ARMS — Event Risk Classification</h2>'
     +'<div class="box">'+armsHTML+'</div>'
-    +'<h2>7 · 5 Whys — Root Cause Analysis</h2>'
+    +'<h2>8 · 5 Whys — Root Cause Analysis</h2>'
     +'<div class="box">'
     +(whyRows?'<table style="margin-bottom:10px;">'+whyRows+'</table>':'<p style="color:#8896a0;font-size:11px;">No 5 Whys analysis recorded.</p>')
     +(fw.root_cause?'<div class="root-box"><div style="font-size:10px;font-weight:700;color:#C98000;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Root Cause</div><p style="margin:0;line-height:1.5;">'+fw.root_cause+'</p></div>':'')
     +'<div class="corr-box"><div style="font-size:10px;font-weight:700;color:#1a7a4a;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Corrective / Preventive Actions</div>'+corrHTML+'</div>'
     +'</div>'
+    +'<h2>9 · Investigations &amp; Comments</h2>'
+    +'<div class="box">'+investigationHTML+'</div>'
+    +'<h2>10 · HFACS — Human Factors Analysis &amp; Classification</h2>'
+    +'<div class="box">'+hfacsHTML+'</div>'
     +'<div class="footer"><span>SAF International — Occurrence Report — '+occ.id+'</span><span>EU 376/2014 · ECCAIRS2 · '+new Date().toLocaleDateString('en-GB')+'</span></div>'
     +'<script>window.onload=function(){window.print();}\x3c/script>'
     +'</body></html>';
