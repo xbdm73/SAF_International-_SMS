@@ -15106,15 +15106,23 @@ function printOccurrenceExact(id){
 function _occPreparePrint(id){
   var wrap=document.getElementById('occ-form-wrap');
   if(!wrap) return;
+  // Truly re-open any collapsed panels FIRST (not just via a print-only
+  // CSS rule) so that textareas inside them report their real
+  // scrollHeight below — a still-collapsed (display:none) ancestor
+  // would otherwise measure as 0 and get clipped.
+  wrap.querySelectorAll('.occ-panel-body.collapsed').forEach(function(b){
+    b.classList.remove('collapsed');
+    b.classList.add('occ-print-was-collapsed');
+  });
+  wrap.querySelectorAll('#occ-hfacs-wrap[style*="display:none"], #occ-hfacs-wrap[style*="display: none"]').forEach(function(w){
+    w.dataset.occPrintForcedVisible='1';
+    w.style.display='';
+  });
   // Expand every textarea to its full content height so nothing gets clipped
   wrap.querySelectorAll('textarea').forEach(function(t){
     t.dataset.occPrevHeight=t.style.height||'';
     t.style.height='auto';
     t.style.height=(t.scrollHeight+4)+'px';
-  });
-  // Force-open any collapsed panels so the full record prints
-  wrap.querySelectorAll('.occ-panel-body.collapsed').forEach(function(b){
-    b.classList.add('occ-print-forced-open');
   });
   // Mark editing-only controls (buttons, dropdown carets) so the print
   // stylesheet below can hide them without touching the on-screen look
@@ -15131,8 +15139,8 @@ function _occPreparePrint(id){
     +'  #occ-form-wrap { position:absolute; left:0; top:0; width:100%; margin:0 !important; }'
     +'  #occ-form-wrap .occ-print-hide { display:none !important; }'
     +'  #occ-form-wrap .occ-msel-panel { display:none !important; }'
-    +'  #occ-form-wrap .occ-panel-body.collapsed.occ-print-forced-open { display:block !important; }'
     +'  #occ-form-wrap input, #occ-form-wrap select, #occ-form-wrap textarea { color:var(--white) !important; }'
+    +'  #occ-form-wrap textarea { overflow:visible !important; resize:none !important; }'
     +'  #occ-form-wrap * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }'
     +'}';
   window.onafterprint=function(){ _occRestoreAfterPrint(); };
@@ -15143,7 +15151,8 @@ function _occRestoreAfterPrint(){
   if(style && style.parentNode) style.parentNode.removeChild(style);
   if(wrap){
     wrap.querySelectorAll('textarea').forEach(function(t){ t.style.height=t.dataset.occPrevHeight||''; delete t.dataset.occPrevHeight; });
-    wrap.querySelectorAll('.occ-print-forced-open').forEach(function(b){ b.classList.remove('occ-print-forced-open'); });
+    wrap.querySelectorAll('.occ-print-was-collapsed').forEach(function(b){ b.classList.add('collapsed'); b.classList.remove('occ-print-was-collapsed'); });
+    wrap.querySelectorAll('[data-occ-print-forced-visible]').forEach(function(w){ w.style.display='none'; delete w.dataset.occPrintForcedVisible; });
     wrap.querySelectorAll('.occ-print-hide').forEach(function(b){ b.classList.remove('occ-print-hide'); });
   }
   window.onafterprint=null;
