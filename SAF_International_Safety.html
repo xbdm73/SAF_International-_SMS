@@ -15107,9 +15107,8 @@ function _occPreparePrint(id){
   var wrap=document.getElementById('occ-form-wrap');
   if(!wrap) return;
   // Truly re-open any collapsed panels FIRST (not just via a print-only
-  // CSS rule) so that textareas inside them report their real
-  // scrollHeight below — a still-collapsed (display:none) ancestor
-  // would otherwise measure as 0 and get clipped.
+  // CSS rule) so that any cloned text below reflects the real content —
+  // a still-collapsed (display:none) ancestor would otherwise be skipped.
   wrap.querySelectorAll('.occ-panel-body.collapsed').forEach(function(b){
     b.classList.remove('collapsed');
     b.classList.add('occ-print-was-collapsed');
@@ -15118,11 +15117,23 @@ function _occPreparePrint(id){
     w.dataset.occPrintForcedVisible='1';
     w.style.display='';
   });
-  // Expand every textarea to its full content height so nothing gets clipped
+  // A native <textarea> is a form control the browser cannot split across
+  // print pages: if its content is taller than one page, whatever doesn't
+  // fit on the page where it starts is simply lost. To guarantee every
+  // word of every field prints in full, each textarea is replaced (for
+  // print only) by a plain read-only text block that looks identical but
+  // is ordinary flowing content, so it can wrap onto as many pages as needed.
   wrap.querySelectorAll('textarea').forEach(function(t){
-    t.dataset.occPrevHeight=t.style.height||'';
-    t.style.height='auto';
-    t.style.height=(t.scrollHeight+4)+'px';
+    var cs=window.getComputedStyle(t);
+    var clone=document.createElement('div');
+    clone.className='occ-print-text-clone';
+    clone.style.cssText='display:none;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:break-word;'
+      +'font-family:'+cs.fontFamily+';font-size:'+cs.fontSize+';line-height:'+cs.lineHeight+';'
+      +'color:'+cs.color+';background:'+cs.backgroundColor+';border:'+cs.border+';border-radius:'+cs.borderRadius+';'
+      +'padding:'+cs.padding+';width:100%;box-sizing:border-box;min-height:'+cs.minHeight+';';
+    clone.textContent=t.value||'';
+    t.classList.add('occ-print-hide-original');
+    t.insertAdjacentElement('afterend', clone);
   });
   // Mark editing-only controls (buttons, dropdown carets) so the print
   // stylesheet below can hide them without touching the on-screen look
@@ -15139,8 +15150,9 @@ function _occPreparePrint(id){
     +'  #occ-form-wrap { position:absolute; left:0; top:0; width:100%; margin:0 !important; }'
     +'  #occ-form-wrap .occ-print-hide { display:none !important; }'
     +'  #occ-form-wrap .occ-msel-panel { display:none !important; }'
-    +'  #occ-form-wrap input, #occ-form-wrap select, #occ-form-wrap textarea { color:var(--white) !important; }'
-    +'  #occ-form-wrap textarea { overflow:visible !important; resize:none !important; }'
+    +'  #occ-form-wrap .occ-print-hide-original { display:none !important; }'
+    +'  #occ-form-wrap .occ-print-text-clone { display:block !important; }'
+    +'  #occ-form-wrap input, #occ-form-wrap select { color:var(--white) !important; }'
     +'  #occ-form-wrap * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }'
     +'}';
   window.onafterprint=function(){ _occRestoreAfterPrint(); };
@@ -15150,7 +15162,8 @@ function _occRestoreAfterPrint(){
   var style=document.getElementById('occ-print-style');
   if(style && style.parentNode) style.parentNode.removeChild(style);
   if(wrap){
-    wrap.querySelectorAll('textarea').forEach(function(t){ t.style.height=t.dataset.occPrevHeight||''; delete t.dataset.occPrevHeight; });
+    wrap.querySelectorAll('.occ-print-text-clone').forEach(function(c){ c.remove(); });
+    wrap.querySelectorAll('.occ-print-hide-original').forEach(function(t){ t.classList.remove('occ-print-hide-original'); });
     wrap.querySelectorAll('.occ-print-was-collapsed').forEach(function(b){ b.classList.add('collapsed'); b.classList.remove('occ-print-was-collapsed'); });
     wrap.querySelectorAll('[data-occ-print-forced-visible]').forEach(function(w){ w.style.display='none'; delete w.dataset.occPrintForcedVisible; });
     wrap.querySelectorAll('.occ-print-hide').forEach(function(b){ b.classList.remove('occ-print-hide'); });
