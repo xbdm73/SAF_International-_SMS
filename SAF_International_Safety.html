@@ -11300,7 +11300,7 @@ function renderOccurrenceList() {
     btn.addEventListener('click', function() { deleteOccurrence(this.getAttribute('data-id')); });
   });
   el.querySelectorAll('.occ-pdf-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() { exportOccurrencePDF(this.getAttribute('data-id')); });
+    btn.addEventListener('click', function() { printOccurrenceExact(this.getAttribute('data-id')); });
   });
   el.querySelectorAll('.occ-csv-btn').forEach(function(btn) {
     btn.addEventListener('click', function() { exportOccurrenceCSV(this.getAttribute('data-id')); });
@@ -15084,6 +15084,69 @@ function exportOccurrencePDF(id){
   var w=window.open('','_blank','width=1000,height=800');
   if(!w){alert('Allow pop-ups to generate the PDF');return;}
   w.document.write(html);w.document.close();w.focus();
+}
+
+// ── Print an occurrence with the EXACT on-screen layout/theme ────────
+// (reuses the real occurrence form DOM + the page's own stylesheet,
+// instead of rebuilding a separate "clean" report design)
+function printOccurrenceExact(id){
+  var occ=getOccurrences().find(function(o){return o.id===id;});
+  if(!occ){showToast('Occurrence not found','error');return;}
+  showOccurrenceForm(id);
+  var wrap=document.getElementById('occ-form-wrap');
+  if(wrap){
+    wrap.style.display='';
+    wrap.scrollIntoView({behavior:'auto',block:'start'});
+  }
+  setTimeout(function(){
+    _occPreparePrint(id);
+    setTimeout(function(){ window.print(); }, 60);
+  }, 150);
+}
+function _occPreparePrint(id){
+  var wrap=document.getElementById('occ-form-wrap');
+  if(!wrap) return;
+  // Expand every textarea to its full content height so nothing gets clipped
+  wrap.querySelectorAll('textarea').forEach(function(t){
+    t.dataset.occPrevHeight=t.style.height||'';
+    t.style.height='auto';
+    t.style.height=(t.scrollHeight+4)+'px';
+  });
+  // Force-open any collapsed panels so the full record prints
+  wrap.querySelectorAll('.occ-panel-body.collapsed').forEach(function(b){
+    b.classList.add('occ-print-forced-open');
+  });
+  // Mark editing-only controls (buttons, dropdown carets) so the print
+  // stylesheet below can hide them without touching the on-screen look
+  wrap.querySelectorAll('button').forEach(function(b){
+    if(!b.classList.contains('occ-msel-btn')) b.classList.add('occ-print-hide');
+  });
+  var style=document.getElementById('occ-print-style');
+  if(!style){ style=document.createElement('style'); style.id='occ-print-style'; document.head.appendChild(style); }
+  style.textContent =
+    '@media print {'
+    +'  html, body { background:var(--navy) !important; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }'
+    +'  body * { visibility:hidden !important; }'
+    +'  #occ-form-wrap, #occ-form-wrap * { visibility:visible !important; }'
+    +'  #occ-form-wrap { position:absolute; left:0; top:0; width:100%; margin:0 !important; }'
+    +'  #occ-form-wrap .occ-print-hide { display:none !important; }'
+    +'  #occ-form-wrap .occ-msel-panel { display:none !important; }'
+    +'  #occ-form-wrap .occ-panel-body.collapsed.occ-print-forced-open { display:block !important; }'
+    +'  #occ-form-wrap input, #occ-form-wrap select, #occ-form-wrap textarea { color:var(--white) !important; }'
+    +'  #occ-form-wrap * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }'
+    +'}';
+  window.onafterprint=function(){ _occRestoreAfterPrint(); };
+}
+function _occRestoreAfterPrint(){
+  var wrap=document.getElementById('occ-form-wrap');
+  var style=document.getElementById('occ-print-style');
+  if(style && style.parentNode) style.parentNode.removeChild(style);
+  if(wrap){
+    wrap.querySelectorAll('textarea').forEach(function(t){ t.style.height=t.dataset.occPrevHeight||''; delete t.dataset.occPrevHeight; });
+    wrap.querySelectorAll('.occ-print-forced-open').forEach(function(b){ b.classList.remove('occ-print-forced-open'); });
+    wrap.querySelectorAll('.occ-print-hide').forEach(function(b){ b.classList.remove('occ-print-hide'); });
+  }
+  window.onafterprint=null;
 }
 
 </script>
