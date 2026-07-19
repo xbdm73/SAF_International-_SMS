@@ -10381,8 +10381,8 @@ function btExportCSV(){
 // ════════════════════════════════════════════════════════════════
 function getOccurrences(){try{return JSON.parse(localStorage.getItem('safOccurrences')||'[]');}catch{return[];}}
 function saveOccurrences(o){localStorage.setItem('safOccurrences',JSON.stringify(o));updateLastModified();if(typeof window.safCloudScheduleSave==='function')window.safCloudScheduleSave();}
-function occAddAction(){const list=document.getElementById('occ-actions-list');if(!list)return;const row=document.createElement('div');row.className='occ-action-row';row.style.cssText='display:flex;gap:6px;align-items:center;';row.innerHTML='<input type="text" class="occ-action-input" placeholder="e.g. DSAC notified…" style="flex:1;"/><button type="button" onclick="occRemoveAction(this)" style="flex-shrink:0;padding:3px 8px;background:rgba(255,60,60,.15);border:1px solid rgba(255,80,80,.3);border-radius:4px;color:#ff9090;font-family:var(--font-mono);font-size:11px;cursor:pointer;">✕</button>';list.appendChild(row);row.querySelector('input').focus();}
-function occRemoveAction(btn){const row=btn.closest('.occ-action-row');const list=document.getElementById('occ-actions-list');if(list&&list.querySelectorAll('.occ-action-row').length>1)row.remove();else{const inp=row.querySelector('input');if(inp)inp.value='';}}
+function occAddAction(){const list=document.getElementById('occ-actions-list');if(!list)return;const row=document.createElement('div');row.className='occ-action-row';row.style.cssText='display:flex;gap:6px;align-items:flex-start;';row.innerHTML='<textarea class="occ-action-input" rows="1" placeholder="e.g. DSAC notified…" style="flex:1;min-height:38px;height:38px;resize:vertical;overflow:auto;line-height:1.4;"></textarea><button type="button" onclick="occRemoveAction(this)" style="flex-shrink:0;padding:3px 8px;background:rgba(255,60,60,.15);border:1px solid rgba(255,80,80,.3);border-radius:4px;color:#ff9090;font-family:var(--font-mono);font-size:11px;cursor:pointer;">✕</button>';list.appendChild(row);row.querySelector('textarea').focus();}
+function occRemoveAction(btn){const row=btn.closest('.occ-action-row');const list=document.getElementById('occ-actions-list');if(list&&list.querySelectorAll('.occ-action-row').length>1)row.remove();else{const inp=row.querySelector('textarea');if(inp)inp.value='';}}
 function getOccActions(){return[...document.querySelectorAll('#occ-actions-list .occ-action-input')].map(i=>i.value.trim()).filter(Boolean);}
 function occFWActionText(a){return (typeof a==='object'&&a!==null)?(a.text||''):String(a||'');}
 function occFWActionOwner(a){return (typeof a==='object'&&a!==null)?(a.owner||''):'';}
@@ -10844,7 +10844,7 @@ function showOccurrenceForm(editId){
       <div class="form-field" style="margin:0;"><label class="field-label">Location</label><input id="occ-location" type="text" placeholder="e.g. LFMN, Alpine LZ…"/></div>
       <div class="form-field" style="margin:0;"><label class="field-label">Immediate actions taken</label>
         <div id="occ-actions-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px;">
-          <div class="occ-action-row" style="display:flex;gap:6px;align-items:center;"><input type="text" class="occ-action-input" placeholder="e.g. Flight suspended…" style="flex:1;"/><button type="button" onclick="occRemoveAction(this)" style="flex-shrink:0;padding:3px 8px;background:rgba(255,60,60,.15);border:1px solid rgba(255,80,80,.3);border-radius:4px;color:#ff9090;font-family:var(--font-mono);font-size:11px;cursor:pointer;">✕</button></div>
+          <div class="occ-action-row" style="display:flex;gap:6px;align-items:flex-start;"><textarea class="occ-action-input" rows="1" placeholder="e.g. Flight suspended…" style="flex:1;min-height:38px;height:38px;resize:vertical;overflow:auto;line-height:1.4;"></textarea><button type="button" onclick="occRemoveAction(this)" style="flex-shrink:0;padding:3px 8px;background:rgba(255,60,60,.15);border:1px solid rgba(255,80,80,.3);border-radius:4px;color:#ff9090;font-family:var(--font-mono);font-size:11px;cursor:pointer;">✕</button></div>
         </div>
         <button type="button" onclick="occAddAction()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 12px;background:rgba(74,159,224,.1);border:1px dashed var(--steel-bright);border-radius:5px;color:var(--steel-bright);font-family:var(--font-mono);font-size:11px;cursor:pointer;"><span style="font-size:14px;font-weight:700;">+</span> Add action</button>
       </div>
@@ -11101,9 +11101,9 @@ function showOccurrenceForm(editId){
       _occ.actions.forEach(function(a) {
         var row = document.createElement('div');
         row.className = 'occ-action-row';
-        row.style.cssText = 'display:flex;gap:6px;align-items:center;';
-        var actionText = occActionTextForInput(a).replace(/"/g,'&quot;');
-        row.innerHTML = '<input type="text" class="occ-action-input" style="flex:1;" value="'+actionText+'"/>'
+        row.style.cssText = 'display:flex;gap:6px;align-items:flex-start;';
+        var actionText = occHtmlEsc(occActionTextForInput(a));
+        row.innerHTML = '<textarea class="occ-action-input" rows="1" style="flex:1;min-height:38px;height:38px;resize:vertical;overflow:auto;line-height:1.4;">'+actionText+'</textarea>'
           +'<button type="button" onclick="occRemoveAction(this)" style="flex-shrink:0;padding:3px 8px;background:rgba(255,60,60,.15);border:1px solid rgba(255,80,80,.3);border-radius:4px;color:#ff9090;font-family:var(--font-mono);font-size:11px;cursor:pointer;">✕</button>';
         actList.appendChild(row);
       });
