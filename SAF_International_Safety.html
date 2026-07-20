@@ -10907,12 +10907,48 @@ window.occRenderEccairsFields = occRenderEccairsFields;
 window.occGetEccairsFields = occGetEccairsFields;
 window.occEccairsCompleteness = occEccairsCompleteness;
 
+function _occMobileReportDetailsHtml(occ){
+  var hasAny = occ.pic||occ.tsop||occ.other_persons||occ.dossier_ref||occ.base||occ.maintenance_concern||
+    (occ.maintenance_types&&occ.maintenance_types.length)||occ.maintenance_ref||occ.consequence||
+    (occ.pressure&&occ.pressure.length)||occ.cyber_description||occ.comments||occ.attachments_count||
+    (occ.event_types_avi&&occ.event_types_avi.length)||(occ.event_types_cyber&&occ.event_types_cyber.length);
+  if(!hasAny) return '';
+  var consLabels={none:'Aucune / None',minor:'Légère / Minor',med:'Moyenne / Medium',major:'Grave / Major',other:'Autre / Other'};
+  var row=function(label,val){ if(!val || (Array.isArray(val)&&!val.length)) return ''; return '<div><span style="color:var(--grey-400);">'+occHtmlEsc(label)+':</span> <strong style="color:var(--white);">'+occHtmlEsc(Array.isArray(val)?val.join(', '):val)+'</strong></div>'; };
+  var body=''
+    +row('Type — Aviation', occ.event_types_avi)
+    +row('Type — Cybersécurité', occ.event_types_cyber)
+    +row('Pilote commandant de bord (PIC)', occ.pic)
+    +row('TSOP', occ.tsop)
+    +row('Autres personnes', occ.other_persons)
+    +row('N° de dossier', occ.dossier_ref)
+    +row('Base de rattachement', occ.base)
+    +row('Concerne Part 145 / CAMO ?', occ.maintenance_concern)
+    +row('Type d\'erreur maintenance', occ.maintenance_types)
+    +row('ATA / PN / SN / CT / BLT', occ.maintenance_ref)
+    +row('Conséquence', occ.consequence?(consLabels[occ.consequence]||occ.consequence):'')
+    +row('Pression ressentie', occ.pressure)
+    +row('Description cybersécurité', occ.cyber_description)
+    +row('Commentaires / Suggestions', occ.comments)
+    +row('Pièces jointes (nombre)', occ.attachments_count);
+  return '<div style="margin-bottom:14px;padding:12px 14px;background:rgba(74,159,224,.05);border:1px solid rgba(74,159,224,.2);border-radius:6px;">'
+    +'<div style="font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:var(--steel-bright);text-transform:uppercase;margin-bottom:8px;">📱 Détails du signalement mobile</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px 20px;font-family:var(--font-mono);font-size:11px;">'+body+'</div>'
+    +'</div>';
+}
 function showOccurrenceForm(editId){
   const w=document.getElementById('occ-form-wrap');if(!w)return;w.style.display='';
   const _occ = editId ? (getOccurrences().find(function(o){return o.id===editId;})||{}) : {};
   const _isEdit = !!editId;
   w.innerHTML=`<div class="chart-card" style="padding:24px;margin-bottom:20px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;"><div class="chart-title">${_isEdit?'✎ Edit Occurrence — '+_occ.id:'⚡ New Occurrence'}</div><button type="button" onclick="document.getElementById('occ-form-wrap').style.display='none';document.getElementById('occ-list-wrap')?.scrollIntoView({behavior:'smooth',block:'start'});" style="padding:4px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:5px;color:var(--grey-200);font-family:var(--font-mono);font-size:10px;cursor:pointer;white-space:nowrap;flex-shrink:0;" title="Replier">▲ Replier</button></div>
+    ${(_occ.reporter||_occ.reporter_email)?`<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:9px 14px;background:rgba(74,159,224,.08);border:1px solid rgba(74,159,224,.25);border-radius:6px;font-family:var(--font-mono);font-size:11px;color:var(--grey-200);">
+      <span style="color:var(--steel-bright);">📱 Reported by:</span>
+      <strong style="color:var(--white);">${occHtmlEsc(_occ.reporter||'—')}</strong>
+      ${_occ.reporter_email?`<span style="color:var(--grey-400);">· ${occHtmlEsc(_occ.reporter_email)}</span>`:''}
+      ${_occ.source?`<span style="margin-left:auto;color:var(--grey-600);">${occHtmlEsc(_occ.source)}</span>`:''}
+    </div>`:''}
+    ${_occMobileReportDetailsHtml(_occ)}
     <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
       <div class="form-field" style="margin:0;"><label class="field-label">Occurrence ID <span class="req">*</span><span style="font-size:9px;color:var(--grey-600);margin-left:5px;font-style:italic;">modifiable</span></label><input id="occ-custom-id" type="text" placeholder="ex. OCC-2024-001" style="width:100%;font-family:var(--font-mono);font-size:11px;" title="Identifiant unique de l'occurrence — modifiable librement"/></div>
       <div class="form-field" style="margin:0;"><label class="field-label">Date <span class="req">*</span></label><input id="occ-date" type="date" style="width:100%;"/></div>
