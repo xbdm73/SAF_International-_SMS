@@ -10648,11 +10648,68 @@ function occClassificationLabel(k){return k==='ind'?'Indiscipline':(k==='vio'?'V
 // formatting rule below — NOT the official ECCAIRS numeric datatype code.
 //        1 Alphanumeric | 2 Code | 3 Code+AdditionalText | 5 Date | 7 Decimal
 //        13 Number | 14 Text(long) | 15 Time
-const RIT_ENTITY_ORDER = ['Occurrence','Aerodrome_General','Aircraft','Dangerous_Goods','Reporting_History'];
-const RIT_ENTITY_ID = {Occurrence:'24', Aerodrome_General:'1', Aircraft:'4', Dangerous_Goods:'43', Reporting_History:'53'};
+const RIT_ENTITY_ORDER = ['Occurrence','Aerodrome_General','Aircraft','Events','Dangerous_Goods','Reporting_History','Risk_Assessment'];
+// entityId values confirmed 2026-07-20 directly against the real Schema.xsd from
+// Eccairs_Aviation_v5100_RITedb.zip (not guessed). Events(14) and Risk_Assessment(59)
+// are new entries — both exist as proper <ENTITIES> children, sibling to Aircraft/
+// Dangerous_Goods/Reporting_History, confirmed via direct XML inspection of Schema.xsd.
+const RIT_ENTITY_ID = {Occurrence:'24', Aerodrome_General:'1', Aircraft:'4', Events:'14', Dangerous_Goods:'43', Reporting_History:'53', Risk_Assessment:'59'};
 // Real value-list codes (label -> numeric code) for strict "Code" (dtype 2) attributes.
 // Option arrays below use these exact authoritative labels so mapping is 1:1 and lossless.
+// ERCS barrier-scoring dimensions (VL1188) — shared by all 8 ERCS attributes (1098-1105
+// below). Real values describe barrier status, NOT a 0-5 severity scale as previously
+// assumed. Sourced from FOCA_ECCAIRS_Aviation_8_0_0_0 Value_lists.zip, 2026-07-20.
+const ERCS_BARRIER_VL = {Stopped:'1','Remaining Known':'2','Remaining Assumed':'3','Failed Known':'4','Failed Assumed':'5','Not Applicable':'6'};
 const RIT_VALUE_CODES = {
+  // Sourced 2026-07-20 directly from the official FOCA_ECCAIRS_Aviation_8_0_0_0
+  // Value_lists.zip (per-attribute Excel exports with real label->code pairs).
+  // Occurrence_Category (VL430) — one label per real code; 'HESLO: Helicopter HESLO'
+  // has no direct ADREP equivalent and is best-matched to 'EXTL: External load
+  // related occurrences' (101) — verify with Xav/FOCA if precision is required.
+  occurrence_category: {'ADRM: Aerodrome':'24','AMAN: Abrupt manoeuvre':'1','ARC: Abnormal runway contact':'2','ATM: ATM/CNS':'25','BIRD: Birdstrike':'29','CABIN: Cabin safety events':'26','CFIT: Controlled flight into terrain':'3','FUEL: Fuel related':'7','HESLO: Helicopter HESLO':'101','LALT: Low altitude operations':'11','MAC: Mid-air collision':'14','RAMP: Ground handling':'8','RE: Runway excursion':'15','RI: Runway incursion':'28','SCF-NP: System/component failure – non-powerplant':'18','SCF-PP: System/component failure – powerplant':'19','USOS: Undershoot/overshoot':'22','UNK: Unknown':'99',Other:'98'},
+  // Occurrence_Class (VL1015) — exact match confirmed.
+  occurrence_class: {Accident:'100','Serious incident':'200',Incident:'300'},
+  // Aircraft_Category (VL1179) — top-level codes used (Helicopter/Aeroplane/Glider/Other).
+  aircraft_category: {Helicopter:'29',Aeroplane:'8',Glider:'9',Other:'4'},
+  // Propulsion_Type (VL232) — exact match confirmed ('Turbine – shaft' = Turboshaft).
+  propulsion_type: {'Turbine – shaft':'3',Piston:'1',Electric:'100',Other:'98'},
+  // State_Of_Registry (VL1024) — exact match confirmed for SAF's operating states.
+  // 'Other' intentionally left unmapped (falls to manual coding) — SAF's fleet only
+  // registers in these 4 states in practice.
+  state_registry: {Switzerland:'229',France:'82',Italy:'122',Austria:'16'},
+  // ATM_Contribution (VL428) — real list splits 'involved' into Directly(2)/Indirectly(3),
+  // which the UI's single 'Yes' option can't distinguish; 'Yes' is left unmapped
+  // (falls to manual coding) until the UI is split into those two options if needed.
+  // 'No' and 'Unknown' map cleanly.
+  atm_contribution: {No:'4',Unknown:'99'},
+  // Responsible_Entity (VL1181) — country/authority list. 'Switzerland – FOCA' and
+  // 'EASA' map to their real dedicated authority codes; 'France – DSAC' maps to the
+  // real code for France's civil aviation authority, but note the real label there is
+  // 'DGAC' (Direction Générale de l'Aviation Civile) — DSAC is a sub-directorate of
+  // DGAC and has no separate VL entry. 'Operator' has no single generic code (the real
+  // list has one entry per specific operator, 6001-6198) and is left unmapped.
+  responsible_entity: {'Switzerland – FOCA':'2171','France – DSAC':'2060',EASA:'3004',Other:'99998'},
+  // Mass_Group (VL319) — only 'Over 5 700 kg' mapped, using the rotorcraft-specific
+  // child code (107, "5 701 - 27 000 kg" under the Rotorcraft parent 102) rather than
+  // the generic top-level code (3), since AS332/H125/H135/H145 are all rotorcraft. The
+  // other 3 UI bands (1 501–5 700 / 751–1 500 / Up to 750 kg) don't line up cleanly with
+  // the real bands (which start at 2 251 kg) and are left unmapped by request.
+  mass_group: {'Over 5 700 kg':'107'},
+  // Manufacturer_Model (VL1182) — only the AS 332 C1 Super Puma mapped, by request.
+  // Code 201829 confirmed correct (not the older/ambiguous 2536) by cross-checking its
+  // neighbouring rows in the value list, which are unmistakably modern Airbus
+  // Helicopters/Eurocopter model codes (EC130, EC135, EC175, AS355, AS350, EC155…).
+  manufacturer_model: {'Airbus Helicopters / AS 332 C1 Super Puma':'201829'},
+  // Risk_Grade / ERCS_Risk_Grade (VL1103) — real 3-level scale (not the 4-level one the
+  // UI previously offered).
+  risk_grade: {'Low (green)':'1','Elevated (Yellow)':'2','High (Red)':'3'},
+  // Risk_Grading_Method (VL1136) — real 10-value method list.
+  risk_method_939: {'ECCAIRS (old)':'1',Undefined:'2','RAT (Eurocontrol Risk Analysis Tool)':'3',Other:'4','ERC (Event Risk Classification of ARMS)':'5','ERCS (European Common Risk Classification Scheme)':'6','ICAO (Safety Risk Management)':'7','ED-125 (EUROCAE Risk Classification Scheme)':'8','FAA SRM (Safety Risk Management Worksheet)':'9','Not applicable':'10'},
+  // ERCS barrier-scoring dimensions (VL1188) — one entry per attribute key, all pointing
+  // at the same real 6-value list (see ERCS_BARRIER_VL above).
+  ercs_1098: ERCS_BARRIER_VL, ercs_1099: ERCS_BARRIER_VL, ercs_1100: ERCS_BARRIER_VL,
+  ercs_1101: ERCS_BARRIER_VL, ercs_1102: ERCS_BARRIER_VL, ercs_1103: ERCS_BARRIER_VL,
+  ercs_1104: ERCS_BARRIER_VL, ercs_1105: ERCS_BARRIER_VL,
   // highest_damage / injury_level / weather_relevant / dangerous_goods / report_status /
   // reporter_language / flight_phase / birds_seen / birds_struck / bird_size /
   // pilot_advised_birds — all CONFIRMED byte-for-byte against the embedded dropdown
@@ -10696,6 +10753,10 @@ const RIT_VALUE_CODES = {
   // Dangerous_Good (VL1086, attribute 688) — CONFIRMED full list of UN classes from the PDF.
   dangerous_good_detail: {'Not defined':'1','1 - Explosives':'2','2 - Gases':'37','3 - Flammable Liquids':'41','4 - Flammable Solids':'42','5 - Oxidizing Agents and Organic Peroxides':'46','6 - Toxic and Infectious Substances':'49','7 - Radioactive Substances':'52','8 - Corrosive Substances':'53','9 - Miscellaneous':'56'},
   // Reporter_S_Language (VL1097) — full ICAO/ADREP language list, CONFIRMED against the PDF.
+  // Risk_Classification (attribute 1065) — 5-level scale, confirmed by the user to match
+  // ECCAIRS2's own 5-level scale. The leading digit already embedded in each label is
+  // used directly as the VL code.
+  risk_classification: {'5 – Intolerable':'5','4 – Tolerable but undesirable':'4','3 – Tolerable':'3','2 – Acceptable':'2','1 – Negligible':'1'},
   reporter_language: {Afrikaans:'1',Albanian:'2',Arabic:'3',Armenian:'4',Azerbaijani:'5',Basque:'6',Belarusian:'7',Bulgarian:'8',Catalan:'9',Chinese:'10',Croatian:'11',Czech:'12',Danish:'13',Divehi:'14',Dutch:'15',English:'16',Estonian:'17',Faroese:'18',Finnish:'19',French:'20',Galician:'21',Georgian:'22',German:'23',Greek:'24',Gujarati:'25',Hebrew:'26',Hindi:'27',Hungarian:'28',Icelandic:'29',Indonesian:'30',Italian:'31',Japanese:'32',Kannada:'33',Kazakh:'34',Kirghiz:'35',Korean:'36',Latvian:'37',Lithuanian:'38',Macedonian:'39',Malay:'40',Marathi:'41',Mongolian:'42',Norwegian:'43',Persian:'44',Polish:'45',Portuguese:'46',Punjabi:'47',Romanian:'48',Russian:'49',Sanskrit:'50',Serbian:'51',Slovak:'52',Slovenian:'53',Spanish:'54',Swedish:'55',Tamil:'56',Tatar:'57',Telugu:'58',Thai:'59',Turkish:'60',Ukrainian:'61',Unknown:'62',Urdu:'63',Uzbek:'64',Vietnamese:'65',Other:'66'}
 };
 
@@ -10731,7 +10792,11 @@ const ECCAIRS_OCC_FIELDS = [
   {key:'analysis_follow_up', code:'1067', label:'Analysis / Follow-up', type:'textarea', entity:'Reporting_History', dtype:14},
   {key:'risk_mitigation_action', code:'1069', label:'Risk Mitigation Action', type:'textarea', entity:'Reporting_History', dtype:14},
   {key:'conclusions', code:'1070', label:'Conclusions', type:'textarea', entity:'Reporting_History', dtype:14},
-  {key:'risk_classification', code:'1065', label:'Risk Classification', type:'select', req:true, entity:'Reporting_History', dtype:1, options:['5 – Intolerable','4 – Tolerable but undesirable','3 – Tolerable','2 – Acceptable','1 – Negligible']},
+  // FIX 2026-07-20: was dtype:1 (sent as raw alphanumeric text, e.g. "5 – Intolerable"),
+  // which risked rejection if ECCAIRS2 expects a Code here. User confirmed the same
+  // 5-level scale is used in ECCAIRS2 as in this file -> switched to dtype:2 with the
+  // digit already embedded in each label used as the VL code (see RIT_VALUE_CODES).
+  {key:'risk_classification', code:'1065', label:'Risk Classification', type:'select', req:true, entity:'Reporting_History', dtype:2, options:['5 – Intolerable','4 – Tolerable but undesirable','3 – Tolerable','2 – Acceptable','1 – Negligible']},
   {key:'risk_methodology', code:'1066', label:'Risk Methodology', type:'text', entity:'Reporting_History', dtype:1, fallback:function(o){return 'ICAO Doc 9859 Safety Management Manual';}},
   // ── AIRCRAFT & FLIGHT DETAILS (entity: Aircraft, ID 4) ────────────
   {key:'aircraft_registration', code:'244', label:'Aircraft Registration', type:'text', req:true, entity:'Aircraft', dtype:1, fallback:function(o){return o.aircraft_reg||'';}},
@@ -10780,32 +10845,95 @@ const ECCAIRS_OCC_FIELDS = [
   // Champs additionnels — hors périmètre du PDF "Flight Operation" V3
   // (taxonomie ECCAIRS étendue / ERCS / infos internes SAF)
   // ══════════════════════════════════════════════════════════════════
-  {key:'occurrence_category', code:'430', label:'Occurrence Category', type:'select', req:true, options:['ADRM: Aerodrome','AMAN: Abrupt manoeuvre','ARC: Abnormal runway contact','ATM: ATM/CNS','BIRD: Birdstrike','CABIN: Cabin safety events','CFIT: Controlled flight into terrain','FUEL: Fuel related','HESLO: Helicopter HESLO','LALT: Low altitude operations','MAC: Mid-air collision','RAMP: Ground handling','RE: Runway excursion','RI: Runway incursion','SCF-NP: System/component failure – non-powerplant','SCF-PP: System/component failure – powerplant','USOS: Undershoot/overshoot','UNK: Unknown','Other'], fallback:function(o){return o.eccairs_cat||'';}},
-  {key:'occurrence_class', code:'431', label:'Occurrence Class', type:'select', req:true, options:['Accident','Serious incident','Incident'], fallback:function(o){return o.severity==='accident'?'Accident':(o.severity==='serious'?'Serious incident':(o.severity?'Incident':''));}},
-  {key:'responsible_entity', code:'453', label:'Responsible Entity', type:'select', req:true, options:['Switzerland – FOCA','France – DSAC','EASA','Operator','Other']},
-  {key:'atm_contribution', code:'428', label:'ATM Contribution', type:'select', options:['No','Yes','Unknown']},
-  {key:'event_type', code:'390', label:'Event Type', type:'select', req:true, options:['System/component failure or malfunction (non-powerplant)','System/component failure or malfunction (powerplant)','Abnormal runway contact','Bird strike','Cabin safety events','Controlled flight into terrain','Fire/smoke (non-impact)','Fuel related','Ground events','HESLO – External load','Icing','Loss of control – in-flight','Loss of control – ground','Mid-air collision','Near collision with obstacle','Runway excursion','Runway incursion','Undershoot/overshoot','Unintended flight in IMC','Windshear/turbulence encounter','Other'], fallback:function(o){return (o.event_type || (o.event_types_avi&&o.event_types_avi[0]) || (o.event_types_cyber&&o.event_types_cyber[0]) || 'Other');}},
-  {key:'state_registry', code:'281', label:'State of Registry', type:'select', req:true, options:['Switzerland','France','Italy','Austria','Other']},
-  {key:'aircraft_category', code:'32', label:'Aircraft Category', type:'select', req:true, options:['Helicopter','Aeroplane','Glider','Other'], fallback:function(o){return 'Helicopter';}},
-  {key:'manufacturer_model', code:'21', label:'Manufacturer / Model', type:'select', req:true, options:['Airbus Helicopters / AS 332 C1 Super Puma','Airbus Helicopters / H125','Airbus Helicopters / H135','Airbus Helicopters / H145','Other'], fallback:function(o){return o.aircraft_type?('Airbus Helicopters / '+o.aircraft_type):'Airbus Helicopters / AS 332 C1 Super Puma';}},
-  {key:'serial_number', code:'254', label:'Serial Number', type:'text', req:true},
-  {key:'propulsion_type', code:'232', label:'Propulsion Type', type:'select', req:true, options:['Turbine – shaft','Piston','Electric','Other']},
-  {key:'mass_group', code:'319', label:'Mass Group', type:'select', req:true, options:['Over 5 700 kg','1 501 – 5 700 kg','751 – 1 500 kg','Up to 750 kg']},
-  {key:'risk_assessment', code:'1068', label:'Risk Assessment', type:'textarea'},
-  {key:'local_date', code:'433', label:'Local Date', type:'date', fallback:function(o){return o.date||'';}},
-  {key:'local_time', code:'457', label:'Local Time', type:'time', fallback:function(o){return o.time_local||'';}},
-  {key:'ercs_1098', code:'1098', label:'ERCS 1. Aircraft/Equip/Infr. Design', type:'select', options:['0','1','2','3','4','5']},
-  {key:'ercs_1099', code:'1099', label:'ERCS 2. Tactical Planning', type:'select', options:['0','1','2','3','4','5']},
-  {key:'ercs_1100', code:'1100', label:'ERCS 3. Regulations / Procedures', type:'select', options:['0','1','2','3','4','5']},
-  {key:'ercs_1101', code:'1101', label:'ERCS 4. Situational Awareness', type:'select', options:['0','1','2','3','4','5']},
-  {key:'ercs_1102', code:'1102', label:'ERCS 5. Warning Systems', type:'select', options:['0','1','2','3','4','5']},
-  {key:'ercs_1103', code:'1103', label:'ERCS 6. Late Recovery', type:'select', options:['0','1','2','3','4','5']},
-  {key:'ercs_1104', code:'1104', label:'ERCS 7. Protections', type:'select', options:['0','1','2','3','4','5']},
-  {key:'ercs_1105', code:'1105', label:'ERCS 8. Low Energy Occurrence', type:'select', options:['0','1','2','3','4','5']},
+  // RE-FIXED 2026-07-20: confirmed directly in the real Schema.xsd (Eccairs_Aviation_
+  // v5100_RITedb.zip) — attribute 430 "Occurrence_Category" DOES exist under entity
+  // Occurrence(24), extending VL430_5_0_1_1 (36 valid numeric codes, e.g. 1,2,3…24…106,
+  // 98,99 for None/Unknown). No label text is provided anywhere in this RIT package for
+  // any VL (checked exhaustively) — only valid code numbers, not their meaning — so no
+  // codeMap can safely be built without the Taxonomy Browser. Falls to manual-coding
+  // notes until real label->code pairs are sourced.
+  {key:'occurrence_category', code:'430', label:'Occurrence Category', type:'select', req:true, entity:'Occurrence', dtype:2, options:['ADRM: Aerodrome','AMAN: Abrupt manoeuvre','ARC: Abnormal runway contact','ATM: ATM/CNS','BIRD: Birdstrike','CABIN: Cabin safety events','CFIT: Controlled flight into terrain','FUEL: Fuel related','HESLO: Helicopter HESLO','LALT: Low altitude operations','MAC: Mid-air collision','RAMP: Ground handling','RE: Runway excursion','RI: Runway incursion','SCF-NP: System/component failure – non-powerplant','SCF-PP: System/component failure – powerplant','USOS: Undershoot/overshoot','UNK: Unknown','Other'], fallback:function(o){return o.eccairs_cat||'';}},
+  // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 431 "Occurrence_Class"
+  // exists under Occurrence(24), extending VL1015. No label text available -> uncoded.
+  {key:'occurrence_class', code:'431', label:'Occurrence Class', type:'select', req:true, entity:'Occurrence', dtype:2, options:['Accident','Serious incident','Incident'], fallback:function(o){return o.severity==='accident'?'Accident':(o.severity==='serious'?'Serious incident':(o.severity?'Incident':''));}},
+  // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 453 "Responsible_Entity"
+  // exists under Occurrence(24), extending VL1181. No label text available -> uncoded.
+  {key:'responsible_entity', code:'453', label:'Responsible Entity', type:'select', req:true, entity:'Occurrence', dtype:2, options:['Switzerland – FOCA','France – DSAC','EASA','Operator','Other']},
+  // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 428 "ATM_Contribution"
+  // exists under Occurrence(24), extending VL428. No label text available -> uncoded.
+  {key:'atm_contribution', code:'428', label:'ATM Contribution', type:'select', entity:'Occurrence', dtype:2, options:['No','Yes','Unknown']},
+  // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 390 "Event_Type" exists,
+  // but under a dedicated ENTITY called "Events" (entityId=14), NOT under Occurrence as
+  // originally guessed. Extends VL1009. No label text available -> uncoded.
+  {key:'event_type', code:'390', label:'Event Type', type:'select', req:true, entity:'Events', dtype:2, options:['System/component failure or malfunction (non-powerplant)','System/component failure or malfunction (powerplant)','Abnormal runway contact','Bird strike','Cabin safety events','Controlled flight into terrain','Fire/smoke (non-impact)','Fuel related','Ground events','HESLO – External load','Icing','Loss of control – in-flight','Loss of control – ground','Mid-air collision','Near collision with obstacle','Runway excursion','Runway incursion','Undershoot/overshoot','Unintended flight in IMC','Windshear/turbulence encounter','Other'], fallback:function(o){return (o.event_type || (o.event_types_avi&&o.event_types_avi[0]) || (o.event_types_cyber&&o.event_types_cyber[0]) || 'Other');}},
+  // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 281 "State_Of_Registry"
+  // (note capital O, exact XML element casing) exists under Aircraft(4), extending
+  // VL1024. No label text available -> uncoded.
+  {key:'state_registry', code:'281', label:'State of Registry', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Switzerland','France','Italy','Austria','Other']},
+  // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 32 "Aircraft_Category"
+  // exists under Aircraft(4), extending VL1179. No label text available -> uncoded.
+  {key:'aircraft_category', code:'32', label:'Aircraft Category', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Helicopter','Aeroplane','Glider','Other'], fallback:function(o){return 'Helicopter';}},
+  // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 21 "Manufacturer_Model"
+  // exists under Aircraft(4), extending VL1182. No label text available -> uncoded.
+  {key:'manufacturer_model', code:'21', label:'Manufacturer / Model', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Airbus Helicopters / AS 332 C1 Super Puma','Airbus Helicopters / H125','Airbus Helicopters / H135','Airbus Helicopters / H145','Other'], fallback:function(o){return o.aircraft_type?('Airbus Helicopters / '+o.aircraft_type):'Airbus Helicopters / AS 332 C1 Super Puma';}},
+  // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 254 "Serial_Number" exists
+  // under Aircraft(4), extending db:Base_Serial_Number (plain alphanumeric, not a coded
+  // VL). Emits directly in the XML, no VL code needed.
+  {key:'serial_number', code:'254', label:'Serial Number', type:'text', req:true, entity:'Aircraft', dtype:1},
+  // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 232 "Propulsion_Type"
+  // exists under Aircraft(4), extending VL232. No label text available -> uncoded.
+  {key:'propulsion_type', code:'232', label:'Propulsion Type', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Turbine – shaft','Piston','Electric','Other']},
+  // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 319 "Mass_Group" exists
+  // under Aircraft(4), extending VL319. No label text available -> uncoded.
+  {key:'mass_group', code:'319', label:'Mass Group', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Over 5 700 kg','1 501 – 5 700 kg','751 – 1 500 kg','Up to 750 kg']},
+  // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 1068 "Risk_Assessment"
+  // exists under Reporting_History(53), extending dt:Text (plain long text). The earlier
+  // "skipped in the PDF's 1067->1069 sequence" concern was a form-display choice, not a
+  // schema gap. Emits directly in the XML, no VL code needed.
+  {key:'risk_assessment', code:'1068', label:'Risk Assessment', type:'textarea', entity:'Reporting_History', dtype:14},
+  // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 433 "Local_Date" exists
+  // under Occurrence(24), extending xs:date (plain date, like UTC_Date). Emits directly
+  // in the XML, no VL code needed.
+  {key:'local_date', code:'433', label:'Local Date', type:'date', entity:'Occurrence', dtype:5, fallback:function(o){return o.date||'';}},
+  // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 457 "Local_Time" exists
+  // under Occurrence(24), extending dt:Time (like UTC_Time). Emits directly in the XML,
+  // no VL code needed.
+  {key:'local_time', code:'457', label:'Local Time', type:'time', entity:'Occurrence', dtype:15, fallback:function(o){return o.time_local||'';}},
+  // UPDATED 2026-07-20: real labels sourced from FOCA_ECCAIRS_Aviation_8_0_0_0 Value
+  // Lists (VL1188) — these describe barrier status, not a 0-5 severity scale. entity
+  // added: all 8 live under the "Risk_Assessment" entity (id 59), confirmed in Schema.xsd.
+  {key:'ercs_1098', code:'1098', label:'ERCS 1. Aircraft/Equip/Infr. Design', type:'select', entity:'Risk_Assessment', dtype:2, options:['Stopped','Remaining Known','Remaining Assumed','Failed Known','Failed Assumed','Not Applicable']},
+  {key:'ercs_1099', code:'1099', label:'ERCS 2. Tactical Planning', type:'select', entity:'Risk_Assessment', dtype:2, options:['Stopped','Remaining Known','Remaining Assumed','Failed Known','Failed Assumed','Not Applicable']},
+  {key:'ercs_1100', code:'1100', label:'ERCS 3. Regulations / Procedures', type:'select', entity:'Risk_Assessment', dtype:2, options:['Stopped','Remaining Known','Remaining Assumed','Failed Known','Failed Assumed','Not Applicable']},
+  {key:'ercs_1101', code:'1101', label:'ERCS 4. Situational Awareness', type:'select', entity:'Risk_Assessment', dtype:2, options:['Stopped','Remaining Known','Remaining Assumed','Failed Known','Failed Assumed','Not Applicable']},
+  {key:'ercs_1102', code:'1102', label:'ERCS 5. Warning Systems', type:'select', entity:'Risk_Assessment', dtype:2, options:['Stopped','Remaining Known','Remaining Assumed','Failed Known','Failed Assumed','Not Applicable']},
+  {key:'ercs_1103', code:'1103', label:'ERCS 6. Late Recovery', type:'select', entity:'Risk_Assessment', dtype:2, options:['Stopped','Remaining Known','Remaining Assumed','Failed Known','Failed Assumed','Not Applicable']},
+  {key:'ercs_1104', code:'1104', label:'ERCS 7. Protections', type:'select', entity:'Risk_Assessment', dtype:2, options:['Stopped','Remaining Known','Remaining Assumed','Failed Known','Failed Assumed','Not Applicable']},
+  {key:'ercs_1105', code:'1105', label:'ERCS 8. Low Energy Occurrence', type:'select', entity:'Risk_Assessment', dtype:2, options:['Stopped','Remaining Known','Remaining Assumed','Failed Known','Failed Assumed','Not Applicable']},
   {key:'safety_risk_score', code:'1095', label:'Safety Risk Score', type:'select', options:['A – Catastrophic','B – Hazardous','C – Major','D – Minor','E – Negligible']},
-  {key:'risk_method_939', code:'939', label:'Risk Method', type:'text', fallback:function(o){return 'ERCS + ICAO';}},
-  {key:'risk_grade', code:'1109', label:'Risk Grade', type:'select', options:['Intolerable','High','Medium','Low']},
-  {key:'ercs_comments', code:'1110', label:'ERCS Comments', type:'text'}
+  // UPDATED 2026-07-20: was free text ('ERCS + ICAO' fallback); the real attribute
+  // (Risk_Grading_Method, VL1136) is a coded 10-value select. Converted to type:'select'
+  // with real labels; entity added (Risk_Assessment, id 59, confirmed in Schema.xsd).
+  // Default kept close to the old free-text intent (ERCS is SAF's actual methodology).
+  {key:'risk_method_939', code:'939', label:'Risk Method', type:'select', entity:'Risk_Assessment', dtype:2, options:['ECCAIRS (old)','Undefined','RAT (Eurocontrol Risk Analysis Tool)','Other','ERC (Event Risk Classification of ARMS)','ERCS (European Common Risk Classification Scheme)','ICAO (Safety Risk Management)','ED-125 (EUROCAE Risk Classification Scheme)','FAA SRM (Safety Risk Management Worksheet)','Not applicable'], fallback:function(o){return 'ERCS (European Common Risk Classification Scheme)';}},
+  // UPDATED 2026-07-20: real scale only has 3 levels (VL1103), not 4 — 'Intolerable'/
+  // 'Medium' don't exist in the real list. entity added (Risk_Assessment, id 59).
+  {key:'risk_grade', code:'1109', label:'Risk Grade', type:'select', entity:'Risk_Assessment', dtype:2, options:['Low (green)','Elevated (Yellow)','High (Red)']},
+  // NEW 2026-07-20: confirmed in Schema.xsd — attribute 1110 "ERCS_Comments" exists
+  // under a dedicated entity "Risk_Assessment" (entityId=59, distinct from the
+  // Reporting_History.Risk_Assessment(1068) attribute above — same name, different
+  // level), extending dt:Text (plain long text). Emits directly, no VL code needed.
+  // The sibling ERCS dimension fields (1098-1105) and risk_grade/safety_risk_score/
+  // risk_method_939 below are LEFT EXCLUDED: their real VL code ranges (checked
+  // directly in the schema) don't match this file's current UI option sets — e.g.
+  // VL1188 (used by 1098-1105) only allows codes 1-6, not the 0-5 offered here; VL1103
+  // (risk_grade/1109) only allows 3 codes, not 4; VL1186 (safety_risk_score/1095) allows
+  // 51 codes, nothing like the 5 ICAO letter grades offered here; risk_method_939 is a
+  // free-text field here but the real attribute is a 10-value VL1136 code. Enabling
+  // these without realigning the UI options first would risk sending schema-valid but
+  // semantically wrong codes. Get the real label lists for VL1188/VL1103/VL1186/VL1136
+  // from the Taxonomy Browser to fix these properly.
+  {key:'ercs_comments', code:'1110', label:'ERCS Comments', type:'text', entity:'Risk_Assessment', dtype:14}
 ];
 function occHtmlEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function occGetEccairsValue(occ,key){
@@ -14943,6 +15071,26 @@ function _ritAttrXml(f, occ, uncoded){
 }
 // RIT attribute synonym (XML element name) per field key — matches Schema.xsd element names.
 const RIT_SYNONYM={headline:'Headline',utc_date:'UTC_Date',utc_time:'UTC_Time',state_area:'State_Area_Of_Occ',location_name:'Location_Name',highest_damage:'Highest_Damage',injury_level:'Injury_Level',weather_relevant:'Weather_Relevant',dangerous_goods:'Dang_Goods_Involved',reporting_entity:'Reporting_Entity',report_identification:'Report_Identification',parties_informed:'Parties_Informed',report_status:'Report_Status',reporter_language:'Reporter_S_Language',stsb_info:'STSB_information_by_reporter',reporter_description:'Reporter_S_Description',analysis_follow_up:'Description_Investigation',risk_mitigation_action:'Corrective_Actions',conclusions:'Conclusions',risk_classification:'Risk_Classification',risk_methodology:'Risk_Methodology',aircraft_registration:'Aircraft_Registration',operator:'Operator',operation_type:'Operation_Type',call_sign:'Call_Sign',flight_phase:'Flight_Phase',last_departure:'Last_Departure_Point',planned_destination:'Planned_Destination',birds_seen:'Birds_Wildlife_Seen',birds_struck:'Birds_Wildlife_Struck',bird_size:'Bird_Size',species_description:'Species_Description',speed_first_event:'Speed_First_Event',parts_struck:'Parts_Struck',pilot_advised_birds:'Pilot_Advised_Of_Birds',parts_damaged:'Parts_Damaged',location_indicator:'Location_Indicator',dangerous_good_detail:'Dangerous_Good',origin_of_goods:'Origin_Of_Goods',shipper_name:'Shipper_Name',air_waybill:'Air_Waybill_Consignment_Tracking_Number',total_fatalities:'Total_Fatalities',fatalities_aircraft:'Total_Fatalities_Aircraft',fatalities_ground:'Total_Fatalities_Ground',serious_injuries:'Total_Serious_Injuries',serious_injuries_aircraft:'Total_Serious_Injuries-Aircraft',serious_injuries_ground:'Total_Serious_Injuries-Ground',minor_injuries:'Total_Minor_Injuries',minor_injuries_aircraft:'Total_Minor_Injuries-Aircraft',minor_injuries_ground:'Total_Minor_Injuries-Ground'};
+// RE-ADDED 2026-07-20: synonyms confirmed by direct extraction of element names from
+// the real Schema.xsd (Eccairs_Aviation_v5100_RITedb.zip) — exact case matters (e.g.
+// State_Of_Registry has a capital O, not State_of_Registry as an earlier version used).
+Object.assign(RIT_SYNONYM, {
+  occurrence_category:'Occurrence_Category', occurrence_class:'Occurrence_Class',
+  responsible_entity:'Responsible_Entity', atm_contribution:'ATM_Contribution',
+  event_type:'Event_Type', state_registry:'State_Of_Registry',
+  aircraft_category:'Aircraft_Category', manufacturer_model:'Manufacturer_Model',
+  serial_number:'Serial_Number', propulsion_type:'Propulsion_Type',
+  mass_group:'Mass_Group', risk_assessment:'Risk_Assessment',
+  local_date:'Local_Date', local_time:'Local_Time', ercs_comments:'ERCS_Comments',
+  // ADDED 2026-07-20: real Schema.xsd element names for the ERCS/risk fields under the
+  // Risk_Assessment entity (id 59). Note risk_grade(1109)'s real name is
+  // 'ERCS_Risk_Grade', not 'Risk_Grade' (that's a separate attribute, 718, unused here).
+  ercs_1098:'Aircraft_Equipment_And_Infrastructure', ercs_1099:'Tactical_Planning',
+  ercs_1100:'Regulations_Procedures_And_Compliance', ercs_1101:'Situational_Awareness_And_Actions',
+  ercs_1102:'Warning_System_Operation_And_Compliance', ercs_1103:'Recovery_Action',
+  ercs_1104:'Protections', ercs_1105:'Unspecified',
+  risk_method_939:'Risk_Method', risk_grade:'ERCS_Risk_Grade'
+});
 // All 9 injury codes (458/459/460/467/468/469/470/471/472) confirmed directly under
 // Occurrence (24) via the embedded field data in the official production PDF (Taxonomy 7.2.0.1).
 
@@ -14959,7 +15107,7 @@ function _buildRitOccurrenceXml(occ, uncoded){
   Object.keys(byEntity).forEach(function(e){ byEntity[e].sort(byNumCode); });
   var rootAttrsXml=''; byEntity['Occurrence'].forEach(function(f){ rootAttrsXml+=_ritAttrXml(f, occ, uncoded); });
   var entitiesXml='';
-  ['Aerodrome_General','Aircraft','Dangerous_Goods','Reporting_History'].forEach(function(ent){
+  ['Aerodrome_General','Aircraft','Events','Dangerous_Goods','Reporting_History','Risk_Assessment'].forEach(function(ent){
     var fields=byEntity[ent]||[]; if(!fields.length) return;
     var body=''; fields.forEach(function(f){ body+=_ritAttrXml(f, occ, uncoded); });
     if(!body) return; // skip empty entity blocks
