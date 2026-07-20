@@ -10828,16 +10828,11 @@ const OCC_ECCAIRS_SECTIONS = [
 ];
 function _occFieldHtml(f, occ){
   var v=occGetEccairsValue(occ,f.key), id='occ-eccairs-'+f.key;
-  var wide=(f.type==='multiselect')?' form-full':'';
-  var html='<div class="form-field'+wide+'" style="margin:0;"><label class="field-label">'+occHtmlEsc(f.label)+' '+(f.req?'<span class="req">*</span> ':'')+'<span class="field-code">('+occHtmlEsc(f.code)+')</span></label>';
+  var html='<div class="form-field" style="margin:0;"><label class="field-label">'+occHtmlEsc(f.label)+' '+(f.req?'<span class="req">*</span> ':'')+'<span class="field-code">('+occHtmlEsc(f.code)+')</span></label>';
   if(f.type==='textarea') html+='<textarea id="'+id+'" rows="2">'+occHtmlEsc(v)+'</textarea>';
   else if(f.type==='multiselect'){
     var valsM=Array.isArray(v)?v:String(v||'').split('|').map(function(x){return x.trim();}).filter(Boolean);
-    html+='<div class="occ-msel">'
-      +'<button type="button" class="occ-msel-btn" onclick="occMselToggle(this)"><span class="occ-msel-label">'+(valsM.length?occHtmlEsc(valsM.join(', ')):'Select…')+'</span><span class="occ-msel-caret">▾</span></button>'
-      +'<div class="occ-msel-panel occ-msel-panel-grid" style="display:none;">'+(f.options||[]).map(function(o){var chk=valsM.indexOf(o)>=0?' checked':'';return '<label class="occ-msel-opt"><input type="checkbox" value="'+occHtmlEsc(o)+'"'+chk+' onchange="occMselUpdate(this)"/> '+occHtmlEsc(o)+'</label>';}).join('')+'</div>'
-      +'<input type="hidden" id="'+id+'" value="'+occHtmlEsc(valsM.join('|'))+'"/>'
-      +'</div>';
+    html+='<select id="'+id+'" multiple style="height:96px;">'+(f.options||[]).map(function(o){var sel=valsM.indexOf(o)>=0?' selected':'';return '<option'+sel+'>'+occHtmlEsc(o)+'</option>';}).join('')+'</select>';
   }
   else if(f.type==='select'){
     var vals=Array.isArray(v)?v:String(v||'').split('|').map(function(x){return x.trim();}).filter(Boolean);
@@ -10897,7 +10892,7 @@ function occMselUpdate(cb){
 }
 function occGetEccairsFields(){
   var out={};
-  ECCAIRS_OCC_FIELDS.forEach(function(f){var el=document.getElementById('occ-eccairs-'+f.key); if(!el) return; if(f.type==='multiselect') out[f.key]=(el.value||'').split('|').map(function(x){return x.trim();}).filter(Boolean); else out[f.key]=el.value||'';});
+  ECCAIRS_OCC_FIELDS.forEach(function(f){var el=document.getElementById('occ-eccairs-'+f.key); if(!el) return; if(f.type==='multiselect') out[f.key]=Array.from(el.selectedOptions||[]).map(function(o){return o.value;}); else out[f.key]=el.value||'';});
   return out;
 }
 function occEccairsCompleteness(occ){
