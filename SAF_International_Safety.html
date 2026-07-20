@@ -1075,7 +1075,8 @@ select[id$="-status"].status-clos{border-left-color:#3fb950;}
 .occ-msel-btn:hover{border-color:var(--steel-bright);}
 .occ-msel-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
 .occ-msel-caret{color:var(--grey-400);font-size:10px;flex-shrink:0;}
-.occ-msel-panel{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:40;max-height:200px;overflow-y:auto;background:#0d1b2a;border:1px solid rgba(74,159,224,.4);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.4);padding:6px;}
+.occ-msel-panel{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:40;max-height:260px;overflow-y:auto;background:#0d1b2a;border:1px solid rgba(74,159,224,.4);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.4);padding:8px;}
+.occ-msel-panel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:2px 10px;}
 .occ-msel-opt{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;font-size:12px;color:#f4f6f8;cursor:pointer;}
 .occ-msel-opt:hover{background:rgba(74,159,224,.12);}
 .occ-msel-opt input{margin:0;cursor:pointer;}
@@ -10827,13 +10828,14 @@ const OCC_ECCAIRS_SECTIONS = [
 ];
 function _occFieldHtml(f, occ){
   var v=occGetEccairsValue(occ,f.key), id='occ-eccairs-'+f.key;
-  var html='<div class="form-field" style="margin:0;"><label class="field-label">'+occHtmlEsc(f.label)+' '+(f.req?'<span class="req">*</span> ':'')+'<span class="field-code">('+occHtmlEsc(f.code)+')</span></label>';
+  var wide=(f.type==='multiselect')?' form-full':'';
+  var html='<div class="form-field'+wide+'" style="margin:0;"><label class="field-label">'+occHtmlEsc(f.label)+' '+(f.req?'<span class="req">*</span> ':'')+'<span class="field-code">('+occHtmlEsc(f.code)+')</span></label>';
   if(f.type==='textarea') html+='<textarea id="'+id+'" rows="2">'+occHtmlEsc(v)+'</textarea>';
   else if(f.type==='multiselect'){
     var valsM=Array.isArray(v)?v:String(v||'').split('|').map(function(x){return x.trim();}).filter(Boolean);
     html+='<div class="occ-msel">'
       +'<button type="button" class="occ-msel-btn" onclick="occMselToggle(this)"><span class="occ-msel-label">'+(valsM.length?occHtmlEsc(valsM.join(', ')):'Select…')+'</span><span class="occ-msel-caret">▾</span></button>'
-      +'<div class="occ-msel-panel" style="display:none;">'+(f.options||[]).map(function(o){var chk=valsM.indexOf(o)>=0?' checked':'';return '<label class="occ-msel-opt"><input type="checkbox" value="'+occHtmlEsc(o)+'"'+chk+' onchange="occMselUpdate(this)"/> '+occHtmlEsc(o)+'</label>';}).join('')+'</div>'
+      +'<div class="occ-msel-panel occ-msel-panel-grid" style="display:none;">'+(f.options||[]).map(function(o){var chk=valsM.indexOf(o)>=0?' checked':'';return '<label class="occ-msel-opt"><input type="checkbox" value="'+occHtmlEsc(o)+'"'+chk+' onchange="occMselUpdate(this)"/> '+occHtmlEsc(o)+'</label>';}).join('')+'</div>'
       +'<input type="hidden" id="'+id+'" value="'+occHtmlEsc(valsM.join('|'))+'"/>'
       +'</div>';
   }
