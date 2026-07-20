@@ -10727,7 +10727,7 @@ const ECCAIRS_OCC_FIELDS = [
   // official RIT v5.1.0.0 zip (which also lacks 1134) and overrides the PDF's embedded
   // form field for this attribute. `entity` intentionally omitted → excluded from E5X XML.
   {key:'stsb_info', code:'1134', label:'STSB Information by Reporter', type:'select', dtype:2, options:['YES','NO']},
-  {key:'reporter_description', code:'1092', label:"Reporter's Description", type:'textarea', req:true, entity:'Reporting_History', dtype:14, fallback:function(o){return o.description||'';}},
+  {key:'reporter_description', code:'1092', label:"Reporter's Description", type:'textarea', req:true, entity:'Reporting_History', dtype:14, full:true, fallback:function(o){return o.description||'';}},
   {key:'analysis_follow_up', code:'1067', label:'Analysis / Follow-up', type:'textarea', entity:'Reporting_History', dtype:14},
   {key:'risk_mitigation_action', code:'1069', label:'Risk Mitigation Action', type:'textarea', entity:'Reporting_History', dtype:14},
   {key:'conclusions', code:'1070', label:'Conclusions', type:'textarea', entity:'Reporting_History', dtype:14},
@@ -10834,8 +10834,9 @@ const OCC_ECCAIRS_SECTIONS = [
 ];
 function _occFieldHtml(f, occ){
   var v=occGetEccairsValue(occ,f.key), id='occ-eccairs-'+f.key;
-  var html='<div class="form-field" style="margin:0;"><label class="field-label">'+occHtmlEsc(f.label)+' '+(f.req?'<span class="req">*</span> ':'')+'<span class="field-code">('+occHtmlEsc(f.code)+')</span></label>';
-  if(f.type==='textarea') html+='<textarea id="'+id+'" rows="2">'+occHtmlEsc(v)+'</textarea>';
+  var wrapStyle='margin:0;'+(f.full?'grid-column:1 / -1;':'');
+  var html='<div class="form-field" style="'+wrapStyle+'"><label class="field-label">'+occHtmlEsc(f.label)+' '+(f.req?'<span class="req">*</span> ':'')+'<span class="field-code">('+occHtmlEsc(f.code)+')</span></label>';
+  if(f.type==='textarea') html+='<textarea id="'+id+'" rows="'+(f.full?4:2)+'" style="width:100%;box-sizing:border-box;'+(f.full?'resize:vertical;':'')+'">'+occHtmlEsc(v)+'</textarea>';
   else if(f.type==='multiselect'){
     var valsM=Array.isArray(v)?v:String(v||'').split('|').map(function(x){return x.trim();}).filter(Boolean);
     html+='<select id="'+id+'" multiple style="height:96px;">'+(f.options||[]).map(function(o){var sel=valsM.indexOf(o)>=0?' selected':'';return '<option'+sel+'>'+occHtmlEsc(o)+'</option>';}).join('')+'</select>';
