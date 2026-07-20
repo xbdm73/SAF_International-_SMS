@@ -10629,16 +10629,25 @@ function occClassificationLabel(k){return k==='ind'?'Indiscipline':(k==='vio'?'V
 // (Taxonomy Version 7.2.0.1 (C0), aviationreporting.eu). Les champs hors périmètre
 // de ce formulaire (taxonomie étendue / ERCS) sont regroupés en fin de liste.
 // ── RIT / E5X REAL SCHEMA METADATA ──────────────────────────────────
-// Sourced from the FOCA ECCAIRS Aviation 7.2.0.1 (1.1.4) RIT package
-// (Schema.xsd, dataTypes.xsd, mappings/Attributes.csv, mappings/Entities.csv,
-// mappings/VLxxx.csv) provided by the SAF ECCAIRS2 organisation account.
+// Entity IDs, attribute IDs and entity assignment cross-checked against the
+// OFFICIAL "Eccairs Aviation v5100 RITedb.zip" published at
+// aviationreporting.eu/en/ElectronicReporting (ECCAIRS Aviation RIT v5.1.0.0,
+// Identification.xml + mappings/Attributes.csv + mappings/Entities.csv).
+// This RIT export does NOT include the label→code translations for coded
+// value lists (VLxxx.csv files contain numeric codes only, no text), so the
+// RIT_VALUE_CODES map below is NOT independently verified against an
+// authoritative source — cross-check against the live ECCAIRS2 Taxonomy
+// Browser (aviationreporting.eu/en/taxonomy-browser) before relying on it.
 // entity: real RIT parent entity synonym | eid: entity taxonomy ID
-// dtype: 1 Alphanumeric | 2 Code | 3 Code+AdditionalText | 5 Date | 7 Decimal
+// dtype: internal convention used only by _ritAttrXml() to pick an XML
+// formatting rule below — NOT the official ECCAIRS numeric datatype code.
+//        1 Alphanumeric | 2 Code | 3 Code+AdditionalText | 5 Date | 7 Decimal
 //        13 Number | 14 Text(long) | 15 Time
 const RIT_ENTITY_ORDER = ['Occurrence','Aerodrome_General','Aircraft','Dangerous_Goods','Reporting_History'];
 const RIT_ENTITY_ID = {Occurrence:'24', Aerodrome_General:'1', Aircraft:'4', Dangerous_Goods:'43', Reporting_History:'53'};
 // Real value-list codes (label -> numeric code) for strict "Code" (dtype 2) attributes.
 // Option arrays below use these exact authoritative labels so mapping is 1:1 and lossless.
+// UNVERIFIED against official label lists (see note above) — treat as best-effort.
 const RIT_VALUE_CODES = {
   highest_damage: {Destroyed:'1', Substantial:'2', Minor:'3', None:'98', Unknown:'99'},
   injury_level: {Fatal:'1', Serious:'2', Minor:'3', None:'98', Unknown:'99'},
@@ -10679,7 +10688,9 @@ const ECCAIRS_OCC_FIELDS = [
   {key:'parties_informed', code:'1064', label:'Parties Informed', type:'multiselect', entity:'Reporting_History', dtype:3, options:['Aerodrome','ANSP','CAMO','Competent Authority','Design Approval Holder','Operator','Other'], fallback:function(o){return o.maintenance_concern==='Oui'?['CAMO','Operator']:['Operator'];}},
   {key:'report_status', code:'800', label:'Report Status', type:'select', req:true, entity:'Reporting_History', dtype:2, options:['Preliminary','Open','Closed','Data','Initial notification','Factual','Draft','Closed on issue'], fallback:function(o){return o.status==='pending_review'?'Draft':'Closed';}},
   {key:'reporter_language', code:'1091', label:"Reporter's Language", type:'select', req:true, entity:'Reporting_History', dtype:2, options:['Afrikaans','Albanian','Arabic','Armenian','Azerbaijani','Basque','Belarusian','Bulgarian','Catalan','Chinese','Croatian','Czech','Danish','Divehi','Dutch','English','Estonian','Faroese','Finnish','French','Galician','Georgian','German','Greek','Gujarati','Hebrew','Hindi','Hungarian','Icelandic','Indonesian','Italian','Japanese','Kannada','Kazakh','Kirghiz','Korean','Latvian','Lithuanian','Macedonian','Malay','Marathi','Mongolian','Norwegian','Persian','Polish','Portuguese','Punjabi','Romanian','Russian','Sanskrit','Serbian','Slovak','Slovenian','Spanish','Swedish','Tamil','Tatar','Telugu','Thai','Turkish','Ukrainian','Unknown','Urdu','Uzbek','Vietnamese','Other'], fallback:function(o){return 'French';}},
-  {key:'stsb_info', code:'1134', label:'STSB Information by Reporter', type:'select', entity:'Reporting_History', dtype:2, options:['YES','NO']},
+  // stsb_info (1134): not present in the official RIT v5.1.0.0 export — kept for
+  // on-screen tracking only (no `entity`, excluded from the E5X XML).
+  {key:'stsb_info', code:'1134', label:'STSB Information by Reporter', type:'select', dtype:2, options:['YES','NO']},
   {key:'reporter_description', code:'1092', label:"Reporter's Description", type:'textarea', req:true, entity:'Reporting_History', dtype:14, fallback:function(o){return o.description||'';}},
   {key:'analysis_follow_up', code:'1067', label:'Analysis / Follow-up', type:'textarea', entity:'Reporting_History', dtype:14},
   {key:'risk_mitigation_action', code:'1069', label:'Risk Mitigation Action', type:'textarea', entity:'Reporting_History', dtype:14},
@@ -10710,15 +10721,25 @@ const ECCAIRS_OCC_FIELDS = [
   {key:'origin_of_goods', code:'1051', label:'Origin of Goods', type:'text', entity:'Dangerous_Goods', dtype:1},
   {key:'shipper_name', code:'1053', label:'Shipper Name', type:'text', entity:'Dangerous_Goods', dtype:1},
   {key:'air_waybill', code:'1052', label:'Air Waybill / Consignment', type:'text', entity:'Dangerous_Goods', dtype:1},
-  // ── INJURIES (entity: Occurrence, ID 24) ──────────────────────────
-  {key:'total_fatalities', code:'458', label:'Total Fatalities', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
-  {key:'fatalities_aircraft', code:'459', label:'Total Fatalities – Aircraft', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
+  // ── INJURIES ────────────────────────────────────────────────────────
+  // Codes verified against the official ECCAIRS Aviation RIT v5.1.0.0
+  // (Eccairs Aviation v5100 RITedb.zip, aviationreporting.eu/en/ElectronicReporting).
+  // In this RIT, only the "-Ground" breakdown lives under Occurrence (24) with the
+  // SAME codes as the PDF (460/469/472). The "aircraft" breakdown is NOT under
+  // Occurrence in this RIT — it lives under Aircraft (4) with different codes:
+  // Total_Number_Fatalities=114, Total_Number_Serious_Injuries=262, Total_Number_Minor_Injuries=187.
+  // The PDF's "grand total" fields (458 Total Fatalities / 470 Total Serious / 467 Total Minor)
+  // do not exist as attributes in this RIT at all — kept here for on-screen tracking only
+  // (no `entity`, so they are excluded from the E5X XML and reported as computed values
+  // in the companion notes file instead of being sent as unverified codes).
+  {key:'total_fatalities', code:'458', label:'Total Fatalities', type:'number', req:true, dtype:13, fallback:function(o){return '0';}},
+  {key:'fatalities_aircraft', code:'114', label:'Total Fatalities – Aircraft', type:'number', req:true, entity:'Aircraft', dtype:13, fallback:function(o){return '0';}},
   {key:'fatalities_ground', code:'460', label:'Total Fatalities – Ground', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
-  {key:'serious_injuries', code:'470', label:'Total Serious Injuries', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
-  {key:'serious_injuries_aircraft', code:'471', label:'Total Serious Injuries – Aircraft', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
+  {key:'serious_injuries', code:'470', label:'Total Serious Injuries', type:'number', req:true, dtype:13, fallback:function(o){return '0';}},
+  {key:'serious_injuries_aircraft', code:'262', label:'Total Serious Injuries – Aircraft', type:'number', req:true, entity:'Aircraft', dtype:13, fallback:function(o){return '0';}},
   {key:'serious_injuries_ground', code:'472', label:'Total Serious Injuries – Ground', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
-  {key:'minor_injuries', code:'467', label:'Total Minor Injuries', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
-  {key:'minor_injuries_aircraft', code:'468', label:'Total Minor Injuries – Aircraft', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
+  {key:'minor_injuries', code:'467', label:'Total Minor Injuries', type:'number', req:true, dtype:13, fallback:function(o){return '0';}},
+  {key:'minor_injuries_aircraft', code:'187', label:'Total Minor Injuries – Aircraft', type:'number', req:true, entity:'Aircraft', dtype:13, fallback:function(o){return '0';}},
   {key:'minor_injuries_ground', code:'469', label:'Total Minor Injuries – Ground', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
 
   // ══════════════════════════════════════════════════════════════════
@@ -10759,31 +10780,66 @@ function occGetEccairsValue(occ,key){
   if(f && typeof f.fallback==='function') return f.fallback(occ);
   return '';
 }
+// Section grouping mirrors the official ECCAIRS2 "Flight Operation" PDF
+// (aviationreporting.eu) page order: OCCURRENCE, OCCURRENCE CLASSIFICATION,
+// REPORTING HISTORY, AIRCRAFT & FLIGHT DETAILS, BIRD/WILDLIFE INFORMATION,
+// AERODROME IDENTIFICATION, DANGEROUS GOODS, INJURIES — plus a final SAF/ERCS
+// extension section for fields outside the official PDF scope.
+const OCC_ECCAIRS_SECTIONS = [
+  {title:'Occurrence', sub:'Headline', keys:['headline']},
+  {title:null, sub:'When/Where', keys:['utc_date','utc_time','local_date','local_time','state_area','location_name']},
+  {title:'Occurrence Classification', sub:null, keys:['highest_damage','injury_level','weather_relevant','dangerous_goods','occurrence_category','occurrence_class','responsible_entity','atm_contribution']},
+  {title:'Reporting History', sub:'Reporting History', keys:['reporting_entity','report_identification','parties_informed','report_status','reporter_language','stsb_info','reporter_description','analysis_follow_up','risk_mitigation_action','conclusions','risk_classification','risk_methodology']},
+  {title:'Aircraft & Flight Details', sub:'Aircraft Information', keys:['state_registry','aircraft_registration','aircraft_category','manufacturer_model','serial_number','propulsion_type','mass_group']},
+  {title:null, sub:'Flight Details', keys:['operation_type','operator','last_departure','planned_destination','call_sign','flight_phase','event_type']},
+  {title:'Bird/Wildlife Information', sub:'Bird/Wildlife Information', keys:['birds_seen','birds_struck','bird_size','species_description','speed_first_event','parts_struck','parts_damaged','pilot_advised_birds']},
+  {title:'Aerodrome Identification', sub:'Aerodrome General', keys:['location_indicator']},
+  {title:'Dangerous Goods', sub:'Dangerous Goods', keys:['dangerous_good_detail','origin_of_goods','shipper_name','air_waybill']},
+  {title:'Injuries', sub:'Injuries', keys:['total_fatalities','fatalities_aircraft','fatalities_ground','serious_injuries','serious_injuries_aircraft','serious_injuries_ground','minor_injuries','minor_injuries_aircraft','minor_injuries_ground']},
+  {title:'Risk Assessment & ERCS (SAF Extension)', sub:null, keys:['risk_assessment','ercs_1098','ercs_1099','ercs_1100','ercs_1101','ercs_1102','ercs_1103','ercs_1104','ercs_1105','safety_risk_score','risk_method_939','risk_grade','ercs_comments']}
+];
+function _occFieldHtml(f, occ){
+  var v=occGetEccairsValue(occ,f.key), id='occ-eccairs-'+f.key;
+  var html='<div class="form-field" style="margin:0;"><label class="field-label">'+occHtmlEsc(f.label)+' '+(f.req?'<span class="req">*</span> ':'')+'<span class="field-code">('+occHtmlEsc(f.code)+')</span></label>';
+  if(f.type==='textarea') html+='<textarea id="'+id+'" rows="2">'+occHtmlEsc(v)+'</textarea>';
+  else if(f.type==='multiselect'){
+    var valsM=Array.isArray(v)?v:String(v||'').split('|').map(function(x){return x.trim();}).filter(Boolean);
+    html+='<div class="occ-msel">'
+      +'<button type="button" class="occ-msel-btn" onclick="occMselToggle(this)"><span class="occ-msel-label">'+(valsM.length?occHtmlEsc(valsM.join(', ')):'Select…')+'</span><span class="occ-msel-caret">▾</span></button>'
+      +'<div class="occ-msel-panel" style="display:none;">'+(f.options||[]).map(function(o){var chk=valsM.indexOf(o)>=0?' checked':'';return '<label class="occ-msel-opt"><input type="checkbox" value="'+occHtmlEsc(o)+'"'+chk+' onchange="occMselUpdate(this)"/> '+occHtmlEsc(o)+'</label>';}).join('')+'</div>'
+      +'<input type="hidden" id="'+id+'" value="'+occHtmlEsc(valsM.join('|'))+'"/>'
+      +'</div>';
+  }
+  else if(f.type==='select'){
+    var vals=Array.isArray(v)?v:String(v||'').split('|').map(function(x){return x.trim();}).filter(Boolean);
+    html+='<select id="'+id+'"><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option>'+(f.options||[]).map(function(o){var sel=vals.indexOf(o)>=0?' selected':'';return '<option'+sel+'>'+occHtmlEsc(o)+'</option>';}).join('')+'</select>';
+  } else if(f.type==='number') html+='<input id="'+id+'" type="number" min="0" value="'+occHtmlEsc(v||'0')+'"/>';
+  else html+='<input id="'+id+'" type="'+(f.type||'text')+'" value="'+occHtmlEsc(v)+'"/>';
+  html+='</div>';
+  return html;
+}
 function occRenderEccairsFields(occ){
   occ=occ||{};
-  var html='<div class="occ-eccairs-wrap" style="margin:0 0 16px;padding:16px;border:1px solid rgba(74,159,224,.25);border-left:4px solid var(--steel-bright);border-radius:0 8px 8px 0;background:rgba(74,159,224,.045);">'
-    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;"><div><div style="font-family:var(--font-mono);font-size:11px;font-weight:800;color:var(--steel-bright);letter-spacing:.08em;">ECCAIRS2 · FLIGHT OPERATION V3</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-top:3px;">Occurrence reporting fields — Taxonomy 7.1.0.1 / Release 2.58 mapping used by this SAF file</div></div><button type="button" class="occ-panel-toggle" onclick="occTogglePanel(\'occ-eccairs-body\',this)"><span class="occ-panel-chevron">▼</span> Replier / déplier</button></div>'
-    +'<div id="occ-eccairs-body" class="occ-panel-body"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">';
-  ECCAIRS_OCC_FIELDS.forEach(function(f){
-    var v=occGetEccairsValue(occ,f.key), id='occ-eccairs-'+f.key;
-    html+='<div class="form-field" style="margin:0;"><label class="field-label">'+occHtmlEsc(f.label)+' '+(f.req?'<span class="req">*</span> ':'')+'<span class="field-code">('+occHtmlEsc(f.code)+')</span></label>';
-    if(f.type==='textarea') html+='<textarea id="'+id+'" rows="2">'+occHtmlEsc(v)+'</textarea>';
-    else if(f.type==='multiselect'){
-      var valsM=Array.isArray(v)?v:String(v||'').split('|').map(function(x){return x.trim();}).filter(Boolean);
-      html+='<div class="occ-msel">'
-        +'<button type="button" class="occ-msel-btn" onclick="occMselToggle(this)"><span class="occ-msel-label">'+(valsM.length?occHtmlEsc(valsM.join(', ')):'Select…')+'</span><span class="occ-msel-caret">▾</span></button>'
-        +'<div class="occ-msel-panel" style="display:none;">'+(f.options||[]).map(function(o){var chk=valsM.indexOf(o)>=0?' checked':'';return '<label class="occ-msel-opt"><input type="checkbox" value="'+occHtmlEsc(o)+'"'+chk+' onchange="occMselUpdate(this)"/> '+occHtmlEsc(o)+'</label>';}).join('')+'</div>'
-        +'<input type="hidden" id="'+id+'" value="'+occHtmlEsc(valsM.join('|'))+'"/>'
-        +'</div>';
-    }
-    else if(f.type==='select'){
-      var vals=Array.isArray(v)?v:String(v||'').split('|').map(function(x){return x.trim();}).filter(Boolean);
-      html+='<select id="'+id+'"><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option>'+(f.options||[]).map(function(o){var sel=vals.indexOf(o)>=0?' selected':'';return '<option'+sel+'>'+occHtmlEsc(o)+'</option>';}).join('')+'</select>';
-    } else if(f.type==='number') html+='<input id="'+id+'" type="number" min="0" value="'+occHtmlEsc(v||'0')+'"/>';
-    else html+='<input id="'+id+'" type="'+(f.type||'text')+'" value="'+occHtmlEsc(v)+'"/>';
-    html+='</div>';
+  var byKey={}; ECCAIRS_OCC_FIELDS.forEach(function(f){ byKey[f.key]=f; });
+  var placed={};
+  var body='';
+  OCC_ECCAIRS_SECTIONS.forEach(function(sec){
+    var fields=sec.keys.map(function(k){ return byKey[k]; }).filter(Boolean);
+    if(!fields.length) return;
+    fields.forEach(function(f){ placed[f.key]=true; });
+    if(sec.title) body+='<div style="font-family:var(--font-mono);font-size:11px;font-weight:800;color:var(--gold-light,var(--gold));letter-spacing:.06em;text-transform:uppercase;margin:'+(body?'22px':'0')+' 0 6px;padding-bottom:6px;border-bottom:1px solid rgba(201,162,39,.3);">'+occHtmlEsc(sec.title)+'</div>';
+    if(sec.sub) body+='<div style="font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:var(--steel-bright);text-transform:uppercase;border-bottom:1px solid rgba(74,159,224,.25);padding-bottom:5px;margin:10px 0 10px;">'+occHtmlEsc(sec.sub)+'</div>';
+    body+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">'+fields.map(function(f){ return _occFieldHtml(f, occ); }).join('')+'</div>';
   });
-  html+='</div></div></div>';
+  // Any field not explicitly placed in a section (safety net) still renders, grouped at the end.
+  var leftover=ECCAIRS_OCC_FIELDS.filter(function(f){ return !placed[f.key]; });
+  if(leftover.length){
+    body+='<div style="font-family:var(--font-mono);font-size:11px;font-weight:800;color:var(--gold-light,var(--gold));letter-spacing:.06em;text-transform:uppercase;margin:22px 0 6px;padding-bottom:6px;border-bottom:1px solid rgba(201,162,39,.3);">Other Fields</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">'+leftover.map(function(f){ return _occFieldHtml(f, occ); }).join('')+'</div>';
+  }
+  var html='<div class="occ-eccairs-wrap" style="margin:0 0 16px;padding:16px;border:1px solid rgba(74,159,224,.25);border-left:4px solid var(--steel-bright);border-radius:0 8px 8px 0;background:rgba(74,159,224,.045);">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;"><div><div style="font-family:var(--font-mono);font-size:11px;font-weight:800;color:var(--steel-bright);letter-spacing:.08em;">ECCAIRS2 · FLIGHT OPERATION</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-top:3px;">Occurrence reporting fields — layout follows the official ECCAIRS2 Flight Operation PDF (aviationreporting.eu); E5X export verified against RIT v5.1.0.0</div></div><button type="button" class="occ-panel-toggle" onclick="occTogglePanel(\'occ-eccairs-body\',this)"><span class="occ-panel-chevron">▼</span> Replier / déplier</button></div>'
+    +'<div id="occ-eccairs-body" class="occ-panel-body">'+body+'</div></div>';
   return html;
 }
 if(!window.__occMselOutsideClickBound){
@@ -14819,14 +14875,22 @@ function _ritAttrXml(f, occ, uncoded){
   return out;
 }
 // RIT attribute synonym (XML element name) per field key — matches Schema.xsd element names.
-const RIT_SYNONYM={headline:'Headline',utc_date:'UTC_Date',utc_time:'UTC_Time',state_area:'State_Area_Of_Occ',location_name:'Location_Name',highest_damage:'Highest_Damage',injury_level:'Injury_Level',weather_relevant:'Weather_Relevant',dangerous_goods:'Dang_Goods_Involved',reporting_entity:'Reporting_Entity',report_identification:'Report_Identification',parties_informed:'Parties_Informed',report_status:'Report_Status',reporter_language:'Reporter_S_Language',stsb_info:'STSB_information_by_reporter',reporter_description:'Reporter_S_Description',analysis_follow_up:'Description_Investigation',risk_mitigation_action:'Corrective_Actions',conclusions:'Conclusions',risk_classification:'Risk_Classification',risk_methodology:'Risk_Methodology',aircraft_registration:'Aircraft_Registration',operator:'Operator',operation_type:'Operation_Type',call_sign:'Call_Sign',flight_phase:'Flight_Phase',last_departure:'Last_Departure_Point',planned_destination:'Planned_Destination',birds_seen:'Birds_Wildlife_Seen',birds_struck:'Birds_Wildlife_Struck',bird_size:'Bird_Size',species_description:'Species_Description',speed_first_event:'Speed_First_Event',parts_struck:'Parts_Struck',pilot_advised_birds:'Pilot_Advised_Of_Birds',parts_damaged:'Parts_Damaged',location_indicator:'Location_Indicator',dangerous_good_detail:'Dangerous_Good',origin_of_goods:'Origin_Of_Goods',shipper_name:'Shipper_Name',air_waybill:'Air_Waybill_Consignment_Tracking_Number',total_fatalities:'Total_Fatalities',fatalities_aircraft:'Total_Fatalities_Aircraft',fatalities_ground:'Total_Fatalities_Ground',serious_injuries:'Total_Serious_Injuries',serious_injuries_aircraft:'Total_Serious_Injuries-Aircraft',serious_injuries_ground:'Total_Serious_Injuries-Ground',minor_injuries:'Total_Minor_Injuries',minor_injuries_aircraft:'Total_Minor_Injuries-Aircraft',minor_injuries_ground:'Total_Minor_Injuries-Ground'};
+const RIT_SYNONYM={headline:'Headline',utc_date:'UTC_Date',utc_time:'UTC_Time',state_area:'State_Area_Of_Occ',location_name:'Location_Name',highest_damage:'Highest_Damage',injury_level:'Injury_Level',weather_relevant:'Weather_Relevant',dangerous_goods:'Dang_Goods_Involved',reporting_entity:'Reporting_Entity',report_identification:'Report_Identification',parties_informed:'Parties_Informed',report_status:'Report_Status',reporter_language:'Reporter_S_Language',stsb_info:'STSB_information_by_reporter',reporter_description:'Reporter_S_Description',analysis_follow_up:'Description_Investigation',risk_mitigation_action:'Corrective_Actions',conclusions:'Conclusions',risk_classification:'Risk_Classification',risk_methodology:'Risk_Methodology',aircraft_registration:'Aircraft_Registration',operator:'Operator',operation_type:'Operation_Type',call_sign:'Call_Sign',flight_phase:'Flight_Phase',last_departure:'Last_Departure_Point',planned_destination:'Planned_Destination',birds_seen:'Birds_Wildlife_Seen',birds_struck:'Birds_Wildlife_Struck',bird_size:'Bird_Size',species_description:'Species_Description',speed_first_event:'Speed_First_Event',parts_struck:'Parts_Struck',pilot_advised_birds:'Pilot_Advised_Of_Birds',parts_damaged:'Parts_Damaged',location_indicator:'Location_Indicator',dangerous_good_detail:'Dangerous_Good',origin_of_goods:'Origin_Of_Goods',shipper_name:'Shipper_Name',air_waybill:'Air_Waybill_Consignment_Tracking_Number',total_fatalities:'Total_Fatalities',fatalities_aircraft:'Total_Number_Fatalities',fatalities_ground:'Total_Fatalities_Ground',serious_injuries_aircraft:'Total_Number_Serious_Injuries',serious_injuries_ground:'Total_Serious_Injuries-Ground',minor_injuries_aircraft:'Total_Number_Minor_Injuries',minor_injuries_ground:'Total_Minor_Injuries-Ground'};
+// NOTE: total_fatalities / serious_injuries / minor_injuries (grand totals, PDF codes 458/470/467)
+// have no `entity` in ECCAIRS_OCC_FIELDS and are intentionally absent here — they are not
+// part of the official RIT v5.1.0.0 and are reported as computed values in the SAF notes file only.
 
 function _buildRitOccurrenceXml(occ, uncoded){
   var ritFields=ECCAIRS_OCC_FIELDS.filter(function(f){return f.entity;}).map(function(f){
     var g=Object.assign({}, f); g.label_synonym=RIT_SYNONYM[f.key]||f.key; return g;
   });
+  // IMPORTANT: per the official "ECCAIRS RIT - e5x data bridge" white paper (§5.3/§5.4),
+  // attributes and entities MUST appear in ascending numeric ID order inside their XSD
+  // sequence, or the E5X integrity check will fail on import. Sort by numeric code.
+  var byNumCode=function(a,b){ return parseInt(a.code,10)-parseInt(b.code,10); };
   var byEntity={}; RIT_ENTITY_ORDER.forEach(function(e){byEntity[e]=[];});
   ritFields.forEach(function(f){ (byEntity[f.entity]=byEntity[f.entity]||[]).push(f); });
+  Object.keys(byEntity).forEach(function(e){ byEntity[e].sort(byNumCode); });
   var rootAttrsXml=''; byEntity['Occurrence'].forEach(function(f){ rootAttrsXml+=_ritAttrXml(f, occ, uncoded); });
   var entitiesXml='';
   ['Aerodrome_General','Aircraft','Dangerous_Goods','Reporting_History'].forEach(function(ent){
@@ -14835,11 +14899,20 @@ function _buildRitOccurrenceXml(occ, uncoded){
     if(!body) return; // skip empty entity blocks
     entitiesXml+='      <'+ent+' entityId="'+RIT_ENTITY_ID[ent]+'">\n        <ATTRIBUTES>\n'+body+'        </ATTRIBUTES>\n      </'+ent+'>\n';
   });
+  // SET header verified against Identification.xml of the official
+  // "Eccairs Aviation v5100 RITedb.zip" (aviationreporting.eu/en/ElectronicReporting):
+  // NAME="ECCAIRS Aviation" VERSION="5.1.0.0". Domain="RIT" is a REQUIRED attribute per
+  // the E5X spec (§5.1) — it was previously left empty, which would likely fail validation.
+  // NOTE: the xmlns namespace URLs below use the ECCAIRS2 (e2.aviationreporting.eu) domain,
+  // as this file targets the current ECCAIRS2 platform rather than the legacy JRC system
+  // documented in the 2018 white paper (which uses eccairsportal.jrc.ec.europa.eu). This
+  // has not been confirmed against a live ECCAIRS2 Schema.xsd — verify with FOCA/JRC support
+  // or an actual E5X validation run if imports are rejected on namespace grounds.
   var xml='<?xml version="1.0" encoding="UTF-8"?>\n'
     +'<SET xmlns="https://e2.aviationreporting.eu/data.xsd"\n'
     +'     xmlns:dt="https://e2.aviationreporting.eu/dataTypes.xsd"\n'
-    +'     TaxonomyName="FOCA ECCAIRS Aviation 7.0.0.0 (1.1.4)"\n'
-    +'     TaxonomyVersion="7.0.0.0 (C0)" Domain="" Version="1.0.0.0">\n'
+    +'     TaxonomyName="ECCAIRS Aviation"\n'
+    +'     TaxonomyVersion="5.1.0.0" Domain="RIT" Version="1.0.0.0">\n'
     +'  <Occurrence entityId="24">\n'
     +'    <ATTRIBUTES>\n'+rootAttrsXml+'    </ATTRIBUTES>\n'
     +(entitiesXml?'    <ENTITIES>\n'+entitiesXml+'    </ENTITIES>\n':'')
@@ -14865,6 +14938,20 @@ function _buildSafNotes(occ, uncoded){
     uncoded.forEach(function(u){ L.push('- '+u); });
     L.push('');
   }
+  L.push('=== Totaux non-RIT (calculés, absents de la RIT v5.1.0.0 officielle) ===');
+  L.push('Ces 3 totaux ne correspondent à aucun attribut de la RIT officielle et ne sont donc pas transmis dans le XML E5X. Ils sont fournis ici à titre de référence (somme aircraft + ground) :');
+  (function(){
+    var fa=parseInt(occGetEccairsValue(occ,'fatalities_aircraft'),10)||0;
+    var fg=parseInt(occGetEccairsValue(occ,'fatalities_ground'),10)||0;
+    var sa=parseInt(occGetEccairsValue(occ,'serious_injuries_aircraft'),10)||0;
+    var sg=parseInt(occGetEccairsValue(occ,'serious_injuries_ground'),10)||0;
+    var ma=parseInt(occGetEccairsValue(occ,'minor_injuries_aircraft'),10)||0;
+    var mg=parseInt(occGetEccairsValue(occ,'minor_injuries_ground'),10)||0;
+    L.push('Total Fatalities (aircraft+ground): '+(fa+fg));
+    L.push('Total Serious Injuries (aircraft+ground): '+(sa+sg));
+    L.push('Total Minor Injuries (aircraft+ground): '+(ma+mg));
+  })();
+  L.push('');
   L.push('=== SAF metadata ===');
   L.push('Occurrence ID: '+occ.id);
   L.push('Linked Risk ID: '+(occ.risk_link||'None'));
