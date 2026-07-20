@@ -10720,7 +10720,13 @@ const ECCAIRS_OCC_FIELDS = [
   {key:'reporter_language', code:'1091', label:"Reporter's Language", type:'select', req:true, entity:'Reporting_History', dtype:2, options:['Afrikaans','Albanian','Arabic','Armenian','Azerbaijani','Basque','Belarusian','Bulgarian','Catalan','Chinese','Croatian','Czech','Danish','Divehi','Dutch','English','Estonian','Faroese','Finnish','French','Galician','Georgian','German','Greek','Gujarati','Hebrew','Hindi','Hungarian','Icelandic','Indonesian','Italian','Japanese','Kannada','Kazakh','Kirghiz','Korean','Latvian','Lithuanian','Macedonian','Malay','Marathi','Mongolian','Norwegian','Persian','Polish','Portuguese','Punjabi','Romanian','Russian','Sanskrit','Serbian','Slovak','Slovenian','Spanish','Swedish','Tamil','Tatar','Telugu','Thai','Turkish','Ukrainian','Unknown','Urdu','Uzbek','Vietnamese','Other'], fallback:function(o){return 'French';}},
   // stsb_info (1134): not present in the official RIT v5.1.0.0 export — kept for
   // on-screen tracking only (no `entity`, excluded from the E5X XML).
-  {key:'stsb_info', code:'1134', label:'STSB Information by Reporter', type:'select', entity:'Reporting_History', dtype:2, options:['YES','NO']},
+  // CONFIRMED by an actual ECCAIRS2 submission rejection (2026-07-20, migration status
+  // "Not migrated"): attributeId 1134 under Reporting_History is REJECTED by the live
+  // schema — "$.taxonomy_codes.24.ENTITIES.53[0].ATTRIBUTES.1134: is not defined in the
+  // schema and the schema does not allow additional properties". This matches the
+  // official RIT v5.1.0.0 zip (which also lacks 1134) and overrides the PDF's embedded
+  // form field for this attribute. `entity` intentionally omitted → excluded from E5X XML.
+  {key:'stsb_info', code:'1134', label:'STSB Information by Reporter', type:'select', dtype:2, options:['YES','NO']},
   {key:'reporter_description', code:'1092', label:"Reporter's Description", type:'textarea', req:true, entity:'Reporting_History', dtype:14, fallback:function(o){return o.description||'';}},
   {key:'analysis_follow_up', code:'1067', label:'Analysis / Follow-up', type:'textarea', entity:'Reporting_History', dtype:14},
   {key:'risk_mitigation_action', code:'1069', label:'Risk Mitigation Action', type:'textarea', entity:'Reporting_History', dtype:14},
@@ -15043,16 +15049,26 @@ async function exportOccurrenceE5X(id){
   if(typeof JSZip==='undefined'){showToast('JSZip unavailable — check internet connection','error');return;}
   var built=_buildE5XFromOcc(occ);
   var base='Occurrence_'+occ.id;
+  // IMPORTANT: confirmed by an actual ECCAIRS2 submission (2026-07-20) — a file placed at
+  // the root of the .e5x that is not referenced by a Resource Locator attribute in the XML
+  // is flagged as an orphan attachment ("Some attachment has not been referred in the xml"),
+  // even though it doesn't block the migration by itself. The SAF companion notes file is
+  // therefore no longer bundled inside the .e5x — it is downloaded separately instead.
   var zip=new JSZip();
   zip.file(base+'.xml', built.xml);
-  zip.file(base+'_SAF_notes.txt', built.notes);
   var blob=await zip.generateAsync({type:'blob', compression:'DEFLATE', compressionOptions:{level:6}});
   var fname='SAF_E5X_'+occ.id+'_'+occ.date+'.e5x';
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;
   document.body.appendChild(a);a.click();
   setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1000);
-  if(built.uncoded.length) showToast('E5X exported: '+fname+' — '+built.uncoded.length+' champ(s) à coder manuellement (voir notes)','warning');
-  else showToast('E5X exported: '+fname,'success');
+  // Companion notes as a separate plain-text download (NOT part of the E5X package)
+  var notesFname='SAF_E5X_'+occ.id+'_'+occ.date+'_notes.txt';
+  var nb=new Blob([built.notes],{type:'text/plain;charset=utf-8'});
+  var na=document.createElement('a');na.href=URL.createObjectURL(nb);na.download=notesFname;
+  document.body.appendChild(na);na.click();
+  setTimeout(function(){URL.revokeObjectURL(na.href);na.remove();},1200);
+  if(built.uncoded.length) showToast('E5X exported: '+fname+' — '+built.uncoded.length+' champ(s) à coder manuellement (voir '+notesFname+')','warning');
+  else showToast('E5X exported: '+fname+' (notes séparées: '+notesFname+')','success');
 }
 
 function saveAndExportE5X(){
