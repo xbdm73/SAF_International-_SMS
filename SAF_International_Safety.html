@@ -1384,7 +1384,7 @@ nav { top: 118px !important; }
     <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
     <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
-    <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
+    <a href="Archives/SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
     <a href="SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
   </div>
 </div>
@@ -1581,7 +1581,7 @@ nav { top: 118px !important; }
 </div>
 <div class="nav-item" onclick="showView('spi')">
 <span class="icon">📈</span>
-<span class="nav-item-text"><span class="nav-app-code">APP11</span><span class="nav-app-title">Safety Performance Indicators</span></span>
+<span class="nav-item-text"><span class="nav-app-code">APP11-OMM</span><span class="nav-app-title">Safety Performance Indicators</span></span>
 </div>
 <div class="nav-item" onclick="showView('occurrences')">
 <span class="icon">⚡</span>
@@ -1862,7 +1862,7 @@ nav { top: 118px !important; }
 <div class="dash-header">
 <div>
 <div class="dash-title">RISK REGISTER</div>
-<div class="dash-subtitle">Risk register consolidé · 35 évènements SMS · Barrières sources conservées</div>
+<div class="dash-subtitle">APP08-OMM · Risk register consolidé · 35 évènements SMS · Barrières sources conservées</div>
 </div>
 <button class="btn btn-gold" onclick="showView('form')">＋ NEW ENTRY</button>
 </div>
@@ -2715,7 +2715,7 @@ function updateOaciDefinitionDropdown(sel) {
 </div>
 </div>
 <div class="view" id="view-spi">
-<div class="dash-header"><div><div class="dash-title">SAFETY PERFORMANCE — SPT & CAPA KPI</div><div class="dash-subtitle">AMC1 ORO.GEN.200(a)(3) & AMC1 ORO.GEN.200(a)(6) — targets, thresholds, trends, corrective action effectiveness</div></div><button class="btn btn-ghost" onclick="renderSPIView()">↺ Refresh</button></div>
+<div class="dash-header"><div><div class="dash-title">SAFETY PERFORMANCE INDICATORS</div><div class="dash-subtitle">APP11-OMM · AMC1 ORO.GEN.200(a)(3) & AMC1 ORO.GEN.200(a)(6) — SPT & CAPA KPI: targets, thresholds, trends, corrective action effectiveness</div></div><button class="btn btn-ghost" onclick="renderSPIView()">↺ Refresh</button></div>
 <div style="margin:0 28px 18px;padding:14px 16px;background:rgba(74,159,224,.06);border:1px solid rgba(74,159,224,.25);border-radius:8px;font-size:11.5px;line-height:1.6;color:var(--grey-200);">
   <div style="font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:8px;">What do SPI, SPT and CAPA mean?</div>
   <div style="margin-bottom:6px;"><b>SPI — Safety Performance Indicator:</b> a measurable value tracked over time that reflects the actual state of safety performance (e.g. number of intolerable risks, reporting rate, barrier coverage).</div>
@@ -2825,7 +2825,7 @@ function updateOaciDefinitionDropdown(sel) {
   <div class="bt-collapsed-note">Bow-Tie replié — sélectionnez un autre évènement SMS ou cliquez sur “Afficher le Bow-Tie”.</div>
 </div></div>
 <div class="view" id="view-occurrences">
-<div class="dash-header"><div><div class="dash-title">OCCURRENCE LOG</div><div class="dash-subtitle">Reg. (EU) 376/2014 Art. 4 — Occurrence tracking with 5 Whys root cause analysis</div></div>
+<div class="dash-header"><div><div class="dash-title">OCCURRENCE LOG</div><div class="dash-subtitle">APP12-OMM · Reg. (EU) 376/2014 Art. 4 — Occurrence tracking with 5 Whys root cause analysis</div></div>
 <div style="display:flex;gap:8px;align-items:center;">
 <button class="btn" style="background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.4);color:#f85149;font-family:var(--font-mono);font-size:11px;padding:7px 14px;border-radius:6px;cursor:pointer;" onclick="if(typeof safImportMobileReports==='function') safImportMobileReports().then(function(){ showToast('Vérification terminée','success'); })" title="Vérifier les rapports mobiles en attente dans saf_reports">📱 Rapports mobiles</button>
 <button class="btn btn-primary" onclick="showOccurrenceForm()">＋ New Occurrence</button>
@@ -2930,7 +2930,7 @@ function updateOaciDefinitionDropdown(sel) {
 <div class="dash-header">
   <div>
     <div class="dash-title">🚨 EMERGENCY RESPONSE PLAN</div>
-    <div class="dash-subtitle">APP12-OMM Ver. 3.0 · 01.01.2026 · SAF International · AS 332 C1 Super Puma</div>
+    <div class="dash-subtitle">APP10-OMM Ver. 3.0 · 01.01.2026 · SAF International · AS 332 C1 Super Puma</div>
   </div>
   <button class="btn btn-ghost" onclick="window.print()" style="font-size:11px;">🖨 Print ERP</button>
 </div>
@@ -3815,7 +3815,7 @@ function updateOaciDefinitionDropdown(sel) {
 <div class="dash-header" style="padding:0 0 20px;">
   <div>
     <div class="dash-title">MANAGEMENT OF CHANGE</div>
-    <div class="dash-subtitle">Change Study / Safety Assessment · AS 332 C1 Super Puma · SAF International</div>
+    <div class="dash-subtitle">APP09-OMM · Change Study / Safety Assessment · AS 332 C1 Super Puma · SAF International</div>
   </div>
   <button class="btn btn-primary" onclick="showChangeStudyForm()">＋ New Change Study</button>
 </div>
