@@ -10710,6 +10710,13 @@ const RIT_VALUE_CODES = {
   ercs_1098: ERCS_BARRIER_VL, ercs_1099: ERCS_BARRIER_VL, ercs_1100: ERCS_BARRIER_VL,
   ercs_1101: ERCS_BARRIER_VL, ercs_1102: ERCS_BARRIER_VL, ercs_1103: ERCS_BARRIER_VL,
   ercs_1104: ERCS_BARRIER_VL, ercs_1105: ERCS_BARRIER_VL,
+  // Flight points and event coding integrated from official ECCAIRS Aviation 8.0.0.0 mappings.
+  // VL167/VL228: LFKT : Corte = 68157. For an off-aerodrome firefighting worksite,
+  // the coded geographical reference is Corte and AdditionalText preserves the operational wording.
+  last_departure: {'LFKT':'68157','LFKT : Corte':'68157','Corte':'68157'},
+  planned_destination: {'Chantier feu Corte':'68157','LFKT':'68157','LFKT : Corte':'68157','Corte':'68157'},
+  // VL390: broad official event node for helicopter external-load occurrences.
+  event_type: {'HESLO – External load':'99010038','HESLO - External load':'99010038','External Load Events':'99010038'},
   // highest_damage / injury_level / weather_relevant / dangerous_goods / report_status /
   // reporter_language / flight_phase / birds_seen / birds_struck / bird_size /
   // pilot_advised_birds — all CONFIRMED byte-for-byte against the embedded dropdown
@@ -10797,7 +10804,7 @@ const ECCAIRS_OCC_FIELDS = [
   // 5-level scale is used in ECCAIRS2 as in this file -> switched to dtype:2 with the
   // digit already embedded in each label used as the VL code (see RIT_VALUE_CODES).
   {key:'risk_classification', code:'1065', label:'Risk Classification', type:'select', req:true, entity:'Reporting_History', dtype:2, options:['5 – Intolerable','4 – Tolerable but undesirable','3 – Tolerable','2 – Acceptable','1 – Negligible']},
-  {key:'risk_methodology', code:'1066', label:'Risk Methodology', type:'text', entity:'Reporting_History', dtype:1, fallback:function(o){return 'ICAO Doc 9859 Safety Management Manual';}},
+  {key:'risk_methodology', code:'1066', label:'Risk Methodology', type:'text', entity:'Reporting_History', dtype:1, fallback:function(o){return 'ERCS (European Common Risk Classification Scheme) supplemented by ICAO Doc 9859 Safety Risk Management methodology';}},
   // ── AIRCRAFT & FLIGHT DETAILS (entity: Aircraft, ID 4) ────────────
   {key:'aircraft_registration', code:'244', label:'Aircraft Registration', type:'text', req:true, entity:'Aircraft', dtype:1, fallback:function(o){return o.aircraft_reg||'';}},
   {key:'operator', code:'215', label:'Operator', type:'text', req:true, entity:'Aircraft', dtype:3, fallback:function(o){return 'SAF International';}},
@@ -15016,7 +15023,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ════════════════════════════════════════════════════════════════
 // OCCURRENCE EXPORT — E5X / PDF / CSV
-// E5X structure aligned with official ECCAIRS Aviation 8.0.0.0 Schema.xsd (03-Jul-2026)
+// E5X structure aligned with official ECCAIRS Aviation 8.0.0.0 Schema.xsd (03-Jul-2026) | LFKT/HESLO/ERCS mappings integrated
 // Schema.xsd (namespace https://e2.aviationreporting.eu/data.xsd)
 // ════════════════════════════════════════════════════════════════
 
@@ -15326,6 +15333,15 @@ function _preflightE5XPackage(built){
   if(!/<Headline\b[^>]*attributeId=["']601["']/.test(xml)) errors.push('Headline (601) is missing.');
   if(!/<UTC_Date\b[^>]*attributeId=["']477["']/.test(xml)) errors.push('UTC Date (477) is missing.');
   if(!/<UTC_Time\b[^>]*attributeId=["']478["']/.test(xml)) errors.push('UTC Time (478) is missing.');
+  if(built&&built.occ){
+    var ld=occGetEccairsValue(built.occ,'last_departure');
+    var pd=occGetEccairsValue(built.occ,'planned_destination');
+    var et=occGetEccairsValue(built.occ,'event_type');
+    if(ld && !/<Last_Departure_Point\b[^>]*attributeId=["']167["']/.test(xml)) errors.push('Last Departure Point (167) is not coded in the E5X.');
+    if(pd && !/<Planned_Destination\b[^>]*attributeId=["']228["']/.test(xml)) errors.push('Planned Destination (228) is not coded in the E5X.');
+    if(et && !/<Event_Type\b[^>]*attributeId=["']390["']/.test(xml)) errors.push('Event Type (390) is not coded in the E5X.');
+    if(!/<Risk_Method\b[^>]*attributeId=["']939["']>6<\/Risk_Method>/.test(xml)) warnings.push('Risk Method (939) is not coded as ERCS (code 6).');
+  }
   function n(key){var v=occGetEccairsValue((built&&built.occ)||{},key);return Math.max(0,parseInt(v,10)||0);}
   if(built&&built.occ){
     var ft=n('total_fatalities'), fa=n('fatalities_aircraft'), fg=n('fatalities_ground');
