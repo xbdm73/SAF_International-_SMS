@@ -6,7 +6,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>SAFETY MANAGEMENT SYSTEM</title>
 <!-- SAF ECCAIRS OCCLOG PATCH V2 TESTED 2026-06-18 | BOWTIE SMS DROPDOWN FIX -->
-<!-- SAF E5X RIT REBUILD V2 2026-07-03 | REAL FOCA 7.2.0.1 SCHEMA + ENTITY NESTING + JSZIP + MULTISELECT DROPDOWN FIX -->
+<!-- SAF E5X TAXONOMY 8.0.0.0 CHECKED 2026-07-21 | OFFICIAL ECCAIRS2 XSD + VALUE LISTS + PREFLIGHT -->
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&amp;family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&amp;family=Bebas+Neue&amp;display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -10997,7 +10997,7 @@ function occRenderEccairsFields(occ){
       +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">'+leftover.map(function(f){ return _occFieldHtml(f, occ); }).join('')+'</div>';
   }
   var html='<div class="occ-eccairs-wrap" style="margin:0 0 16px;padding:16px;border:1px solid rgba(74,159,224,.25);border-left:4px solid var(--steel-bright);border-radius:0 8px 8px 0;background:rgba(74,159,224,.045);">'
-    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;"><div><div style="font-family:var(--font-mono);font-size:11px;font-weight:800;color:var(--steel-bright);letter-spacing:.08em;">ECCAIRS2 · FLIGHT OPERATION</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-top:3px;">Occurrence reporting fields — layout follows the official ECCAIRS2 Flight Operation PDF (aviationreporting.eu); E5X export verified against RIT v5.1.0.0</div></div><button type="button" class="occ-panel-toggle" onclick="occTogglePanel(\'occ-eccairs-body\',this)"><span class="occ-panel-chevron">▼</span> Replier / déplier</button></div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;"><div><div style="font-family:var(--font-mono);font-size:11px;font-weight:800;color:var(--steel-bright);letter-spacing:.08em;">ECCAIRS2 · FLIGHT OPERATION</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-top:3px;">Occurrence reporting fields — layout follows the official ECCAIRS2 Flight Operation PDF (aviationreporting.eu); E5X export aligned with official ECCAIRS Aviation 8.0.0.0 XSD</div></div><button type="button" class="occ-panel-toggle" onclick="occTogglePanel(\'occ-eccairs-body\',this)"><span class="occ-panel-chevron">▼</span> Replier / déplier</button></div>'
     +'<div id="occ-eccairs-body" class="occ-panel-body">'+body+'</div></div>';
   return html;
 }
@@ -15126,7 +15126,7 @@ function _buildRitOccurrenceXml(occ, uncoded){
     +'<SET xmlns="https://e2.aviationreporting.eu/data.xsd"\n'
     +'     xmlns:dt="https://e2.aviationreporting.eu/dataTypes.xsd"\n'
     +'     TaxonomyName="ECCAIRS Aviation"\n'
-    +'     TaxonomyVersion="5.1.0.0" Domain="RIT" Version="1.0.0.0">\n'
+    +'     TaxonomyVersion="8.0.0.0" Domain="" Version="1.0.0.0">\n'
     +'  <Occurrence entityId="24">\n'
     +'    <ATTRIBUTES>\n'+rootAttrsXml+'    </ATTRIBUTES>\n'
     +(entitiesXml?'    <ENTITIES>\n'+entitiesXml+'    </ENTITIES>\n':'')
@@ -15192,11 +15192,31 @@ function _buildE5XFromOcc(occ){
   return {xml:xml, notes:notes, uncoded:uncoded};
 }
 
+function _preflightE5XPackage(built){
+  var errors=[];
+  var warnings=[];
+  var xml=(built&&built.xml)||'';
+  if(!xml.trim()) errors.push('XML occurrence absent.');
+  if(/attributeId=["']1134["']/.test(xml)) errors.push('Attribute 1134 must not be exported: rejected by the ECCAIRS2 import schema for Reporting_History (entity 53).');
+  if(!/<SET\b/.test(xml) || !/<Occurrence\b[^>]*entityId=["']24["']/.test(xml)) errors.push('Invalid E5X root structure (SET/Occurrence entity 24).');
+  if(!/TaxonomyVersion=["']8\.0\.0\.0["']/.test(xml)) errors.push('TaxonomyVersion must be 8.0.0.0 for the official ECCAIRS Aviation package dated 03-Jul-2026.');
+  if(!/Domain=["']["']/.test(xml)) errors.push('Domain must be empty according to the official ECCAIRS Aviation 8.0.0.0 Schema.xsd.');
+  if(!/<Report_Identification\b[^>]*attributeId=["']438["']/.test(xml)) errors.push('Report Identification (438) is missing.');
+  if(!/<Reporting_Entity\b[^>]*attributeId=["']447["']/.test(xml)) errors.push('Reporting Entity (447) is missing.');
+  if(!/<Headline\b[^>]*attributeId=["']601["']/.test(xml)) errors.push('Headline (601) is missing.');
+  if(!/<UTC_Date\b[^>]*attributeId=["']477["']/.test(xml)) errors.push('UTC Date (477) is missing.');
+  if(!/<UTC_Time\b[^>]*attributeId=["']478["']/.test(xml)) errors.push('UTC Time (478) is missing.');
+  return {ok:errors.length===0,errors:errors,warnings:warnings};
+}
+
 async function exportOccurrenceE5X(id){
   var occ=getOccurrences().find(function(o){return o.id===id;});
   if(!occ){showToast('Occurrence not found','error');return;}
   if(typeof JSZip==='undefined'){showToast('JSZip unavailable — check internet connection','error');return;}
   var built=_buildE5XFromOcc(occ);
+  var preflight=_preflightE5XPackage(built);
+  if(!preflight.ok){showToast('E5X export blocked: '+preflight.errors.join(' | '),'error');console.error('E5X preflight',preflight);return;}
+  if(preflight.warnings.length) console.warn('E5X preflight warnings',preflight.warnings);
   var base='Occurrence_'+occ.id;
   // IMPORTANT: confirmed by an actual ECCAIRS2 submission (2026-07-20) — a file placed at
   // the root of the .e5x that is not referenced by a Resource Locator attribute in the XML
