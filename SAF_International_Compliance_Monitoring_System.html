@@ -1840,12 +1840,12 @@ function safExportPDF() {
 <div class="cms-nav-section">
 <div class="cms-nav-label">Navigation</div>
 <button class="tab active" onclick="showMainTab('dashboard',this)"><span class="cms-nav-icon">🏠</span><span class="cms-nav-text"><span class="cms-nav-title">Dashboard</span></span></button>
-<button class="tab" onclick="showMainTab('audit_plan',this)"><span class="cms-nav-icon">📝</span><span class="cms-nav-text"><span class="cms-nav-code">APP13</span><span class="cms-nav-title">Audit plan</span></span></button>
-<button class="tab" onclick="showMainTab('kpispi',this)"><span class="cms-nav-icon">📊</span><span class="cms-nav-text"><span class="cms-nav-code">APP14</span><span class="cms-nav-title">Compliance indicators</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_registre',this)"><span class="cms-nav-icon">📋</span><span class="cms-nav-text"><span class="cms-nav-code">APP15</span><span class="cms-nav-title">Corrective Action Plan</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_sous_traitants',this)"><span class="cms-nav-icon">🔗</span><span class="cms-nav-text"><span class="cms-nav-code">APP16</span><span class="cms-nav-title">List of Subcontractors</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_auditeurs',this)"><span class="cms-nav-icon">👤</span><span class="cms-nav-text"><span class="cms-nav-code">APP17</span><span class="cms-nav-title">Auditors & Inspectors</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_trainers',this)"><span class="cms-nav-icon">🎓</span><span class="cms-nav-text"><span class="cms-nav-code">APP18</span><span class="cms-nav-title">List of Trainers</span></span></button>
+<button class="tab" onclick="showMainTab('audit_plan',this)"><span class="cms-nav-icon">📝</span><span class="cms-nav-text"><span class="cms-nav-code">APP13-OMM</span><span class="cms-nav-title">Audit plan</span></span></button>
+<button class="tab" onclick="showMainTab('kpispi',this)"><span class="cms-nav-icon">📊</span><span class="cms-nav-text"><span class="cms-nav-code">APP14-OMM</span><span class="cms-nav-title">Compliance indicators</span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_registre',this)"><span class="cms-nav-icon">📋</span><span class="cms-nav-text"><span class="cms-nav-code">APP15-OMM</span><span class="cms-nav-title">Corrective Action Plan</span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_sous_traitants',this)"><span class="cms-nav-icon">🔗</span><span class="cms-nav-text"><span class="cms-nav-code">APP16-OMM</span><span class="cms-nav-title">List of Subcontractors</span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_auditeurs',this)"><span class="cms-nav-icon">👤</span><span class="cms-nav-text"><span class="cms-nav-code">APP17-OMM</span><span class="cms-nav-title">Auditors & Inspectors</span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_trainers',this)"><span class="cms-nav-icon">🎓</span><span class="cms-nav-text"><span class="cms-nav-code">APP18-OMM</span><span class="cms-nav-title">List of Trainers</span></span></button>
 </div>
 <div class="cms-nav-section">
 <div class="cms-nav-label">CMS Modules</div>
@@ -1873,6 +1873,7 @@ function safExportPDF() {
 <section class="panel" id="kpispi">
 <div class="card note">
 <h2>KPI Indicators — EASA Audit Compliance</h2>
+<div style="font-family:var(--font-mono,monospace);font-size:11px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase;margin:2px 0 8px;">APP14-OMM</div>
 <p class="muted">Compliance performance indicators (KPIs) required by EASA in accordance with Regulation (EU) 965/2012, ORO.GEN.200, ORO.AOC.130 and ORO.GEN.150. These indicators measure the quality and effectiveness of the internal audit programme and the handling of regulatory findings.</p>
 <p class="muted" style="font-size:11px;border-left:3px solid #f5a623;padding-left:10px;">Note — Scope: KPI-6 "Repeat findings" here tracks recurrence <b>within the formal Part-ORO/CAT/SPO/SPA audit grids only</b>. A separate "Repeat findings (SMS/CAPA register)" indicator exists in the Safety Management module — it tracks recurrence across the wider SMS audit, change-study and change-control record, and is not the same dataset.</p>
 <div class="badges">
@@ -16937,6 +16938,7 @@ function g_toggleText(el){
     <div class="ap-logo">AP</div>
     <div>
       <div class="ap-title">Audit Plan — SAF International</div>
+      <div style="font-family:var(--font-mono,monospace);font-size:11px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase;margin:2px 0 4px;">APP13-OMM</div>
       <div class="ap-sub">AS 332 C1 Super Puma · Reg. 965/2012 &amp; 1321/2014 · With IR (Implementing Rules)</div>
     </div>
   </div>
@@ -17405,6 +17407,7 @@ function ap2Show(id,btn){
 <section class="panel" id="cmsx_registre">
 <div class="cmsx-panel">
 <div class="cmsx-h2">📋 Corrective Action Plan</div>
+<div style="font-family:var(--font-mono,monospace);font-size:11px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase;margin:2px 0 8px;">APP15-OMM</div>
 <div class="cmsx-sub">Tracking of corrective actions for findings (deviations) raised during audits. Each entry records the audit, the finding level, the nominated person responsible, the corrective-action status and its effectiveness verification. Compliant with AMC1 ORO.GEN.200(a)(6) (management of findings &amp; corrective actions) and GM1 ORO.GEN.150 (closure deadlines).</div>
 <div class="cmsx-kpi-row" id="cmsx-reg-kpis"></div>
 <div class="cmsx-toolbar">
@@ -18807,6 +18810,7 @@ else { cmsxInit(); }
 <section class="panel" id="cmsx_sous_traitants">
 <div class="cmsx-panel">
 <div class="cmsx-h2">🔗 List of Subcontractors</div>
+<div style="font-family:var(--font-mono,monospace);font-size:11px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase;margin:2px 0 8px;">APP16-OMM</div>
 <div class="cmsx-sub">Monitoring of contracted organizations (maintenance, training, handling, expertise). Compliant with AMC2 ORO.GEN.200(a)(6) &amp; ORO.GEN.205 — continuous monitoring of provider compliance.</div>
 <div class="cmsx-toolbar">
 <button class="cmsx-btn green" onclick="safSTOpen()">＋ Add a contractor</button>
@@ -18884,6 +18888,7 @@ else { cmsxInit(); }
 <section class="panel" id="cmsx_auditeurs">
 <div class="cmsx-panel">
 <div class="cmsx-h2">👤 Auditors & Inspectors</div>
+<div style="font-family:var(--font-mono,monospace);font-size:11px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase;margin:2px 0 8px;">APP17-OMM</div>
 <div class="cmsx-sub">Formal qualification, authorizations and recurrent training of CMS internal auditors. Compliant with AMC1 ORO.GEN.200(a)(6) — the auditor must be competent, trained and independent of the audited domain.</div>
 <div class="cmsx-toolbar">
 <button class="cmsx-btn green" onclick="safAudOpen()">＋ Add an auditor</button>
@@ -18949,6 +18954,7 @@ else { cmsxInit(); }
 <section class="panel" id="cmsx_trainers">
 <div class="cmsx-panel">
 <div class="cmsx-h2">🎓 List of Trainers</div>
+<div style="font-family:var(--font-mono,monospace);font-size:11px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase;margin:2px 0 8px;">APP18-OMM</div>
 <div class="cmsx-sub">Register of internal and external trainers authorized to deliver training within the SAF International training programme. Compliant with ORO.GEN.200(a)(4) — competency, qualification and currency of instructors.</div>
 <div class="cmsx-toolbar">
 <button class="cmsx-btn green" onclick="safTrnOpen()">＋ Add a trainer</button>
