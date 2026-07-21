@@ -15016,7 +15016,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ════════════════════════════════════════════════════════════════
 // OCCURRENCE EXPORT — E5X / PDF / CSV
-// Real RIT/E5X structure sourced from FOCA ECCAIRS Aviation 7.2.0.1 (1.1.4)
+// E5X structure aligned with official ECCAIRS Aviation 8.0.0.0 Schema.xsd (03-Jul-2026)
 // Schema.xsd (namespace https://e2.aviationreporting.eu/data.xsd)
 // ════════════════════════════════════════════════════════════════
 
@@ -15094,45 +15094,161 @@ Object.assign(RIT_SYNONYM, {
 // All 9 injury codes (458/459/460/467/468/469/470/471/472) confirmed directly under
 // Occurrence (24) via the embedded field data in the official production PDF (Taxonomy 7.2.0.1).
 
+// Exact attribute order from the official ECCAIRS Aviation 8.0.0.0 Schema.xsd
+// generated 03-Jul-2026. The XSD uses ordered sequences inside ATTRIBUTES;
+// numeric AttributeId sorting is NOT sufficient (e.g. File_Number 452 must precede
+// Responsible_Entity 453 and Reporting History has its own non-numeric sequence).
+const ECCAIRS8_ATTRIBUTE_ORDER = {
+  Occurrence: [
+    'Validation_Taxonomy_Name','Validation_Taxonomy_Vers','Dew_Point','Wx_Conditions',
+    'Dang_Goods_Involved','Height_Of_Cloud_Base','Light_Conditions','Maximum_Gust',
+    'Cloud_Amount','Speed_Measured_At','Air_Temperature','Visibility','Wind_Direction',
+    'Wind_Gusts','Wind_Speed','ATM_Contribution','Occurrence_Category','Occurrence_Class',
+    'Highest_Damage','Local_Date','Date_Report_Created','Report_Last_Modified',
+    'Effect_On_ATM_Service','Latitude_Of_Occ','Location_Name','Lock_Status',
+    'Locked_Released_By','Locked_Released_Since','Longitude_Of_Occ','Occurrence_Moderator',
+    'Damage_Not_To_A_C','Injury_Level','File_Number','Responsible_Entity','State_Area_Of_Occ',
+    'Occurrence_Status','Third_Party_Damage','Local_Time','Total_Fatalities',
+    'Total_Fatalities_Aircraft','Total_Fatalities_Ground','Total_Involved','Total_On_Board_A_C',
+    'Total_Injuries-Ground','Total_Injuries-Unknown','Total_Injuries-Unknown_Aircraft',
+    'Total_Injuries-Unknown_Ground','Total_Minor_Injuries','Total_Minor_Injuries-Aircraft',
+    'Total_Minor_Injuries-Ground','Total_Serious_Injuries','Total_Serious_Injuries-Aircraft',
+    'Total_Serious_Injuries-Ground','Total_No_Injuries','Total_No_Injuries-Aircraft',
+    'Total_No_Injuries-Ground','UTC_Date','UTC_Time','Headline','Weather_Relevant'
+  ],
+  Aircraft: [
+    'Manufacturer_Model','Aircraft_Altitude','Actual_Altimeter_Setting','A_C_Flight_Level',
+    'Aircraft_Height','Height_Altimeter','ICAO_Information','Current_Traffic_Type',
+    'Break-Up_On_Impact','Break-Up_At_Ditching','Aircraft_Category','Total_Cycles_A_C',
+    'Airworthiness_Cert','Impact_Angle','Immersion_Suits_Avail','Immersion_Suits_Worn',
+    'Approval_Icing_Cond','Approval_Prec_Appr','Approach_Errors','Approach_RVR_Status',
+    'Approach_Stabilized','Person_At_Controls','ATS_Route_Name','ATS_Route_Type',
+    'Recording_Quality','Auto_Bank_Call','Auto_Altitude_Call','Automatic_Landing',
+    'Availability_ARFS','Bearing_Rwy_Heading','Call_Sign','Chute_Slide_Ops','Chute_Slide_Inst',
+    'Clearance_Validity','Cleared_Altitude','Cleared_Alt_Altimeter','Cleared_Flight_Level',
+    'Cleared_Height','Cleared_Height_Altim','Controlling_Agency','Co-Ord_Entry_Altitude',
+    'Co-Ord_Entry_Flt_Level','Co-Ord_Entry_Height','Co-Ord_Exit_Altitude',
+    'Co-Ord_Exit_Flt_Level','Co-Ord_Exit_Height','Co-Pilot_Altim_Type',
+    'Co-Pilot_Restraint_System','Charts_Available_CoPilot','Altitude_Contours_CoPilot',
+    'Charts_Provider','Terrain_Contours_CoPilot','Crew_Call-Out_Done','Crosswind_Component',
+    'Current_Flight_Rules','CVR_Recovery','Data_Recovery','Data_Usefulness','Descent_Rate',
+    'Descent_Speed','Distance_Threshold','Recording_Duration','Duration_Of_Flight',
+    'ARFS_Effective','EFIS','ELB-A_ELT_Status','Electr_Landing_Aids','Elevation_Terrain',
+    'Resulting_State','Floatation_Inflation','Floatation_Installed','Functioning','Escape_Time',
+    'Ext_Agent_Type','Fatal_Cabin_Crew','Fatal_Burns','Fatal_Drowning','Fatal_Fumes_Or_Gasses',
+    'Fatal_Impact','Fatal_Other_Reasons','Fatal_Shock_Exposure','Fatal_Unknown_Reasons',
+    'Fatal_Co-Pilot','Fatal_Crew_Total','Fatal_Other_Flight_Crew','Fatal_Passengers',
+    'Fatal_Pilot','Other_Fatalities_On_A_C','Total_Number_Fatalities','Fatal_Unknown',
+    'FDR_Recovery','Filed_Flight_Rules','Filed_Traffic_Type','Flight_Number','Flight_Phase',
+    'Floatation_Time','Wx_Info_Phase','Fuel_Source','Recommended_Type','Type_Used',
+    'GNSS_Installed','GPWS_Installed','GPWS_Operated','GPWS_Required','GPWS_Type_Mark',
+    'GPWS_Warning_Given','Evacuation_Hampered','HUD_Installed','HUD_Used','Headwind_Loss',
+    'Hot_Microphone','Icing_Intensity','Ignition_Source','Initial_Location',
+    'Number_Of_Cabin_Crew','Number_Of_Co-Pilots','Number_Of_Crew','Number_Of_Other_Flight_Crew',
+    'Number_Of_Passengers','Number_Of_PIC','Number_Of_Other_Persons','Total_Number_Of_Persons',
+    'Number_Of_Persons_Unknown_Category','Injuries_Unknown_Cabin_Crew',
+    'Injuries_Unknown_Co-Pilot','Injuries_Unknown_Crew_Total',
+    'Injuries_Unknown_Other_Flight_Crew','Injuries_Unknown_Passengers',
+    'Injuries_Unknown_Pilot','Unknown_Other_Injuries_On_A_C','Total_Number_Unknown_Injuries',
+    'Injuries_Unknown','Installation','Instr_Land_Proc','Instrument_Appr_Type',
+    'Landing_Gear_Type','Last_Departure_Point','FDR_Location','Wreckage_Location',
+    'CVR_Location','Landing_Location','Locating_Method','Maintenance_Docs','Maximum_T_O_Mass',
+    'Microburst','Minima_Call-Out_Made','Minor_Injuries-Cabin_Crew','Minor_Injuries-Co-Pilot',
+    'Minor_Injuries-Crew_Total','Minor_Injuries-Other_Crew','Minor_Injuries-Passengers',
+    'Minor_Injuries-Pilot','Minor_Other_Injuries_On_A_C','Total_Number_Minor_Injuries',
+    'Minor_Injuries-Unknown','Mountain_Wave_Intens','No_Injuries-Cabin_Crew',
+    'No_Injuries-Co-Pilot','No_Injuries-Crew_Total','No_Injuries-Other_Flight_Crew',
+    'No_Injuries-Passengers','No_Injuries-Pilot','No_Injuries_Other',
+    'Total_Number_No_Injuries','No_Injuries_Unknown','Non-Fatal_Injuries-Burns',
+    'Non-Fatal_Injuries-Gasses','Non-Fatal_Injuries-Impact','Non-Fatal_Injuries-Shock',
+    'Non-Fatal_Injuries-Other','Non-Fatal_Injuries-Unknown','Nr_Of_Restraint_Failures',
+    'Nr_Seat_Failures','Number_Of_Channels','Number_Of_Engines','Number_Of_Parameters',
+    'Persons_Evacuated','Occ_On_Ground','Operation_Type','Operator','Operator_Type',
+    'Pax_Restraint_System','Persons_Autopsied','Charts_Available_Pilot',
+    'Altitude_Contours_Pilot','Provider','Terrain_Contours','Charts_Different',
+    'Pilot_Altimeter_Type','Pilot_Restraint_System','Pitch_Angle_Specific','Pitch_Attitude',
+    'Planned_Destination','Wreckage_Position','Precision_Appr_Cat','Propulsion_Type',
+    'Ext_Agent_Quantity','Fuel_Volume_On_Board','Radio_Altimeter_Inst','Reason_For_Data_Loss_FDR',
+    'Aircraft_Registration','Serial_Number','Speed_First_Event','State_Of_Registry','Mass_Group',
+    'Parts_Damaged','Parts_Struck','Species_Description','Birds_Wildlife_Seen',
+    'Birds_Wildlife_Struck','Bird_Size','Pilot_Advised_Of_Birds'
+  ],
+  Reporting_History: [
+    'Report_Identification','Reporting_Entity','Report_Source','Reporting_Form_Type',
+    'Report_Status','Reporting_Date','Report','Parties_Informed','Risk_Classification',
+    'Risk_Methodology','Description_Investigation','Risk_Assessment','Corrective_Actions',
+    'Conclusions','Tracking_Sheet_Number','Report_Version','Other_Report_Inform',
+    'Export_Control','Reporter_S_Language','Reporter_S_Description'
+  ],
+  Aerodrome_General: ['Aerodrome_Latitude','Aerodrome_Longitude','Area_Configuration',
+    'Elevation_Above_MSL','Location_Indicator','Aerodrome_Status','Surface_Type',
+    'Landing_Area_Type','Aerodrome_Type','Category_Provided','Category_Published',
+    'Braking_Determined_By','Braking_Action','Type_Of_Deposits','Location_On_Near_Aerodrome',
+    'Extent_Contamination','Depth_Of_Deposit','Loc_Of_Contamination','Wildlife_Species',
+    'Wildlife_Size','Number_Of_Wildlife'],
+  Events: ['Event_Type','Phase','Event_Justification'],
+  Dangerous_Goods: ['Dangerous_Good','Label','Origin_Of_Goods',
+    'Air_Waybill_Consignment_Tracking_Number','Shipper_Name',
+    'Total_Number_Of_Packages_In_Consignment','Subsidiary_Risk','Type_Of_Outer_Packaging',
+    'Packing_Group_Class_7_Category','Number_Of_Inner_Packages','Type_Of_Inner_Packaging',
+    'Quantity_Per_Inner_Packaging'],
+  Risk_Assessment: ['Risk_Grade','Risk_Method','Risk_Level','Risk_Container','Risk_Confidence',
+    'ERCS_Row_Score','ERCS_Column_Score','ERCS_Score','ERCS_Numerical_Equivalent_Score',
+    'Key_Risk_Area','Aircraft_Equipment_And_Infrastructure','Tactical_Planning',
+    'Regulations_Procedures_And_Compliance','Situational_Awareness_And_Actions',
+    'Warning_System_Operation_And_Compliance','Recovery_Action','Protections','Unspecified',
+    'ERCS_Calculated_B_S','ERCS_Final_B_S','ERCS_Container','ERCS_Risk_Grade',
+    'ERCS_Comments','ERCS_Barrier']
+};
+
+function _eccairsOrderIndex(entity, synonym){
+  var arr=ECCAIRS8_ATTRIBUTE_ORDER[entity]||[];
+  var i=arr.indexOf(synonym);
+  return i<0 ? 100000 : i;
+}
+
 function _buildRitOccurrenceXml(occ, uncoded){
   var ritFields=ECCAIRS_OCC_FIELDS.filter(function(f){return f.entity;}).map(function(f){
     var g=Object.assign({}, f); g.label_synonym=RIT_SYNONYM[f.key]||f.key; return g;
   });
-  // IMPORTANT: per the official "ECCAIRS RIT - e5x data bridge" white paper (§5.3/§5.4),
-  // attributes and entities MUST appear in ascending numeric ID order inside their XSD
-  // sequence, or the E5X integrity check will fail on import. Sort by numeric code.
-  var byNumCode=function(a,b){ return parseInt(a.code,10)-parseInt(b.code,10); };
   var byEntity={}; RIT_ENTITY_ORDER.forEach(function(e){byEntity[e]=[];});
   ritFields.forEach(function(f){ (byEntity[f.entity]=byEntity[f.entity]||[]).push(f); });
-  Object.keys(byEntity).forEach(function(e){ byEntity[e].sort(byNumCode); });
-  var rootAttrsXml=''; byEntity['Occurrence'].forEach(function(f){ rootAttrsXml+=_ritAttrXml(f, occ, uncoded); });
-  var entitiesXml='';
+  Object.keys(byEntity).forEach(function(e){
+    byEntity[e].sort(function(a,b){
+      var d=_eccairsOrderIndex(e,a.label_synonym)-_eccairsOrderIndex(e,b.label_synonym);
+      return d || parseInt(a.code,10)-parseInt(b.code,10);
+    });
+  });
+
+  var rootAttrsXml='';
+  byEntity.Occurrence.forEach(function(f){ rootAttrsXml+=_ritAttrXml(f, occ, uncoded); });
+  // Mandatory XSD field: File_Number (452) must precede Responsible_Entity (453).
+  // Use the SAF occurrence identifier as the stable ECCAIRS file number.
+  var fileNumberXml='      <File_Number attributeId="452">'+_xmlEsc(occ.id||'')+'</File_Number>\n';
+  var responsibleTag='<Responsible_Entity ';
+  var pos=rootAttrsXml.indexOf(responsibleTag);
+  if(pos>=0) rootAttrsXml=rootAttrsXml.slice(0,pos)+fileNumberXml+rootAttrsXml.slice(pos);
+  else rootAttrsXml+=fileNumberXml;
+
+  var entitiesXml=''; var entityInstanceId=1;
   ['Aerodrome_General','Aircraft','Events','Dangerous_Goods','Reporting_History','Risk_Assessment'].forEach(function(ent){
     var fields=byEntity[ent]||[]; if(!fields.length) return;
     var body=''; fields.forEach(function(f){ body+=_ritAttrXml(f, occ, uncoded); });
-    if(!body) return; // skip empty entity blocks
-    entitiesXml+='      <'+ent+' entityId="'+RIT_ENTITY_ID[ent]+'">\n        <ATTRIBUTES>\n'+body+'        </ATTRIBUTES>\n      </'+ent+'>\n';
+    if(!body) return;
+    entitiesXml+='      <'+ent+' entityId="'+RIT_ENTITY_ID[ent]+'" ID="E'+(entityInstanceId++)+'">\n'
+      +'        <ATTRIBUTES>\n'+body+'        </ATTRIBUTES>\n      </'+ent+'>\n';
   });
-  // SET header verified against Identification.xml of the official
-  // "Eccairs Aviation v5100 RITedb.zip" (aviationreporting.eu/en/ElectronicReporting):
-  // NAME="ECCAIRS Aviation" VERSION="5.1.0.0". Domain="RIT" is a REQUIRED attribute per
-  // the E5X spec (§5.1) — it was previously left empty, which would likely fail validation.
-  // NOTE: the xmlns namespace URLs below use the ECCAIRS2 (e2.aviationreporting.eu) domain,
-  // as this file targets the current ECCAIRS2 platform rather than the legacy JRC system
-  // documented in the 2018 white paper (which uses eccairsportal.jrc.ec.europa.eu). This
-  // has not been confirmed against a live ECCAIRS2 Schema.xsd — verify with FOCA/JRC support
-  // or an actual E5X validation run if imports are rejected on namespace grounds.
-  var xml='<?xml version="1.0" encoding="UTF-8"?>\n'
+
+  return '<?xml version="1.0" encoding="UTF-8"?>\n'
     +'<SET xmlns="https://e2.aviationreporting.eu/data.xsd"\n'
     +'     xmlns:dt="https://e2.aviationreporting.eu/dataTypes.xsd"\n'
     +'     TaxonomyName="ECCAIRS Aviation"\n'
     +'     TaxonomyVersion="8.0.0.0" Domain="" Version="1.0.0.0">\n'
-    +'  <Occurrence entityId="24">\n'
+    +'  <Occurrence entityId="24" ID="O1">\n'
     +'    <ATTRIBUTES>\n'+rootAttrsXml+'    </ATTRIBUTES>\n'
     +(entitiesXml?'    <ENTITIES>\n'+entitiesXml+'    </ENTITIES>\n':'')
     +'  </Occurrence>\n'
     +'</SET>';
-  return xml;
 }
 
 // Human-readable companion file: SAF-specific data that has no equivalent
@@ -15189,7 +15305,7 @@ function _buildE5XFromOcc(occ){
   var uncoded=[];
   var xml=_buildRitOccurrenceXml(occ, uncoded);
   var notes=_buildSafNotes(occ, uncoded);
-  return {xml:xml, notes:notes, uncoded:uncoded};
+  return {xml:xml, notes:notes, uncoded:uncoded, occ:occ};
 }
 
 function _preflightE5XPackage(built){
@@ -15201,11 +15317,25 @@ function _preflightE5XPackage(built){
   if(!/<SET\b/.test(xml) || !/<Occurrence\b[^>]*entityId=["']24["']/.test(xml)) errors.push('Invalid E5X root structure (SET/Occurrence entity 24).');
   if(!/TaxonomyVersion=["']8\.0\.0\.0["']/.test(xml)) errors.push('TaxonomyVersion must be 8.0.0.0 for the official ECCAIRS Aviation package dated 03-Jul-2026.');
   if(!/Domain=["']["']/.test(xml)) errors.push('Domain must be empty according to the official ECCAIRS Aviation 8.0.0.0 Schema.xsd.');
+  if(!/<File_Number\b[^>]*attributeId=["']452["']/.test(xml)) errors.push('Mandatory File Number (452) is missing.');
+  if(!/<Occurrence\b[^>]*ID=["'][^"']+["']/.test(xml)) errors.push('Occurrence instance ID is missing.');
+  var entityTags=xml.match(/<(Aircraft|Reporting_History|Aerodrome_General|Events|Dangerous_Goods|Risk_Assessment)\b[^>]*>/g)||[];
+  entityTags.forEach(function(tag){if(!/\bID=["'][^"']+["']/.test(tag)) errors.push('Entity instance ID is missing: '+tag.replace(/<|>.*/g,''));});
   if(!/<Report_Identification\b[^>]*attributeId=["']438["']/.test(xml)) errors.push('Report Identification (438) is missing.');
   if(!/<Reporting_Entity\b[^>]*attributeId=["']447["']/.test(xml)) errors.push('Reporting Entity (447) is missing.');
   if(!/<Headline\b[^>]*attributeId=["']601["']/.test(xml)) errors.push('Headline (601) is missing.');
   if(!/<UTC_Date\b[^>]*attributeId=["']477["']/.test(xml)) errors.push('UTC Date (477) is missing.');
   if(!/<UTC_Time\b[^>]*attributeId=["']478["']/.test(xml)) errors.push('UTC Time (478) is missing.');
+  function n(key){var v=occGetEccairsValue((built&&built.occ)||{},key);return Math.max(0,parseInt(v,10)||0);}
+  if(built&&built.occ){
+    var ft=n('total_fatalities'), fa=n('fatalities_aircraft'), fg=n('fatalities_ground');
+    var st=n('serious_injuries'), sa=n('serious_injuries_aircraft'), sg=n('serious_injuries_ground');
+    var mt=n('minor_injuries'), ma=n('minor_injuries_aircraft'), mg=n('minor_injuries_ground');
+    if(ft!==fa+fg) errors.push('Fatalities inconsistency: total must equal aircraft + ground.');
+    if(st!==sa+sg) errors.push('Serious injuries inconsistency: total must equal aircraft + ground.');
+    if(mt!==ma+mg) errors.push('Minor injuries inconsistency: total must equal aircraft + ground.');
+    if(ft>0 && (st>0||mt>0)) warnings.push('Fatalities and injuries are both declared. Confirm that they concern different persons.');
+  }
   return {ok:errors.length===0,errors:errors,warnings:warnings};
 }
 
