@@ -10773,7 +10773,7 @@ const ECCAIRS_OCC_FIELDS = [
   {key:'risk_methodology', code:'1066', label:'Risk Methodology', type:'text', entity:'Reporting_History', dtype:1, fallback:function(o){return 'ERCS (European Common Risk Classification Scheme) supplemented by ICAO Doc 9859 Safety Risk Management methodology';}},
   // ── AIRCRAFT & FLIGHT DETAILS (entity: Aircraft, ID 4) ────────────
   {key:'aircraft_registration', code:'244', label:'Aircraft Registration', type:'select', req:true, entity:'Aircraft', dtype:1, options:['HB-ZKN','HB-ZIP','F-HRTS'], fallback:function(o){return o.aircraft_reg||'';}},
-  {key:'operator', code:'215', label:'Operator', type:'text', req:true, entity:'Aircraft', dtype:3, fallback:function(o){return 'SAF International';}},
+  {key:'operator', code:'215', label:'Operator', type:'select', req:true, fixed:true, entity:'Aircraft', dtype:3, options:['SAF International'], fallback:function(o){return 'SAF International';}},
   {key:'operation_type', code:'214', label:'Operation Type', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Specialised Operations (Aerial Work)','Commercial Air Transport','Non-Commercial Operations','Nationally Regulated Operations','Illegal','Not Applicable','Unknown']},
   {key:'call_sign', code:'54', label:'Call Sign', type:'text', req:true, entity:'Aircraft', dtype:1},
   {key:'flight_phase', code:'121', label:'Flight Phase', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Standing','Taxi','Take-off','En route','Manoeuvring','Approach','Landing','Post-impact','Tow','Not Applicable','Unknown'], fallback:function(o){return o.phase||'';}},
@@ -10845,7 +10845,7 @@ const ECCAIRS_OCC_FIELDS = [
   {key:'state_registry', code:'281', label:'State of Registry', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Switzerland','France','Italy','Austria','Other']},
   // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 32 "Aircraft_Category"
   // exists under Aircraft(4), extending VL1179. No label text available -> uncoded.
-  {key:'aircraft_category', code:'32', label:'Aircraft Category', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Helicopter','Aeroplane','Glider','Other'], fallback:function(o){return 'Helicopter';}},
+  {key:'aircraft_category', code:'32', label:'Aircraft Category', type:'select', req:true, fixed:true, entity:'Aircraft', dtype:2, options:['Helicopter'], fallback:function(o){return 'Helicopter';}},
   // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 21 "Manufacturer_Model"
   // exists under Aircraft(4), extending VL1182. No label text available -> uncoded.
   {key:'manufacturer_model', code:'21', label:'Manufacturer / Model', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Airbus Helicopters / AS 332 C1 Super Puma'], fallback:function(o){return 'Airbus Helicopters / AS 332 C1 Super Puma';}},
@@ -10855,7 +10855,7 @@ const ECCAIRS_OCC_FIELDS = [
   {key:'serial_number', code:'254', label:'Serial Number', type:'text', req:true, entity:'Aircraft', dtype:1},
   // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 232 "Propulsion_Type"
   // exists under Aircraft(4), extending VL232. No label text available -> uncoded.
-  {key:'propulsion_type', code:'232', label:'Propulsion Type', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Turbine – shaft','Piston','Electric','Other']},
+  {key:'propulsion_type', code:'232', label:'Propulsion Type', type:'select', req:true, fixed:true, entity:'Aircraft', dtype:2, options:['Turbine – shaft'], fallback:function(o){return 'Turbine – shaft';}},
   // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 319 "Mass_Group" exists
   // under Aircraft(4), extending VL319. No label text available -> uncoded.
   {key:'mass_group', code:'319', label:'Mass Group', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Over 5 700 kg','1 501 – 5 700 kg','751 – 1 500 kg','Up to 750 kg']},
@@ -10969,7 +10969,7 @@ function _occFieldHtml(f, occ){
     var vals=Array.isArray(v)?v:String(v||'').split('|').map(function(x){return x.trim();}).filter(Boolean);
     var selAttrs=(f.key==='aircraft_registration')?' onchange="occUpdateSerialFromRegistration(this.value)"':'';
     if(isErcsBarrier) selAttrs+=' title="'+occHtmlEsc(ERCS_BARRIER_TOOLTIP)+'"';
-    html+='<select id="'+id+'"'+selAttrs+'><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option>'+(f.options||[]).map(function(o){var sel=vals.indexOf(o)>=0?' selected':'';return '<option'+sel+'>'+occHtmlEsc(o)+'</option>';}).join('')+'</select>';
+    html+='<select id="'+id+'"'+selAttrs+'>'+(f.fixed?'':'<option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option>')+(f.options||[]).map(function(o){var sel=(f.fixed||vals.indexOf(o)>=0)?' selected':'';return '<option'+sel+'>'+occHtmlEsc(o)+'</option>';}).join('')+'</select>';
   } else if(f.type==='number') html+='<input id="'+id+'" type="number" min="0" value="'+occHtmlEsc(v||'0')+'"/>';
   else if(f.key==='serial_number') html+='<input id="'+id+'" type="text" value="'+occHtmlEsc(v)+'" readonly style="background:rgba(255,255,255,.04);cursor:not-allowed;"/>';
   else html+='<input id="'+id+'" type="'+(f.type||'text')+'" value="'+occHtmlEsc(v)+'"/>';
