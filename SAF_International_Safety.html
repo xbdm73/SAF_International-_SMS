@@ -1080,6 +1080,26 @@ select[id$="-status"].status-clos{border-left-color:#3fb950;}
 .occ-msel-opt{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;font-size:12px;color:#f4f6f8;cursor:pointer;}
 .occ-msel-opt:hover{background:rgba(74,159,224,.12);}
 .occ-msel-opt input{margin:0;cursor:pointer;}
+/* Persistent summary displayed below native multi-select fields */
+.occ-selection-summary{
+  display:flex;flex-wrap:wrap;align-items:center;gap:5px;
+  min-height:32px;margin-top:6px;padding:6px 8px;
+  background:rgba(74,159,224,.055);
+  border:1px solid rgba(74,159,224,.22);
+  border-radius:6px;
+}
+.occ-selection-chip{
+  display:inline-flex;align-items:center;max-width:100%;
+  padding:3px 7px;border-radius:4px;
+  background:rgba(74,159,224,.18);
+  border:1px solid rgba(74,159,224,.38);
+  color:var(--white);font-family:var(--font-mono);font-size:9.5px;
+  line-height:1.35;white-space:normal;overflow-wrap:anywhere;
+}
+.occ-selection-empty{
+  color:var(--grey-400);font-family:var(--font-mono);font-size:9.5px;
+  font-style:italic;
+}
 .occ-panel-toggle:hover{border-color:var(--steel-bright);color:var(--white);}
 .occ-panel-chevron{display:inline-block;transition:transform .15s;font-size:12px;}
 .occ-panel-toggle.collapsed .occ-panel-chevron{transform:rotate(-90deg);}
@@ -2419,11 +2439,12 @@ function updateOaciDefinitionDropdown(sel) {
 </div>
 <div class="form-field">
 <label class="field-label">Parties Informed <span class="field-code">(1064)</span></label>
-<select id="f-parties" multiple="" style="height:90px;">
+<select id="f-parties" multiple="" style="height:90px;" data-summary-id="f-parties-summary" onchange="occNativeMselUpdate(this)">
 <option>Aerodrome</option><option>ANSP</option><option>CAMO</option>
 <option>Competent Authority</option><option>Design Approval Holder</option>
 <option>Operator</option><option>Other</option>
 </select>
+<div id="f-parties-summary" class="occ-selection-summary" aria-label="No selection"><span class="occ-selection-empty">No selection</span></div>
 </div>
 <div class="form-field">
 <label class="field-label">Risk Methodology <span class="field-code">(1066)</span></label>
@@ -2503,75 +2524,6 @@ function updateOaciDefinitionDropdown(sel) {
 <div class="form-field">
 <label class="field-label">Minor Injuries <span class="req">*</span> <span class="field-code">(467)</span></label>
 <input id="f-minor" min="0" type="number" value="0"/>
-</div>
-</div>
-</div>
-</div>
-<!-- ── 9 · ERCS ───────────────────────────────────────────────────── -->
-<div class="form-section">
-<div class="section-header" onclick="toggleSection(this)">
-<span class="section-num">9</span>
-<span class="section-icon">◫</span>
-<span class="section-title">ERCS – EUROPEAN RISK CLASSIFICATION SCHEME</span>
-<span class="section-chevron">▾</span>
-</div>
-<div class="section-body">
-<div class="form-grid cols-3">
-<div class="form-field">
-<label class="field-label">1. Aircraft/Equip/Infr. Design <span class="field-code">(1098)</span></label>
-<select id="f-ercs1"><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
-</div>
-<div class="form-field">
-<label class="field-label">2. Tactical Planning <span class="field-code">(1099)</span></label>
-<select id="f-ercs2"><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
-</div>
-<div class="form-field">
-<label class="field-label">3. Regulations / Procedures <span class="field-code">(1100)</span></label>
-<select id="f-ercs3"><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
-</div>
-<div class="form-field">
-<label class="field-label">4. Situational Awareness <span class="field-code">(1101)</span></label>
-<select id="f-ercs4"><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
-</div>
-<div class="form-field">
-<label class="field-label">5. Warning Systems <span class="field-code">(1102)</span></label>
-<select id="f-ercs5"><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
-</div>
-<div class="form-field">
-<label class="field-label">6. Late Recovery <span class="field-code">(1103)</span></label>
-<select id="f-ercs6"><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
-</div>
-<div class="form-field">
-<label class="field-label">7. Protections <span class="field-code">(1104)</span></label>
-<select id="f-ercs7"><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
-</div>
-<div class="form-field">
-<label class="field-label">8. Low Energy Occurrence <span class="field-code">(1105)</span></label>
-<select id="f-ercs8"><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
-</div>
-<div class="form-field">
-<label class="field-label">Safety Risk Score <span class="field-code">(1095)</span></label>
-<select id="f-srs">
-<option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option>
-<option>A – Catastrophic</option><option>B – Hazardous</option>
-<option>C – Major</option><option>D – Minor</option><option>E – Negligible</option>
-</select>
-</div>
-<div class="form-field">
-<label class="field-label">Risk Method <span class="field-code">(939)</span></label>
-<input id="f-risk-meth2" placeholder="e.g. ERCS / ICAO" type="text" value="ERCS + ICAO"/>
-</div>
-<div class="form-field">
-<label class="field-label">Risk Grade <span class="field-code">(1109)</span></label>
-<select id="f-rg">
-<option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option>
-<option>Intolerable</option><option>High</option>
-<option>Medium</option><option>Low</option>
-</select>
-</div>
-<div class="form-field">
-<label class="field-label">Comments <span class="field-code">(1110)</span></label>
-<input id="f-ercs-comments" placeholder="Additional ERCS comments…" type="text"/>
 </div>
 </div>
 </div>
@@ -10988,18 +10940,35 @@ const OCC_ECCAIRS_SECTIONS = [
   {title:'Injuries', sub:'Injuries', keys:['total_fatalities','fatalities_aircraft','fatalities_ground','serious_injuries','serious_injuries_aircraft','serious_injuries_ground','minor_injuries','minor_injuries_aircraft','minor_injuries_ground']},
   {title:'Risk Assessment & ERCS (SAF Extension)', sub:null, keys:['risk_assessment','ercs_1098','ercs_1099','ercs_1100','ercs_1101','ercs_1102','ercs_1103','ercs_1104','ercs_1105','safety_risk_score','risk_method_939','risk_grade','ercs_comments']}
 ];
+// ERCS barrier states (VL1188) — shared tooltip shown on the 8 ERCS barrier selects (1098-1105).
+var ERCS_BARRIER_TOOLTIP = 'Stopped : la barrière a effectivement arrêté la séquence\n'
+  + 'Remaining Known : barrière encore active et connue comme fonctionnelle\n'
+  + 'Remaining Assumed : présumée active mais non vérifiée\n'
+  + 'Failed (Known/Assumed) : a été sollicitée et a échoué\n'
+  + 'Not Applicable : non pertinente pour ce scénario\n\n'
+  + 'Seules Stopped / Remaining Known / Remaining Assumed comptent dans le score final.';
+var ERCS_BARRIER_CODES = {'1098':1,'1099':1,'1100':1,'1101':1,'1102':1,'1103':1,'1104':1,'1105':1};
 function _occFieldHtml(f, occ){
   var v=occGetEccairsValue(occ,f.key), id='occ-eccairs-'+f.key;
   var wrapStyle='margin:0;'+(f.full?'grid-column:1 / -1;':'');
-  var html='<div class="form-field" style="'+wrapStyle+'"><label class="field-label">'+occHtmlEsc(f.label)+' '+(f.req?'<span class="req">*</span> ':'')+'<span class="field-code">('+occHtmlEsc(f.code)+')</span></label>';
+  var isErcsBarrier=!!ERCS_BARRIER_CODES[f.code];
+  var ercsInfoIcon=isErcsBarrier?' <span title="'+occHtmlEsc(ERCS_BARRIER_TOOLTIP)+'" style="cursor:help;color:var(--steel-bright);font-weight:700;">ⓘ</span>':'';
+  var html='<div class="form-field" style="'+wrapStyle+'"><label class="field-label">'+occHtmlEsc(f.label)+' '+(f.req?'<span class="req">*</span> ':'')+'<span class="field-code">('+occHtmlEsc(f.code)+')</span>'+ercsInfoIcon+'</label>';
   if(f.type==='textarea') html+='<textarea id="'+id+'" rows="'+(f.full?4:2)+'" style="width:100%;box-sizing:border-box;'+(f.full?'resize:vertical;':'')+'">'+occHtmlEsc(v)+'</textarea>';
   else if(f.type==='multiselect'){
     var valsM=Array.isArray(v)?v:String(v||'').split('|').map(function(x){return x.trim();}).filter(Boolean);
-    html+='<select id="'+id+'" multiple style="height:96px;">'+(f.options||[]).map(function(o){var sel=valsM.indexOf(o)>=0?' selected':'';return '<option'+sel+'>'+occHtmlEsc(o)+'</option>';}).join('')+'</select>';
+    var summaryId=id+'-summary';
+    var summaryContent=valsM.length
+      ? valsM.map(function(x){return '<span class="occ-selection-chip">'+occHtmlEsc(x)+'</span>';}).join('')
+      : '<span class="occ-selection-empty">No selection</span>';
+    html+='<select id="'+id+'" multiple style="height:96px;" data-summary-id="'+summaryId+'" onchange="occNativeMselUpdate(this)">'
+      +(f.options||[]).map(function(o){var sel=valsM.indexOf(o)>=0?' selected':'';return '<option'+sel+'>'+occHtmlEsc(o)+'</option>';}).join('')
+      +'</select><div id="'+summaryId+'" class="occ-selection-summary" aria-label="'+occHtmlEsc(valsM.length?'Selected: '+valsM.join(', '):'No selection')+'">'+summaryContent+'</div>';
   }
   else if(f.type==='select'){
     var vals=Array.isArray(v)?v:String(v||'').split('|').map(function(x){return x.trim();}).filter(Boolean);
     var selAttrs=(f.key==='aircraft_registration')?' onchange="occUpdateSerialFromRegistration(this.value)"':'';
+    if(isErcsBarrier) selAttrs+=' title="'+occHtmlEsc(ERCS_BARRIER_TOOLTIP)+'"';
     html+='<select id="'+id+'"'+selAttrs+'><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option>'+(f.options||[]).map(function(o){var sel=vals.indexOf(o)>=0?' selected':'';return '<option'+sel+'>'+occHtmlEsc(o)+'</option>';}).join('')+'</select>';
   } else if(f.type==='number') html+='<input id="'+id+'" type="number" min="0" value="'+occHtmlEsc(v||'0')+'"/>';
   else if(f.key==='serial_number') html+='<input id="'+id+'" type="text" value="'+occHtmlEsc(v)+'" readonly style="background:rgba(255,255,255,.04);cursor:not-allowed;"/>';
@@ -11055,6 +11024,17 @@ function occMselUpdate(cb){
   var label=wrap.querySelector('.occ-msel-label');
   if(label) label.textContent=checked.length?checked.join(', '):'Select…';
 }
+function occNativeMselUpdate(select){
+  if(!select) return;
+  var summaryId=select.getAttribute('data-summary-id') || (select.id?select.id+'-summary':'');
+  var summary=summaryId?document.getElementById(summaryId):null;
+  if(!summary) return;
+  var selected=Array.from(select.selectedOptions||[]).map(function(o){return o.value||o.textContent||'';}).filter(Boolean);
+  summary.innerHTML=selected.length
+    ? selected.map(function(v){return '<span class="occ-selection-chip">'+occHtmlEsc(v)+'</span>';}).join('')
+    : '<span class="occ-selection-empty">No selection</span>';
+  summary.setAttribute('aria-label',selected.length?'Selected: '+selected.join(', '):'No selection');
+}
 function occGetEccairsFields(){
   var out={};
   ECCAIRS_OCC_FIELDS.forEach(function(f){var el=document.getElementById('occ-eccairs-'+f.key); if(!el) return; if(f.type==='multiselect') out[f.key]=Array.from(el.selectedOptions||[]).map(function(o){return o.value;}); else out[f.key]=el.value||'';});
@@ -11070,6 +11050,7 @@ function occActionTextForInput(a){ return (typeof a==='object' && a!==null) ? (a
 
 window.occRenderEccairsFields = occRenderEccairsFields;
 window.occGetEccairsFields = occGetEccairsFields;
+window.occNativeMselUpdate = occNativeMselUpdate;
 window.occEccairsCompleteness = occEccairsCompleteness;
 
 function _occMobileReportDetailsHtml(occ){
