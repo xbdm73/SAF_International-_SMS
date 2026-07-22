@@ -10986,6 +10986,15 @@ function occRenderEccairsFields(occ){
     if(!fields.length) return;
     fields.forEach(function(f){ placed[f.key]=true; });
     if(sec.title) body+='<div style="font-family:var(--font-mono);font-size:11px;font-weight:800;color:var(--gold-light,var(--gold));letter-spacing:.06em;text-transform:uppercase;margin:'+(body?'22px':'0')+' 0 6px;padding-bottom:6px;border-bottom:1px solid rgba(201,162,39,.3);">'+occHtmlEsc(sec.title)+'</div>';
+    if(sec.title==='Risk Assessment & ERCS (SAF Extension)') body+='<div style="margin:10px 0 14px;padding:12px 14px;background:rgba(74,159,224,.06);border:1px solid rgba(74,159,224,.28);border-left:4px solid var(--steel-bright);border-radius:0 7px 7px 0;">'
+      +'<div style="font-family:var(--font-mono);font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--steel-bright);text-transform:uppercase;margin-bottom:9px;">Définitions des statuts des barrières ERCS</div>'
+      +'<div style="display:grid;grid-template-columns:minmax(150px,190px) 1fr;gap:6px 12px;font-size:11px;line-height:1.45;">'
+      +'<strong style="color:var(--white);font-family:var(--font-mono);">Stopped</strong><span style="color:var(--grey-200);">La barrière a effectivement arrêté la séquence.</span>'
+      +'<strong style="color:var(--white);font-family:var(--font-mono);">Remaining Known</strong><span style="color:var(--grey-200);">Barrière encore active et connue comme fonctionnelle.</span>'
+      +'<strong style="color:var(--white);font-family:var(--font-mono);">Remaining Assumed</strong><span style="color:var(--grey-200);">Présumée active mais non vérifiée.</span>'
+      +'<strong style="color:var(--white);font-family:var(--font-mono);">Failed</strong><span style="color:var(--grey-200);">La barrière a été sollicitée et a échoué. Cette définition couvre les choix <em>Failed Known</em> et <em>Failed Assumed</em>.</span>'
+      +'<strong style="color:var(--white);font-family:var(--font-mono);">Not Applicable</strong><span style="color:var(--grey-200);">Non pertinente pour ce scénario.</span>'
+      +'</div></div>';
     if(sec.sub) body+='<div style="font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:var(--steel-bright);text-transform:uppercase;border-bottom:1px solid rgba(74,159,224,.25);padding-bottom:5px;margin:10px 0 10px;">'+occHtmlEsc(sec.sub)+'</div>';
     body+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">'+fields.map(function(f){ return _occFieldHtml(f, occ); }).join('')+'</div>';
   });
