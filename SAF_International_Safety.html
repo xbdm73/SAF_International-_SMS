@@ -2251,7 +2251,12 @@ function updateOaciDefinitionDropdown(sel) {
 </div>
 <div class="form-field">
 <label class="field-label">Aircraft Registration <span class="req">*</span> <span class="field-code">(244)</span></label>
-<input id="f-registration" placeholder="e.g. HB-ZXY" style="text-transform:uppercase;" type="text"/>
+<select id="f-registration" onchange="updateSerialFromRegistration(this.value)">
+<option value="">— Select —</option>
+<option value="HB-ZKN">HB-ZKN</option>
+<option value="HB-ZIP">HB-ZIP</option>
+<option value="F-HRTS">F-HRTS</option>
+</select>
 </div>
 <div class="form-field">
 <label class="field-label">Aircraft Category <span class="req">*</span> <span class="field-code">(32)</span></label>
@@ -2264,15 +2269,11 @@ function updateOaciDefinitionDropdown(sel) {
 <label class="field-label">Manufacturer / Model <span class="req">*</span> <span class="field-code">(21)</span></label>
 <select id="f-model">
 <option>Airbus Helicopters / AS 332 C1 Super Puma</option>
-<option>Airbus Helicopters / H125</option>
-<option>Airbus Helicopters / H135</option>
-<option>Airbus Helicopters / H145</option>
-<option>Other</option>
 </select>
 </div>
 <div class="form-field">
 <label class="field-label">Serial Number <span class="req">*</span> <span class="field-code">(254)</span></label>
-<input id="f-serial" placeholder="MSN…" type="text"/>
+<input id="f-serial" placeholder="MSN…" readonly="" style="background:rgba(255,255,255,.04);cursor:not-allowed;" type="text"/>
 </div>
 <div class="form-field">
 <label class="field-label">Propulsion Type <span class="req">*</span> <span class="field-code">(232)</span></label>
@@ -6859,6 +6860,16 @@ function selectRisk(containerId, code, previewId) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// AIRCRAFT REGISTRATION → SERIAL NUMBER MAPPING
+// ══════════════════════════════════════════════════════════════════
+const SAF_REG_TO_SERIAL = { 'HB-ZKN':'9010', 'HB-ZIP':'2864', 'F-HRTS':'3017' };
+function updateSerialFromRegistration(reg) {
+  const serialField = document.getElementById('f-serial');
+  if (!serialField) return;
+  serialField.value = SAF_REG_TO_SERIAL[reg] || '';
+}
+
+// ══════════════════════════════════════════════════════════════════
 // FORM ACTIONS
 // ══════════════════════════════════════════════════════════════════
 function toggleSection(header) {
@@ -10809,7 +10820,7 @@ const ECCAIRS_OCC_FIELDS = [
   {key:'risk_classification', code:'1065', label:'Risk Classification', type:'select', req:true, entity:'Reporting_History', dtype:2, options:['5 – Intolerable','4 – Tolerable but undesirable','3 – Tolerable','2 – Acceptable','1 – Negligible']},
   {key:'risk_methodology', code:'1066', label:'Risk Methodology', type:'text', entity:'Reporting_History', dtype:1, fallback:function(o){return 'ERCS (European Common Risk Classification Scheme) supplemented by ICAO Doc 9859 Safety Risk Management methodology';}},
   // ── AIRCRAFT & FLIGHT DETAILS (entity: Aircraft, ID 4) ────────────
-  {key:'aircraft_registration', code:'244', label:'Aircraft Registration', type:'text', req:true, entity:'Aircraft', dtype:1, fallback:function(o){return o.aircraft_reg||'';}},
+  {key:'aircraft_registration', code:'244', label:'Aircraft Registration', type:'select', req:true, entity:'Aircraft', dtype:1, options:['HB-ZKN','HB-ZIP','F-HRTS'], fallback:function(o){return o.aircraft_reg||'';}},
   {key:'operator', code:'215', label:'Operator', type:'text', req:true, entity:'Aircraft', dtype:3, fallback:function(o){return 'SAF International';}},
   {key:'operation_type', code:'214', label:'Operation Type', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Specialised Operations (Aerial Work)','Commercial Air Transport','Non-Commercial Operations','Nationally Regulated Operations','Illegal','Not Applicable','Unknown']},
   {key:'call_sign', code:'54', label:'Call Sign', type:'text', req:true, entity:'Aircraft', dtype:1},
@@ -10885,7 +10896,7 @@ const ECCAIRS_OCC_FIELDS = [
   {key:'aircraft_category', code:'32', label:'Aircraft Category', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Helicopter','Aeroplane','Glider','Other'], fallback:function(o){return 'Helicopter';}},
   // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 21 "Manufacturer_Model"
   // exists under Aircraft(4), extending VL1182. No label text available -> uncoded.
-  {key:'manufacturer_model', code:'21', label:'Manufacturer / Model', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Airbus Helicopters / AS 332 C1 Super Puma','Airbus Helicopters / H125','Airbus Helicopters / H135','Airbus Helicopters / H145','Other'], fallback:function(o){return o.aircraft_type?('Airbus Helicopters / '+o.aircraft_type):'Airbus Helicopters / AS 332 C1 Super Puma';}},
+  {key:'manufacturer_model', code:'21', label:'Manufacturer / Model', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Airbus Helicopters / AS 332 C1 Super Puma'], fallback:function(o){return 'Airbus Helicopters / AS 332 C1 Super Puma';}},
   // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 254 "Serial_Number" exists
   // under Aircraft(4), extending db:Base_Serial_Number (plain alphanumeric, not a coded
   // VL). Emits directly in the XML, no VL code needed.
@@ -10946,6 +10957,13 @@ const ECCAIRS_OCC_FIELDS = [
   {key:'ercs_comments', code:'1110', label:'ERCS Comments', type:'text', entity:'Risk_Assessment', dtype:14}
 ];
 function occHtmlEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+// Aircraft Registration → Serial Number mapping (SAF International fleet)
+const OCC_REG_TO_SERIAL = { 'HB-ZKN':'9010', 'HB-ZIP':'2864', 'F-HRTS':'3017' };
+function occUpdateSerialFromRegistration(reg){
+  var serialField=document.getElementById('occ-eccairs-serial_number');
+  if(!serialField) return;
+  serialField.value = OCC_REG_TO_SERIAL[reg] || '';
+}
 function occGetEccairsValue(occ,key){
   occ=occ||{}; var e=occ.eccairs||{}; if(e[key]!==undefined && e[key]!==null) return e[key];
   var f=ECCAIRS_OCC_FIELDS.find(function(x){return x.key===key;});
@@ -10981,8 +10999,10 @@ function _occFieldHtml(f, occ){
   }
   else if(f.type==='select'){
     var vals=Array.isArray(v)?v:String(v||'').split('|').map(function(x){return x.trim();}).filter(Boolean);
-    html+='<select id="'+id+'"><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option>'+(f.options||[]).map(function(o){var sel=vals.indexOf(o)>=0?' selected':'';return '<option'+sel+'>'+occHtmlEsc(o)+'</option>';}).join('')+'</select>';
+    var selAttrs=(f.key==='aircraft_registration')?' onchange="occUpdateSerialFromRegistration(this.value)"':'';
+    html+='<select id="'+id+'"'+selAttrs+'><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option>'+(f.options||[]).map(function(o){var sel=vals.indexOf(o)>=0?' selected':'';return '<option'+sel+'>'+occHtmlEsc(o)+'</option>';}).join('')+'</select>';
   } else if(f.type==='number') html+='<input id="'+id+'" type="number" min="0" value="'+occHtmlEsc(v||'0')+'"/>';
+  else if(f.key==='serial_number') html+='<input id="'+id+'" type="text" value="'+occHtmlEsc(v)+'" readonly style="background:rgba(255,255,255,.04);cursor:not-allowed;"/>';
   else html+='<input id="'+id+'" type="'+(f.type||'text')+'" value="'+occHtmlEsc(v)+'"/>';
   html+='</div>';
   return html;
@@ -11388,6 +11408,10 @@ function showOccurrenceForm(editId){
     occRestoreFiveWhys(null);
     occRenderARMSMatrix();
   }
+  // Sync Serial Number with whatever Aircraft Registration ended up selected
+  // (pre-filled on edit, or default selection on a new entry).
+  var _regField=document.getElementById('occ-eccairs-aircraft_registration');
+  if(_regField) occUpdateSerialFromRegistration(_regField.value);
 }
 
 function saveOccurrence(){
@@ -15600,6 +15624,23 @@ function _occPreparePrint(id){
     clone.textContent=t.value||'';
     t.classList.add('occ-print-hide-original');
     t.insertAdjacentElement('afterend', clone);
+  });
+  // Single-line <input type="text"> fields (e.g. Headline) never wrap: if the
+  // value is longer than the visible box, the browser simply crops it on
+  // print instead of showing the rest. The same clone-to-div technique used
+  // above for textareas is applied here so the full text always prints,
+  // wrapping onto extra lines/pages as needed instead of being cut off.
+  wrap.querySelectorAll('input[type="text"], input:not([type])').forEach(function(inp){
+    var cs=window.getComputedStyle(inp);
+    var clone=document.createElement('div');
+    clone.className='occ-print-text-clone';
+    clone.style.cssText='display:none;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:break-word;'
+      +'font-family:'+cs.fontFamily+';font-size:'+cs.fontSize+';line-height:'+cs.lineHeight+';'
+      +'color:'+cs.color+';background:'+cs.backgroundColor+';border:'+cs.border+';border-radius:'+cs.borderRadius+';'
+      +'padding:'+cs.padding+';width:100%;box-sizing:border-box;min-height:'+cs.minHeight+';';
+    clone.textContent=inp.value||'';
+    inp.classList.add('occ-print-hide-original');
+    inp.insertAdjacentElement('afterend', clone);
   });
   // Mark editing-only controls (buttons, dropdown carets) so the print
   // stylesheet below can hide them without touching the on-screen look
