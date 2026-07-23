@@ -17327,7 +17327,7 @@ function occRestoreHFACS(hfacs,severity){
     var el=node.parentElement;
     preserveOptionValue(el);
     // Options/selects can't render a forced line break, so keep those inline.
-    var stackable = el && el.tagName!=='OPTION' && el.tagName!=='SELECT';
+    var stackable = el && el.tagName!=='OPTION' && el.tagName!=='SELECT' && !(el.classList && el.classList.contains('sub'));
     var finalText = repl;
     if(stackable){
       var parts=splitFrEnJoined(nKey, repl);
