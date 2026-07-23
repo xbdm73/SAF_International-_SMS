@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SAF International — Outils de gestion</title>
+<title>SAF International — Outils de gestion / Management tools</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&family=Bebas+Neue&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
@@ -123,6 +123,16 @@ main { flex: 1; padding: 3rem 2rem; max-width: 960px; margin: 0 auto; width: 100
 
 /* ─── FOOTER ──────────────────────────────────── */
 footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--grey-600); letter-spacing: .06em; text-transform: uppercase; }
+
+/* ─── BILINGUAL DISPLAY ─────────────────────────── */
+.bi-en { display:block; margin-top:2px; font-family:var(--font-body); font-size:.82em; font-weight:400; color:var(--grey-400); letter-spacing:.01em; line-height:1.25; text-transform:none; }
+.tool-name .bi-en { font-size:.68em; color:#9db8d6; letter-spacing:.035em; }
+.tool-desc .bi-en { font-size:1em; margin-top:.35rem; color:#9aa7b0; }
+button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
+#saf-login-box label .bi-en { font-size:.9em; }
+#saf-login-box h2 .bi-en { font-size:.9em; color:var(--grey-400); margin-top:4px; }
+.section-label .bi-en { font-family:var(--font-mono); font-size:1em; color:var(--grey-400); margin-top:5px; }
+.report-link .bi-en { font-size:.88em; color:var(--grey-400); }
 </style>
 </head>
 <body>
@@ -137,13 +147,13 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
         <div class="login-logo-sub">CH.AOC.3052 &nbsp;/&nbsp; CH.CAMO.3052</div>
       </div>
     </div>
-    <h2>Connexion requise</h2>
+    <h2>Connexion requise<span class="bi-en">Login required</span></h2>
     <label for="saf-email">Email</label>
     <input type="email" id="saf-email" autocomplete="username" placeholder="prenom.nom@saf-helico.com">
-    <label for="saf-pwd">Mot de passe</label>
+    <label for="saf-pwd">Mot de passe<span class="bi-en">Password</span></label>
     <input type="password" id="saf-pwd" autocomplete="current-password">
-    <button id="saf-login-btn">Se connecter</button>
-    <button id="saf-login-cancel-btn" type="button" style="width:100%;background:none;color:var(--grey-400);border:1px solid rgba(255,255,255,.12);margin-top:8px;padding:10px;border-radius:6px;font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;cursor:pointer;">Annuler</button>
+    <button id="saf-login-btn">Se connecter<span class="bi-en">Sign in</span></button>
+    <button id="saf-login-cancel-btn" type="button" style="width:100%;background:none;color:var(--grey-400);border:1px solid rgba(255,255,255,.12);margin-top:8px;padding:10px;border-radius:6px;font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;cursor:pointer;">Annuler<span class="bi-en">Cancel</span></button>
     <div id="saf-login-msg"></div>
   </div>
 </div>
@@ -154,48 +164,48 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
   </div>
   <div class="header-text">
     <h1>SAF International</h1>
-    <span class="sub">Management tools &nbsp;·&nbsp; CH.AOC.3052 / CH.CAMO.3052</span>
+    <span class="sub">Outils de gestion / Management tools &nbsp;·&nbsp; CH.AOC.3052 / CH.CAMO.3052</span>
   </div>
   <div class="header-right">
     <span id="saf-user-info"></span>
     <span id="saf-role-badge" style="display:none;font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;padding:2px 7px;border-radius:3px;border:1px solid;"></span>
-    <button id="saf-login-trigger-btn" style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);background:none;border:1px solid rgba(255,255,255,.1);padding:4px 10px;border-radius:4px;cursor:pointer;letter-spacing:.04em;">Connexion admin</button>
-    <button id="saf-logout-btn" style="display:none">Déconnexion</button>
+    <button id="saf-login-trigger-btn" style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);background:none;border:1px solid rgba(255,255,255,.1);padding:4px 10px;border-radius:4px;cursor:pointer;letter-spacing:.04em;">Connexion administrateur<span class="bi-en">Administrator login</span></button>
+    <button id="saf-logout-btn" style="display:none">Déconnexion<span class="bi-en">Sign out</span></button>
     <div class="header-badge">FOCA / EASA</div>
   </div>
 </header>
 
 <main>
-  <p class="section-label">Accès aux outils</p>
+  <p class="section-label">Accès aux outils<span class="bi-en">Tool access</span></p>
   <div class="tools-grid">
 
     <a class="tool-card" href="SAF_International_Safety.html">
       <div class="tool-header">
         <div class="tool-icon icon-sms">🛡️</div>
-        <span class="tool-name">Safety Management</span>
+        <span class="tool-name">Gestion de la sécurité<span class="bi-en">Safety Management</span></span>
         <span class="arrow">→</span>
       </div>
-      <p class="tool-desc">Registre des occurrences, analyse des risques, indicateurs SPI/KPI, Safety Case et promotion sécurité.</p>
+      <p class="tool-desc">Registre des occurrences, analyse des risques, indicateurs SPI/KPI, Safety Case et promotion de la sécurité.<span class="bi-en">Occurrence register, risk analysis, SPI/KPI indicators, Safety Cases and safety promotion.</span></p>
       <span class="tool-tag tag-sms">SMS</span>
     </a>
 
     <a class="tool-card" href="SAF_International_Compliance_Monitoring_System.html">
       <div class="tool-header">
         <div class="tool-icon icon-cms">📋</div>
-        <span class="tool-name">Compliance Monitoring</span>
+        <span class="tool-name">Surveillance de la conformité<span class="bi-en">Compliance Monitoring</span></span>
         <span class="arrow">→</span>
       </div>
-      <p class="tool-desc">Audits EASA Part-ORO/CAT/CAMO, registre des constatations, plan d'audit 12 mois et suivi CAP.</p>
+      <p class="tool-desc">Audits EASA Part-ORO/CAT/CAMO, registre des constatations, plan d’audit sur 12 mois et suivi des CAP.<span class="bi-en">EASA Part-ORO/CAT/CAMO audits, findings register, 12-month audit plan and CAP follow-up.</span></p>
       <span class="tool-tag tag-cms">CMS</span>
     </a>
 
     <a class="tool-card" href="SAF_International_Appendices_OMM.html">
       <div class="tool-header">
         <div class="tool-icon icon-omm">📁</div>
-        <span class="tool-name">OMM Appendices</span>
+        <span class="tool-name">Annexes OMM<span class="bi-en">OMM Appendices</span></span>
         <span class="arrow">→</span>
       </div>
-      <p class="tool-desc">Annexes opérationnelles, organigramme, registre de formation et certificats, bases et équipements.</p>
+      <p class="tool-desc">Annexes opérationnelles, organigramme, registre de formation et certificats, bases et équipements.<span class="bi-en">Operational appendices, organisation chart, training and certificate registers, bases and equipment.</span></p>
       <span class="tool-tag tag-omm">OMM</span>
     </a>
 
@@ -204,24 +214,24 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
 
   <div style="text-align:center; margin: 0.5rem 0 1.5rem;">
     <a href="SAF_Report.html" style="color: var(--gold-light); opacity:0.75; text-decoration:none; font-size:0.9rem; transition: opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">
-      📱 Signaler un événement (accès mobile) →
+      📱 Signaler un événement (accès mobile)<span class="bi-en">Report an occurrence (mobile access)</span> →
     </a>
   </div>
 
   <div class="export-bar" id="export-bar" style="display:none;">
     <div class="export-bar-label">
-      <span style="color:var(--gold-light);font-weight:700;">💾 Sauvegarde globale</span><br>
-      Exporte les données des 3 modules (SMS · CMS · OMM) depuis Supabase en un seul fichier JSON.
+      <span style="color:var(--gold-light);font-weight:700;">💾 Sauvegarde globale<span class="bi-en">Global backup</span></span><br>
+      Exporte les données des 3 modules (SMS · CMS · OMM) depuis Supabase en un seul fichier JSON.<span class="bi-en">Exports data from all three modules (SMS · CMS · OMM) from Supabase into a single JSON file.</span>
     </div>
     <span id="export-status"></span>
-    <button class="btn-export-global" id="btn-export-global" onclick="exportGlobal()">⬇ Exporter tout en JSON</button>
-    <button class="btn-import-global" id="btn-import-global" onclick="document.getElementById('import-file-input').click()">⬆ Restaurer depuis JSON</button>
+    <button class="btn-export-global" id="btn-export-global" onclick="exportGlobal()">⬇ Exporter tout en JSON<span class="bi-en">Export all to JSON</span></button>
+    <button class="btn-import-global" id="btn-import-global" onclick="document.getElementById('import-file-input').click()">⬆ Restaurer depuis JSON<span class="bi-en">Restore from JSON</span></button>
     <input type="file" id="import-file-input" accept=".json" style="display:none">
   </div>
   <div class="export-bar" id="import-confirm-bar">
     <div class="import-confirm-msg" id="import-confirm-msg"></div>
-    <button class="btn-cancel-import" id="btn-cancel-import" onclick="cancelImport()">Annuler</button>
-    <button class="btn-confirm-import" id="btn-confirm-import" onclick="confirmImport()">⚠ Confirmer la restauration</button>
+    <button class="btn-cancel-import" id="btn-cancel-import" onclick="cancelImport()">Annuler<span class="bi-en">Cancel</span></button>
+    <button class="btn-confirm-import" id="btn-confirm-import" onclick="confirmImport()">⚠ Confirmer la restauration<span class="bi-en">Confirm restoration</span></button>
   </div>
 
 </main>
@@ -247,7 +257,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     SAF_ROLE = role;
     var badge = document.getElementById('saf-role-badge');
     if(badge){
-      badge.textContent  = role === 'admin' ? 'ADMIN' : 'READ ONLY';
+      badge.textContent  = role === 'admin' ? 'ADMIN' : 'LECTURE SEULE / READ ONLY';
       badge.style.color  = role === 'admin' ? '#C9A227' : '#6a82a5';
       badge.style.borderColor = role === 'admin' ? 'rgba(201,162,39,.4)' : 'rgba(106,130,165,.3)';
       badge.style.display = 'inline-block';
@@ -281,7 +291,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
   // lecture seule, sans login ni token requis.
   function applyGuestRole(){
     overlay.style.display = 'none';
-    userInfo.textContent  = 'Invité';
+    userInfo.textContent  = 'Invité / Guest';
     logoutBtn.style.display = 'none';
     loginTriggerBtn.style.display = 'inline-block';
     applyRole('reader', 'guest');
@@ -291,11 +301,11 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
   async function doLogin(){
     var email = document.getElementById('saf-email').value.trim();
     var pwd   = document.getElementById('saf-pwd').value;
-    loginMsg.className = ''; loginMsg.textContent = 'Connexion…';
+    loginMsg.className = ''; loginMsg.textContent = 'Connexion… / Signing in…';
     var res = await db.auth.signInWithPassword({ email: email, password: pwd });
     if(res.error){
       loginMsg.className = 'err';
-      loginMsg.textContent = 'Échec : ' + res.error.message;
+      loginMsg.textContent = 'Échec / Failed: ' + res.error.message;
       return;
     }
     onAuthenticated(res.data.session);
@@ -322,7 +332,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     var btn = document.getElementById('btn-export-global');
     var status = document.getElementById('export-status');
     btn.disabled = true;
-    status.textContent = 'Connexion Supabase…';
+    status.textContent = 'Connexion à Supabase… / Connecting to Supabase…';
 
     var MODULES = [
       { key: 'sms_data',       label: 'SMS' },
@@ -334,7 +344,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
       _meta: {
         exported_at: new Date().toISOString(),
         exported_by: document.getElementById('saf-user-info').textContent,
-        tool: 'SAF International — Export global',
+        tool: 'SAF International — Sauvegarde globale / Global backup',
         version: '1.0',
         modules: MODULES.map(function(m){ return m.key; })
       }
@@ -343,7 +353,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     var errors = [];
     for(var i=0; i<MODULES.length; i++){
       var mod = MODULES[i];
-      status.textContent = 'Chargement ' + mod.label + ' (' + (i+1) + '/' + MODULES.length + ')…';
+      status.textContent = 'Chargement / Loading ' + mod.label + ' (' + (i+1) + '/' + MODULES.length + ')…';
       try {
         var res = await db.from('saf_data').select('data, updated_at').eq('module', mod.key).single();
         if(res.error){ errors.push(mod.label + ': ' + res.error.message); bundle[mod.key] = null; }
@@ -354,7 +364,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
       }
     }
 
-    status.textContent = 'Génération du fichier…';
+    status.textContent = 'Génération du fichier… / Generating file…';
     var json = JSON.stringify(bundle, null, 2);
     var date = new Date().toISOString().slice(0,10);
     var filename = 'SAF_FullBackup_' + date + '.json';
@@ -366,10 +376,10 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     document.body.removeChild(a);
 
     if(errors.length){
-      status.textContent = '⚠ Terminé avec erreurs : ' + errors.join(' · ');
+      status.textContent = '⚠ Terminé avec erreurs / Completed with errors: ' + errors.join(' · ');
       status.style.color = '#e3b341';
     } else {
-      status.textContent = '✓ ' + filename + ' téléchargé';
+      status.textContent = '✓ ' + filename + ' téléchargé / downloaded';
       status.style.color = '#3fb950';
     }
     btn.disabled = false;
@@ -413,10 +423,10 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
           var nbRisks = 0;
           try { nbRisks = JSON.parse(bundle.safRiskDB || '[]').length; } catch(x){}
           document.getElementById('import-confirm-msg').innerHTML =
-            '<strong style="color:var(--gold-light)">⚠ Restauration imminente</strong><br>' +
-            'Format : <strong>SMS localStorage</strong> — exporté le <strong>' + d + '</strong><br>' +
-            'Contenu : <strong>' + nbRisks + ' risques SMS</strong> (données locales du navigateur).<br>' +
-            'Note : ce fichier ne contient pas les données Supabase (CMS / OMM).';
+            '<strong style="color:var(--gold-light)">⚠ Restauration imminente / Restoration pending</strong><br>' +
+            'Format : <strong>SMS localStorage</strong> — exporté le / exported on <strong>' + d + '</strong><br>' +
+            'Contenu / Content: <strong>' + nbRisks + ' risques SMS / SMS risks</strong> (données locales du navigateur / local browser data).<br>' +
+            'Note : ce fichier ne contient pas les données Supabase (CMS / OMM). / This file does not contain Supabase data (CMS / OMM).';
           document.getElementById('import-confirm-bar').style.display = 'flex';
           document.getElementById('import-confirm-bar').scrollIntoView({behavior:'smooth', block:'nearest'});
           return;
@@ -424,26 +434,26 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
 
         // ── Format global Supabase (_meta) ─────────────────────────────────
         if(!bundle._meta || !bundle._meta.modules){
-          showImportStatus('⚠ Fichier invalide : structure _meta manquante et format SMS non reconnu.', '#e07070');
+          showImportStatus('⚠ Fichier invalide / Invalid file: structure _meta manquante et format SMS non reconnu / missing _meta structure and unrecognised SMS format.', '#e07070');
           return;
         }
         var modules = bundle._meta.modules;
         var present = modules.filter(function(k){ return bundle[k] && bundle[k].data; });
         if(present.length === 0){
-          showImportStatus('⚠ Aucun module avec des données dans ce fichier.', '#e07070');
+          showImportStatus('⚠ Aucun module avec des données dans ce fichier / No module contains data in this file.', '#e07070');
           return;
         }
         _pendingBundle = bundle;
         var d = bundle._meta.exported_at ? bundle._meta.exported_at.slice(0,19).replace('T',' ') : '?';
         var by = bundle._meta.exported_by || '?';
         document.getElementById('import-confirm-msg').innerHTML =
-          '<strong style="color:var(--gold-light)">⚠ Restauration imminente</strong><br>' +
-          'Fichier exporté le <strong>' + d + '</strong> par <strong>' + by + '</strong><br>' +
-          'Modules à écraser : <strong>' + present.join(', ') + '</strong> — cette action est irréversible.';
+          '<strong style="color:var(--gold-light)">⚠ Restauration imminente / Restoration pending</strong><br>' +
+          'Fichier exporté le / File exported on <strong>' + d + '</strong> par / by <strong>' + by + '</strong><br>' +
+          'Modules à écraser / Modules to overwrite: <strong>' + present.join(', ') + '</strong> — cette action est irréversible / this action cannot be undone.';
         document.getElementById('import-confirm-bar').style.display = 'flex';
         document.getElementById('import-confirm-bar').scrollIntoView({behavior:'smooth', block:'nearest'});
       } catch(err) {
-        showImportStatus('⚠ Erreur de lecture JSON : ' + err.message, '#e07070');
+        showImportStatus('⚠ Erreur de lecture JSON / JSON read error: ' + err.message, '#e07070');
       }
     };
     reader.readAsText(file);
@@ -467,7 +477,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
 
     // ── Format SMS localStorage ────────────────────────────────────────────
     if(bundle._smsLocal){
-      status.textContent = 'Restauration SMS localStorage…';
+      status.textContent = 'Restauration SMS localStorage… / Restoring SMS localStorage…';
       status.style.color = 'var(--grey-400)';
       try {
         var sms = bundle._smsData;
@@ -492,15 +502,15 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
               localStorage.setItem('safRiskDB', sms.safRiskDB);
               count++;
             } else {
-              status.textContent = '⚠ safRiskDB ignoré : ne correspond pas au registre SMS 9 événements.';
+              status.textContent = '⚠ safRiskDB ignoré / ignored: ne correspond pas au registre SMS de 9 événements / does not match the 9-event SMS register.';
               status.style.color = '#e3b341';
             }
           } catch(ex){}
         }
-        status.textContent = '✓ SMS localStorage restauré (' + count + ' clés). Ouvrez le module SMS pour vérifier.';
+        status.textContent = '✓ SMS localStorage restauré / restored (' + count + ' clés / keys). Ouvrez le module SMS pour vérifier / Open the SMS module to verify.';
         status.style.color = '#3fb950';
       } catch(e){
-        status.textContent = '⚠ Erreur restauration SMS : ' + e.message;
+        status.textContent = '⚠ Erreur de restauration SMS / SMS restoration error: ' + e.message;
         status.style.color = '#e07070';
       }
       btn.disabled = false; btnExp.disabled = false;
@@ -516,7 +526,7 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     for(var i=0; i<modules.length; i++){
       var key = modules[i];
       if(!bundle[key] || !bundle[key].data){ continue; }
-      status.textContent = 'Restauration ' + (LABEL[key]||key) + ' (' + (i+1) + '/' + modules.length + ')…';
+      status.textContent = 'Restauration / Restoring ' + (LABEL[key]||key) + ' (' + (i+1) + '/' + modules.length + ')…';
       status.style.color = 'var(--grey-400)';
       try {
         var res = await db.from('saf_data').upsert(
@@ -531,10 +541,10 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
     }
 
     if(errors.length){
-      status.textContent = '⚠ Restauration partielle — ' + done + ' ok, erreurs : ' + errors.join(' · ');
+      status.textContent = '⚠ Restauration partielle / Partial restoration — ' + done + ' ok, erreurs / errors: ' + errors.join(' · ');
       status.style.color = '#e3b341';
     } else {
-      status.textContent = '✓ ' + done + ' module(s) restauré(s) avec succès';
+      status.textContent = '✓ ' + done + ' module(s) restauré(s) avec succès / restored successfully';
       status.style.color = '#3fb950';
     }
     btn.disabled = false; btnExp.disabled = false;

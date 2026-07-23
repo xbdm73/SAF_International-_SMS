@@ -1401,9 +1401,9 @@ nav { top: 118px !important; }
 <!-- ── SAF INTER-TOOL NAV ── -->
 <div id="saf-subnav" class="saf-guest-hide" style="background:#070e1a;border-bottom:1px solid #1a2840;padding:0 28px;position:sticky;top:75px;z-index:18;">
   <div style="max-width:1800px;margin:auto;display:flex;align-items:center;gap:4px;overflow-x:auto;">
-    <a href="Archives/index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
+    <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
-    <a href="Archives/SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
+    <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
     <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
     <a href="SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
   </div>
@@ -17252,13 +17252,72 @@ function occRestoreHFACS(hfacs,severity){
     var n=normalize(s);
     return Object.prototype.hasOwnProperty.call(EXACT,n) ? EXACT[n] : null;
   }
+  // A handful of strings contain several " / " sequences as part of their own
+  // content (e.g. "SMS-B — CFIT / navigation / météo / préparation site"),
+  // which makes the automatic FR/EN boundary detection below ambiguous.
+  // These are given an explicit, hand-checked split.
+  var SPLIT_OVERRIDES = {
+    "Impression / Archivage document": ["Impression / Archivage du document", "Document printing / archiving"],
+    "Measures not controlled / last control date": ["Mesures non maîtrisées / date du dernier contrôle", "Measures Not Controlled / Last Control Date"],
+    "Pushback / towing": ["Repoussage / remorquage", "Pushback / Towing"],
+    "⟳ Backup / Restore": ["⟳ Sauvegarde / Restauration", "⟳ Backup / Restore"],
+    "↑ Import / Restore JSON": ["↑ Importer / Restaurer le JSON", "↑ Import / Restore JSON"],
+    "SMS-A — Maîtrise du vol / LOC-I / performance aéronef": ["SMS-A — Maîtrise du vol / LOC-I / performances de l’aéronef", "SMS-A — Flight Control / LOC-I / Aircraft Performance"],
+    "SMS-B — CFIT / navigation / météo / préparation site": ["SMS-B — CFIT / navigation / météo / préparation du site", "SMS-B — CFIT / Navigation / Weather / Site Preparation"],
+    "SMS-D — HESLO / charge suspendue / élingage / downwash": ["SMS-D — HESLO / charge suspendue / élingage / souffle rotor", "SMS-D — HESLO / Slung Load / Rigging / Downwash"],
+    "⛽ Fuel leak / smell?": ["⛽ Fuite / odeur de carburant ?", "Fuel Leak / Smell?"],
+    "Which internal / external instant information can be switched?": ["Quelles informations internes / externes immédiates peuvent être diffusées ?", "Which Internal / External Immediate Information Can Be Released?"],
+    "14.3 — NPFO / NPCT — FLIGHT OPERATIONS / CREW TRAINING": ["14.3 — NPFO / NPCT — OPÉRATIONS AÉRIENNES / FORMATION DES ÉQUIPAGES", "FLIGHT OPERATIONS / CREW TRAINING"],
+    "✦ Aviation accident / Serious incident": ["✦ Accident aérien / Incident grave", "Aviation Accident / Serious Incident"],
+    "✦ Loss of energy / communication: electricity, internet, phones": ["✦ Perte d’énergie / communication : électricité, internet, téléphones", "Loss of Energy / Communication: Electricity, Internet, Phones"],
+    "• Protect any victims/casualties": ["• Protéger les victimes / blessés", "• Protect Victims / Casualties"],
+    "Which feedback channels must/can we open?": ["Quels canaux de retour devons-nous / pouvons-nous ouvrir ?", "Which Feedback Channels Must/Can We Open?"],
+    "Date and time of accident/incident": ["Date et heure de l’accident / incident", "Date and Time of Accident/Incident"],
+    "Description of accident/incident and material damage": ["Description de l’accident / incident et des dommages matériels", "Description of Accident/Incident and Material Damage"],
+    "• Press releases must not contain the names of persons involved in the accident/incident unless definitively established": ["• Les communiqués de presse ne doivent pas mentionner les noms des personnes impliquées dans l’accident / incident tant que ceux-ci ne sont pas définitivement établis", "• Press Releases Must Not Contain the Names of Persons Involved in the Accident/Incident until They Are Definitively Established"],
+    "For national/international coverage: ensure translation": ["Pour une couverture nationale/internationale : prévoir une traduction", "For National/International Coverage: Ensure Translation"],
+    "e.g. IS.I.OR.205 / IS.I.OR.230 / registre SGSI réf…": ["p. ex. IS.I.OR.205 / IS.I.OR.230 / registre SGSI réf…", "e.g. IS.I.OR.205 / IS.I.OR.230 / ISMS Register Ref…"]
+  };
+  // Splits a joined "FR ... / EN ..." string back into its French and English
+  // halves so the two can be stacked on separate lines instead of shown
+  // inline. Relies on the fact that one side always matches the original
+  // source text (nKey), case-insensitively, since that is how the dictionary
+  // was built; falls back to the manual overrides above, then to the last
+  // " / " in the string.
+  function splitFrEnJoined(nKey, joined){
+    if(Object.prototype.hasOwnProperty.call(SPLIT_OVERRIDES, nKey)) return SPLIT_OVERRIDES[nKey];
+    var lowJoined=joined.toLowerCase(), lowKey=nKey.toLowerCase();
+    if(nKey && joined.length>nKey.length && lowJoined.slice(joined.length-nKey.length)===lowKey){
+      var en=joined.slice(joined.length-nKey.length);
+      var fr=joined.slice(0,joined.length-nKey.length).replace(/[\s/]+$/,'');
+      return [fr, en];
+    }
+    if(nKey && joined.length>nKey.length && lowJoined.slice(0,nKey.length)===lowKey){
+      var fr2=joined.slice(0,nKey.length);
+      var en2=joined.slice(nKey.length).replace(/^[\s/]+/,'');
+      return [fr2, en2];
+    }
+    var idx=joined.lastIndexOf(' / ');
+    if(idx>-1) return [joined.slice(0,idx), joined.slice(idx+3)];
+    return [joined, ''];
+  }
   function applyExactTextNode(node){
     if(!node || node.nodeType!==3 || exactDone.has(node) || excluded(node.parentElement)) return false;
     var current=node.nodeValue || '';
+    var nKey=normalize(current);
     var repl=exactBilingual(current);
     if(repl==null) return false;
-    preserveOptionValue(node.parentElement);
-    node.nodeValue=preserveEdge(current,repl);
+    var el=node.parentElement;
+    preserveOptionValue(el);
+    // Options/selects can't render a forced line break, so keep those inline.
+    var stackable = el && el.tagName!=='OPTION' && el.tagName!=='SELECT';
+    var finalText = repl;
+    if(stackable){
+      var parts=splitFrEnJoined(nKey, repl);
+      if(parts[1]) finalText = parts[0] + '\n' + parts[1];
+    }
+    node.nodeValue=preserveEdge(current,finalText);
+    if(stackable) el.setAttribute('data-saf-bi-wrap','1');
     exactDone.add(node); asyncDone.add(node);
     return true;
   }
