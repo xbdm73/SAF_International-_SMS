@@ -11083,24 +11083,22 @@ function occEccairsCompleteness(occ){
 }
 function occActionTextForInput(a){ return (typeof a==='object' && a!==null) ? (a.text||'') : String(a||''); }
 
-// ── ECCAIRS2 notification deadline tracking ──────────────────────────────
-// Milestones per Reg. (EU) 376/2014 / OFAC diagram:
-//   J+3  (72h)          : transmission to the organisation
-//   J+6  (72h + 72h)    : transmission to the Authority (via the organisation)
-//   J+1 month           : preliminary analysis elements to the Authority
-//   J+3 months          : final analysis to the Authority
-function occEccairsDeadlines(dateStr){
+// ── ECCAIRS2 notification deadline tracking (Règl. (UE) 376/2014 art. 4 + Règl. d'exécution (UE) 2015/1018) ──
+//   J+3 (72h)     : notification initiale — soumission à ECCAIRS2, à compter de la connaissance de l'événement
+//   J+1 mois       : analyse des causes racines (5 Whys), à compter de la date de soumission ECCAIRS2
+//   J+3 mois       : analyse finale détaillée transmise à l'Autorité, à compter de la date de l'événement
+function occEccairsDeadlines(dateStr, submittedStr){
   if(!dateStr) return null;
   var d = new Date(dateStr+'T00:00:00');
   if(isNaN(d.getTime())) return null;
   function addDays(base,n){ var r=new Date(base); r.setDate(r.getDate()+n); return r; }
   function addMonths(base,n){ var r=new Date(base); r.setMonth(r.getMonth()+n); return r; }
-  return {
-    org:       addDays(d,3),
-    authority: addDays(d,6),
-    prelim:    addMonths(d,1),
-    final:     addMonths(d,3)
-  };
+  var out = { submit: addDays(d,3), final: addMonths(d,3), rca: null };
+  if(submittedStr){
+    var s = new Date(submittedStr+'T00:00:00');
+    if(!isNaN(s.getTime())) out.rca = addMonths(s,1);
+  }
+  return out;
 }
 function occDeadlineStatus(deadlineDate, sentDateStr){
   if(!deadlineDate) return {level:'na', label:'—'};
@@ -11125,50 +11123,99 @@ function occEccairsDeadlineSpanHtml(deadline, sentVal){
   var sub = sentVal ? st.label : (typeof st.daysLeft==='number' ? (st.daysLeft<0 ? st.label : Math.ceil(st.daysLeft)+'j restants — '+st.label) : st.label);
   return '<span style="color:'+col+';font-weight:700;">'+dstr+'</span><br/><span style="color:'+col+';font-size:9px;">'+occHtmlEsc(sub)+'</span>';
 }
-// Recomputes and displays the 4 deadline previews inside the open occurrence form.
+// Shows/hides the ECCAIRS2 date fields depending on the "notifiable" checkbox.
+function occToggleEccairsReportable(){
+  var cb=document.getElementById('occ-eccairs-reportable');
+  var body=document.getElementById('occ-eccairs-reportable-body');
+  if(body) body.style.display = (cb && cb.checked) ? '' : 'none';
+  occRefreshEccairsDeadlinePreview();
+}
+// Recomputes and displays the ECCAIRS2 deadline previews inside the open occurrence form.
 function occRefreshEccairsDeadlinePreview(){
   var dateEl=document.getElementById('occ-date'); if(!dateEl) return;
-  var dl=occEccairsDeadlines(dateEl.value);
-  var map=[['occ-eccairs-dl-org','org','occ-notif-org'],['occ-eccairs-dl-authority','authority','occ-notif-authority'],['occ-eccairs-dl-prelim','prelim','occ-notif-prelim'],['occ-eccairs-dl-final','final','occ-notif-final']];
-  map.forEach(function(m){
-    var span=document.getElementById(m[0]); if(!span) return;
-    if(!dl){ span.innerHTML='—'; span.style.color=''; return; }
-    var sentEl=document.getElementById(m[2]);
-    span.innerHTML = occEccairsDeadlineSpanHtml(dl[m[1]], sentEl?sentEl.value:'');
-  });
+  var submitEl=document.getElementById('occ-eccairs-submitted');
+  var dl=occEccairsDeadlines(dateEl.value, submitEl?submitEl.value:'');
+  var spanSubmit=document.getElementById('occ-eccairs-dl-submit');
+  var spanFinal=document.getElementById('occ-eccairs-dl-final');
+  var spanRca=document.getElementById('occ-eccairs-dl-rca');
+  var rcaStatus=document.getElementById('occ-eccairs-rca-status');
+  if(spanSubmit) spanSubmit.innerHTML = dl ? occEccairsDeadlineSpanHtml(dl.submit, submitEl?submitEl.value:'') : '—';
+  if(spanFinal){
+    var finalEl=document.getElementById('occ-notif-final');
+    spanFinal.innerHTML = dl ? occEccairsDeadlineSpanHtml(dl.final, finalEl?finalEl.value:'') : '—';
+  }
+  if(spanRca && rcaStatus){
+    if(!dl || !dl.rca){
+      spanRca.innerHTML='—';
+      rcaStatus.innerHTML='Renseignez la date de soumission ECCAIRS2';
+      rcaStatus.style.color='var(--grey-400)';
+    } else {
+      var rootCauseEl=document.getElementById('occ-fw-root-cause');
+      var rcaDone = rootCauseEl && rootCauseEl.value.trim();
+      if(rcaDone){
+        spanRca.innerHTML = '<span style="color:#3fb950;font-weight:700;">'+dl.rca.toLocaleDateString('fr-FR')+'</span>';
+        rcaStatus.innerHTML='✓ Analyse des causes racines complétée (5 Whys)';
+        rcaStatus.style.color='#3fb950';
+      } else {
+        var st=occDeadlineStatus(dl.rca, '');
+        var col=OCC_ECCAIRS_STATUS_COLORS[st.level]||'#8896a0';
+        spanRca.innerHTML = '<span style="color:'+col+';font-weight:700;">'+dl.rca.toLocaleDateString('fr-FR')+'</span>';
+        rcaStatus.innerHTML = '<span style="color:'+col+';">'+(typeof st.daysLeft==='number' && st.daysLeft>=0 ? Math.ceil(st.daysLeft)+'j restants — ' : '')+st.label+' — 5 Whys à compléter</span>';
+        rcaStatus.style.color=col;
+      }
+    }
+  }
 }
 function occGetNotifDates(){
   return {
-    notif_org_date:       document.getElementById('occ-notif-org')?.value||'',
-    notif_authority_date: document.getElementById('occ-notif-authority')?.value||'',
-    notif_prelim_date:    document.getElementById('occ-notif-prelim')?.value||'',
-    notif_final_date:     document.getElementById('occ-notif-final')?.value||''
+    eccairs_reportable:  !!document.getElementById('occ-eccairs-reportable')?.checked,
+    eccairs_submitted_date: document.getElementById('occ-eccairs-submitted')?.value||'',
+    notif_final_date:    document.getElementById('occ-notif-final')?.value||''
   };
 }
-// Dashboard block (Occurrence Log) tracking every reportable occurrence's ECCAIRS2 deadlines at a glance.
+// Dashboard block (Occurrence Log) tracking every ECCAIRS2-notifiable occurrence's deadlines at a glance.
 function renderECCAIRSTracker(){
   var wrap=document.getElementById('eccairs-tracker-wrap');
   if(!wrap) return;
-  var occs=getOccurrences().filter(function(o){return ['accident','serious','incident'].indexOf(o.severity)!==-1;});
+  var occs=getOccurrences().filter(function(o){
+    // Notifiable = explicit checkbox, with a fallback to severity for entries saved before this field existed.
+    if(typeof o.eccairs_reportable !== 'undefined') return !!o.eccairs_reportable;
+    return ['accident','serious','incident'].indexOf(o.severity)!==-1;
+  });
   if(!occs.length){ wrap.innerHTML=''; return; }
   occs.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
   var overdueCount=0, warnCount=0;
-  var cols=[['org','Organisation<br/>72h','notif_org_date'],['authority','Autorité<br/>72h+72h','notif_authority_date'],['prelim','Analyse prélim.<br/>1 mois','notif_prelim_date'],['final','Analyse finale<br/>3 mois','notif_final_date']];
   var rows = occs.map(function(o){
-    var dl=occEccairsDeadlines(o.date);
-    var cellsHtml=cols.map(function(c){
-      var deadline = dl ? dl[c[0]] : null;
-      var sentVal = o[c[2]]||'';
-      var st=occDeadlineStatus(deadline, sentVal);
-      if(st.level==='overdue') overdueCount++;
-      else if(st.level==='critical'||st.level==='warning') warnCount++;
-      return '<td style="padding:8px 10px;text-align:center;border-left:1px solid rgba(255,255,255,.06);">'+occEccairsDeadlineSpanHtml(deadline, sentVal)+'</td>';
-    }).join('');
+    var dl=occEccairsDeadlines(o.date, o.eccairs_submitted_date);
+    var rcaDone = !!(o.five_whys && o.five_whys.root_cause && String(o.five_whys.root_cause).trim());
+
+    // Col 1 — initial ECCAIRS2 notification (72h)
+    var stSubmit=occDeadlineStatus(dl?dl.submit:null, o.eccairs_submitted_date);
+    if(stSubmit.level==='overdue') overdueCount++; else if(stSubmit.level==='critical'||stSubmit.level==='warning') warnCount++;
+    var cellSubmit='<td style="padding:8px 10px;text-align:center;border-left:1px solid rgba(255,255,255,.06);">'+occEccairsDeadlineSpanHtml(dl?dl.submit:null, o.eccairs_submitted_date)+'</td>';
+
+    // Col 2 — root cause analysis (1 month after ECCAIRS2 submission)
+    var cellRca;
+    if(!dl || !dl.rca){
+      cellRca='<td style="padding:8px 10px;text-align:center;border-left:1px solid rgba(255,255,255,.06);font-family:var(--font-mono);font-size:9px;color:var(--grey-400);">En attente de soumission ECCAIRS2</td>';
+    } else if(rcaDone){
+      cellRca='<td style="padding:8px 10px;text-align:center;border-left:1px solid rgba(255,255,255,.06);"><span style="color:#3fb950;font-weight:700;">'+dl.rca.toLocaleDateString('fr-FR')+'</span><br/><span style="color:#3fb950;font-size:9px;">✓ 5 Whys complétée</span></td>';
+    } else {
+      var stRca=occDeadlineStatus(dl.rca, '');
+      if(stRca.level==='overdue') overdueCount++; else if(stRca.level==='critical'||stRca.level==='warning') warnCount++;
+      cellRca='<td style="padding:8px 10px;text-align:center;border-left:1px solid rgba(255,255,255,.06);">'+occEccairsDeadlineSpanHtml(dl.rca, '')+'</td>';
+    }
+
+    // Col 3 — final analysis (3 months after the event)
+    var stFinal=occDeadlineStatus(dl?dl.final:null, o.notif_final_date);
+    if(stFinal.level==='overdue') overdueCount++; else if(stFinal.level==='critical'||stFinal.level==='warning') warnCount++;
+    var cellFinal='<td style="padding:8px 10px;text-align:center;border-left:1px solid rgba(255,255,255,.06);">'+occEccairsDeadlineSpanHtml(dl?dl.final:null, o.notif_final_date)+'</td>';
+
     return '<tr style="border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer;" onclick="showOccurrenceForm(\''+o.id.replace(/'/g,"\\'")+'\')" title="Ouvrir l\'occurrence">'
       +'<td style="padding:8px 10px;font-family:var(--font-mono);font-size:11px;color:var(--white);font-weight:700;">'+occHtmlEsc(o.id)+'</td>'
       +'<td style="padding:8px 10px;font-family:var(--font-mono);font-size:11px;color:var(--grey-200);">'+occHtmlEsc(o.date||'')+'</td>'
       +'<td style="padding:8px 10px;font-family:var(--font-mono);font-size:10px;color:var(--grey-200);text-transform:uppercase;">'+occHtmlEsc(o.severity||'')+'</td>'
-      +cellsHtml+'</tr>';
+      +cellSubmit+cellRca+cellFinal+'</tr>';
   }).join('');
   var badge = overdueCount
     ? '<span style="margin-left:10px;padding:2px 10px;border-radius:10px;font-size:10px;font-family:var(--font-mono);font-weight:700;background:rgba(248,81,73,.18);color:#f85149;">'+overdueCount+' délai(s) dépassé(s)</span>'
@@ -11177,16 +11224,18 @@ function renderECCAIRSTracker(){
       : '<span style="margin-left:10px;padding:2px 10px;border-radius:10px;font-size:10px;font-family:var(--font-mono);font-weight:700;background:rgba(63,185,80,.15);color:#3fb950;">Tout est à jour</span>');
   wrap.innerHTML = '<div class="chart-card" style="padding:18px 20px;">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">'
-    +'<div><div class="chart-title" style="margin:0;">📅 Suivi des délais de notification ECCAIRS2</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-top:2px;">Règl. (UE) 376/2014 · accidents, incidents graves et incidents — 72h / 1 mois / 3 mois</div></div>'
+    +'<div><div class="chart-title" style="margin:0;">📅 Suivi des délais de notification ECCAIRS2</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-top:2px;">Règl. (UE) 376/2014 art. 4 · événements marqués « notifiable ECCAIRS2 » — 72h / 1 mois (causes racines) / 3 mois</div></div>'
     +'<div>'+badge+'</div></div>'
     +'<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
     +'<thead><tr style="border-bottom:1px solid rgba(255,255,255,.12);">'
     +'<th style="text-align:left;padding:6px 10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);text-transform:uppercase;letter-spacing:.06em;">ID</th>'
     +'<th style="text-align:left;padding:6px 10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);text-transform:uppercase;letter-spacing:.06em;">Date</th>'
     +'<th style="text-align:left;padding:6px 10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);text-transform:uppercase;letter-spacing:.06em;">Sévérité</th>'
-    +cols.map(function(c){return '<th style="text-align:center;padding:6px 10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);text-transform:uppercase;letter-spacing:.06em;border-left:1px solid rgba(255,255,255,.06);">'+c[1]+'</th>';}).join('')
+    +'<th style="text-align:center;padding:6px 10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);text-transform:uppercase;letter-spacing:.06em;border-left:1px solid rgba(255,255,255,.06);">Notification ECCAIRS2<br/>72h</th>'
+    +'<th style="text-align:center;padding:6px 10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);text-transform:uppercase;letter-spacing:.06em;border-left:1px solid rgba(255,255,255,.06);">Causes racines<br/>J+1 mois</th>'
+    +'<th style="text-align:center;padding:6px 10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);text-transform:uppercase;letter-spacing:.06em;border-left:1px solid rgba(255,255,255,.06);">Analyse finale<br/>3 mois</th>'
     +'</tr></thead><tbody>'+rows+'</tbody></table></div>'
-    +'<div style="margin-top:10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-600);">Cliquez sur une ligne pour ouvrir l\'occurrence et renseigner les dates de transmission réelles.</div>'
+    +'<div style="margin-top:10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-600);">Cliquez sur une ligne pour ouvrir l\'occurrence, cocher « notifiable ECCAIRS2 » et renseigner la date de soumission.</div>'
     +'</div>';
 }
 window.renderECCAIRSTracker = renderECCAIRSTracker;
@@ -11264,13 +11313,18 @@ function showOccurrenceForm(editId){
     ${occRenderEccairsFields(_occ)}
 
     <div class="occ-jc-wrap" style="margin-bottom:14px;">
-      <div class="occ-jc-head"><div><div class="occ-jc-title">📅 Suivi des délais de notification ECCAIRS2</div><div class="occ-jc-note">Calculé automatiquement depuis la date de l'événement — Règl. (UE) 376/2014. Renseignez les dates de transmission réelles pour vérifier le respect des délais.</div></div></div>
+      <div class="occ-jc-head"><div><div class="occ-jc-title">📅 ECCAIRS2 — Notification &amp; délais réglementaires</div><div class="occ-jc-note">Règl. (UE) 376/2014 art. 4 &amp; Règl. d'exécution (UE) 2015/1018 — notification initiale sous 72h ; analyse des causes racines sous 1 mois après soumission ECCAIRS2 ; analyse finale sous 3 mois après l'événement.</div></div></div>
       <div class="occ-panel-body" style="padding:14px 16px;">
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
-          <div class="form-field" style="margin:0;"><label class="field-label">Transmis à l'organisation le<br/><span style="font-weight:400;font-size:9px;color:var(--grey-600);">Échéance (72h) : <span id="occ-eccairs-dl-org">—</span></span></label><input id="occ-notif-org" type="date" style="width:100%;" onchange="occRefreshEccairsDeadlinePreview()"/></div>
-          <div class="form-field" style="margin:0;"><label class="field-label">Transmis à l'Autorité le<br/><span style="font-weight:400;font-size:9px;color:var(--grey-600);">Échéance (72h+72h) : <span id="occ-eccairs-dl-authority">—</span></span></label><input id="occ-notif-authority" type="date" style="width:100%;" onchange="occRefreshEccairsDeadlinePreview()"/></div>
-          <div class="form-field" style="margin:0;"><label class="field-label">Éléments préliminaires transmis le<br/><span style="font-weight:400;font-size:9px;color:var(--grey-600);">Échéance (1 mois) : <span id="occ-eccairs-dl-prelim">—</span></span></label><input id="occ-notif-prelim" type="date" style="width:100%;" onchange="occRefreshEccairsDeadlinePreview()"/></div>
-          <div class="form-field" style="margin:0;"><label class="field-label">Analyse finale transmise le<br/><span style="font-weight:400;font-size:9px;color:var(--grey-600);">Échéance (3 mois) : <span id="occ-eccairs-dl-final">—</span></span></label><input id="occ-notif-final" type="date" style="width:100%;" onchange="occRefreshEccairsDeadlinePreview()"/></div>
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:6px;cursor:pointer;margin-bottom:14px;">
+          <input type="checkbox" id="occ-eccairs-reportable" style="width:18px;height:18px;accent-color:#e3b341;flex-shrink:0;cursor:pointer;" onchange="this.dataset.userTouched='1';occToggleEccairsReportable()"/>
+          <span style="font-size:12px;color:var(--white);">Cet événement doit être remonté sur <strong>ECCAIRS2</strong> (notifiable — Art. 4 Règl. (UE) 376/2014 / Règl. d'exécution (UE) 2015/1018)</span>
+        </label>
+        <div id="occ-eccairs-reportable-body" style="display:none;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
+            <div class="form-field" style="margin:0;"><label class="field-label">Date de soumission à ECCAIRS2<br/><span style="font-weight:400;font-size:9px;color:var(--grey-600);">Échéance notification initiale (72h) : <span id="occ-eccairs-dl-submit">—</span></span></label><input id="occ-eccairs-submitted" type="date" style="width:100%;" onchange="occRefreshEccairsDeadlinePreview()"/></div>
+            <div class="form-field" style="margin:0;"><label class="field-label">Analyse des causes racines (5 Whys)<br/><span style="font-weight:400;font-size:9px;color:var(--grey-600);">Échéance — J+1 mois après soumission : <span id="occ-eccairs-dl-rca">—</span></span></label><div id="occ-eccairs-rca-status" style="padding:9px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:6px;font-family:var(--font-mono);font-size:11px;min-height:36px;display:flex;align-items:center;">Renseignez la date de soumission ECCAIRS2</div></div>
+            <div class="form-field" style="margin:0;"><label class="field-label">Analyse finale transmise à l'Autorité le<br/><span style="font-weight:400;font-size:9px;color:var(--grey-600);">Échéance — 3 mois après l'événement : <span id="occ-eccairs-dl-final">—</span></span></label><input id="occ-notif-final" type="date" style="width:100%;" onchange="occRefreshEccairsDeadlinePreview()"/></div>
+          </div>
         </div>
       </div>
     </div>
@@ -11310,7 +11364,7 @@ function showOccurrenceForm(editId){
             <button type="button" onclick="occAddWhyRow()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 14px;background:rgba(232,160,32,.1);border:1px dashed #e3b341;border-radius:5px;color:#e3b341;font-family:var(--font-mono);font-size:11px;cursor:pointer;"><span style="font-size:15px;font-weight:700;">+</span> Add WHY</button>
           </div>
           <div class="occ-fw-side">
-            <div class="form-field" style="margin:0 0 12px;"><label class="field-label">Root cause</label><textarea id="occ-fw-root-cause" class="occ-fw-root" rows="4" placeholder="5 Whys analysis conclusion: organisational cause, process, barrier, training, interface, supervision…"></textarea></div>
+            <div class="form-field" style="margin:0 0 12px;"><label class="field-label">Root cause</label><textarea id="occ-fw-root-cause" class="occ-fw-root" rows="4" placeholder="5 Whys analysis conclusion: organisational cause, process, barrier, training, interface, supervision…" oninput="occRefreshEccairsDeadlinePreview()"></textarea></div>
             <div class="form-field" style="margin:0;"><label class="field-label">Evidence / notes</label><textarea id="occ-fw-notes" rows="3" placeholder="Facts, evidence, assumptions, documents reviewed…"></textarea></div>
           </div>
         </div>
@@ -11486,10 +11540,11 @@ function showOccurrenceForm(editId){
     document.getElementById('occ-desc').value       = _occ.description || '';
     document.getElementById('occ-location').value   = _occ.location || '';
     document.getElementById('occ-risk-link').value  = _occ.risk_link || '';
-    document.getElementById('occ-notif-org').value       = _occ.notif_org_date || '';
-    document.getElementById('occ-notif-authority').value = _occ.notif_authority_date || '';
-    document.getElementById('occ-notif-prelim').value    = _occ.notif_prelim_date || '';
-    document.getElementById('occ-notif-final').value     = _occ.notif_final_date || '';
+    document.getElementById('occ-eccairs-reportable').checked =
+      (typeof _occ.eccairs_reportable !== 'undefined') ? !!_occ.eccairs_reportable : (['accident','serious','incident'].indexOf(_occ.severity)!==-1);
+    document.getElementById('occ-eccairs-submitted').value = _occ.eccairs_submitted_date || '';
+    document.getElementById('occ-notif-final').value       = _occ.notif_final_date || '';
+    occToggleEccairsReportable();
     // Restore contributing factors
     (_occ.contributing_factors||[]).forEach(function(cf) {
       var cb = document.querySelector('input[name="occ-cf"][value="'+cf+'"]');
@@ -11548,6 +11603,9 @@ function showOccurrenceForm(editId){
     occUpdateJustCultureResult();
     occRestoreFiveWhys(null);
     occRenderARMSMatrix();
+    var eccb0=document.getElementById('occ-eccairs-reportable');
+    if(eccb0){ eccb0.checked=false; delete eccb0.dataset.userTouched; }
+    occToggleEccairsReportable();
   }
   // Sync Serial Number with whatever Aircraft Registration ended up selected
   // (pre-filled on edit, or default selection on a new entry).
@@ -17139,8 +17197,12 @@ setTimeout(function(){
 function occCheckHFACSTrigger(){
   var sev=(document.getElementById('occ-severity')?.value||'').toLowerCase();
   var wrap=document.getElementById('occ-hfacs-wrap');
-  if(!wrap)return;
-  wrap.style.display=(sev==='accident'||sev==='serious'||sev==='incident')?'':'none';
+  if(wrap) wrap.style.display=(sev==='accident'||sev==='serious'||sev==='incident')?'':'none';
+  var eccb=document.getElementById('occ-eccairs-reportable');
+  if(eccb && !eccb.dataset.userTouched){
+    eccb.checked = (sev==='accident'||sev==='serious'||sev==='incident');
+    if(typeof occToggleEccairsReportable==='function') occToggleEccairsReportable();
+  }
 }
 function safRemoveComment(btn){
   var n=btn;
