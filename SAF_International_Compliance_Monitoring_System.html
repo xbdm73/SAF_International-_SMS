@@ -1883,7 +1883,7 @@ function safExportPDF() {
 <div style="display:flex;align-items:center;gap:4px;overflow-x:auto;">
 <a href="index.html" onmouseout="this.style.color='#6a82a5'" onmouseover="this.style.color='#e8f0fe'" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;">⌂ HOME</a>
 <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
-<a class="saf-nav-link" href="SAF_International_Safety.html" onmouseout="this.style.color='#6a82a5'" onmouseover="this.style.color='#e07070'" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;"><span style="color:#e07070">■</span> SMS</a>
+<a class="saf-nav-link" href="Archives/SAF_International_Safety.html" onmouseout="this.style.color='#6a82a5'" onmouseover="this.style.color='#e07070'" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;"><span style="color:#e07070">■</span> SMS</a>
 <a class="saf-nav-link" href="SAF_International_Compliance_Monitoring_System.html" onmouseout="this.style.color='#6a82a5'" onmouseover="this.style.color='#70a8e0'" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;"><span style="color:#70a8e0">■</span> CMS</a>
 <a class="saf-nav-link" href="SAF_International_Appendices_OMM.html" onmouseout="this.style.color='#6a82a5'" onmouseover="this.style.color='#70d0a0'" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;"><span style="color:#70d0a0">■</span> OMM</a>
 </div>
@@ -20176,11 +20176,14 @@ window.safSmsConfirmImport=safSmsConfirmImport;
   // --- Chargement depuis la base ---
   async function cloudLoad(){
     try{
-      var res = await db.from('saf_data').select('data').eq('module', MODULE).single();
+      var res = await db.from('saf_data').select('data, updated_at').eq('module', MODULE).single();
       if(res.error){
         if(res.error.code === 'PGRST116'){ setBar('ok','Base vide — sauvegarde au 1er changement'); return; }
         setBar('ok','Erreur chargement: '+res.error.message); return;
       }
+
+      // Contrôle de concurrence : mémorise la version chargée.
+      if(res.data){ CC_ROW_EXISTS = true; CC_LAST_SYNC = res.data.updated_at || null; }
       var data = res.data && res.data.data;
       if(!data){ setBar('ok','Base vide'); return; }
 
@@ -20210,6 +20213,148 @@ window.safSmsConfirmImport=safSmsConfirmImport;
       .forEach(function(fn){ if(typeof window[fn]==='function'){ try{ window[fn](); }catch(e){} } });
   }
 
+
+  /* ══════════════════════════════════════════════════════════════════════
+     CONTRÔLE DE CONCURRENCE — verrou optimiste multi-administrateurs
+     ----------------------------------------------------------------------
+     La table saf_data stocke un module entier dans UNE seule ligne JSON.
+     Sans ce contrôle, si deux administrateurs travaillent en même temps,
+     la dernière écriture écrase silencieusement le travail de l'autre.
+
+     Principe : on mémorise le updated_at de la version chargée, puis on
+     n'écrit QUE si la ligne en base porte toujours ce même updated_at
+     (condition évaluée par PostgreSQL — donc atomique). Sinon → conflit.
+     ══════════════════════════════════════════════════════════════════════ */
+  var CC_LAST_SYNC  = null;   // updated_at de la version chargée / dernière écrite
+  var CC_ROW_EXISTS = false;  // la ligne du module existe-t-elle en base ?
+  var CC_CONFLICT   = false;  // sauvegardes bloquées jusqu'à résolution
+  var CC_NOTIFIED   = null;   // dernier updated_at distant déjà signalé
+
+  function ccPayload(){ try{ return buildPayload(); }catch(e){ return null; } }
+
+  // Écriture conditionnelle : n'aboutit que si personne n'a écrit entre-temps.
+  async function ccWrite(payload){
+    var stamp = new Date().toISOString(), q;
+    if(CC_ROW_EXISTS && CC_LAST_SYNC){
+      q = db.from('saf_data')
+            .update({ data: payload, updated_at: stamp })
+            .eq('module', MODULE)
+            .eq('updated_at', CC_LAST_SYNC)
+            .select('updated_at');
+    } else {
+      q = db.from('saf_data')
+            .insert({ module: MODULE, data: payload, updated_at: stamp })
+            .select('updated_at');
+    }
+    var res = await q;
+    if(res.error){
+      if(res.error.code === '23505') return { conflict:true };  // ligne créée entre-temps
+      return { error: res.error.message };
+    }
+    if(!res.data || res.data.length === 0) return { conflict:true }; // updated_at périmé
+    CC_LAST_SYNC = res.data[0].updated_at;
+    CC_ROW_EXISTS = true;
+    return { ok:true };
+  }
+
+  // Écriture forcée (choix explicite de l'utilisateur : écraser le serveur).
+  async function ccForce(payload){
+    var stamp = new Date().toISOString();
+    var res = await db.from('saf_data')
+      .upsert({ module: MODULE, data: payload, updated_at: stamp }, { onConflict:'module' })
+      .select('updated_at');
+    if(res.error) return { error: res.error.message };
+    CC_LAST_SYNC = (res.data && res.data[0]) ? res.data[0].updated_at : stamp;
+    CC_ROW_EXISTS = true;
+    return { ok:true };
+  }
+
+  // Sauvegarde de secours du travail non enregistré, en fichier JSON local.
+  function ccDownload(payload){
+    try{
+      var wrap = { _module: MODULE, _exported_at: new Date().toISOString(),
+                   _note: 'Sauvegarde locale produite lors d\'un conflit de version.',
+                   data: payload };
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(wrap, null, 2)], {type:'application/json'}));
+      a.download = MODULE + '_conflit_' + new Date().toISOString().slice(0,19).replace(/[:T]/g,'-') + '.json';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }catch(e){ alert('Export impossible : ' + e.message); }
+  }
+
+  function ccBtn(bg, fg){
+    return 'padding:8px 12px;border-radius:5px;border:1px solid rgba(255,255,255,.18);'
+         + 'cursor:pointer;font-family:inherit;font-size:12px;background:'+bg+';color:'+fg+';';
+  }
+
+  // Bandeau de résolution de conflit (non destructif : rien n'est perdu).
+  function ccShowConflict(payload){
+    var box = document.getElementById('saf-cc-box');
+    if(!box){
+      box = document.createElement('div');
+      box.id = 'saf-cc-box';
+      box.style.cssText = 'position:fixed;z-index:99999;left:50%;bottom:20px;transform:translateX(-50%);'
+        + 'width:calc(100% - 32px);max-width:600px;background:#2b1b1b;border:1px solid #a4423f;'
+        + 'border-radius:8px;padding:16px 18px;color:#f0e6e6;font-family:system-ui,-apple-system,sans-serif;'
+        + 'font-size:13px;line-height:1.55;box-shadow:0 10px 40px rgba(0,0,0,.55);';
+      box.innerHTML =
+        '<div style="font-weight:600;color:#ff9b9b;margin-bottom:8px;">'
+      + '&#9888; Conflit de version &mdash; sauvegarde suspendue</div>'
+      + '<div id="saf-cc-msg" style="margin-bottom:14px;"></div>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+      + '<button id="saf-cc-dl">Télécharger mes modifications</button>'
+      + '<button id="saf-cc-reload">Recharger depuis le serveur</button>'
+      + '<button id="saf-cc-force">Écraser le serveur</button>'
+      + '</div>';
+      document.body.appendChild(box);
+      document.getElementById('saf-cc-dl').style.cssText     = ccBtn('#c9a227','#1a1a1a');
+      document.getElementById('saf-cc-reload').style.cssText = ccBtn('transparent','#e0d8d8');
+      document.getElementById('saf-cc-force').style.cssText  = ccBtn('transparent','#ff9b9b');
+
+      document.getElementById('saf-cc-dl').onclick     = function(){ ccDownload(ccPayload()); };
+      document.getElementById('saf-cc-reload').onclick = function(){ location.reload(); };
+      document.getElementById('saf-cc-force').onclick  = async function(){
+        if(!confirm('Écraser la version du serveur ?\n\nLes modifications enregistrées entre-temps '
+                  + 'par l\'autre administrateur seront définitivement perdues.\n\n'
+                  + 'Téléchargez d\'abord vos modifications si ce n\'est pas déjà fait.')) return;
+        var out = await ccForce(ccPayload());
+        if(out.error){ alert('Échec : ' + out.error); return; }
+        CC_CONFLICT = false; CC_NOTIFIED = CC_LAST_SYNC;
+        box.remove();
+        setBar('ok','Serveur écrasé — synchronisé ✓ ' + new Date().toLocaleTimeString());
+      };
+    }
+    var who = '';
+    db.from('saf_data').select('updated_at').eq('module', MODULE).single().then(function(r){
+      if(r && r.data && r.data.updated_at){
+        document.getElementById('saf-cc-msg').innerHTML =
+          'Un autre administrateur a enregistré une nouvelle version de ce module le <strong>'
+        + new Date(r.data.updated_at).toLocaleString() + '</strong>.<br><br>'
+        + 'Vos modifications <strong>ne sont pas enregistrées</strong> et la sauvegarde automatique '
+        + 'est suspendue pour ne rien écraser. Téléchargez-les avant de recharger ou d\'écraser.';
+      }
+    });
+    document.getElementById('saf-cc-msg').textContent =
+      'Un autre administrateur a enregistré une nouvelle version de ce module. '
+    + 'Vos modifications ne sont pas enregistrées et la sauvegarde automatique est suspendue.';
+  }
+
+  // Veille passive : prévient tôt qu'une nouvelle version existe sur le serveur.
+  async function ccPoll(){
+    if(CC_CONFLICT || !CC_ROW_EXISTS || !CC_LAST_SYNC) return;
+    try{
+      var r = await db.from('saf_data').select('updated_at').eq('module', MODULE).single();
+      if(r.error || !r.data) return;
+      var remote = r.data.updated_at;
+      if(remote !== CC_LAST_SYNC && remote !== CC_NOTIFIED){
+        CC_NOTIFIED = remote;
+        setBar('ok','⚠ Nouvelle version sur le serveur (' + new Date(remote).toLocaleTimeString()
+                  + ') — rechargez avant de continuer');
+      }
+    }catch(e){}
+  }
+  setInterval(ccPoll, 60000);
+
   // --- Sauvegarde vers la base ---
   function buildPayload(){
     var p = {};
@@ -20217,15 +20362,14 @@ window.safSmsConfirmImport=safSmsConfirmImport;
     return p;
   }
   async function cloudSave(){
+    if(CC_CONFLICT){ return; }   // bloqué jusqu'à résolution du conflit
     if(saving){ dirty = true; return; }
     saving = true; setBar('saving','Sauvegarde…');
     try{
       var payload = buildPayload();
-      var res = await db.from('saf_data').upsert(
-        { module: MODULE, data: payload, updated_at: new Date() },
-        { onConflict: 'module' }
-      );
-      if(res.error) setBar('ok','Erreur d’enregistrement / Saving error: '+res.error.message);
+      var out = await ccWrite(payload);
+      if(out.conflict){ CC_CONFLICT = true; ccShowConflict(payload); setBar('ok','⚠ Conflit de version — sauvegarde suspendue'); }
+      else if(out.error) setBar('ok','Erreur d’enregistrement / Saving error: '+out.error);
       else setBar('ok','Synchronisé ✓ '+new Date().toLocaleTimeString());
     }catch(e){ setBar('ok','Sauvegarde impossible: '+e.message); }
     saving = false;

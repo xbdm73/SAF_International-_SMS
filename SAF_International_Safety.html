@@ -731,6 +731,57 @@ main { flex: 1; overflow-y: auto; background: #0A1520; }
 .cs-action-body{padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .cs-action-body .form-field{margin:0;}
 .cs-action-body .cs-full{grid-column:1/-1;}
+/* ── MoC · Action structured breakdown (hazards / risk / barriers) ── */
+.cs-act-brk{grid-column:1/-1;border:1px solid rgba(74,159,224,.25);border-radius:9px;background:rgba(74,159,224,.045);overflow:hidden;}
+.cs-act-brk-head{display:flex;align-items:center;gap:9px;padding:7px 12px;background:rgba(74,159,224,.10);border-bottom:1px solid rgba(74,159,224,.16);cursor:pointer;user-select:none;}
+.cs-act-brk-head .t{font-family:var(--font-mono);font-size:10.5px;font-weight:700;color:var(--steel-bright);letter-spacing:.05em;}
+.cs-act-brk-head .s{margin-left:auto;font-family:var(--font-mono);font-size:9.5px;color:var(--grey-400);display:flex;align-items:center;gap:0;}
+.cs-act-brk-head .chev{font-size:11px;color:var(--steel-bright);transition:transform .18s;flex-shrink:0;}
+.cs-act-brk.collapsed .cs-act-brk-body{display:none;}
+.cs-act-brk.collapsed .cs-act-brk-head{border-bottom:none;}
+.cs-act-brk.collapsed .cs-act-brk-head .chev{transform:rotate(-90deg);}
+.cs-act-brk-body{padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.cs-act-brk-body .form-field{margin:0;}
+.cs-act-brk-body .bfull{grid-column:1/-1;}
+.cs-act-brk-body textarea{min-height:62px;}
+.cs-act-brk-tools{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-top:2px;}
+.cs-act-mini-btn{padding:5px 11px;background:rgba(27,108,168,.22);border:1px solid rgba(27,108,168,.45);border-radius:6px;color:var(--steel-bright);font-family:var(--font-mono);font-size:10px;cursor:pointer;transition:background .15s;}
+.cs-act-mini-btn:hover{background:rgba(27,108,168,.38);}
+.cs-bar-tag{display:inline-block;padding:1px 6px;border-radius:4px;font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.05em;margin-left:4px;}
+.cs-bar-tag.hzd{background:rgba(224,130,74,.16);color:#e0824a;border:1px solid rgba(224,130,74,.35);}
+.cs-bar-tag.rsk{background:rgba(255,255,255,.07);color:var(--grey-200);border:1px solid rgba(255,255,255,.18);}
+.cs-bar-tag.prev{background:rgba(80,200,120,.16);color:#5cc990;border:1px solid rgba(80,200,120,.35);}
+.cs-bar-tag.miti{background:rgba(227,179,65,.16);color:#e3b341;border:1px solid rgba(227,179,65,.35);}
+.cs-bar-tag.reco{background:rgba(74,159,224,.16);color:#4a9fe0;border:1px solid rgba(74,159,224,.35);}
+.cs-brk-lbl{display:flex;align-items:center;gap:6px;}
+.cs-brk-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.cs-brk-status{margin-left:auto;max-width:56%;font-family:var(--font-mono);font-size:9.5px;padding:2px 6px;height:auto;background:var(--navy-deep);border:1px solid rgba(255,255,255,.14);color:var(--grey-200);border-radius:5px;text-transform:none;letter-spacing:0;}
+.cs-brk-lbl{width:100%;}
+.cs-bar-tag.nrisk{background:rgba(192,68,0,.20);color:#ff9d5c;border:1px solid rgba(192,68,0,.55);}
+.cs-brk-newrisk{border:1px solid rgba(192,68,0,.38);background:rgba(192,68,0,.08);border-radius:8px;padding:11px 13px;}
+.cs-brk-newrisk-t{font-family:var(--font-mono);font-size:10px;font-weight:700;color:#e0824a;letter-spacing:.05em;margin-bottom:10px;}
+.cs-brk-newrisk-note{margin-top:9px;font-family:var(--font-mono);font-size:9.5px;line-height:1.6;color:var(--grey-400);}
+.cs-brk-newrisk-note b{color:#e0824a;}
+.cs-act-mini-btn.ok{background:rgba(80,200,120,.14);border-color:rgba(80,200,120,.42);color:#5cc990;}
+.cs-act-mini-btn.ok:hover{background:rgba(80,200,120,.26);}
+.cs-act-mini-btn.danger{background:rgba(255,60,60,.12);border-color:rgba(255,80,80,.35);color:#ff9090;}
+.cs-act-mini-btn.danger:hover{background:rgba(255,60,60,.22);}
+.cs-act-mini-btn:disabled{cursor:not-allowed;}
+.cs-fam-sug{margin-top:9px;padding:10px 11px;background:rgba(122,92,201,.08);border:1px solid rgba(122,92,201,.32);border-radius:8px;}
+.cs-fam-sug-h{font-family:var(--font-mono);font-size:9.5px;font-weight:700;letter-spacing:.06em;color:#a98cf0;margin-bottom:8px;}
+.cs-fam-none{font-family:var(--font-mono);font-size:10px;color:var(--grey-400);line-height:1.6;}
+.cs-fam-cand{padding:8px 9px;border:1px solid rgba(255,255,255,.09);border-radius:7px;background:rgba(0,0,0,.18);margin-bottom:7px;}
+.cs-fam-cand.top{border-color:rgba(122,92,201,.5);background:rgba(122,92,201,.10);}
+.cs-fam-cand-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.cs-fam-score{font-family:var(--font-mono);font-size:10px;font-weight:800;padding:1px 7px;border-radius:4px;border:1px solid;flex-shrink:0;}
+.cs-fam-name{font-family:var(--font-mono);font-size:10.5px;font-weight:700;color:var(--grey-100,#f4f6f8);}
+.cs-fam-count{font-family:var(--font-mono);font-size:9px;color:var(--grey-400);}
+.cs-fam-why{margin-top:5px;font-size:10.5px;color:var(--grey-400);line-height:1.5;}
+.cs-fam-why-list{margin:5px 0 0 16px;padding:0;font-family:var(--font-mono);font-size:9.5px;color:var(--grey-200);line-height:1.65;}
+.cs-fam-members{margin-top:5px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);}
+.cs-fam-verdict{margin-top:4px;padding:6px 9px;border:1px solid;border-radius:6px;font-family:var(--font-mono);font-size:10px;line-height:1.55;}
+.cs-fam-new{margin-top:9px;padding:10px 11px;background:rgba(192,68,0,.07);border:1px dashed rgba(192,68,0,.45);border-radius:8px;}
+.cs-fam-new-t{font-family:var(--font-mono);font-size:9.5px;font-weight:700;letter-spacing:.06em;color:#e0824a;margin-bottom:8px;}
 .cs-sig-wrap{position:relative;border:1px solid rgba(255,255,255,.15);border-radius:6px;overflow:hidden;background:rgba(0,0,0,.18);}
 .cs-sig-placeholder{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,.25);font-size:11px;font-family:var(--font-mono);pointer-events:none;white-space:nowrap;}
 .cs-sig-clear{position:absolute;top:4px;right:5px;padding:2px 7px;font-size:10px;background:rgba(255,60,60,.25);border:1px solid rgba(255,80,80,.4);border-radius:4px;color:#ff9090;cursor:pointer;font-family:var(--font-mono);}
@@ -6947,6 +6998,142 @@ const INITIAL_EVENT_CATALOG = [
 const SAF_OCCURRENCE_CATEGORIES = Object.keys(ECCAIRS_DESC).sort().map(function(id){return {id:id,name:ECCAIRS_DESC[id]||id};}).concat([{id:'OTHR',name:'OTHR — Other / pending classification'}]);
 const SAF_EVENT_FAMILIES = [{"id":"FAM-01","name":"Aircraft control and stability","domain":"Flight operations","description":"Loss of control, unstable hover, vortex ring state, drift and dynamic rollover."},{"id":"FAM-02","name":"Visual references, terrain and obstacle clearance","domain":"Flight operations","description":"Degraded visual references, terrain awareness, obstacle clearance and CFIT exposure."},{"id":"FAM-03","name":"Powerplant and performance","domain":"Aircraft technical","description":"Engine failure, power loss, OEI capability and performance margins."},{"id":"FAM-04","name":"Aircraft systems and flight controls","domain":"Aircraft technical","description":"Non-powerplant systems, flight controls, hydraulics, electrical and stabilisation systems."},{"id":"FAM-05","name":"Fuel quantity, quality and management","domain":"Flight operations","description":"Fuel planning, starvation, contamination, transfer and fuel-system indications."},{"id":"FAM-06","name":"Airborne separation, drone and wildlife","domain":"Flight operations","description":"Mid-air collision, airprox, drone conflict and bird or wildlife strike."},{"id":"FAM-07","name":"Ground movement, rotor and vehicle collision","domain":"Ground operations","description":"Rotor contact, vehicle collision, machinery and aircraft ground-collision exposure."},{"id":"FAM-08","name":"Occupants, restraint, doors and cabin safety","domain":"Occupant safety","description":"Doors, restraint, unsecured occupants or goods, disruptive persons and falls from the aircraft."},{"id":"FAM-09","name":"Operational communication and coordination","domain":"Human factors","description":"Air-ground, crew, task-specialist and mission communication failures."},{"id":"FAM-10","name":"Mission preparation, workload and decision-making","domain":"Human factors","description":"Planning, task allocation, cockpit overload, orientation and operational decisions."},{"id":"FAM-11","name":"Fatigue, competence and human performance","domain":"Human factors","description":"Fatigue, time pressure, fitness, competence, training and individual performance."},{"id":"FAM-12","name":"Ground personnel, third parties and site control","domain":"Ground operations","description":"Site access, uninvolved persons, ground staff exposure and work-area control."},{"id":"FAM-13","name":"Weather, environment and field conditions","domain":"Operating environment","description":"Weather, terrain, outdoor exposure, spills, pollution and environmental conditions."},{"id":"FAM-14","name":"HESLO rigging, hooks and lifting equipment","domain":"HESLO","description":"Rigging preparation, sling and hook integrity, lifting-equipment traceability and static discharge."},{"id":"FAM-15","name":"Suspended-load control, release and snagging","domain":"HESLO","description":"Load swing, snagging, uncontrolled movement, jettison, falling loads and tail-rotor strike."},{"id":"FAM-16","name":"Downwash, rotor blast and FOD","domain":"HESLO / ground operations","description":"Downwash, rotor-blast effects, loose objects, branches and FOD projection."},{"id":"FAM-17","name":"HESLO platform, logging and specialist work","domain":"HESLO","description":"Platforms, logging, tree work, assembly, dismantling, crushing, entrapment and work at height."},{"id":"FAM-18","name":"Refuelling, fuel-tank carriage and dangerous goods","domain":"Fuel / dangerous goods","description":"Hot refuelling, mobile fuel tanks, leaks, fire, explosion and dangerous-goods controls."},{"id":"FAM-19","name":"Firefighting external-load operations","domain":"Firefighting","description":"Bambi bucket, water pickup and drop, smoke, heat, congested airspace and firefighting workload."},{"id":"FAM-20","name":"MCF airworthiness status and test preparation","domain":"Maintenance check flight","description":"Aircraft status, crew qualification, task distribution, preparation and time pressure before MCF."},{"id":"FAM-21","name":"MCF system test and emergency handling","domain":"Maintenance check flight","description":"System failures, test points, flight-control, hydraulic, electrical, fuel and autopilot test hazards."},{"id":"FAM-22","name":"Filming and open-door mission equipment","domain":"Specialised operations","description":"Filming crew, open doors, cables, equipment interference, batteries and customer-induced distraction."},{"id":"FAM-23","name":"Diver deployment over water","domain":"Specialised operations","description":"HOGE over water, drift, diver trajectory, distress, coordination and third parties on the surface."},{"id":"FAM-24","name":"EFB hardware, power and installation","domain":"EFB","description":"Device hardware, battery, mounting, stowage, overheating, EMI and operating-system limitations."},{"id":"FAM-25","name":"EFB software, data and connectivity","domain":"EFB","description":"Applications, updates, databases, downloads, synchronisation, availability and flight following."},{"id":"FAM-26","name":"EFB HMI, distraction and intended use","domain":"EFB / human factors","description":"Display usability, clutter, inadvertent inputs, head-down time, interpretation and use outside scope."},{"id":"FAM-27","name":"Cybersecurity and information integrity","domain":"Part-IS","description":"Cyberattack, unauthorised access, privacy, manipulation and integrity of operational information."},{"id":"FAM-28","name":"Continuing-airworthiness planning and records","domain":"CAMO","description":"Maintenance planning, records, software configuration, parts traceability, preservation and archiving."},{"id":"FAM-29","name":"Continuing-airworthiness engineering and technical data","domain":"CAMO","description":"Airworthiness assessment, LLP, modifications, reliability, HUMS, mass and balance and engineering data."},{"id":"FAM-30","name":"Continuing-airworthiness organisation and contracted maintenance","domain":"CAMO governance","description":"Resources, human factors, internal monitoring, contracted maintenance, transfers and CAME governance."},{"id":"FAM-31","name":"Aviation security and unlawful interference","domain":"AVSEC","description":"Malicious intrusion, unlawful interference, aircraft safeguarding, security threats and the safety interface with Part-IS."},{"id":"FAM-32","name":"Commercial pressure and organisational decision-making","domain":"SMS governance / human factors","description":"Safety-versus-production goal conflict, commercial pressure, incentives and management decisions affecting operational safety."},{"id":"FAM-33","name":"Management of organisational change","domain":"SMS / CAMO governance","description":"Rapid growth, start-up, new AOC/base/fleet/activity, key-person changes, resources, readiness and authority coordination."},{"id":"FAM-34","name":"Contracted operational activities and interfaces","domain":"Operator governance","description":"Ground handling, fuelling, catering, flight support, external training, manuals and other non-maintenance contracted services."}];
 const SAF_FAMILY_BY_ID = Object.fromEntries(SAF_EVENT_FAMILIES.map(function(f){return [f.id,f];}));
+// ══════════════════════════════════════════════════════════════════
+//  LEVEL 2 — SAF risk families : custom families + assignment analysis
+//  The 34 baseline families are frozen. Families created by the Safety
+//  Manager (typically from a Management of Change) are stored
+//  separately, carry their justification, and are merged at load.
+// ══════════════════════════════════════════════════════════════════
+var SAF_CUSTOM_FAMILIES = [];
+try { SAF_CUSTOM_FAMILIES = JSON.parse(localStorage.getItem('safCustomFamilies')||'[]')||[]; } catch(e){ SAF_CUSTOM_FAMILIES = []; }
+SAF_CUSTOM_FAMILIES.forEach(function(f){
+  if(!f||!f.id||SAF_FAMILY_BY_ID[f.id])return;
+  f.custom = true;
+  SAF_EVENT_FAMILIES.push(f);
+  SAF_FAMILY_BY_ID[f.id] = f;
+});
+
+function safSaveCustomFamilies(){
+  try { localStorage.setItem('safCustomFamilies', JSON.stringify(SAF_CUSTOM_FAMILIES)); } catch(e){}
+}
+
+function safNextFamilyId(){
+  var nums = SAF_EVENT_FAMILIES.map(function(f){ return parseInt(String(f.id).replace('FAM-',''),10)||0; });
+  var n = (nums.length ? Math.max.apply(null, nums) : 0) + 1;
+  return 'FAM-' + (n<10 ? '0'+n : ''+n);
+}
+
+function safAddCustomFamily(o){
+  o = o || {};
+  var name=(o.name||'').trim(), domain=(o.domain||'').trim(), desc=(o.description||'').trim();
+  if(!name||!domain||!desc) return null;
+  var dup = SAF_EVENT_FAMILIES.find(function(f){ return f.name.toLowerCase()===name.toLowerCase(); });
+  if(dup) return dup;
+  var f = {
+    id: safNextFamilyId(), name: name, domain: domain, description: desc,
+    custom: true,
+    created_at: new Date().toISOString(),
+    created_by: (o.createdBy||'').trim(),
+    source_moc: (o.sourceMoc||'').trim(),
+    rationale: (o.rationale||'').trim()
+  };
+  SAF_EVENT_FAMILIES.push(f);
+  SAF_FAMILY_BY_ID[f.id] = f;
+  SAF_CUSTOM_FAMILIES.push(f);
+  safSaveCustomFamilies();
+  safRefreshFamilySelects();
+  return f;
+}
+
+function safRefreshFamilySelects(){
+  ['filter-family','f-family','em-family','ea-family-filter','ea-review-family','occ-new-event-family']
+    .forEach(function(id){
+      var el=document.getElementById(id); if(!el||el.tagName!=='SELECT')return;
+      var v=el.value; el.innerHTML=safFamilyOptions('',true); el.value=v;
+    });
+  if(typeof CS_ACTIONS!=='undefined' && Array.isArray(CS_ACTIONS)){
+    CS_ACTIONS.forEach(function(a){
+      var s=document.getElementById('cs-brk-fam-'+a.id); if(!s)return;
+      var v=s.value; s.innerHTML=csBrkFamilyOptions(v); s.value=v;
+    });
+  }
+}
+
+function safFamilyMembers(famId){
+  return (typeof DB!=='undefined'&&Array.isArray(DB)?DB:[]).filter(function(r){
+    return (r.family_id||SAF_RISK_FAMILY_MAP[r.id]||'')===famId;
+  });
+}
+
+// ── Text analysis helpers ─────────────────────────────────────────
+var SAF_STOPWORDS = ('the a an of to and or in on for with without during from '
+ + 'de la le les des du un une et ou en au aux par pour dans sur avec sans '
+ + 'risk risque event evenement événement danger dangers hazard hazards other autre '
+ + 'aircraft helicoptere helicoptère operation operations operationnel loss perte '
+ + 'crew personnel this that not non).').split(/\s+/);
+
+function safTokens(txt){
+  return String(txt||'')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().split(/[^a-z0-9]+/)
+    .filter(function(t){ return t.length>=4 && SAF_STOPWORDS.indexOf(t)<0; })
+    .filter(function(t,i,arr){ return arr.indexOf(t)===i; });
+}
+
+function safTokenOverlap(a,b){
+  var set={}; b.forEach(function(t){set[t]=1;});
+  return a.filter(function(t){return set[t];});
+}
+
+/**
+ * Analyses where a new risk scenario belongs in the level-2 family taxonomy.
+ * Returns a ranked, explainable list of candidate families.
+ *   input = {event, hazards, consequences, occurrenceCategory, category}
+ */
+function safFamilySuggest(input){
+  input = input || {};
+  var occ = (input.occurrenceCategory||'').trim().toUpperCase();
+  var cat = (input.category||'').trim();
+  var tokens = safTokens([input.event, input.hazards, input.consequences].join(' '));
+  var out = [];
+  SAF_EVENT_FAMILIES.forEach(function(f){
+    var members = safFamilyMembers(f.id);
+    var score = 0, why = [];
+
+    // 1 · Level-1 anchor: members sharing the same ECCAIRS occurrence category (0-40)
+    if(occ){
+      var occHits = members.filter(function(m){ return String(m.occurrence_category||'').toUpperCase()===occ; }).length;
+      if(occHits){
+        var s1 = Math.min(40, 18 + occHits*7);
+        score += s1;
+        why.push(occHits+' scenario'+(occHits>1?'s':'')+' in this family already classified '+occ);
+      }
+    }
+    // 2 · Same register category (0-14)
+    if(cat && members.some(function(m){ return m.category===cat; })){
+      score += 14; why.push('same register category (“'+cat+'”)');
+    }
+    // 3 · Wording match with the family definition (0-30)
+    var famTok = safTokens(f.name+' '+f.description+' '+f.domain);
+    var sh1 = safTokenOverlap(tokens, famTok);
+    if(sh1.length){ score += Math.min(30, sh1.length*8); why.push('family definition matches: '+sh1.slice(0,5).join(', ')); }
+    // 4 · Wording match with the existing members (0-24)
+    var memTok = safTokens(members.map(function(m){ return (m.event||'')+' '+(m.dangers||'')+' '+(m.undesirable_event||''); }).join(' '));
+    var sh2 = safTokenOverlap(tokens, memTok).filter(function(t){ return sh1.indexOf(t)<0; });
+    if(sh2.length){ score += Math.min(24, sh2.length*3); why.push('member scenarios mention: '+sh2.slice(0,5).join(', ')); }
+
+    if(score>0) out.push({family:f, score:Math.min(100,Math.round(score)), why:why, members:members});
+  });
+  out.sort(function(a,b){ return b.score-a.score; });
+  return out;
+}
+
+function safFamilyVerdict(score){
+  if(score>=55) return {level:'strong',  label:'Strong match — integrate into this family',                    color:'#5cc990'};
+  if(score>=30) return {level:'possible',label:'Possible match — check the member scenarios before deciding',  color:'#e3b341'};
+  return              {level:'weak',    label:'Weak match',                                                    color:'#e0824a'};
+}
+
 const SAF_RISK_FAMILY_MAP = {"SMS-01":"FAM-01","SMS-02":"FAM-03","SMS-03":"FAM-04","SMS-04":"FAM-01","SMS-05":"FAM-02","SMS-06":"FAM-08","SMS-07":"FAM-06","SMS-08":"FAM-07","SMS-09":"FAM-14","SMS-10":"FAM-15","SMS-11":"FAM-12","SMS-12":"FAM-12","SMS-13":"FAM-18","SMS-14":"FAM-19","SMS-15":"FAM-19","SMS-16":"FAM-17","SMS-17":"FAM-17","SMS-18":"FAM-15","SMS-19":"FAM-18","SMS-20":"FAM-11","SMS-21":"FAM-10","SMS-22":"FAM-08","SMS-23":"FAM-13","SMS-24":"FAM-08","SMS-25":"FAM-13","SMS-26":"FAM-24","SMS-27":"FAM-25","SMS-28":"FAM-26","SMS-29":"FAM-25","SMS-30":"FAM-24","SMS-31":"FAM-25","SMS-32":"FAM-22","SMS-33":"FAM-23","SMS-34":"FAM-22","SMS-35":"FAM-27","SMS-36":"FAM-28","SMS-37":"FAM-28","SMS-38":"FAM-29","SMS-39":"FAM-29","SMS-40":"FAM-28","SMS-41":"FAM-30","SMS-42":"FAM-30","SMS-43":"FAM-30","SMS-44":"FAM-29","SMS-45":"FAM-30","SMS-46":"FAM-29","SMS-47":"FAM-29","SMS-48":"FAM-28","SMS-49":"FAM-30","SMS-50":"FAM-30","SMS-51":"FAM-28","SMS-52":"FAM-28","SMS-53":"FAM-29","SMS-54":"FAM-23","SMS-55":"FAM-05","SMS-56":"FAM-20","SMS-57":"FAM-06","SMS-58":"FAM-07","SMS-59":"FAM-14","SMS-60":"FAM-16","SMS-61":"FAM-12","SMS-62":"FAM-15","SMS-63":"FAM-18","SMS-64":"FAM-11","SMS-65":"FAM-09","SMS-66":"FAM-10","SMS-67":"FAM-13","SMS-68":"FAM-25","SMS-69":"FAM-23","SMS-70":"FAM-31","SMS-71":"FAM-32","SMS-72":"FAM-33","SMS-73":"FAM-34"};
 const SAF_RISK_KIND_MAP = {"SMS-42":"governance_precursor","SMS-45":"governance_precursor","SMS-52":"governance_precursor","SMS-71":"governance_precursor","SMS-72":"governance_precursor","SMS-73":"governance_precursor"};
 const SAF_EVENT_FAMILY_MAP = {"GEN-1":"FAM-12","GEN-2":"FAM-12","GEN-3":"FAM-12","GEN-4":"FAM-08","GEN-5":"FAM-09","GEN-6":"FAM-11","GEN-7":"FAM-16","GEN-8":"FAM-08","GEN-9":"FAM-08","GEN-10":"FAM-07","GEN-11":"FAM-01","GEN-12":"FAM-08","GEN-13":"FAM-10","GEN-14":"FAM-06","GEN-15":"FAM-13","GEN-16":"FAM-01","GEN-17":"FAM-08","EFB-1":"FAM-24","EFB-2":"FAM-26","EFB-3":"FAM-24","EFB-4":"FAM-24","EFB-5":"FAM-24","EFB-6":"FAM-24","EFB-7":"FAM-24","EFB-8":"FAM-24","EFB-9":"FAM-27","EFB-10":"FAM-25","EFB-11":"FAM-27","EFB-12":"FAM-25","APP-1":"FAM-25","APP-2":"FAM-25","APP-3":"FAM-25","APP-4":"FAM-26","APP-5":"FAM-26","APP-6":"FAM-26","APP-7":"FAM-26","APP-8":"FAM-26","APP-9":"FAM-27","APP-11":"FAM-26","APP-12":"FAM-26","APP-13":"FAM-25","APP-14":"FAM-24","APP-15":"FAM-25","APP-16":"FAM-26","HMI-1":"FAM-26","HMI-2":"FAM-26","HMI-3":"FAM-26","HMI-4":"FAM-26","HMI-5":"FAM-26","HMI-6":"FAM-26","HMI-7":"FAM-26","HMI-8":"FAM-25","HMI-9":"FAM-24","HMI-10":"FAM-26","HMI-11":"FAM-26","HMI-12":"FAM-25","HMI-13":"FAM-26","HMI-14":"FAM-26","HMI-15":"FAM-25","HMI-16":"FAM-24","HMI-17":"FAM-25","HMI-18":"FAM-26","HMI-19":"FAM-26","HMI-20":"FAM-25","HMI-21":"FAM-27","HMI-22":"FAM-25","HMI-23":"FAM-14","HESLO/G-1":"FAM-10","HESLO/G-2":"FAM-16","HESLO/G-3":"FAM-12","HESLO/G-4":"FAM-15","HESLO/G-5":"FAM-15","HESLO/G-6":"FAM-14","HESLO/G-7":"FAM-12","HESLO/G-8":"FAM-15","HESLO/G-9":"FAM-16","HESLO/G-10":"FAM-12","HESLO/G-11":"FAM-02","HESLO/G-12":"FAM-07","HESLO/G-13":"FAM-18","HESLO/G-14":"FAM-18","HESLO/G-15":"FAM-18","HESLO/G-16":"FAM-18","HESLO/G-17":"FAM-03","HESLO/G-18":"FAM-15","HESLO/G-19":"FAM-15","HESLO/G-20":"FAM-18","HESLO/G-21":"FAM-09","HESLO/G-22":"FAM-09","HESLO/G-23":"FAM-10","HESLO/G-24":"FAM-16","HESLO/G-25":"FAM-12","HESLO/G-26":"FAM-18","HESLO/G-27":"FAM-12","HESLO/G-28":"FAM-09","HESLO/G-29":"FAM-15","HESLO/G-30":"FAM-10","HESLO/G-31":"FAM-03","HESLO/G-32":"FAM-14","HESLO/G-33":"FAM-15","HESLO/G-34":"FAM-15","HESLO/G-35":"FAM-12","HESLO/G-36":"FAM-18","HESLO/G-37":"FAM-18","HESLO/FF-1":"FAM-19","HESLO/FF-2":"FAM-19","HESLO/FF-3":"FAM-19","HESLO/FF-4":"FAM-19","HESLO/FF-5":"FAM-19","HESLO/FF-6":"FAM-19","HESLO/FF-7":"FAM-19","HESLO/FF-8":"FAM-19","HESLO/FF-9":"FAM-19","HESLO/FF-10":"FAM-19","HESLO/FF-11":"FAM-19","HESLO/FF-12":"FAM-19","HESLO/FF-13":"FAM-19","HESLO/FF-14":"FAM-19","HESLO/FF-15":"FAM-19","HESLO/FF-16":"FAM-19","HESLO/FF-17":"FAM-19","HESLO/L-1":"FAM-17","HESLO/L-2":"FAM-17","HESLO/L-3":"FAM-17","HESLO/L-4":"FAM-17","HESLO/L-5":"FAM-17","HESLO/L-6":"FAM-17","HESLO/S-1":"FAM-17","HESLO/S-2":"FAM-17","HESLO/S-3":"FAM-17","HESLO/S-4":"FAM-17","HESLO/P-1":"FAM-17","HESLO/P-2":"FAM-17","HESLO/P-3":"FAM-17","HESLO/P-4":"FAM-17","HESLO/P-5":"FAM-17","HESLO/P-6":"FAM-17","HESLO/P-7":"FAM-17","HESLO/P-8":"FAM-17","HESLO/P-9":"FAM-17","MCF-1":"FAM-20","MCF-2":"FAM-20","MCF-3":"FAM-20","MCF-4":"FAM-21","MCF-5":"FAM-20","MCF-6":"FAM-21","MCF-7":"FAM-21","MCF-8":"FAM-21","MCF-9":"FAM-21","MCF-10":"FAM-21","PDV-1":"FAM-22","PDV-2":"FAM-22","PDV-3":"FAM-22","PDV-4":"FAM-22","PDV-5":"FAM-22","PDV-6":"FAM-22","PDV-7":"FAM-22","LDP-1":"FAM-23","LDP-2":"FAM-23","LDP-3":"FAM-23","LDP-4":"FAM-23","LDP-5":"FAM-23","LDP-6":"FAM-23","LDP-7":"FAM-23"};
@@ -10070,12 +10257,14 @@ function _buildChangeStudyReport(cs) {
   let fuData = {};
   try { fuData = cs.c_fu_data ? JSON.parse(cs.c_fu_data) : {}; } catch(e){ fuData = {}; }
 
-  const actionsHTML = actions.length ? actions.map((a,i) => {
+  const footprintHTML = (typeof csBrkFootprintHTML==='function') ? csBrkFootprintHTML(actions,{pdf:true}) : '';
+  const actionsHTML = actions.length ? footprintHTML + actions.map((a,i) => {
     const fu = fuData[a.id] || {};
     return `<div style="border:1px solid #e8ecf0;border-radius:6px;padding:10px 12px;margin-bottom:10px;">
       <div style="font-weight:700;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#2E75B6;margin-bottom:5px;">ACTION #${i+1}</div>
       <div style="margin-bottom:6px;">${_csNl2br(a.text)}</div>
-      <table style="width:100%;margin-bottom:6px;">
+      ${typeof csBrkRenderHTML==='function'?csBrkRenderHTML(a,{pdf:true}):''}
+      <table style="width:100%;margin-top:6px;margin-bottom:6px;">
         <tr>
           <td style="width:16%;font-weight:600;background:none;border:none;padding:2px 0;">Nominated person</td><td style="background:none;border:none;padding:2px 0;">${a.nominatedPerson||'—'}</td>
           <td style="width:16%;font-weight:600;background:none;border:none;padding:2px 0;">Email</td><td style="background:none;border:none;padding:2px 0;">${a.email||'—'}</td>
@@ -10619,6 +10808,8 @@ function csRenderAction(action){
   const ta=document.createElement('textarea');ta.id='cs-action-text-'+id;ta.rows=3;ta.placeholder='Describe the action: briefing, training, procedure update, technical check, supplier validation…';ta.value=action.text||'';
   ta.addEventListener('input',()=>csSyncAction(id));
   taWrap.appendChild(taLabel);taWrap.appendChild(ta);
+  // ── Structured breakdown: hazards / risk / prevention / mitigation / recovery ──
+  const brkWrap=csBuildActionBreakdown(action);
   const npWrap=document.createElement('div');npWrap.className='form-field';
   const npLabel=document.createElement('label');npLabel.className='field-label';npLabel.textContent='Nominated Person';
   const npInput=document.createElement('input');npInput.id='cs-action-np-'+id;npInput.type='text';npInput.value=action.nominatedPerson||'';npInput.placeholder='Name / role of nominated person…';
@@ -10659,15 +10850,678 @@ function csRenderAction(action){
   sendBtn.addEventListener('click',()=>csSendEmail(id));
   emailRow.appendChild(emailIcon);emailRow.appendChild(emailInput);emailRow.appendChild(sendBtn);
 
-  body.appendChild(taWrap);body.appendChild(npWrap);body.appendChild(sigWrap);
+  body.appendChild(taWrap);body.appendChild(brkWrap);body.appendChild(npWrap);body.appendChild(sigWrap);
   body.appendChild(emailRow);
   card.appendChild(header);card.appendChild(body);
   return card;
 }
 
+
+// ══════════════════════════════════════════════════════════════════
+//  MoC · ACTION — structured breakdown
+//  Dissociates, for each action: hazards, the risk (existing register
+//  scenario OR a new one created by the change) and the prevention /
+//  mitigation / recovery barriers, each flagged existing / new /
+//  reinforced, with write-back to the risk register.
+// ══════════════════════════════════════════════════════════════════
+const CS_BRK_STATUS_HZ = [
+  ['',           'status…'],
+  ['existing',   'Existing hazard'],
+  ['new',        'NEW hazard — introduced by this change'],
+  ['aggravated', 'Existing hazard aggravated by the change']
+];
+const CS_BRK_STATUS_BAR = [
+  ['',           'status…'],
+  ['existing',   'Existing barrier — already in place'],
+  ['new',        'NEW barrier — introduced by this change'],
+  ['reinforced', 'Reinforced / modified barrier']
+];
+
+const CS_BRK_FIELDS = [
+  {k:'hazards',    id:'hz',   st:'hazardsStatus',    stId:'sthz',   opts:CS_BRK_STATUS_HZ,  label:'Hazards / Dangers',        dot:'#e0824a', ph:'Conditions or sources of potential harm addressed by this action (one per line)…'},
+  {k:'riskEvent',  id:'rev',  st:null,                                                      label:'Risk — undesirable event', dot:'#c04400', ph:'The undesirable event / risk this action acts upon…'},
+  {k:'prevention', id:'prev', st:'preventionStatus', stId:'stprev', opts:CS_BRK_STATUS_BAR, label:'Prevention measures',      dot:'#5cc990', ph:'Barriers preventing the undesirable event from occurring…'},
+  {k:'mitigation', id:'miti', st:'mitigationStatus', stId:'stmiti', opts:CS_BRK_STATUS_BAR, label:'Mitigation measures',      dot:'#e3b341', ph:'Barriers limiting escalation or severity once the event occurs (if any)…'},
+  {k:'recovery',   id:'reco', st:'recoveryStatus',   stId:'streco', opts:CS_BRK_STATUS_BAR, label:'Recovery measures',        dot:'#4a9fe0', ph:'Barriers restoring a safe state after the event (if any)…'}
+];
+
+const CS_BRK_PREFIX_MAP = {
+  'LOC-I':'LOC','CFIT':'CFIT','Collisions':'COL','HESLO & Aerial work':'HESLO',
+  'Facteurs Humains & Opérations':'HF','EFB & Systèmes Numériques':'EFB',
+  'Opérations Spécialisées':'SPO','Cybersécurité (Part-IS)':'PIS',
+  'Maintenance / CAMO (Part-M / Part-CAMO)':'CAMO','Sûreté / AVSEC':'SEC',
+  'Management System / Organisation':'ORG','Contracted Activities / Sous-traitance':'CTR'
+};
+
+function csBrkStatusAbbr(s){
+  return s==='new' ? '+NEW' : s==='reinforced' ? '⟳' : s==='aggravated' ? '▲' : '';
+}
+function csBrkStatusWord(s){
+  return s==='new' ? 'new' : s==='reinforced' ? 'reinforced' : s==='aggravated' ? 'aggravated' : s==='existing' ? 'existing' : '';
+}
+
+function csBrkSummary(a){
+  var out='';
+  if(a.riskId==='__new__') out+='<span class="cs-bar-tag nrisk">⊕ NEW RISK</span>';
+  if((a.hazards||'').trim())    out+='<span class="cs-bar-tag hzd">HAZARD '+csBrkStatusAbbr(a.hazardsStatus)+'</span>';
+  if(a.riskId && a.riskId!=='__new__') out+='<span class="cs-bar-tag rsk">'+esc(a.riskId)+'</span>';
+  else if(!a.riskId && (a.riskEvent||'').trim()) out+='<span class="cs-bar-tag rsk">RISK</span>';
+  if((a.prevention||'').trim()) out+='<span class="cs-bar-tag prev">PREV '+csBrkStatusAbbr(a.preventionStatus)+'</span>';
+  if((a.mitigation||'').trim()) out+='<span class="cs-bar-tag miti">MITIG '+csBrkStatusAbbr(a.mitigationStatus)+'</span>';
+  if((a.recovery||'').trim())   out+='<span class="cs-bar-tag reco">RECOV '+csBrkStatusAbbr(a.recoveryStatus)+'</span>';
+  return out || '<span style="opacity:.45;">not detailed yet</span>';
+}
+
+function csBrkRefreshSummary(id){
+  var a=CS_ACTIONS.find(function(x){return x.id===id;});if(!a)return;
+  var s=document.getElementById('cs-brk-sum-'+id);
+  if(s)s.innerHTML=csBrkSummary(a);
+}
+
+function csBrkToggle(id){
+  var w=document.getElementById('cs-brk-'+id);
+  if(w)w.classList.toggle('collapsed');
+}
+
+function csBrkRiskOptions(selected){
+  var html='<option value="" style="background:#0d1b2a;color:#f4f6f8;">— not linked —</option>'
+         + '<option value="__new__"'+(selected==='__new__'?' selected':'')+' style="background:#0d1b2a;color:#e0824a;">⊕ NEW risk introduced by this change…</option>';
+  if(typeof DB!=='undefined' && Array.isArray(DB)){
+    DB.slice().sort(function(x,y){return String(x.id).localeCompare(String(y.id),undefined,{numeric:true});})
+      .forEach(function(r){
+        var lbl=r.id+' — '+String(r.event||'').slice(0,60);
+        html+='<option value="'+esc(r.id)+'"'+(selected===r.id?' selected':'')+' style="background:#0d1b2a;color:#f4f6f8;">'+esc(lbl)+'</option>';
+      });
+  }
+  return html;
+}
+
+function csBrkCategoryOptions(selected){
+  var cats=Object.keys(CS_BRK_PREFIX_MAP);
+  if(typeof DB!=='undefined' && Array.isArray(DB)){
+    DB.forEach(function(r){ if(r.category && cats.indexOf(r.category)<0) cats.push(r.category); });
+  }
+  var html='<option value="" style="background:#0d1b2a;color:#f4f6f8;">Select a category…</option>';
+  cats.forEach(function(c){
+    html+='<option value="'+esc(c)+'"'+(selected===c?' selected':'')+' style="background:#0d1b2a;color:#f4f6f8;">'+esc(c)+'</option>';
+  });
+  return html;
+}
+
+// ICAO risk code picker (5×5) as a coloured select
+function csBrkRatingOptions(selected){
+  var html='<option value="" style="background:#0d1b2a;color:#f4f6f8;">—</option>';
+  var found=false;
+  (typeof PROB_LABELS!=='undefined'?PROB_LABELS:['5','4','3','2','1']).forEach(function(p){
+    (typeof SEV_LABELS!=='undefined'?SEV_LABELS:['A','B','C','D','E']).forEach(function(s){
+      var code=p+s;
+      var bg=(typeof ICAO_CELL_COLORS!=='undefined'&&ICAO_CELL_COLORS[code])||'#333';
+      var fg=(typeof readableTextColor==='function')?readableTextColor(bg):'#fff';
+      if(selected===code)found=true;
+      html+='<option value="'+code+'"'+(selected===code?' selected':'')+' style="background:'+bg+';color:'+fg+';font-weight:700;">'+code+'</option>';
+    });
+  });
+  if(selected && !found) html+='<option value="'+esc(selected)+'" selected style="background:#0d1b2a;color:#f4f6f8;">'+esc(selected)+'</option>';
+  return html;
+}
+
+function csBrkPaintRating(elId){
+  var el=document.getElementById(elId);if(!el)return;
+  var bg=(typeof ICAO_CELL_COLORS!=='undefined'&&ICAO_CELL_COLORS[el.value])||'transparent';
+  el.style.background = el.value ? bg : '';
+  el.style.color = el.value ? ((typeof readableTextColor==='function')?readableTextColor(bg):'#fff') : '';
+  el.style.fontWeight = el.value ? '800' : '';
+}
+
+function csBuildActionBreakdown(action){
+  var id=action.id;
+  var w=document.createElement('div');
+  w.className='cs-act-brk'+(csBrkSummary(action).indexOf('not detailed')>-1?' collapsed':'');
+  w.id='cs-brk-'+id;
+  var fieldsHTML=CS_BRK_FIELDS.map(function(f){
+    var stHTML='';
+    if(f.st){
+      stHTML='<select class="cs-brk-status" id="cs-brk-'+f.stId+'-'+id+'" onchange="csSyncActionBreakdown(\''+id+'\')" title="Is this hazard/barrier already in place, or introduced by the change?">'
+        + f.opts.map(function(o){
+            return '<option value="'+o[0]+'"'+((action[f.st]||'')===o[0]?' selected':'')+' style="background:#0d1b2a;color:#f4f6f8;">'+esc(o[1])+'</option>';
+          }).join('')
+        + '</select>';
+    }
+    return '<div class="form-field bfull">'
+      + '<label class="field-label cs-brk-lbl"><span class="cs-brk-dot" style="background:'+f.dot+';"></span>'+f.label+stHTML+'</label>'
+      + '<textarea id="cs-brk-'+f.id+'-'+id+'" rows="2" placeholder="'+esc(f.ph)+'" '
+      + 'oninput="csSyncActionBreakdown(\''+id+'\')">'+esc(action[f.k]||'')+'</textarea></div>';
+  }).join('');
+
+  var isNew = action.riskId==='__new__';
+  w.innerHTML =
+    '<div class="cs-act-brk-head" onclick="csBrkToggle(\''+id+'\')">'
+      + '<span class="chev">&#9662;</span>'
+      + '<span class="t">&#9670; HAZARDS · RISK · BARRIERS</span>'
+      + '<span class="s" id="cs-brk-sum-'+id+'">'+csBrkSummary(action)+'</span>'
+    + '</div>'
+    + '<div class="cs-act-brk-body">'
+      + '<div class="form-field bfull"><label class="field-label">Risk scenario</label>'
+        + '<div style="display:grid;grid-template-columns:1fr 96px 96px;gap:10px;align-items:end;">'
+          + '<select id="cs-brk-rid-'+id+'" onchange="csBrkRiskSelChange(\''+id+'\')">'+csBrkRiskOptions(action.riskId||'')+'</select>'
+          + '<div><label class="field-label" style="font-size:9px;opacity:.7;">Initial risk</label>'
+            + '<select id="cs-brk-ri-'+id+'" onchange="csSyncActionBreakdown(\''+id+'\')" style="text-align:center;font-family:var(--font-mono);">'+csBrkRatingOptions(action.riskInitial||'')+'</select></div>'
+          + '<div><label class="field-label" style="font-size:9px;opacity:.7;">Residual risk</label>'
+            + '<select id="cs-brk-rr-'+id+'" onchange="csSyncActionBreakdown(\''+id+'\')" style="text-align:center;font-family:var(--font-mono);">'+csBrkRatingOptions(action.riskResidual||'')+'</select></div>'
+        + '</div></div>'
+      // ── New-risk definition panel ─────────────────────────────
+      + '<div class="cs-brk-newrisk bfull" id="cs-brk-new-'+id+'" style="display:'+(isNew?'block':'none')+';">'
+        + '<div class="cs-brk-newrisk-t">⊕ NEW RISK SCENARIO — to be created in the risk register</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+          + '<div class="form-field"><label class="field-label" style="font-size:9px;opacity:.75;">Risk category *</label>'
+            + '<select id="cs-brk-ncat-'+id+'" onchange="csSyncActionBreakdown(\''+id+'\')">'+csBrkCategoryOptions(action.riskNewCategory||'')+'</select></div>'
+          + '<div class="form-field"><label class="field-label" style="font-size:9px;opacity:.75;">ECCAIRS / occurrence category</label>'
+            + '<input id="cs-brk-necc-'+id+'" type="text" placeholder="e.g. EXTL, LOC-I, SCF-NP…" value="'+esc(action.riskNewEccairs||'')+'" oninput="csSyncActionBreakdown(\''+id+'\')"/></div>'
+          + '<div class="form-field"><label class="field-label" style="font-size:9px;opacity:.75;">Risk owner</label>'
+            + '<input id="cs-brk-nown-'+id+'" type="text" placeholder="e.g. NPFO, NPCA, NPGO…" value="'+esc(action.riskNewOwner||'')+'" oninput="csSyncActionBreakdown(\''+id+'\')"/></div>'
+          + '<div class="form-field"><label class="field-label" style="font-size:9px;opacity:.75;">Document reference</label>'
+            + '<input id="cs-brk-ndoc-'+id+'" type="text" placeholder="OM-A §…, SOP §…, MOC ref…" value="'+esc(action.riskNewDocRef||'')+'" oninput="csSyncActionBreakdown(\''+id+'\')"/></div>'
+          + '<div class="form-field bfull" style="grid-column:1/-1;"><label class="field-label" style="font-size:9px;opacity:.75;">Consequences</label>'
+            + '<input id="cs-brk-ncons-'+id+'" type="text" placeholder="Credible worst-case outcome…" value="'+esc(action.riskNewConsequences||'')+'" oninput="csSyncActionBreakdown(\''+id+'\')"/></div>'
+          + '<div class="form-field bfull" style="grid-column:1/-1;"><label class="field-label" style="font-size:9px;opacity:.75;">SAF risk family (level 2) *</label>'
+            + '<div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;">'
+              + '<select id="cs-brk-fam-'+id+'" onchange="csBrkFamilySelChange(\''+id+'\')">'+csBrkFamilyOptions(action.riskNewFamily||'')+'</select>'
+              + '<button type="button" class="cs-act-mini-btn" onclick="csBrkSuggestFamily(\''+id+'\')">&#8981; Analyse &amp; suggest</button>'
+            + '</div>'
+            + '<div id="cs-brk-famsug-'+id+'" class="cs-fam-sug" style="display:none;"></div>'
+            + '<div id="cs-brk-famnew-'+id+'" class="cs-fam-new" style="display:none;">'
+              + '<div class="cs-fam-new-t">&#8853; CREATE A NEW LEVEL-2 FAMILY</div>'
+              + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+                + '<div class="form-field"><label class="field-label" style="font-size:9px;opacity:.75;">Family name *</label><input id="cs-brk-fnname-'+id+'" type="text" placeholder="e.g. Night NVG aerial firefighting" value="'+esc(action.newFamilyName||'')+'" oninput="csSyncActionBreakdown(\''+id+'\')"/></div>'
+                + '<div class="form-field"><label class="field-label" style="font-size:9px;opacity:.75;">Domain *</label><input id="cs-brk-fndom-'+id+'" type="text" placeholder="e.g. Firefighting" value="'+esc(action.newFamilyDomain||'')+'" oninput="csSyncActionBreakdown(\''+id+'\')"/></div>'
+                + '<div class="form-field bfull" style="grid-column:1/-1;"><label class="field-label" style="font-size:9px;opacity:.75;">Definition — what belongs in this family *</label><textarea id="cs-brk-fndesc-'+id+'" rows="2" placeholder="Hazard mechanism grouped by this family…" oninput="csSyncActionBreakdown(\''+id+'\')">'+esc(action.newFamilyDesc||'')+'</textarea></div>'
+                + '<div class="form-field bfull" style="grid-column:1/-1;"><label class="field-label" style="font-size:9px;opacity:.75;">Justification — why no existing family fits *</label><textarea id="cs-brk-fnwhy-'+id+'" rows="2" placeholder="Families examined and reason for rejection (recorded for audit)…" oninput="csSyncActionBreakdown(\''+id+'\')">'+esc(action.newFamilyWhy||'')+'</textarea></div>'
+              + '</div>'
+              + '<button type="button" class="cs-act-mini-btn ok" style="margin-top:8px;" onclick="csBrkCreateFamily(\''+id+'\')">&#8853; Create family '+(typeof safNextFamilyId==="function"?safNextFamilyId():"")+'</button>'
+              + '<div class="cs-brk-newrisk-note" style="margin-top:7px;">A new family is justified only by a <b>distinct hazard mechanism</b>, not by a new activity or a new aircraft. If the mechanism already exists elsewhere in the register, integrate the scenario into that family instead — it keeps the SPI trending and the ALoS review consistent.</div>'
+            + '</div>'
+          + '</div>'
+        + '</div>'
+        + '<div class="cs-brk-newrisk-note">The hazards, undesirable event and barriers entered below become the content of the new register entry. '
+          + 'It will be created with <b>linked change study = this MOC</b>, status “Conditions en attente”, and the residual rating recorded as a <b>target only</b> until all MOC actions are closed and verified.</div>'
+      + '</div>'
+      + fieldsHTML
+      + '<div class="cs-act-brk-tools">'
+        + '<button type="button" class="cs-act-mini-btn" onclick="csBrkImportFromRegister(\''+id+'\')">&#8595; Fill from linked risk</button>'
+        + '<button type="button" class="cs-act-mini-btn ok" id="cs-brk-push-'+id+'" onclick="csBrkPushToRegister(\''+id+'\')">&#8593; Create / update in risk register</button>'
+        + '<button type="button" class="cs-act-mini-btn" onclick="csBrkSplitFromText(\''+id+'\')">&#10549; Split description into fields</button>'
+        + '<button type="button" class="cs-act-mini-btn danger" onclick="csBrkClear(\''+id+'\')">&#10005; Clear breakdown</button>'
+        + '<span style="font-family:var(--font-mono);font-size:9.5px;color:var(--grey-400);opacity:.75;">Mitigation and recovery measures are optional.</span>'
+      + '</div>'
+    + '</div>';
+  setTimeout(function(){csBrkPaintRating('cs-brk-ri-'+id);csBrkPaintRating('cs-brk-rr-'+id);csBrkUpdatePushBtn(id);},0);
+  return w;
+}
+
+function csBrkFamilyOptions(selected){
+  var h='<option value="" style="background:#0d1b2a;color:#f4f6f8;">— select a level-2 family —</option>';
+  if(typeof SAF_EVENT_FAMILIES!=='undefined'){
+    SAF_EVENT_FAMILIES.forEach(function(f){
+      h+='<option value="'+esc(f.id)+'"'+(selected===f.id?' selected':'')+' style="background:#0d1b2a;color:#f4f6f8;">'
+        + esc(f.id+' — '+f.name)+(f.custom?' \u2726':'')+'</option>';
+    });
+  }
+  h+='<option value="__newfam__"'+(selected==='__newfam__'?' selected':'')+' style="background:#0d1b2a;color:#e0824a;">\u2295 New family\u2026</option>';
+  return h;
+}
+
+function csBrkFamilySelChange(id){
+  var sel=document.getElementById('cs-brk-fam-'+id);
+  var np=document.getElementById('cs-brk-famnew-'+id);
+  if(np)np.style.display=(sel&&sel.value==='__newfam__')?'block':'none';
+  csSyncActionBreakdown(id);
+}
+
+// Ranks the existing families against the scenario being created.
+function csBrkSuggestFamily(id){
+  var a=CS_ACTIONS.find(function(x){return x.id===id;});if(!a)return;
+  csSyncActionBreakdown(id);
+  var box=document.getElementById('cs-brk-famsug-'+id);if(!box)return;
+  if(typeof safFamilySuggest!=='function'){showToast('Family taxonomy not available','error');return;}
+  var res=safFamilySuggest({
+    event:a.riskEvent, hazards:a.hazards, consequences:a.riskNewConsequences,
+    occurrenceCategory:a.riskNewEccairs, category:a.riskNewCategory
+  }).slice(0,4);
+  box.style.display='block';
+  if(!res.length){
+    box.innerHTML='<div class="cs-fam-sug-h">\u2315 FAMILY ANALYSIS</div>'
+      + '<div class="cs-fam-none">No family scored above zero — describe the hazards and the undesirable event first, '
+      + 'or create a new family if the hazard mechanism is genuinely new.</div>';
+    return;
+  }
+  var best=res[0], v=safFamilyVerdict(best.score);
+  var h='<div class="cs-fam-sug-h">\u2315 FAMILY ANALYSIS — '+res.length+' candidate'+(res.length>1?'s':'')+'</div>';
+  res.forEach(function(c,i){
+    var vc=safFamilyVerdict(c.score);
+    h+='<div class="cs-fam-cand'+(i===0?' top':'')+'">'
+      + '<div class="cs-fam-cand-h">'
+        + '<span class="cs-fam-score" style="background:'+vc.color+'22;border-color:'+vc.color+';color:'+vc.color+';">'+c.score+'%</span>'
+        + '<span class="cs-fam-name">'+esc(c.family.id+' \u2014 '+c.family.name)+'</span>'
+        + '<span class="cs-fam-count">'+c.members.length+' scenario'+(c.members.length===1?'':'s')+'</span>'
+        + '<button type="button" class="cs-act-mini-btn ok" style="margin-left:auto;padding:3px 9px;" onclick="csBrkUseFamily(\''+id+'\',\''+c.family.id+'\')">Use</button>'
+      + '</div>'
+      + '<div class="cs-fam-why">'+esc(c.family.description)+'</div>'
+      + (c.why.length?'<ul class="cs-fam-why-list"><li>'+c.why.map(esc).join('</li><li>')+'</li></ul>':'')
+      + (c.members.length?'<div class="cs-fam-members">Members: '+c.members.slice(0,8).map(function(m){return esc(m.id);}).join(', ')+(c.members.length>8?' \u2026':'')+'</div>':'')
+      + '</div>';
+  });
+  h+='<div class="cs-fam-verdict" style="border-color:'+v.color+';color:'+v.color+';"><b>Verdict:</b> '+esc(v.label)
+    + (v.level==='weak'
+        ? ' \u2014 review the two best candidates; if neither groups the same hazard mechanism, create a new family.'
+        : ' \u2014 a new family is not justified.')
+    + '</div>';
+  if(best.score<55){
+    h+='<button type="button" class="cs-act-mini-btn" style="margin-top:8px;" onclick="csBrkOpenNewFamily(\''+id+'\')">\u2295 None of these fits \u2014 create a new family</button>';
+  }
+  box.innerHTML=h;
+}
+
+function csBrkUseFamily(id,famId){
+  var sel=document.getElementById('cs-brk-fam-'+id);
+  if(sel){sel.value=famId;}
+  var np=document.getElementById('cs-brk-famnew-'+id);if(np)np.style.display='none';
+  csSyncActionBreakdown(id);
+  showToast('\u2713 Scenario assigned to '+safFamilyLabel(famId),'success');
+}
+
+function csBrkOpenNewFamily(id){
+  var sel=document.getElementById('cs-brk-fam-'+id);
+  if(sel)sel.value='__newfam__';
+  csBrkFamilySelChange(id);
+  var el=document.getElementById('cs-brk-famnew-'+id);
+  if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function csBrkCreateFamily(id){
+  var a=CS_ACTIONS.find(function(x){return x.id===id;});if(!a)return;
+  csSyncActionBreakdown(id);
+  var miss=[];
+  if(!(a.newFamilyName||'').trim())miss.push('family name');
+  if(!(a.newFamilyDomain||'').trim())miss.push('domain');
+  if(!(a.newFamilyDesc||'').trim())miss.push('definition');
+  if(!(a.newFamilyWhy||'').trim())miss.push('justification');
+  if(miss.length){showToast('Missing: '+miss.join(', '),'error');return;}
+  var mocRef=(typeof getChangeVal==='function'?(getChangeVal('ref')||''):'');
+  var by=(document.getElementById('c-assessors-signature')||{}).value||(typeof getChangeVal==='function'?getChangeVal('assessors'):'')||'';
+  var nextId=safNextFamilyId();
+  if(!confirm('Create level-2 family '+nextId+'?\n\n'+a.newFamilyName+'\nDomain: '+a.newFamilyDomain
+    +'\n\nThis extends the SAF risk taxonomy and will appear in the register filters, the SPI trending and the ALoS review.'))return;
+  var f=safAddCustomFamily({
+    name:a.newFamilyName, domain:a.newFamilyDomain, description:a.newFamilyDesc,
+    rationale:a.newFamilyWhy, sourceMoc:mocRef, createdBy:by
+  });
+  if(!f){showToast('Family could not be created','error');return;}
+  a.newFamilyCreatedId=f.id;
+  var sel=document.getElementById('cs-brk-fam-'+id);
+  if(sel){sel.innerHTML=csBrkFamilyOptions(f.id);sel.value=f.id;}
+  var np=document.getElementById('cs-brk-famnew-'+id);if(np)np.style.display='none';
+  var box=document.getElementById('cs-brk-famsug-'+id);if(box)box.style.display='none';
+  csSyncActionBreakdown(id);
+  showToast('\u2713 '+f.id+' \u2014 '+f.name+' created and applied','success');
+}
+
+function csBrkRiskSelChange(id){
+  var sel=document.getElementById('cs-brk-rid-'+id);
+  var panel=document.getElementById('cs-brk-new-'+id);
+  if(panel) panel.style.display = (sel && sel.value==='__new__') ? 'block' : 'none';
+  csSyncActionBreakdown(id);
+}
+
+function csBrkUpdatePushBtn(id){
+  var a=CS_ACTIONS.find(function(x){return x.id===id;});if(!a)return;
+  var b=document.getElementById('cs-brk-push-'+id);if(!b)return;
+  if(a.riskId==='__new__'){ b.innerHTML='&#8593; Create this risk in the register'; b.disabled=false; b.style.opacity=''; }
+  else if(a.riskId){ b.innerHTML='&#8593; Update '+esc(a.riskId)+' in the register'; b.disabled=false; b.style.opacity=''; }
+  else { b.innerHTML='&#8593; Create / update in risk register'; b.disabled=true; b.style.opacity='.45'; }
+}
+
+function csSyncActionBreakdown(id){
+  var a=CS_ACTIONS.find(function(x){return x.id===id;});if(!a)return;
+  CS_BRK_FIELDS.forEach(function(f){
+    var el=document.getElementById('cs-brk-'+f.id+'-'+id);
+    if(el)a[f.k]=el.value;
+    if(f.st){var st=document.getElementById('cs-brk-'+f.stId+'-'+id);if(st)a[f.st]=st.value;}
+  });
+  var g=function(sfx){var e=document.getElementById('cs-brk-'+sfx+'-'+id);return e?e.value:undefined;};
+  var v;
+  if((v=g('rid'))!==undefined)a.riskId=v;
+  if((v=g('ri'))!==undefined)a.riskInitial=v;
+  if((v=g('rr'))!==undefined)a.riskResidual=v;
+  if((v=g('ncat'))!==undefined)a.riskNewCategory=v;
+  if((v=g('necc'))!==undefined)a.riskNewEccairs=v;
+  if((v=g('nown'))!==undefined)a.riskNewOwner=v;
+  if((v=g('ndoc'))!==undefined)a.riskNewDocRef=v;
+  if((v=g('ncons'))!==undefined)a.riskNewConsequences=v;
+  if((v=g('fam'))!==undefined)a.riskNewFamily=v;
+  if((v=g('fnname'))!==undefined)a.newFamilyName=v;
+  if((v=g('fndom'))!==undefined)a.newFamilyDomain=v;
+  if((v=g('fndesc'))!==undefined)a.newFamilyDesc=v;
+  if((v=g('fnwhy'))!==undefined)a.newFamilyWhy=v;
+  csBrkPaintRating('cs-brk-ri-'+id);
+  csBrkPaintRating('cs-brk-rr-'+id);
+  csBrkUpdatePushBtn(id);
+  csBrkRefreshSummary(id);
+  csRefreshBlock6();
+  if(typeof saveState==='function')saveState();
+}
+
+function csBrkSetVal(elId,val){var e=document.getElementById(elId);if(e)e.value=val;}
+
+function csBrkImportFromRegister(id){
+  var a=CS_ACTIONS.find(function(x){return x.id===id;});if(!a)return;
+  var sel=document.getElementById('cs-brk-rid-'+id);
+  var rid=sel?sel.value:'';
+  if(!rid||rid==='__new__'){showToast('Select an existing risk scenario first','error');return;}
+  var r=(typeof DB!=='undefined'?DB:[]).find(function(x){return x.id===rid;});
+  if(!r){showToast('Risk '+rid+' not found in the register','error');return;}
+  csBrkSetVal('cs-brk-hz-'+id, r.dangers||'');
+  csBrkSetVal('cs-brk-rev-'+id, r.undesirable_event||r.event||'');
+  csBrkSetVal('cs-brk-prev-'+id, r.prevention||'');
+  csBrkSetVal('cs-brk-miti-'+id, r.mitigation||'');
+  csBrkSetVal('cs-brk-reco-'+id, r.recovery||'');
+  csBrkSetVal('cs-brk-ri-'+id, r.initial_risk||'');
+  csBrkSetVal('cs-brk-rr-'+id, r.residual_risk||'');
+  ['sthz','stprev','stmiti','streco'].forEach(function(k){csBrkSetVal('cs-brk-'+k+'-'+id,'existing');});
+  var w=document.getElementById('cs-brk-'+id);if(w)w.classList.remove('collapsed');
+  csSyncActionBreakdown(id);
+  showToast('\u2713 Hazards, risk and barriers imported from '+rid+' (flagged “existing”)','success');
+}
+
+// ── Write-back to the risk register ───────────────────────────────
+function csBrkNextRiskId(category){
+  // The consolidated register uses the SMS-nn scheme; stay consistent with it.
+  if(typeof eventAccountingNextRiskId==='function'){
+    try{ var v=eventAccountingNextRiskId(); if(v) return v; }catch(e){}
+  }
+  var prefix=CS_BRK_PREFIX_MAP[category]||'CS';
+  var nums=(typeof DB!=='undefined'?DB:[])
+    .filter(function(r){return String(r.id).indexOf(prefix+'-')===0;})
+    .map(function(r){return parseInt(String(r.id).split('-').pop(),10)||0;});
+  return prefix+'-'+((nums.length?Math.max.apply(null,nums):0)+1);
+}
+
+function csBrkPushToRegister(id){
+  var a=CS_ACTIONS.find(function(x){return x.id===id;});if(!a)return;
+  csSyncActionBreakdown(id);
+  if(typeof DB==='undefined'||!Array.isArray(DB)){showToast('Risk register not available','error');return;}
+  var mocRef=(typeof getChangeVal==='function'?(getChangeVal('ref')||''):'');
+  if(a.riskId==='__new__') csBrkCreateRisk(id,a,mocRef);
+  else if(a.riskId)        csBrkUpdateRisk(id,a,mocRef);
+  else showToast('Select “NEW risk” or an existing scenario first','error');
+}
+
+function csBrkCreateRisk(id,a,mocRef){
+  var cat=(a.riskNewCategory||'').trim();
+  var ev=(a.riskEvent||'').trim();
+  var miss=[];
+  if(!cat)miss.push('risk category');
+  if(!ev)miss.push('undesirable event');
+  if(!(a.hazards||'').trim())miss.push('hazards');
+  if(!(a.riskInitial||'').trim())miss.push('initial risk');
+  if(!(a.riskResidual||'').trim())miss.push('residual risk');
+  var fam=(a.riskNewFamily||'').trim();
+  if(!fam||fam==='__newfam__')miss.push('level-2 SAF family (run “Analyse & suggest”)');
+  if(miss.length){showToast('Missing: '+miss.join(', '),'error');var w=document.getElementById('cs-brk-'+id);if(w)w.classList.remove('collapsed');return;}
+  var newId=csBrkNextRiskId(cat);
+  if(!confirm('Create '+newId+' in the risk register?\n\n'+ev+'\n\nLevel 2 family: '+(typeof safFamilyLabel==='function'?safFamilyLabel(fam):fam)+'\nInitial '+a.riskInitial+' → residual '+a.riskResidual+' (target)\nLinked change study: '+(mocRef||'—')))return;
+  var today=new Date().toISOString().slice(0,10);
+  var nowIso=new Date().toISOString();
+  var ecc=(a.riskNewEccairs||'').trim();
+  var rec={
+    id:newId, category:cat, event:ev, undesirable_event:ev,
+    dangers:a.hazards||'', consequences:a.riskNewConsequences||'',
+    prevention:a.prevention||'', mitigation:a.mitigation||'', recovery:a.recovery||'',
+    initial_risk:a.riskInitial||'', residual_risk:a.riskResidual||'',
+    doc_ref:(a.riskNewDocRef||'').trim()||mocRef||'',
+    eccairs_cat:ecc,
+    occurrence_category:(typeof safFirstOccurrenceCategory==='function'?safFirstOccurrenceCategory(ecc):(ecc||'OTHR')),
+    family_id:fam, record_kind:'risk_scenario', workflow_status:'approved',
+    event_type:'Change-derived SMS risk scenario', phase:'All phases',
+    risk_owner:(a.riskNewOwner||'').trim(),
+    control_status:'Conditions en attente', last_control_date:today,
+    control_comment:'Created from Management of Change '+(mocRef||'(unreferenced MOC)')+'. Residual rating is a target only: it may be accepted once all MOC actions are closed and verified.',
+    barrier_failure_suspected:false,
+    timestamp:today, created_at:today, updated_at:nowIso,
+    linked_change_study:mocRef||'',
+    source_risk_ids:mocRef||'', source_risk_count:1,
+    rating_rationale:'Initial rating assessed in the change study; residual rating assumes full implementation of the barriers introduced by the change.',
+    safety_indicator:newId+': occurrences, precursor reports and barrier deviations linked to this scenario.',
+    indicator_target:'0 accidents/serious incidents; 100% completion of mandatory barriers; no overdue MOC action.',
+    effectiveness_verification:'Reviewed by the risk owner with the Safety Manager after implementation of the change and at the following periodic review.',
+    effectiveness_due_date:'', effectiveness_evidence:'', effectiveness_assessed_date:'', effectiveness_assessed_by:'',
+    control_effectiveness:'',
+    acceptance_required:true, acceptance_status:'pending_formal_acceptance',
+    acceptance_basis:'Residual rating is a target only. It may be accepted after all applicable MOC actions and operational conditions are closed and verified.',
+    risk_acceptance:'', risk_acceptance_date:'', risk_acceptance_by:'',
+    history:[{action:'created_by_moc',date:nowIso,from:mocRef||'',reason:'New risk scenario identified during the change study.'}]
+  };
+  if(a.newFamilyCreatedId&&a.newFamilyCreatedId===fam){
+    rec.history.push({action:'new_family_created',date:nowIso,from:mocRef||'',reason:'Level-2 family '+fam+' created for this scenario: '+(a.newFamilyWhy||'')});
+  }
+  if(typeof safApplyRiskTaxonomy==='function')safApplyRiskTaxonomy(rec);
+  DB.push(rec);
+  if(typeof filteredDB!=='undefined')filteredDB=DB.slice();
+  if(typeof saveDB==='function')saveDB();
+  if(typeof applyFilters==='function'){try{applyFilters();}catch(e){}}
+  a.riskId=newId; a.riskCreatedId=newId;
+  var sel=document.getElementById('cs-brk-rid-'+id);
+  if(sel)sel.innerHTML=csBrkRiskOptions(newId);
+  var panel=document.getElementById('cs-brk-new-'+id);if(panel)panel.style.display='none';
+  if(!(a.text||'').trim())csBrkSetVal('cs-action-text-'+id,'Implement and verify the barriers of '+newId+' — '+ev);
+  if(typeof csSyncAction==='function')csSyncAction(id);
+  csSyncActionBreakdown(id);
+  showToast('\u2713 '+newId+' created in the risk register and linked to '+(mocRef||'this MOC'),'success');
+}
+
+function _csBrkAppend(existing,addition){
+  var e=(existing||'').trim(), n=(addition||'').trim();
+  if(!n)return e;
+  if(e && e.indexOf(n)>-1)return e;
+  return e ? e+'\n'+n : n;
+}
+
+function csBrkUpdateRisk(id,a,mocRef){
+  var r=DB.find(function(x){return x.id===a.riskId;});
+  if(!r){showToast('Risk '+a.riskId+' not found in the register','error');return;}
+  // Build the change set WITHOUT touching the register yet (cancel must be lossless)
+  var pending={}, changes=[], preview=[];
+  [['hazards','hazardsStatus','dangers','Hazards'],
+   ['prevention','preventionStatus','prevention','Prevention'],
+   ['mitigation','mitigationStatus','mitigation','Mitigation'],
+   ['recovery','recoveryStatus','recovery','Recovery']].forEach(function(f){
+    var txt=(a[f[0]]||'').trim(), st=a[f[1]]||'';
+    if(!txt)return;
+    if(st!=='new'&&st!=='reinforced'&&st!=='aggravated')return;
+    var merged=_csBrkAppend(r[f[2]],txt);
+    if(merged!==(r[f[2]]||'').trim()){
+      pending[f[2]]=merged;
+      changes.push(f[3]+' ('+csBrkStatusWord(st)+')');
+      preview.push('\u2022 '+f[3]+' \u2014 '+csBrkStatusWord(st));
+    }
+  });
+  if((a.riskInitial||'')&&a.riskInitial!==r.initial_risk){
+    preview.push('\u2022 Initial risk '+(r.initial_risk||'\u2014')+' \u2192 '+a.riskInitial);
+    changes.push('initial rating'); pending.initial_risk=a.riskInitial;
+  }
+  if((a.riskResidual||'')&&a.riskResidual!==r.residual_risk){
+    preview.push('\u2022 Residual risk '+(r.residual_risk||'\u2014')+' \u2192 '+a.riskResidual);
+    changes.push('residual rating'); pending.residual_risk=a.riskResidual;
+  }
+  if(!changes.length){
+    showToast('Nothing to push \u2014 flag the hazards/barriers as \u201cnew\u201d or \u201creinforced\u201d first','error');
+    var w=document.getElementById('cs-brk-'+id);if(w)w.classList.remove('collapsed');
+    return;
+  }
+  if(!confirm('Update '+r.id+' in the risk register?\n\n'+preview.join('\n')+'\n\nLinked change study: '+(mocRef||'\u2014')))return;
+  // Commit
+  Object.keys(pending).forEach(function(k){r[k]=pending[k];});
+  var nowIso=new Date().toISOString();
+  if(mocRef){
+    var lcs=(r.linked_change_study||'').trim();
+    r.linked_change_study = lcs ? (lcs.indexOf(mocRef)>-1 ? lcs : lcs+' / '+mocRef) : mocRef;
+  }
+  r.control_status='Conditions en attente';
+  r.last_control_date=nowIso.slice(0,10);
+  r.control_comment=((r.control_comment||'')+' | Updated by MOC '+(mocRef||'(unreferenced)')+' on '+nowIso.slice(0,10)+': '+changes.join(', ')+'. Residual rating remains a target until the MOC actions are closed and verified.').trim();
+  r.acceptance_required=true;
+  r.acceptance_status='pending_formal_acceptance';
+  r.updated_at=nowIso;
+  if(!Array.isArray(r.history))r.history=[];
+  r.history.push({action:'updated_by_moc',date:nowIso,from:mocRef||'',reason:changes.join(', ')});
+  if(typeof filteredDB!=='undefined')filteredDB=DB.slice();
+  if(typeof saveDB==='function')saveDB();
+  if(typeof applyFilters==='function'){try{applyFilters();}catch(e){}}
+  csSyncActionBreakdown(id);
+  showToast('\u2713 '+r.id+' updated in the register \u2014 '+changes.join(', '),'success');
+}
+
+// Splits a legacy free-text action such as "[Prevention — SMS-05]\n1. …"
+// into the dedicated hazard / risk / barrier fields.
+function csBrkSplitFromText(id){
+  var a=CS_ACTIONS.find(function(x){return x.id===id;});if(!a)return;
+  var txt=(a.text||'').trim();
+  if(!txt){showToast('Nothing to split — the description is empty','error');return;}
+  var m=txt.match(/^\[\s*(Prevention|Mitigation|Recovery|Pr\u00e9vention|Att\u00e9nuation|R\u00e9cup\u00e9ration)\s*[\u2014\-\u2013]\s*([A-Za-z0-9\-\._]+)\s*\]\s*\n?([\s\S]*)$/i);
+  var body=txt, kind='', rid='';
+  if(m){ kind=m[1].toLowerCase(); rid=m[2]; body=(m[3]||'').trim(); }
+  var sections={};
+  var re=/^\s*(HAZARDS?|DANGERS?|RISK|PREVENTION|MITIGATION|RECOVERY|PR\u00c9VENTION|ATT\u00c9NUATION|R\u00c9CUP\u00c9RATION)\s*(?:MEASURES)?\s*:\s*$/i;
+  var cur=null, lines=body.split('\n'), found=false;
+  lines.forEach(function(l){
+    var h=l.match(re);
+    if(h){cur=h[1].toUpperCase();sections[cur]=sections[cur]||[];found=true;}
+    else if(cur){sections[cur].push(l);}
+  });
+  var pick=function(keys){for(var i=0;i<keys.length;i++){if(sections[keys[i]])return sections[keys[i]].join('\n').trim();}return '';};
+  if(found){
+    csBrkSetVal('cs-brk-hz-'+id,  pick(['HAZARDS','HAZARD','DANGERS','DANGER']));
+    csBrkSetVal('cs-brk-rev-'+id, pick(['RISK']));
+    csBrkSetVal('cs-brk-prev-'+id,pick(['PREVENTION','PR\u00c9VENTION']));
+    csBrkSetVal('cs-brk-miti-'+id,pick(['MITIGATION','ATT\u00c9NUATION']));
+    csBrkSetVal('cs-brk-reco-'+id,pick(['RECOVERY','R\u00c9CUP\u00c9RATION']));
+  } else if(kind){
+    var target = (kind.indexOf('prev')===0) ? 'prev' : (kind.indexOf('mit')===0||kind.indexOf('att')===0) ? 'miti' : 'reco';
+    csBrkSetVal('cs-brk-'+target+'-'+id, body);
+  } else {
+    showToast('No recognised structure — fill the fields manually','error');
+    var w0=document.getElementById('cs-brk-'+id);if(w0)w0.classList.remove('collapsed');
+    return;
+  }
+  if(rid){
+    var sel=document.getElementById('cs-brk-rid-'+id);
+    if(sel){var opt=Array.prototype.slice.call(sel.options).find(function(o){return o.value===rid;});if(opt)sel.value=rid;}
+    var r=(typeof DB!=='undefined'?DB:[]).find(function(x){return x.id===rid;});
+    if(r){
+      if(!(document.getElementById('cs-brk-hz-'+id)||{}).value)  csBrkSetVal('cs-brk-hz-'+id, r.dangers||'');
+      if(!(document.getElementById('cs-brk-rev-'+id)||{}).value) csBrkSetVal('cs-brk-rev-'+id, r.undesirable_event||r.event||'');
+      if(!(document.getElementById('cs-brk-ri-'+id)||{}).value)  csBrkSetVal('cs-brk-ri-'+id, r.initial_risk||'');
+      if(!(document.getElementById('cs-brk-rr-'+id)||{}).value)  csBrkSetVal('cs-brk-rr-'+id, r.residual_risk||'');
+    }
+  }
+  var w=document.getElementById('cs-brk-'+id);if(w)w.classList.remove('collapsed');
+  csSyncActionBreakdown(id);
+  showToast('\u2713 Description dissociated into hazards / risk / barriers','success');
+}
+
+function csBrkClear(id){
+  ['hz','rev','prev','miti','reco','ri','rr','sthz','stprev','stmiti','streco','ncat','necc','nown','ndoc','ncons','fam','fnname','fndom','fndesc','fnwhy'].forEach(function(k){csBrkSetVal('cs-brk-'+k+'-'+id,'');});
+  var sel=document.getElementById('cs-brk-rid-'+id);if(sel)sel.value='';
+  var panel=document.getElementById('cs-brk-new-'+id);if(panel)panel.style.display='none';
+  ['famsug','famnew'].forEach(function(k){var e=document.getElementById('cs-brk-'+k+'-'+id);if(e)e.style.display='none';});
+  csSyncActionBreakdown(id);
+}
+
+// Read-only HTML rendering of the breakdown (block 6 summary + PDF export)
+function csBrkRenderHTML(a,opt){
+  opt=opt||{};
+  var pdf=!!opt.pdf;
+  var nl=function(t){return esc(t||'').replace(/\n/g,'<br>');};
+  var flag=function(st){
+    if(!st||st==='existing')return '';
+    var col = (st==='new')?'#c04400':(st==='reinforced')?'#b07d10':'#c04400';
+    var lbl = (st==='new')?'NEW':(st==='reinforced')?'REINFORCED':'AGGRAVATED';
+    return ' <span style="font-size:8px;font-weight:800;letter-spacing:.06em;color:'+col+';border:1px solid '+col+';border-radius:3px;padding:0 3px;">'+lbl+'</span>';
+  };
+  var rows=[];
+  if((a.hazards||'').trim())    rows.push(['Hazards','#e0824a',a.hazards,null,a.hazardsStatus]);
+  var riskLine='';
+  if(a.riskId==='__new__') riskLine+='<b style="color:#c04400;">NEW RISK — not yet created in the register</b>';
+  else if(a.riskId) riskLine+='<b>'+esc(a.riskId)+'</b>'+(a.riskCreatedId===a.riskId?' <span style="font-size:8px;font-weight:800;color:#c04400;border:1px solid #c04400;border-radius:3px;padding:0 3px;">NEW</span>':'');
+  if((a.riskEvent||'').trim()) riskLine+=(riskLine?' — ':'')+nl(a.riskEvent);
+  var rat=[];
+  if((a.riskInitial||'').trim()) rat.push('initial '+esc(a.riskInitial));
+  if((a.riskResidual||'').trim()) rat.push('residual '+esc(a.riskResidual));
+  if(rat.length) riskLine+=(riskLine?'<br>':'')+'<span style="opacity:.75;">('+rat.join(' \u2192 ')+')</span>';
+  if(riskLine) rows.push(['Risk','#c04400',null,riskLine,'']);
+  var famId = a.riskCreatedId ? ((typeof DB!=='undefined'&&Array.isArray(DB)?(DB.find(function(x){return x.id===a.riskCreatedId;})||{}):{}).family_id||a.riskNewFamily)
+            : (a.riskId&&a.riskId!=='__new__' ? ((typeof DB!=='undefined'&&Array.isArray(DB)?(DB.find(function(x){return x.id===a.riskId;})||{}):{}).family_id||'') : a.riskNewFamily);
+  if(famId&&famId!=='__newfam__'){
+    var famTxt=(typeof safFamilyLabel==='function')?safFamilyLabel(famId):famId;
+    if(a.newFamilyCreatedId&&a.newFamilyCreatedId===famId) famTxt+=' <span style="font-size:8px;font-weight:800;color:#c04400;border:1px solid #c04400;border-radius:3px;padding:0 3px;">NEW FAMILY</span>';
+    rows.push(['SAF family','#7a5cc9',null,famTxt,'']);
+  }
+  if((a.prevention||'').trim()) rows.push(['Prevention','#5cc990',a.prevention,null,a.preventionStatus]);
+  if((a.mitigation||'').trim()) rows.push(['Mitigation','#e3b341',a.mitigation,null,a.mitigationStatus]);
+  if((a.recovery||'').trim())   rows.push(['Recovery','#4a9fe0',a.recovery,null,a.recoveryStatus]);
+  if(!rows.length) return '';
+  var txtCol = pdf ? '#1e2a35' : 'var(--grey-200)';
+  var bg     = pdf ? '#f6f8fa' : 'rgba(74,159,224,.05)';
+  var bd     = pdf ? '#e8ecf0' : 'rgba(74,159,224,.20)';
+  var html='<div style="margin-top:7px;padding:8px 10px;background:'+bg+';border:1px solid '+bd+';border-radius:6px;">';
+  rows.forEach(function(r){
+    html+='<div style="display:flex;gap:8px;margin-bottom:5px;line-height:1.5;">'
+       + '<span style="flex:0 0 104px;font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:700;letter-spacing:.04em;color:'+r[1]+';text-transform:uppercase;padding-top:1px;">'+r[0]+flag(r[4])+'</span>'
+       + '<span style="flex:1;font-size:'+(pdf?'10px':'11px')+';color:'+txtCol+';">'+(r[3]!==undefined&&r[3]!==null?r[3]:nl(r[2]))+'</span>'
+       + '</div>';
+  });
+  return html+'</div>';
+}
+
+// Roll-up of everything the change introduces (block 6 banner + PDF)
+function csBrkChangeFootprint(actions){
+  var f={newHazards:0,newRisks:0,pendingRisks:0,newBarriers:0,reinforced:0,riskIds:[],newFamilies:[]};
+  (actions||[]).forEach(function(a){
+    if(a.newFamilyCreatedId&&f.newFamilies.indexOf(a.newFamilyCreatedId)<0)f.newFamilies.push(a.newFamilyCreatedId);
+    if(a.hazardsStatus==='new'&&(a.hazards||'').trim())f.newHazards++;
+    if(a.riskId==='__new__')f.pendingRisks++;
+    if(a.riskCreatedId&&a.riskCreatedId===a.riskId){f.newRisks++;f.riskIds.push(a.riskCreatedId);}
+    ['prevention','mitigation','recovery'].forEach(function(k){
+      var st=a[k+'Status'];
+      if(!(a[k]||'').trim())return;
+      if(st==='new')f.newBarriers++;
+      else if(st==='reinforced')f.reinforced++;
+    });
+  });
+  return f;
+}
+
+function csBrkFootprintHTML(actions,opt){
+  var pdf=(opt||{}).pdf;
+  var f=csBrkChangeFootprint(actions);
+  if(!(f.newHazards||f.newRisks||f.pendingRisks||f.newBarriers||f.reinforced||f.newFamilies.length))return '';
+  var bits=[];
+  if(f.newFamilies.length)bits.push('<b>'+f.newFamilies.length+'</b> new level-2 famil'+(f.newFamilies.length>1?'ies':'y')+' ('+f.newFamilies.join(', ')+')');
+  if(f.newHazards)  bits.push('<b>'+f.newHazards+'</b> new hazard'+(f.newHazards>1?'s':''));
+  if(f.newRisks)    bits.push('<b>'+f.newRisks+'</b> new risk scenario'+(f.newRisks>1?'s':'')+' created ('+f.riskIds.join(', ')+')');
+  if(f.pendingRisks)bits.push('<b style="color:#c04400;">'+f.pendingRisks+'</b> new risk'+(f.pendingRisks>1?'s':'')+' not yet created in the register');
+  if(f.newBarriers) bits.push('<b>'+f.newBarriers+'</b> new barrier'+(f.newBarriers>1?'s':''));
+  if(f.reinforced)  bits.push('<b>'+f.reinforced+'</b> reinforced barrier'+(f.reinforced>1?'s':''));
+  var bg=pdf?'#fff6ec':'rgba(192,68,0,.10)', bd=pdf?'#e8b98a':'rgba(192,68,0,.35)', col=pdf?'#8a4a10':'#e0824a';
+  return '<div class="b6-footprint" style="margin-bottom:12px;padding:9px 12px;background:'+bg+';border:1px solid '+bd+';border-radius:8px;'
+    + 'font-family:\'IBM Plex Mono\',monospace;font-size:'+(pdf?'10px':'10.5px')+';color:'+col+';line-height:1.6;">'
+    + '<b>&#9670; SAFETY FOOTPRINT OF THIS CHANGE — </b>' + bits.join(' &nbsp;·&nbsp; ')
+    + (f.pendingRisks?'<br><span style="opacity:.85;">Use “Create this risk in the register” on the action(s) concerned before submitting the study for approval.</span>':'')
+    + '</div>';
+}
+
 function csAddAction(){
   const id='a'+Date.now();
-  const action={id,text:'',nominatedPerson:'',sigData:''};
+  const action={id,text:'',nominatedPerson:'',sigData:'',hazards:'',hazardsStatus:'',riskId:'',riskEvent:'',riskInitial:'',riskResidual:'',riskNewCategory:'',riskNewEccairs:'',riskNewOwner:'',riskNewDocRef:'',riskNewConsequences:'',riskNewFamily:'',newFamilyName:'',newFamilyDomain:'',newFamilyDesc:'',newFamilyWhy:'',newFamilyCreatedId:'',riskCreatedId:'',prevention:'',preventionStatus:'',mitigation:'',mitigationStatus:'',recovery:'',recoveryStatus:''};
   CS_ACTIONS.push(action);
   const list=document.getElementById('cs-action-list');
   const card=csRenderAction(action);
@@ -10695,6 +11549,7 @@ function csSyncAction(id){
   if(em)action.email=em.value;
   const prev=document.querySelector('#fu-row-'+id+' .fu-action-preview');
   if(prev)prev.innerHTML=(action.text||'').slice(0,80)+((action.text||'').length>80?'…':'')||'<em style="opacity:.5;">No description yet</em>';
+  if(typeof csBrkRefreshSummary==='function')csBrkRefreshSummary(id);
   csRefreshBlock6();
   if(typeof saveState==='function')saveState();
 }
@@ -10787,12 +11642,18 @@ function csRefreshBlock6(){
 
   // Remove old cards (keep empty msg)
   container.querySelectorAll('.b6-action-card').forEach(c=>c.remove());
+  container.querySelectorAll('.b6-footprint').forEach(c=>c.remove());
 
   if(!CS_ACTIONS.length){
     if(emptyMsg)emptyMsg.style.display='';
     return;
   }
   if(emptyMsg)emptyMsg.style.display='none';
+
+  if(typeof csBrkFootprintHTML==='function'){
+    const fpHTML=csBrkFootprintHTML(CS_ACTIONS);
+    if(fpHTML){const fp=document.createElement('div');fp.innerHTML=fpHTML;const node=fp.firstElementChild;if(node)container.insertBefore(node,container.firstChild);}
+  }
 
   CS_ACTIONS.forEach((action,i)=>{
     // Follow-up status
@@ -10816,6 +11677,7 @@ function csRefreshBlock6(){
       </div>
       <div class="b6-action-body">
         ${action.text||'<em style="opacity:.5;">No description</em>'}
+        ${typeof csBrkRenderHTML==='function'?csBrkRenderHTML(action):''}
         ${fu.notes?`<div style="margin-top:6px;padding:6px 8px;background:rgba(255,255,255,.03);border-left:2px solid rgba(74,159,224,.4);border-radius:0 4px 4px 0;font-size:10px;color:var(--grey-400);">${fu.notes}</div>`:''}
         ${sigData?`<div class="b6-action-sig" style="color:#50c878;font-family:var(--font-mono);font-size:11px;">☑ ${sigData.startsWith('ACK:')?sigData.replace('ACK:','').replace('|',' — acknowledged on '):'Acknowledgement recorded'}</div>`:'<div class="b6-action-sig" style="opacity:.4;">No acknowledgement recorded</div>'}
       </div>`;
@@ -10897,6 +11759,13 @@ function collectChangeStudy(){
   data.workflow_status = document.getElementById('c-workflow-status')?.value || 'draft';
   try { var _vd=document.getElementById('cs-version-data')?.value; data.version_history=_vd?JSON.parse(_vd):[]; } catch(e){data.version_history=[];}
   CS_ACTIONS.forEach(a=>{const em=document.getElementById('cs-email-'+a.id);if(em)a.email=em.value;
+    // re-read the structured breakdown (hazards / risk / barriers) from the DOM
+    if(typeof CS_BRK_FIELDS!=='undefined'){
+      CS_BRK_FIELDS.forEach(function(f){var el=document.getElementById('cs-brk-'+f.id+'-'+a.id);if(el)a[f.k]=el.value;});
+      CS_BRK_FIELDS.forEach(function(f){if(!f.st)return;var s=document.getElementById('cs-brk-'+f.stId+'-'+a.id);if(s)a[f.st]=s.value;});
+      [['rid','riskId'],['ri','riskInitial'],['rr','riskResidual'],['ncat','riskNewCategory'],['necc','riskNewEccairs'],['nown','riskNewOwner'],['ndoc','riskNewDocRef'],['ncons','riskNewConsequences'],['fam','riskNewFamily'],['fnname','newFamilyName'],['fndom','newFamilyDomain'],['fndesc','newFamilyDesc'],['fnwhy','newFamilyWhy']]
+        .forEach(function(p){var e=document.getElementById('cs-brk-'+p[0]+'-'+a.id);if(e)a[p[1]]=e.value;});
+    }
     // collect esig data from checkbox state
     const chk=document.getElementById('cs-sig-check-'+a.id);
     const sel=document.getElementById('cs-sig-sel-'+a.id);
@@ -14231,11 +15100,11 @@ function printLessonById(id){
 let _csNrInitRisk='',_csNrResidRisk='';
 function csOnCategoryChange(){const cat=document.getElementById('c-risk-cat-select')?.value;const evtSel=document.getElementById('c-risk-event-select');const impBtn=document.getElementById('cs-import-btn');const preview=document.getElementById('cs-risk-preview');const fb=document.getElementById('cs-import-feedback');if(!evtSel)return;if(!cat){evtSel.innerHTML='<option value="" style="background:#0d1b2a;color:#f4f6f8;">Select category first…</option>';evtSel.disabled=true;if(impBtn)impBtn.disabled=true;if(preview)preview.style.display='none';return;}const risks=DB.filter(r=>r.category===cat);evtSel.innerHTML='<option value="" style="background:#0d1b2a;color:#f4f6f8;">Select a risk event…</option>';risks.forEach(r=>{const o=document.createElement('option');o.value=r.id;o.textContent=r.id+' — '+(r.event||'').slice(0,70);evtSel.appendChild(o);});evtSel.disabled=false;if(impBtn)impBtn.disabled=true;if(preview)preview.style.display='none';if(fb)fb.textContent=risks.length+' risk(s) found.';}
 function csOnEventChange(){const riskId=document.getElementById('c-risk-event-select')?.value;const impBtn=document.getElementById('cs-import-btn');const preview=document.getElementById('cs-risk-preview');const pc=document.getElementById('cs-risk-preview-content');if(!riskId){if(impBtn)impBtn.disabled=true;if(preview)preview.style.display='none';return;}const r=DB.find(x=>x.id===riskId);if(!r)return;if(impBtn)impBtn.disabled=false;const bg=(code)=>{const c={'red':'#CC2200','yellow':'#FFD700','green':'#1A7A32'}[riskColor(code)]||'#555';const fg='#fff';return`<span style="background:${c};color:${fg};padding:2px 8px;border-radius:3px;font-family:var(--font-mono);font-size:11px;font-weight:700;">${code}</span>`;};const row=(l,v)=>v?`<div style="display:grid;grid-template-columns:160px 1fr;gap:4px 10px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);"><span style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">${l}</span><span style="font-size:11px;color:var(--white);">${v}</span></div>`:'';if(pc)pc.innerHTML=row('Event',r.event)+row('Dangers',r.dangers)+row('Initial risk',bg(r.initial_risk))+row('Prevention',r.prevention)+row('Mitigation',r.mitigation)+row('Recovery',r.recovery)+row('Residual risk',bg(r.residual_risk));if(preview)preview.style.display='';}
-function csImportRiskData(){const riskId=document.getElementById('c-risk-event-select')?.value;const fb=document.getElementById('cs-import-feedback');if(!riskId){if(fb){fb.textContent='Please select a risk event.';fb.style.color='#ff8080';}return;}const r=DB.find(x=>x.id===riskId);if(!r)return;const ed=getChangeVal('description');setChangeVal('description',ed?ed+'\n'+r.category+' — '+r.id+': '+(r.event||''):r.category+' — '+r.id+': '+(r.event||''));const edd=getChangeVal('detailed-description');const db='RISK EVENT: '+(r.event||'')+'\nHAZARDS: '+(r.dangers||'—')+'\nINITIAL RISK: '+(r.initial_risk||'—')+'  |  RESIDUAL RISK: '+(r.residual_risk||'—');setChangeVal('detailed-description',edd?edd+'\n\n'+db:db);const ei=getChangeVal('impact-assessment');const ib='PREVENTION MEASURES:\n'+(r.prevention||'—')+'\n\nMITIGATION MEASURES:\n'+(r.mitigation||'—')+'\n\nRECOVERY MEASURES:\n'+(r.recovery||'—');setChangeVal('impact-assessment',ei?ei+'\n\n'+ib:ib);if(r.doc_ref&&!getChangeVal('doc-archiving'))setChangeVal('doc-archiving',r.doc_ref);[{label:'Prevention',text:r.prevention},{label:'Mitigation',text:r.mitigation},{label:'Recovery',text:r.recovery}].filter(b=>b.text).forEach(b=>{const id='a'+Date.now()+Math.random().toString(36).slice(2,6);const action={id,text:'['+b.label+' — '+r.id+']\n'+b.text,nominatedPerson:'',sigData:'',email:''};CS_ACTIONS.push(action);const list=document.getElementById('cs-action-list');if(list){const card=csRenderAction(action);list.appendChild(card);setTimeout(()=>_initSigPad('cs-sig-canvas-'+id,'cs-sig-hidden-'+id,'cs-sig-ph-'+id),20);}});csRenumber();if(fb){fb.textContent='✓ Risk '+r.id+' imported — barriers added in block 5.';fb.style.color='#5cc990';}showToast('✓ Risk data imported from '+r.category+' — '+r.id,'success');}
+function csImportRiskData(){const riskId=document.getElementById('c-risk-event-select')?.value;const fb=document.getElementById('cs-import-feedback');if(!riskId){if(fb){fb.textContent='Please select a risk event.';fb.style.color='#ff8080';}return;}const r=DB.find(x=>x.id===riskId);if(!r)return;const ed=getChangeVal('description');setChangeVal('description',ed?ed+'\n'+r.category+' — '+r.id+': '+(r.event||''):r.category+' — '+r.id+': '+(r.event||''));const edd=getChangeVal('detailed-description');const db='RISK EVENT: '+(r.event||'')+'\nHAZARDS: '+(r.dangers||'—')+'\nINITIAL RISK: '+(r.initial_risk||'—')+'  |  RESIDUAL RISK: '+(r.residual_risk||'—');setChangeVal('detailed-description',edd?edd+'\n\n'+db:db);const ei=getChangeVal('impact-assessment');const ib='PREVENTION MEASURES:\n'+(r.prevention||'—')+'\n\nMITIGATION MEASURES:\n'+(r.mitigation||'—')+'\n\nRECOVERY MEASURES:\n'+(r.recovery||'—');setChangeVal('impact-assessment',ei?ei+'\n\n'+ib:ib);if(r.doc_ref&&!getChangeVal('doc-archiving'))setChangeVal('doc-archiving',r.doc_ref);[{label:'Prevention',key:'prevention',text:r.prevention},{label:'Mitigation',key:'mitigation',text:r.mitigation},{label:'Recovery',key:'recovery',text:r.recovery}].filter(b=>b.text).forEach(b=>{const id='a'+Date.now()+Math.random().toString(36).slice(2,6);const action={id,text:'Implement and verify the '+b.label.toLowerCase()+' barriers of '+r.id+' — '+(r.event||''),nominatedPerson:'',sigData:'',email:'',hazards:r.dangers||'',riskId:r.id,riskEvent:r.undesirable_event||r.event||'',riskInitial:r.initial_risk||'',riskResidual:r.residual_risk||'',hazardsStatus:'existing',prevention:'',preventionStatus:'',mitigation:'',mitigationStatus:'',recovery:'',recoveryStatus:''};action[b.key]=b.text;action[b.key+'Status']='existing';CS_ACTIONS.push(action);const list=document.getElementById('cs-action-list');if(list){const card=csRenderAction(action);list.appendChild(card);setTimeout(()=>_initSigPad('cs-sig-canvas-'+id,'cs-sig-hidden-'+id,'cs-sig-ph-'+id),20);}});csRenumber();if(fb){fb.textContent='✓ Risk '+r.id+' imported — barriers added in block 5.';fb.style.color='#5cc990';}showToast('✓ Risk data imported from '+r.category+' — '+r.id,'success');}
 
 function _buildCsNrMatrix(containerId,previewId,labelId,type){const el=document.getElementById(containerId);if(!el)return;let html='<div class="icao-ms-label" style="width:80px;height:36px;"></div>';SEV_LABELS.forEach(s=>{html+=`<div class="icao-ms-head" style="width:44px;height:36px;">${SEV_NAMES[s]?.split(' ')[0]||s}<br><small style="font-size:8px">(${s})</small></div>`;});PROB_LABELS.forEach(p=>{html+=`<div class="icao-ms-label">${PROB_NAMES[p]||p}</div>`;SEV_LABELS.forEach(s=>{const code=p+s;const bg=ICAO_CELL_COLORS[code]||'#333';const fg=readableTextColor(bg);html+=`<div class="icao-ms-cell" id="${containerId}-${code}" style="background:${bg};border:1px solid ${bg};color:${fg};font-weight:800;" onclick="_csNrSelectRisk('${containerId}','${previewId}','${labelId}','${code}','${type}')">${code}</div>`;});});el.innerHTML=html;}
 function _csNrSelectRisk(containerId,previewId,labelId,code,type){document.querySelectorAll('#'+containerId+' .icao-ms-cell').forEach(c=>c.classList.remove('selected'));const cell=document.getElementById(containerId+'-'+code);if(cell)cell.classList.add('selected');const bg=ICAO_CELL_COLORS[code]||'#333';const fg=readableTextColor(bg);const preview=document.getElementById(previewId);if(preview){preview.textContent=code;preview.style.background=bg;preview.style.color=fg;}const prob=code.charAt(0);const sev=code.charAt(1);const lbl=document.getElementById(labelId);if(lbl)lbl.textContent=(PROB_NAMES[prob]||prob)+' × '+(SEV_NAMES[sev]||sev);if(type==='init'){_csNrInitRisk=code;document.getElementById('cs-nr-initial-risk').value=code;}else{_csNrResidRisk=code;document.getElementById('cs-nr-residual-risk').value=code;}}
-function csSaveNewRisk(){const fb=document.getElementById('cs-nr-feedback');const s=id=>(document.getElementById(id)?.value||'').trim();const category=s('cs-nr-category'),event_=s('cs-nr-event'),dangers=s('cs-nr-dangers'),prevention=s('cs-nr-prevention'),mitigation=s('cs-nr-mitigation'),recovery=s('cs-nr-recovery'),initRisk=s('cs-nr-initial-risk'),residRisk=s('cs-nr-residual-risk'),docRef=s('cs-nr-doc-ref');const missing=[];if(!category)missing.push('Risk Category');if(!event_)missing.push('Undesirable Event');if(!dangers)missing.push('Dangers');if(!prevention)missing.push('Prevention Measures');if(!initRisk)missing.push('Initial Risk (click a matrix cell)');if(!residRisk)missing.push('Residual Risk (click a matrix cell)');if(!docRef)missing.push('Document Reference');if(missing.length){if(fb){fb.textContent='✗ Missing: '+missing.join(', ');fb.style.color='#ff8080';}return;}const pm={'LOC-I':'LOC','CFIT':'CFIT','Collisions':'COL','HESLO & Aerial work':'HESLO','Facteurs Humains & Opérations':'HF','EFB & Systèmes Numériques':'EFB','Opérations Spécialisées':'SPO','Cybersécurité (Part-IS)':'PIS'};const prefix=pm[category]||'CS';const existing=DB.filter(r=>r.id.startsWith(prefix+'-'));const nextNum=existing.length>0?Math.max(...existing.map(r=>parseInt(r.id.split('-').pop())||0))+1:1;const newId=prefix+'-'+nextNum;const newRecord={id:newId,category,event:event_,dangers,initial_risk:initRisk,prevention,mitigation,recovery,residual_risk:residRisk,doc_ref:docRef,eccairs_cat:'',event_type:'',phase:'',control_status:'',last_control_date:'',control_comment:'',barrier_failure_suspected:false,timestamp:new Date().toISOString(),linked_change_study:getChangeVal('ref')||'',risk_acceptance:'',risk_acceptance_date:'',risk_acceptance_by:'',control_effectiveness:'',history:[]};DB.push(newRecord);filteredDB=[...DB];saveDB();if(fb){fb.textContent='✓ Risk '+newId+' added to database.';fb.style.color='#5cc990';}const catSel=document.getElementById('c-risk-cat-select');if(catSel){catSel.value=category;csOnCategoryChange();}setTimeout(()=>{const evtSel=document.getElementById('c-risk-event-select');if(evtSel){const opt=Array.from(evtSel.options).find(o=>o.value===newId);if(opt){evtSel.value=newId;csOnEventChange();}}},50);const ed=getChangeVal('description');setChangeVal('description',ed?ed+'\n'+category+' — '+newId+': '+event_:category+' — '+newId+': '+event_);const ib='PREVENTION MEASURES:\n'+prevention+(mitigation?'\n\nMITIGATION MEASURES:\n'+mitigation:'')+(recovery?'\n\nRECOVERY MEASURES:\n'+recovery:'');const ei=getChangeVal('impact-assessment');setChangeVal('impact-assessment',ei?ei+'\n\n'+ib:ib);if(docRef&&!getChangeVal('doc-archiving'))setChangeVal('doc-archiving',docRef);[{label:'Prevention',text:prevention},{label:'Mitigation',text:mitigation},{label:'Recovery',text:recovery}].filter(b=>b.text).forEach(b=>{const id='a'+Date.now()+Math.random().toString(36).slice(2,6);const action={id,text:'['+b.label+' — '+newId+']\n'+b.text,nominatedPerson:'',sigData:'',email:''};CS_ACTIONS.push(action);const list=document.getElementById('cs-action-list');if(list){const card=csRenderAction(action);list.appendChild(card);setTimeout(()=>_initSigPad('cs-sig-canvas-'+id,'cs-sig-hidden-'+id,'cs-sig-ph-'+id),20);}});csRenumber();showToast('✓ Risk '+newId+' saved and imported into change study','success');setTimeout(()=>{['cs-nr-category','cs-nr-event','cs-nr-dangers','cs-nr-prevention','cs-nr-mitigation','cs-nr-recovery','cs-nr-doc-ref','cs-nr-initial-risk','cs-nr-residual-risk'].forEach(i=>{const e=document.getElementById(i);if(e)e.value='';});_csNrInitRisk='';_csNrResidRisk='';['cs-nr-init-preview','cs-nr-resid-preview'].forEach(id=>{const e=document.getElementById(id);if(e){e.textContent='–';e.style.background='#333';e.style.color='#fff';}});['cs-nr-init-label','cs-nr-resid-label'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='';});document.querySelectorAll('#cs-nr-init-matrix .icao-ms-cell,#cs-nr-resid-matrix .icao-ms-cell').forEach(c=>c.classList.remove('selected'));if(fb)fb.textContent='';},1500);if(typeof saveState==='function')saveState();}
+function csSaveNewRisk(){const fb=document.getElementById('cs-nr-feedback');const s=id=>(document.getElementById(id)?.value||'').trim();const category=s('cs-nr-category'),event_=s('cs-nr-event'),dangers=s('cs-nr-dangers'),prevention=s('cs-nr-prevention'),mitigation=s('cs-nr-mitigation'),recovery=s('cs-nr-recovery'),initRisk=s('cs-nr-initial-risk'),residRisk=s('cs-nr-residual-risk'),docRef=s('cs-nr-doc-ref');const missing=[];if(!category)missing.push('Risk Category');if(!event_)missing.push('Undesirable Event');if(!dangers)missing.push('Dangers');if(!prevention)missing.push('Prevention Measures');if(!initRisk)missing.push('Initial Risk (click a matrix cell)');if(!residRisk)missing.push('Residual Risk (click a matrix cell)');if(!docRef)missing.push('Document Reference');if(missing.length){if(fb){fb.textContent='✗ Missing: '+missing.join(', ');fb.style.color='#ff8080';}return;}const pm={'LOC-I':'LOC','CFIT':'CFIT','Collisions':'COL','HESLO & Aerial work':'HESLO','Facteurs Humains & Opérations':'HF','EFB & Systèmes Numériques':'EFB','Opérations Spécialisées':'SPO','Cybersécurité (Part-IS)':'PIS'};const prefix=pm[category]||'CS';const existing=DB.filter(r=>r.id.startsWith(prefix+'-'));const nextNum=existing.length>0?Math.max(...existing.map(r=>parseInt(r.id.split('-').pop())||0))+1:1;const newId=prefix+'-'+nextNum;const newRecord={id:newId,category,event:event_,dangers,initial_risk:initRisk,prevention,mitigation,recovery,residual_risk:residRisk,doc_ref:docRef,eccairs_cat:'',event_type:'',phase:'',control_status:'',last_control_date:'',control_comment:'',barrier_failure_suspected:false,timestamp:new Date().toISOString(),linked_change_study:getChangeVal('ref')||'',risk_acceptance:'',risk_acceptance_date:'',risk_acceptance_by:'',control_effectiveness:'',history:[]};DB.push(newRecord);filteredDB=[...DB];saveDB();if(fb){fb.textContent='✓ Risk '+newId+' added to database.';fb.style.color='#5cc990';}const catSel=document.getElementById('c-risk-cat-select');if(catSel){catSel.value=category;csOnCategoryChange();}setTimeout(()=>{const evtSel=document.getElementById('c-risk-event-select');if(evtSel){const opt=Array.from(evtSel.options).find(o=>o.value===newId);if(opt){evtSel.value=newId;csOnEventChange();}}},50);const ed=getChangeVal('description');setChangeVal('description',ed?ed+'\n'+category+' — '+newId+': '+event_:category+' — '+newId+': '+event_);const ib='PREVENTION MEASURES:\n'+prevention+(mitigation?'\n\nMITIGATION MEASURES:\n'+mitigation:'')+(recovery?'\n\nRECOVERY MEASURES:\n'+recovery:'');const ei=getChangeVal('impact-assessment');setChangeVal('impact-assessment',ei?ei+'\n\n'+ib:ib);if(docRef&&!getChangeVal('doc-archiving'))setChangeVal('doc-archiving',docRef);[{label:'Prevention',key:'prevention',text:prevention},{label:'Mitigation',key:'mitigation',text:mitigation},{label:'Recovery',key:'recovery',text:recovery}].filter(b=>b.text).forEach(b=>{const id='a'+Date.now()+Math.random().toString(36).slice(2,6);const action={id,text:'Implement and verify the '+b.label.toLowerCase()+' barriers of '+newId+' — '+event_,nominatedPerson:'',sigData:'',email:'',hazards:dangers||'',riskId:newId,riskEvent:event_,riskInitial:initRisk||'',riskResidual:residRisk||'',hazardsStatus:'new',prevention:'',preventionStatus:'',mitigation:'',mitigationStatus:'',recovery:'',recoveryStatus:''};action[b.key]=b.text;action[b.key+'Status']='new';CS_ACTIONS.push(action);const list=document.getElementById('cs-action-list');if(list){const card=csRenderAction(action);list.appendChild(card);setTimeout(()=>_initSigPad('cs-sig-canvas-'+id,'cs-sig-hidden-'+id,'cs-sig-ph-'+id),20);}});csRenumber();showToast('✓ Risk '+newId+' saved and imported into change study','success');setTimeout(()=>{['cs-nr-category','cs-nr-event','cs-nr-dangers','cs-nr-prevention','cs-nr-mitigation','cs-nr-recovery','cs-nr-doc-ref','cs-nr-initial-risk','cs-nr-residual-risk'].forEach(i=>{const e=document.getElementById(i);if(e)e.value='';});_csNrInitRisk='';_csNrResidRisk='';['cs-nr-init-preview','cs-nr-resid-preview'].forEach(id=>{const e=document.getElementById(id);if(e){e.textContent='–';e.style.background='#333';e.style.color='#fff';}});['cs-nr-init-label','cs-nr-resid-label'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='';});document.querySelectorAll('#cs-nr-init-matrix .icao-ms-cell,#cs-nr-resid-matrix .icao-ms-cell').forEach(c=>c.classList.remove('selected'));if(fb)fb.textContent='';},1500);if(typeof saveState==='function')saveState();}
 
 
 // ════════════════════════════════════════════════════════════════
@@ -18438,13 +19307,16 @@ setTimeout(function(){
   async function cloudLoad(){
     try{
       var res = await Promise.race([
-        db.from('saf_data').select('data').eq('module', MODULE).single(),
+        db.from('saf_data').select('data, updated_at').eq('module', MODULE).single(),
         new Promise(function(_, reject){ setTimeout(function(){ reject(new Error('timeout réseau')); }, 6000); })
       ]);
       if(res.error){
         if(res.error.code === 'PGRST116'){ setBar('ok','Base vide — sauvegarde au 1er changement'); return; }
         setBar('ok','Erreur chargement: '+res.error.message); return;
       }
+
+      // Contrôle de concurrence : mémorise la version chargée.
+      if(res.data){ CC_ROW_EXISTS = true; CC_LAST_SYNC = res.data.updated_at || null; }
       var data = res.data && res.data.data;
       if(!data){ setBar('ok','Base vide'); return; }
 
@@ -18564,8 +19436,151 @@ setTimeout(function(){
     });
   }
 
+
+  /* ══════════════════════════════════════════════════════════════════════
+     CONTRÔLE DE CONCURRENCE — verrou optimiste multi-administrateurs
+     ----------------------------------------------------------------------
+     La table saf_data stocke un module entier dans UNE seule ligne JSON.
+     Sans ce contrôle, si deux administrateurs travaillent en même temps,
+     la dernière écriture écrase silencieusement le travail de l'autre.
+
+     Principe : on mémorise le updated_at de la version chargée, puis on
+     n'écrit QUE si la ligne en base porte toujours ce même updated_at
+     (condition évaluée par PostgreSQL — donc atomique). Sinon → conflit.
+     ══════════════════════════════════════════════════════════════════════ */
+  var CC_LAST_SYNC  = null;   // updated_at de la version chargée / dernière écrite
+  var CC_ROW_EXISTS = false;  // la ligne du module existe-t-elle en base ?
+  var CC_CONFLICT   = false;  // sauvegardes bloquées jusqu'à résolution
+  var CC_NOTIFIED   = null;   // dernier updated_at distant déjà signalé
+
+  function ccPayload(){ try{ return window.safExportForCloud(); }catch(e){ return null; } }
+
+  // Écriture conditionnelle : n'aboutit que si personne n'a écrit entre-temps.
+  async function ccWrite(payload){
+    var stamp = new Date().toISOString(), q;
+    if(CC_ROW_EXISTS && CC_LAST_SYNC){
+      q = db.from('saf_data')
+            .update({ data: payload, updated_at: stamp })
+            .eq('module', MODULE)
+            .eq('updated_at', CC_LAST_SYNC)
+            .select('updated_at');
+    } else {
+      q = db.from('saf_data')
+            .insert({ module: MODULE, data: payload, updated_at: stamp })
+            .select('updated_at');
+    }
+    var res = await q;
+    if(res.error){
+      if(res.error.code === '23505') return { conflict:true };  // ligne créée entre-temps
+      return { error: res.error.message };
+    }
+    if(!res.data || res.data.length === 0) return { conflict:true }; // updated_at périmé
+    CC_LAST_SYNC = res.data[0].updated_at;
+    CC_ROW_EXISTS = true;
+    return { ok:true };
+  }
+
+  // Écriture forcée (choix explicite de l'utilisateur : écraser le serveur).
+  async function ccForce(payload){
+    var stamp = new Date().toISOString();
+    var res = await db.from('saf_data')
+      .upsert({ module: MODULE, data: payload, updated_at: stamp }, { onConflict:'module' })
+      .select('updated_at');
+    if(res.error) return { error: res.error.message };
+    CC_LAST_SYNC = (res.data && res.data[0]) ? res.data[0].updated_at : stamp;
+    CC_ROW_EXISTS = true;
+    return { ok:true };
+  }
+
+  // Sauvegarde de secours du travail non enregistré, en fichier JSON local.
+  function ccDownload(payload){
+    try{
+      var wrap = { _module: MODULE, _exported_at: new Date().toISOString(),
+                   _note: 'Sauvegarde locale produite lors d\'un conflit de version.',
+                   data: payload };
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(wrap, null, 2)], {type:'application/json'}));
+      a.download = MODULE + '_conflit_' + new Date().toISOString().slice(0,19).replace(/[:T]/g,'-') + '.json';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }catch(e){ alert('Export impossible : ' + e.message); }
+  }
+
+  function ccBtn(bg, fg){
+    return 'padding:8px 12px;border-radius:5px;border:1px solid rgba(255,255,255,.18);'
+         + 'cursor:pointer;font-family:inherit;font-size:12px;background:'+bg+';color:'+fg+';';
+  }
+
+  // Bandeau de résolution de conflit (non destructif : rien n'est perdu).
+  function ccShowConflict(payload){
+    var box = document.getElementById('saf-cc-box');
+    if(!box){
+      box = document.createElement('div');
+      box.id = 'saf-cc-box';
+      box.style.cssText = 'position:fixed;z-index:99999;left:50%;bottom:20px;transform:translateX(-50%);'
+        + 'width:calc(100% - 32px);max-width:600px;background:#2b1b1b;border:1px solid #a4423f;'
+        + 'border-radius:8px;padding:16px 18px;color:#f0e6e6;font-family:system-ui,-apple-system,sans-serif;'
+        + 'font-size:13px;line-height:1.55;box-shadow:0 10px 40px rgba(0,0,0,.55);';
+      box.innerHTML =
+        '<div style="font-weight:600;color:#ff9b9b;margin-bottom:8px;">'
+      + '&#9888; Conflit de version &mdash; sauvegarde suspendue</div>'
+      + '<div id="saf-cc-msg" style="margin-bottom:14px;"></div>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+      + '<button id="saf-cc-dl">Télécharger mes modifications</button>'
+      + '<button id="saf-cc-reload">Recharger depuis le serveur</button>'
+      + '<button id="saf-cc-force">Écraser le serveur</button>'
+      + '</div>';
+      document.body.appendChild(box);
+      document.getElementById('saf-cc-dl').style.cssText     = ccBtn('#c9a227','#1a1a1a');
+      document.getElementById('saf-cc-reload').style.cssText = ccBtn('transparent','#e0d8d8');
+      document.getElementById('saf-cc-force').style.cssText  = ccBtn('transparent','#ff9b9b');
+
+      document.getElementById('saf-cc-dl').onclick     = function(){ ccDownload(ccPayload()); };
+      document.getElementById('saf-cc-reload').onclick = function(){ location.reload(); };
+      document.getElementById('saf-cc-force').onclick  = async function(){
+        if(!confirm('Écraser la version du serveur ?\n\nLes modifications enregistrées entre-temps '
+                  + 'par l\'autre administrateur seront définitivement perdues.\n\n'
+                  + 'Téléchargez d\'abord vos modifications si ce n\'est pas déjà fait.')) return;
+        var out = await ccForce(ccPayload());
+        if(out.error){ alert('Échec : ' + out.error); return; }
+        CC_CONFLICT = false; CC_NOTIFIED = CC_LAST_SYNC;
+        box.remove();
+        setBar('ok','Serveur écrasé — synchronisé ✓ ' + new Date().toLocaleTimeString());
+      };
+    }
+    var who = '';
+    db.from('saf_data').select('updated_at').eq('module', MODULE).single().then(function(r){
+      if(r && r.data && r.data.updated_at){
+        document.getElementById('saf-cc-msg').innerHTML =
+          'Un autre administrateur a enregistré une nouvelle version de ce module le <strong>'
+        + new Date(r.data.updated_at).toLocaleString() + '</strong>.<br><br>'
+        + 'Vos modifications <strong>ne sont pas enregistrées</strong> et la sauvegarde automatique '
+        + 'est suspendue pour ne rien écraser. Téléchargez-les avant de recharger ou d\'écraser.';
+      }
+    });
+    document.getElementById('saf-cc-msg').textContent =
+      'Un autre administrateur a enregistré une nouvelle version de ce module. '
+    + 'Vos modifications ne sont pas enregistrées et la sauvegarde automatique est suspendue.';
+  }
+
+  // Veille passive : prévient tôt qu'une nouvelle version existe sur le serveur.
+  async function ccPoll(){
+    if(CC_CONFLICT || !CC_ROW_EXISTS || !CC_LAST_SYNC) return;
+    try{
+      var r = await db.from('saf_data').select('updated_at').eq('module', MODULE).single();
+      if(r.error || !r.data) return;
+      var remote = r.data.updated_at;
+      if(remote !== CC_LAST_SYNC && remote !== CC_NOTIFIED){
+        CC_NOTIFIED = remote;
+        setBar('ok','⚠ Nouvelle version sur le serveur (' + new Date(remote).toLocaleTimeString()
+                  + ') — rechargez avant de continuer');
+      }
+    }catch(e){}
+  }
+  setInterval(ccPoll, 60000);
+
   // --- Sauvegarde vers la base ---
   async function cloudSave(){
+    if(CC_CONFLICT){ return; }   // bloqué jusqu'à résolution du conflit
     if(isGuest){ setBar('ok','Mode invité — lecture seule'); return; }
     if(saving){ dirty = true; return; }
     if(!authenticated){ setBar('ok','Mode local — non connecté'); return; }
@@ -18573,11 +19588,9 @@ setTimeout(function(){
     saving = true; setBar('saving','Sauvegarde...');
     try{
       var payload = window.safExportForCloud();
-      var res = await db.from('saf_data').upsert(
-        { module: MODULE, data: payload, updated_at: new Date() },
-        { onConflict: 'module' }
-      );
-      if(res.error) setBar('ok','Erreur sauvegarde: '+res.error.message);
+      var out = await ccWrite(payload);
+      if(out.conflict){ CC_CONFLICT = true; ccShowConflict(payload); setBar('error','⚠ Conflit de version — sauvegarde suspendue'); }
+      else if(out.error) setBar('ok','Erreur sauvegarde: '+out.error);
       else setBar('ok','Synchronisé ✓ '+new Date().toLocaleTimeString());
     }catch(e){ setBar('ok','Sauvegarde impossible: '+e.message); }
     saving = false;
@@ -18780,12 +19793,16 @@ setTimeout(function(){
       try{
         if(authenticated && typeof window.safExportForCloud === 'function'){
           var payload = window.safExportForCloud();
-          var saveRes = await db.from('saf_data').upsert(
-            { module: MODULE, data: payload, updated_at: new Date() },
-            { onConflict: 'module' }
-          );
-          if(!saveRes.error){ saveOk = true; setBar('ok','Synchronisé ✓ '+new Date().toLocaleTimeString()); }
-          else{ setBar('ok','Erreur sauvegarde: '+saveRes.error.message); }
+          // Écriture soumise au même verrou optimiste que cloudSave().
+          // En cas de conflit, saveOk reste false : les rapports ne sont PAS
+          // marqués 'imported' et seront réimportés au prochain chargement.
+          var saveRes = await ccWrite(payload);
+          if(saveRes.ok){ saveOk = true; setBar('ok','Synchronisé ✓ '+new Date().toLocaleTimeString()); }
+          else if(saveRes.conflict){
+            CC_CONFLICT = true; ccShowConflict(payload);
+            setBar('error','⚠ Conflit de version — import des rapports reporté');
+          }
+          else{ setBar('ok','Erreur sauvegarde: '+saveRes.error); }
         }
       }catch(e2){ console.warn('importMobileReports cloudSave:', e2); }
 
