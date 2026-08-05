@@ -7005,13 +7005,16 @@ const SAF_FAMILY_BY_ID = Object.fromEntries(SAF_EVENT_FAMILIES.map(function(f){r
 //  separately, carry their justification, and are merged at load.
 // ══════════════════════════════════════════════════════════════════
 var SAF_CUSTOM_FAMILIES = [];
-try { SAF_CUSTOM_FAMILIES = JSON.parse(localStorage.getItem('safCustomFamilies')||'[]')||[]; } catch(e){ SAF_CUSTOM_FAMILIES = []; }
-SAF_CUSTOM_FAMILIES.forEach(function(f){
-  if(!f||!f.id||SAF_FAMILY_BY_ID[f.id])return;
-  f.custom = true;
-  SAF_EVENT_FAMILIES.push(f);
-  SAF_FAMILY_BY_ID[f.id] = f;
-});
+try { SAF_CUSTOM_FAMILIES = JSON.parse(localStorage.getItem('safCustomFamilies')||'[]'); } catch(e){ SAF_CUSTOM_FAMILIES = []; }
+if(!Array.isArray(SAF_CUSTOM_FAMILIES)) SAF_CUSTOM_FAMILIES = [];
+try {
+  SAF_CUSTOM_FAMILIES.forEach(function(f){
+    if(!f||!f.id||SAF_FAMILY_BY_ID[f.id])return;
+    f.custom = true;
+    SAF_EVENT_FAMILIES.push(f);
+    SAF_FAMILY_BY_ID[f.id] = f;
+  });
+} catch(e){ SAF_CUSTOM_FAMILIES = []; }
 
 function safSaveCustomFamilies(){
   try { localStorage.setItem('safCustomFamilies', JSON.stringify(SAF_CUSTOM_FAMILIES)); } catch(e){}
