@@ -8833,6 +8833,32 @@ try {
   localStorage.setItem('safChangeStudies', JSON.stringify(CHANGE_STUDIES));
 } catch(e) { console.warn('Seed MOC night firefighting injection failed:', e); }
 
+// ── Réinjection des MOC embarqués après tout rechargement de CHANGE_STUDIES ──
+// Trois chemins écrasent CHANGE_STUDIES (restauration Supabase, import JSON, chargement cloud).
+// Sans réinjection, les études embarquées disparaissent silencieusement tant qu'elles n'ont pas
+// été synchronisées une première fois vers le cloud.
+window.__safReinjectSeedMocs = function(){
+  try {
+    if (typeof CHANGE_STUDIES === 'undefined') return false;
+    var seeds = [];
+    ['_seedMocCargohook','_seedMocFuelTanks','_seedMocReorg','_seedMocNight'].forEach(function(n){
+      try { var v = eval(n); if (v && v.ref) seeds.push(v); } catch(e) {}
+    });
+    var changed = false;
+    seeds.forEach(function(seed){
+      var i = CHANGE_STUDIES.findIndex(function(cs){ return cs && cs.ref === seed.ref; });
+      if (i >= 0) {
+        if (JSON.stringify(CHANGE_STUDIES[i]) !== JSON.stringify(seed)) { CHANGE_STUDIES[i] = seed; changed = true; }
+      } else { CHANGE_STUDIES.push(seed); changed = true; }
+    });
+    if (changed) {
+      try { localStorage.setItem('safChangeStudies', JSON.stringify(CHANGE_STUDIES)); } catch(e) {}
+      try { if (typeof window.safCloudScheduleSave === 'function') window.safCloudScheduleSave(); } catch(e) {}
+    }
+    return changed;
+  } catch(e) { console.warn('Réinjection des seeds MOC impossible:', e); return false; }
+};
+
 
 // ══════════════════════════════════════════════════════════════════
 // NAVIGATION
@@ -9027,6 +9053,7 @@ function safImportAllData(evt){
         var savedCS = JSON.parse(data.safChangeStudies||'[]');
         if(Array.isArray(savedCS)) CHANGE_STUDIES = savedCS;
       }catch(err){}
+      try{ if(typeof window.__safReinjectSeedMocs==='function') window.__safReinjectSeedMocs(); }catch(err){}
       // Refresh the interface
       try{ updateCounts(); }catch(err){}
       try{ renderDashboard(); }catch(err){}
@@ -11432,6 +11459,7 @@ function importJSON(event) {
           const savedCS = JSON.parse(data.safChangeStudies||'[]');
           if(Array.isArray(savedCS)){ CHANGE_STUDIES.length=0; savedCS.forEach(s=>CHANGE_STUDIES.push(s)); }
         } catch(err2){}
+        try{ if(typeof window.__safReinjectSeedMocs==='function') window.__safReinjectSeedMocs(); }catch(err2){}
 
         updateCounts();
         try{ renderExportView(); }catch(err2){}
@@ -21013,6 +21041,7 @@ setTimeout(function(){
           if(typeof _seedMocCargohook!=='undefined' && _seedMocCargohook) _seedsToCheck.push(_seedMocCargohook);
           if(typeof _seedMocFuelTanks!=='undefined' && _seedMocFuelTanks) _seedsToCheck.push(_seedMocFuelTanks);
           if(typeof _seedMocReorg!=='undefined' && _seedMocReorg) _seedsToCheck.push(_seedMocReorg);
+          if(typeof _seedMocNight!=='undefined' && _seedMocNight) _seedsToCheck.push(_seedMocNight);
           var _seedsAdded = false;
           _seedsToCheck.forEach(function(seed){
             var _idx = CHANGE_STUDIES.findIndex(function(cs){ return cs && cs.ref === seed.ref; });
