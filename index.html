@@ -169,7 +169,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   <div class="header-right">
     <span id="saf-user-info"></span>
     <span id="saf-role-badge" style="display:none;font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;padding:2px 7px;border-radius:3px;border:1px solid;"></span>
-    <button id="saf-login-trigger-btn" style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);background:none;border:1px solid rgba(255,255,255,.1);padding:4px 10px;border-radius:4px;cursor:pointer;letter-spacing:.04em;">Connexion administrateur<span class="bi-en">Administrator login</span></button>
+    <button id="saf-login-trigger-btn" style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);background:none;border:1px solid rgba(255,255,255,.1);padding:4px 10px;border-radius:4px;cursor:pointer;letter-spacing:.04em;">Connexion utilisateur<span class="bi-en">User sign-in</span></button>
     <button id="saf-logout-btn" style="display:none">Déconnexion<span class="bi-en">Sign out</span></button>
     <div class="header-badge">FOCA / EASA</div>
   </div>
@@ -179,7 +179,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   <p class="section-label">Accès aux outils<span class="bi-en">Tool access</span></p>
   <div class="tools-grid">
 
-    <a class="tool-card" href="SAF_International_Safety.html">
+    <a class="tool-card" href="Archives/SAF_International_Safety.html">
       <div class="tool-header">
         <div class="tool-icon icon-sms">🛡️</div>
         <span class="tool-name">Gestion de la sécurité<span class="bi-en">Safety Management</span></span>
@@ -254,18 +254,19 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   var SAF_ROLE = 'reader';
 
   function applyRole(role, label){
+    role = (role === 'admin' || role === 'editor') ? role : 'reader';
     SAF_ROLE = role;
     var badge = document.getElementById('saf-role-badge');
     if(badge){
-      badge.textContent  = role === 'admin' ? 'ADMIN' : 'LECTURE SEULE / READ ONLY';
-      badge.style.color  = role === 'admin' ? '#C9A227' : '#6a82a5';
-      badge.style.borderColor = role === 'admin' ? 'rgba(201,162,39,.4)' : 'rgba(106,130,165,.3)';
+      badge.textContent = role === 'admin' ? 'ADMIN' : (role === 'editor' ? 'EDITOR' : 'LECTURE SEULE / READ ONLY');
+      badge.style.color = role === 'admin' ? '#C9A227' : (role === 'editor' ? '#70d0a0' : '#6a82a5');
+      badge.style.borderColor = role === 'admin' ? 'rgba(201,162,39,.4)' : (role === 'editor' ? 'rgba(60,200,130,.4)' : 'rgba(106,130,165,.3)');
       badge.style.display = 'inline-block';
     }
-    // Export/Import : admin uniquement
+    // Les sauvegardes/restaurations globales restent réservées à l'administrateur.
     var bar = document.getElementById('export-bar');
     if(bar) bar.style.display = role === 'admin' ? 'flex' : 'none';
-    // Publie le rôle pour les outils via localStorage
+    // Publie le rôle pour les outils via localStorage (confort UI uniquement ; la sécurité reste côté Supabase/RLS).
     try { localStorage.setItem('saf_role', role + '|' + (label || 'guest')); } catch(e){}
   }
 

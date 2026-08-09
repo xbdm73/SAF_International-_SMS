@@ -2662,7 +2662,7 @@ var SAF_APP_LOGO_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+UAA
 <script data-cert-assets="true">
 (function(){
   window.SAF_CERT_BACKGROUND_SVG = "";
-  window.SAF_CERT_TEMPLATE_HTML = "<!doctype html>
+  window.SAF_CERT_TEMPLATE_HTML = `<!doctype html>
 <html lang=\"en\">
 <head>
 <meta charset=\"utf-8\">
@@ -2793,7 +2793,7 @@ h1 {
   </main>
 </section>
 </body>
-</html>";
+</html>`;
   window.downloadCertBackground = function(){
     var byteCharacters = atob(SVG_BG.split(',')[1]);
     var byteNumbers = new Array(byteCharacters.length);
@@ -2869,7 +2869,7 @@ h1 {
 <div id="saf-cloud-bar">
   <span class="dot"></span><span id="saf-cloud-txt">Synchronisé</span>
   <span id="saf-role-badge" style="display:none;font-size:9px;letter-spacing:.1em;padding:2px 7px;border-radius:3px;border:1px solid;"></span>
-  <button id="saf-login-trigger-btn">Connexion admin</button>
+  <button id="saf-login-trigger-btn">Connexion utilisateur</button>
   <button id="saf-logout-btn" style="display:none">Déconnexion</button>
 </div>
 
@@ -3105,15 +3105,16 @@ h1 {
       var res = await db.from('user_roles').select('role').eq('user_email', email).single();
       SAF_ROLE = (res.data && res.data.role) ? res.data.role : 'reader';
     } catch(e) { SAF_ROLE = 'reader'; }
-    // Badge
+    SAF_ROLE = (SAF_ROLE === 'admin' || SAF_ROLE === 'editor') ? SAF_ROLE : 'reader';
     var badge = document.getElementById('saf-role-badge');
     if(badge){
-      badge.textContent  = SAF_ROLE === 'admin' ? 'ADMIN' : 'READ ONLY';
-      badge.style.color  = SAF_ROLE === 'admin' ? '#C9A227' : '#9fc4e8';
-      badge.style.borderColor = SAF_ROLE === 'admin' ? 'rgba(201,162,39,.4)' : 'rgba(106,130,165,.3)';
+      badge.textContent = SAF_ROLE === 'admin' ? 'ADMIN' : (SAF_ROLE === 'editor' ? 'EDITOR' : 'READ ONLY');
+      badge.style.color = SAF_ROLE === 'admin' ? '#C9A227' : (SAF_ROLE === 'editor' ? '#70d0a0' : '#9fc4e8');
+      badge.style.borderColor = SAF_ROLE === 'admin' ? 'rgba(201,162,39,.4)' : (SAF_ROLE === 'editor' ? 'rgba(60,200,130,.4)' : 'rgba(106,130,165,.3)');
       badge.style.display = 'inline-block';
     }
-    if(SAF_ROLE !== 'admin') applyReadOnly();
+    if(SAF_ROLE === 'reader') applyReadOnly();
+    if(SAF_ROLE === 'editor') applyEditorMode();
     try { localStorage.setItem('saf_role', SAF_ROLE + '|' + email); } catch(e){}
   }
 
@@ -3144,6 +3145,71 @@ h1 {
       el.style.opacity = '0.6'; el.title = 'Lecture seule';
       el.__safLocked = true;
     });
+  }
+
+  // ── MODE ÉDITEUR : saisie de données autorisée, structure réservée à l'admin ──
+  function lockEditorStructureIn(root){
+    if(!root || !root.querySelectorAll) return;
+    var structuralTables = '#t-omm,#t-oma,#t-omb,#t-omc,#t-omd,#t-ome,#t-heslo,#t-mcf';
+
+    // Métadonnées documentaires et listes d'appendices = structure contrôlée.
+    Array.prototype.slice.call(root.querySelectorAll(structuralTables + ' [contenteditable="true"]')).forEach(function(el){
+      if(el.__safEditorLocked) return;
+      el.setAttribute('contenteditable','false');
+      el.style.opacity = '0.72'; el.title = 'Structure réservée à l’administrateur';
+      el.__safEditorLocked = true;
+    });
+    Array.prototype.slice.call(root.querySelectorAll(structuralTables + ' select, .saf-edit-meta input')).forEach(function(el){
+      if(el.__safEditorLocked) return;
+      el.disabled = true; el.style.opacity = '0.55'; el.title = 'Structure réservée à l’administrateur';
+      el.__safEditorLocked = true;
+    });
+    Array.prototype.slice.call(root.querySelectorAll(structuralTables + ' .row-actions button, button[onclick*="addRow("], button[onclick*="saveHTML"], #saf-import-drop-zone')).forEach(function(el){
+      if(el.__safEditorLocked) return;
+      el.disabled = true; el.style.opacity = '0.35'; el.style.cursor = 'not-allowed'; el.title = 'Action réservée à l’administrateur';
+      el.__safEditorLocked = true;
+    });
+  }
+
+  function guardEditorStructureFunctions(){
+    if(window.__safEditorFunctionsGuarded) return;
+    window.__safEditorFunctionsGuarded = true;
+    ['saveHTML','safImportAppendicesData'].forEach(function(name){
+      var orig = window[name];
+      if(typeof orig !== 'function') return;
+      window[name] = function(){
+        setBar('ok','Action réservée à l’administrateur');
+        return;
+      };
+    });
+    if(typeof window.addRow === 'function'){
+      var origAddRow = window.addRow;
+      window.addRow = function(tableId){
+        if(['t-omm','t-oma','t-omb','t-omc','t-omd','t-ome','t-heslo','t-mcf'].indexOf(tableId) !== -1){
+          setBar('ok','Structure réservée à l’administrateur');
+          return;
+        }
+        return origAddRow.apply(this, arguments);
+      };
+    }
+  }
+
+  function applyEditorMode(){
+    var banner = document.createElement('div');
+    banner.id = 'saf-editor-banner';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(20,80,55,.94);border-bottom:1px solid rgba(60,200,130,.4);padding:5px 16px;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;color:#9ff0c0;text-align:center;pointer-events:none;';
+    banner.textContent = '✎ MODE ÉDITEUR — saisie et modification des données autorisées · structure documentaire réservée à l’administrateur.';
+    document.body.prepend(banner);
+    guardEditorStructureFunctions();
+    setTimeout(function(){ lockEditorStructureIn(document); }, 800);
+    if(!window.__safEditorObserver){
+      window.__safEditorObserver = new MutationObserver(function(mutations){
+        mutations.forEach(function(m){
+          m.addedNodes && m.addedNodes.forEach(function(node){ if(node.nodeType === 1) lockEditorStructureIn(node); });
+        });
+      });
+      window.__safEditorObserver.observe(document.body,{childList:true,subtree:true});
+    }
   }
 
   function applyReadOnly(){
