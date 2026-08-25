@@ -15304,7 +15304,7 @@ function occEccairsDeadlineSpanHtml(deadline, sentVal){
   var col = OCC_ECCAIRS_STATUS_COLORS[st.level]||'#8896a0';
   var dstr = deadline ? deadline.toLocaleDateString('fr-FR') : '—';
   var sub = sentVal ? st.label : (typeof st.daysLeft==='number' ? (st.daysLeft<0 ? st.label : Math.ceil(st.daysLeft)+'j restants — '+st.label) : st.label);
-  return '<span style="color:'+col+';font-weight:700;">'+dstr+'</span><br/><span style="color:'+col+';font-size:9px;">'+occHtmlEsc(sub)+'</span>';
+  return '<span style="color:'+col+';font-family:var(--font-mono);font-size:10px;font-weight:700;">'+dstr+'</span><br/><span style="color:'+col+';font-family:var(--font-mono);font-size:9px;">'+occHtmlEsc(sub)+'</span>';
 }
 // Shows/hides the ECCAIRS2 date fields depending on the "notifiable" checkbox.
 function occToggleEccairsReportable(){
@@ -15375,29 +15375,29 @@ function renderECCAIRSTracker(){
     // Col 1 — initial ECCAIRS2 notification (72h)
     var stSubmit=occDeadlineStatus(dl?dl.submit:null, o.eccairs_submitted_date);
     if(stSubmit.level==='overdue') overdueCount++; else if(stSubmit.level==='critical'||stSubmit.level==='warning') warnCount++;
-    var cellSubmit='<td style="padding:8px 10px;text-align:center;border-left:1px solid rgba(255,255,255,.06);">'+occEccairsDeadlineSpanHtml(dl?dl.submit:null, o.eccairs_submitted_date)+'</td>';
+    var cellSubmit='<td style="padding:8px 14px;text-align:center;border-left:1px solid rgba(255,255,255,.06);">'+occEccairsDeadlineSpanHtml(dl?dl.submit:null, o.eccairs_submitted_date)+'</td>';
 
     // Col 2 — root cause analysis (1 month after ECCAIRS2 submission)
     var cellRca;
     if(!dl || !dl.rca){
-      cellRca='<td style="padding:8px 10px;text-align:center;border-left:1px solid rgba(255,255,255,.06);font-family:var(--font-mono);font-size:9px;color:var(--grey-400);">En attente de soumission ECCAIRS2</td>';
+      cellRca='<td style="padding:8px 14px;text-align:center;border-left:1px solid rgba(255,255,255,.06);font-family:var(--font-mono);font-size:9px;color:var(--grey-400);">En attente de soumission ECCAIRS2</td>';
     } else if(rcaDone){
-      cellRca='<td style="padding:8px 10px;text-align:center;border-left:1px solid rgba(255,255,255,.06);"><span style="color:#3fb950;font-weight:700;">'+dl.rca.toLocaleDateString('fr-FR')+'</span><br/><span style="color:#3fb950;font-size:9px;">✓ 5 Whys complétée</span></td>';
+      cellRca='<td style="padding:8px 14px;text-align:center;border-left:1px solid rgba(255,255,255,.06);"><span style="color:#3fb950;font-family:var(--font-mono);font-size:10px;font-weight:700;">'+dl.rca.toLocaleDateString('fr-FR')+'</span><br/><span style="color:#3fb950;font-family:var(--font-mono);font-size:9px;">✓ 5 Whys complétée</span></td>';
     } else {
       var stRca=occDeadlineStatus(dl.rca, '');
       if(stRca.level==='overdue') overdueCount++; else if(stRca.level==='critical'||stRca.level==='warning') warnCount++;
-      cellRca='<td style="padding:8px 10px;text-align:center;border-left:1px solid rgba(255,255,255,.06);">'+occEccairsDeadlineSpanHtml(dl.rca, '')+'</td>';
+      cellRca='<td style="padding:8px 14px;text-align:center;border-left:1px solid rgba(255,255,255,.06);">'+occEccairsDeadlineSpanHtml(dl.rca, '')+'</td>';
     }
 
     // Col 3 — final analysis (3 months after the event)
     var stFinal=occDeadlineStatus(dl?dl.final:null, o.notif_final_date);
     if(stFinal.level==='overdue') overdueCount++; else if(stFinal.level==='critical'||stFinal.level==='warning') warnCount++;
-    var cellFinal='<td style="padding:8px 10px;text-align:center;border-left:1px solid rgba(255,255,255,.06);">'+occEccairsDeadlineSpanHtml(dl?dl.final:null, o.notif_final_date)+'</td>';
+    var cellFinal='<td style="padding:8px 14px;text-align:center;border-left:1px solid rgba(255,255,255,.06);">'+occEccairsDeadlineSpanHtml(dl?dl.final:null, o.notif_final_date)+'</td>';
 
     return '<tr style="border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer;" onclick="showOccurrenceForm(\''+o.id.replace(/'/g,"\\'")+'\')" title="Ouvrir l\'occurrence">'
-      +'<td style="padding:8px 10px;font-family:var(--font-mono);font-size:11px;color:var(--white);font-weight:700;">'+occHtmlEsc(o.id)+'</td>'
-      +'<td style="padding:8px 10px;font-family:var(--font-mono);font-size:11px;color:var(--grey-200);">'+occHtmlEsc(o.date||'')+'</td>'
-      +'<td style="padding:8px 10px;font-family:var(--font-mono);font-size:10px;color:var(--grey-200);text-transform:uppercase;">'+occHtmlEsc(o.severity||'')+'</td>'
+      +'<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);font-weight:700;">'+occHtmlEsc(o.id)+'</td>'
+      +'<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--grey-200);">'+occHtmlEsc(o.date||'')+'</td>'
+      +'<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--grey-200);text-transform:uppercase;">'+occHtmlEsc(o.severity||'')+'</td>'
       +cellSubmit+cellRca+cellFinal+'</tr>';
   }).join('');
   var badge = overdueCount
@@ -15409,14 +15409,14 @@ function renderECCAIRSTracker(){
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">'
     +'<div><div class="chart-title" style="margin:0;">📅 Suivi des délais de notification ECCAIRS2</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-top:2px;">Règl. (UE) 376/2014 art. 4 · événements marqués « notifiable ECCAIRS2 » — 72h / 1 mois (causes racines) / 3 mois</div></div>'
     +'<div>'+badge+'</div></div>'
-    +'<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
-    +'<thead><tr style="border-bottom:1px solid rgba(255,255,255,.12);">'
-    +'<th style="text-align:left;padding:6px 10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);text-transform:uppercase;letter-spacing:.06em;">ID</th>'
-    +'<th style="text-align:left;padding:6px 10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);text-transform:uppercase;letter-spacing:.06em;">Date</th>'
-    +'<th style="text-align:left;padding:6px 10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);text-transform:uppercase;letter-spacing:.06em;">Sévérité</th>'
-    +'<th style="text-align:center;padding:6px 10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);text-transform:uppercase;letter-spacing:.06em;border-left:1px solid rgba(255,255,255,.06);">Notification ECCAIRS2<br/>72h</th>'
-    +'<th style="text-align:center;padding:6px 10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);text-transform:uppercase;letter-spacing:.06em;border-left:1px solid rgba(255,255,255,.06);">Causes racines<br/>J+1 mois</th>'
-    +'<th style="text-align:center;padding:6px 10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);text-transform:uppercase;letter-spacing:.06em;border-left:1px solid rgba(255,255,255,.06);">Analyse finale<br/>3 mois</th>'
+    +'<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;">'
+    +'<thead><tr style="background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.12);">'
+    +'<th style="text-align:left;padding:10px 14px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">ID</th>'
+    +'<th style="text-align:left;padding:10px 14px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">Date</th>'
+    +'<th style="text-align:left;padding:10px 14px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">Sévérité</th>'
+    +'<th style="text-align:center;padding:10px 14px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);border-left:1px solid rgba(255,255,255,.06);">Notification ECCAIRS2<br/>72h</th>'
+    +'<th style="text-align:center;padding:10px 14px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);border-left:1px solid rgba(255,255,255,.06);">Causes racines<br/>J+1 mois</th>'
+    +'<th style="text-align:center;padding:10px 14px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);border-left:1px solid rgba(255,255,255,.06);">Analyse finale<br/>3 mois</th>'
     +'</tr></thead><tbody>'+rows+'</tbody></table></div>'
     +'<div style="margin-top:10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-600);">Cliquez sur une ligne pour ouvrir l\'occurrence, cocher « notifiable ECCAIRS2 » et renseigner la date de soumission.</div>'
     +'</div>';
