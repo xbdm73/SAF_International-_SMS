@@ -1927,6 +1927,15 @@ nav { top: 118px !important; }
       </div>
     </div>
 
+    <!-- Row 6b: justification de la cotation (ICAO Doc 9859 §2.5) -->
+    <div style="margin-bottom:16px;">
+      <label style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);letter-spacing:.06em;display:block;margin-bottom:6px;">
+        RATING RATIONALE <span id="em-rr-req" style="color:#e05000;"></span>
+      </label>
+      <textarea id="em-rating-rationale" rows="3" placeholder="Pourquoi la probabilité (et/ou la gravité) passe de la cotation initiale à la cotation résiduelle : quelles barrières agissent, sur quel mécanisme, avec quelle preuve ou quelle référence." style="width:100%;background:var(--navy-deep);border:1px solid rgba(255,255,255,.12);color:var(--white);font-family:var(--font-mono);font-size:11px;padding:8px 12px;border-radius:6px;box-sizing:border-box;resize:vertical;line-height:1.5;"></textarea>
+      <div id="em-rr-guard" style="margin-top:8px;font-family:var(--font-mono);font-size:10.5px;line-height:1.5;"></div>
+    </div>
+
     <!-- Row 7: Phase + Doc ref + Control status -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;">
       <div>
@@ -2869,6 +2878,19 @@ function updateOaciDefinitionDropdown(sel) {
       <label class="field-label">Objectifs de sécurité de l'année (mesurables)</label>
       <textarea id="sp-objectives" rows="6" placeholder="1- Objectif mesurable n°1 (ex. réduire le taux d'événements HESLO de X%)&#10;2- Objectif mesurable n°2…" oninput="spOnContentChanged()"></textarea>
     </div>
+  </div>
+
+  <!-- ═══ OBJECTIFS MESURABLES RELIÉS AUX SPI ═══════════════════════════════ -->
+  <div class="chart-card" style="padding:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:10px;">
+      <div class="chart-title" style="margin:0;">1 bis — Objectifs mesurables et indicateurs associés</div>
+      <button onclick="soAdd()" style="padding:7px 16px;background:rgba(74,159,224,.18);border:1px solid var(--steel-bright);border-radius:6px;color:var(--steel-bright);font-family:var(--font-mono);font-size:11px;font-weight:700;cursor:pointer;">＋ Nouvel objectif</button>
+    </div>
+    <div style="font-size:10.5px;color:var(--grey-400);line-height:1.55;margin-bottom:14px;">
+      AMC1 ORO.GEN.200(a)(1) et (a)(3) — un objectif de sécurité n'est démontrable que s'il est rattaché à au moins un indicateur mesuré. Chaque objectif ci-dessous est relié aux SPI qui servent à en juger l'atteinte ; la couverture est reportée dans la vue Safety Performance Indicators.
+    </div>
+    <div id="so-list"></div>
+    <div id="so-coverage" style="margin-top:14px;"></div>
   </div>
 
   <div class="chart-card" style="padding:20px;">
@@ -4778,7 +4800,10 @@ function safBarrierOriginPopup(bid){
       })()
     +row('Preuve','<span style="font-family:var(--font-mono);font-size:10px;color:var(--gold-light);">'+safBrkEsc(o.evidence||'—')+'</span>')
     +(o.rationale?row('Motif',safBrkEsc(o.rationale)):'')
-    +row('Responsable',safBrkEsc(b.owner||'—'))
+    +row('Responsable',safBrkEsc(b.owner||'—')+(b.owner?'':' <span style="color:#e05000;font-family:var(--font-mono);font-size:10px;">— à désigner</span>'))
+    +row('Preuves d\'application',(Array.isArray(b.evidence)&&b.evidence.length)
+        ? b.evidence.map(function(ev){return '<div style="font-family:var(--font-mono);font-size:10px;color:var(--gold-light);">• '+safBrkEsc(ev)+'</div>';}).join('')
+        : '<span style="color:#e05000;font-family:var(--font-mono);font-size:10px;">aucune preuve enregistrée</span>')
     +row('Créée le',safBrkEsc((b.created_at||'').slice(0,10)||'—')+(b.created_by?' par '+safBrkEsc(b.created_by):''))
     +(b.superseded_by?row('Remplacée par',safBrkEsc(b.superseded_by)):'')
     +'</div>'
@@ -4788,13 +4813,73 @@ function safBarrierOriginPopup(bid){
        +'<span style="font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);flex-shrink:0;min-width:105px;">'+safBrkEsc(x.bid)+'</span>'
        +'<span style="font-size:11px;color:var(--grey-200);">'+safBrkEsc(x.text)+'</span></div>';}).join('')
       :'<div style="font-size:11px;color:var(--grey-400);font-style:italic;">Aucune — cette origine n a produit que cette barrière.</div>')
-    +'</div></div>';
+    +'</div>'
+    /* ═══════════════════════════════════════════════════════════════════════
+       SAF 2026-08-25 · POINT 3 — RESPONSABLE ET PREUVES SAISISSABLES
+       ICAO Doc 9859 : une barrière sans propriétaire désigné et sans preuve
+       d'application n'est pas une barrière, c'est une intention. Les champs
+       existaient dans le modèle de données mais n'étaient qu'affichés.
+       ═══════════════════════════════════════════════════════════════════════ */
+    +'<div class="chart-card" style="padding:16px 18px;margin-top:16px;border-left:3px solid var(--gold);">'
+    +'<div class="chart-title" style="margin:0 0 4px;">✍ Responsable et preuves</div>'
+    +'<div style="font-size:10px;color:var(--grey-400);margin-bottom:12px;line-height:1.5;">Le responsable répond de l\'application de cette barrière. Les preuves sont les références vérifiables qui démontrent qu\'elle est réellement appliquée (compte rendu de formation, carte de contrôle, rapport d\'audit, enregistrement de vol…), une par ligne.</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
+    +'<div><label style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);display:block;margin-bottom:5px;">RESPONSABLE</label>'
+    +'<input id="saf-brk-owner" type="text" value="'+safBrkEsc(b.owner||'')+'" placeholder="ex. NPFO, NPCA, Base Manager Sion…" style="width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.14);color:var(--white);font-family:var(--font-mono);font-size:11px;padding:8px 10px;border-radius:6px;box-sizing:border-box;"/></div>'
+    +'<div><label style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);display:block;margin-bottom:5px;">STATUT DE LA BARRIÈRE</label>'
+    +'<select id="saf-brk-status" style="width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.14);color:var(--white);font-family:var(--font-mono);font-size:11px;padding:8px 10px;border-radius:6px;box-sizing:border-box;">'
+    +['active','superseded'].map(function(v){return '<option value="'+v+'"'+((b.status||'active')===v?' selected':'')+' style="background:#0d1b2a;color:#f4f6f8;">'+v+'</option>';}).join('')
+    +'</select></div></div>'
+    +'<div style="margin-top:12px;"><label style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);display:block;margin-bottom:5px;">PREUVES D\'APPLICATION — UNE PAR LIGNE</label>'
+    +'<textarea id="saf-brk-evidence" rows="4" placeholder="ex. TM28-OMD — FSTD session 2026-03, 6 pilotes&#10;ex. Audit interne CMS-2026-07, échantillon 3 vols" style="width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.14);color:var(--white);font-family:var(--font-mono);font-size:11px;padding:8px 10px;border-radius:6px;box-sizing:border-box;resize:vertical;line-height:1.5;">'
+    +safBrkEsc((Array.isArray(b.evidence)?b.evidence:(b.evidence?[b.evidence]:[])).join('\n'))+'</textarea></div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap;">'
+    +'<span id="saf-brk-save-fb" style="font-family:var(--font-mono);font-size:10px;min-height:14px;"></span>'
+    +'<button onclick="safBarrierSaveOwnership(decodeURIComponent(\''+encodeURIComponent(bid)+'\'))" style="padding:8px 18px;background:rgba(201,162,39,.18);border:1px solid var(--gold);border-radius:6px;color:var(--gold-light);font-family:var(--font-mono);font-size:11px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>'
+    +'</div></div>'
+    +'</div>';
+}
+
+/* Enregistre le responsable, les preuves et le statut d'une barrière. */
+function safBarrierSaveOwnership(bid){
+  var fb=document.getElementById('saf-brk-save-fb');
+  var set=function(msg,col){ if(fb){ fb.textContent=msg; fb.style.color=col; } };
+  var b=null, risk=null;
+  for(var i=0;i<DB.length;i++){
+    var arr=(DB[i].barriers||[]);
+    for(var j=0;j<arr.length;j++) if(arr[j].bid===bid){ b=arr[j]; risk=DB[i]; break; }
+    if(b) break;
+  }
+  if(!b){ set('✗ Barrière introuvable','#ff8080'); return; }
+  var owner=(document.getElementById('saf-brk-owner')||{}).value||'';
+  var status=(document.getElementById('saf-brk-status')||{}).value||'active';
+  var evRaw=(document.getElementById('saf-brk-evidence')||{}).value||'';
+  var evidence=evRaw.split('\n').map(function(x){return x.trim();}).filter(Boolean);
+  var changes=[];
+  if(String(b.owner||'')!==String(owner.trim())) changes.push('responsable: "'+(b.owner||'—')+'" → "'+(owner.trim()||'—')+'"');
+  if(JSON.stringify(b.evidence||[])!==JSON.stringify(evidence)) changes.push('preuves: '+((b.evidence||[]).length)+' → '+evidence.length);
+  if(String(b.status||'active')!==status) changes.push('statut: '+(b.status||'active')+' → '+status);
+  if(!changes.length){ set('Aucune modification','var(--grey-400)'); return; }
+  b.owner=owner.trim();
+  b.evidence=evidence;
+  b.status=status;
+  if(!Array.isArray(risk.history)) risk.history=[];
+  risk.history.push((typeof safStamp==='function')
+    ? safStamp({action:'barrier_ownership_updated',bid:bid,reason:changes.join(' ; ')})
+    : {action:'barrier_ownership_updated',date:new Date().toISOString(),bid:bid,reason:changes.join(' ; ')});
+  risk.updated_at=new Date().toISOString();
+  try{ saveDB(); }catch(e){}
+  try{ if(typeof renderTable==='function') renderTable(); }catch(e){}
+  set('✓ Enregistré — '+changes.join(' ; '),'#5cc990');
+  if(typeof showToast==='function') showToast('✓ Barrière '+bid+' mise à jour','success');
+  setTimeout(function(){ safBarrierOriginPopup(bid); },700);
 }
 window.safBarriersSync=safBarriersSync;
 window.safBarriersSyncAll=safBarriersSyncAll;
 window.safBarriersBackfillAll=safBarriersBackfillAll;
 window.fmtBarriers=fmtBarriers;
 window.safBarrierOriginPopup=safBarrierOriginPopup;
+window.safBarrierSaveOwnership=safBarrierSaveOwnership;
 
 // ── Dictionnaire des identifiants d origine legacy ──────────────────────────
 // Un identifiant comme COL-4 ne veut rien dire seul : le registre legacy n a
@@ -9477,6 +9562,76 @@ function riskBadgeHTML(code) {
    ═══════════════════════════════════════════════════════════════════════════ */
 function safResidualTarget(r){ return (r && r.residual_risk) || ''; }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   SAF 2026-08-25 · GARDE-FOU DE COTATION
+   ICAO Doc 9859 §2.5 · AMC1 ORO.GEN.200(a)(3) : une réduction de cotation doit
+   être justifiée par un mécanisme identifié, pas postulée. Le registre affichait
+   5 textes de justification pour 73 scénarios et des baisses allant jusqu'à
+   trois classes de probabilité. Ce contrôle rend la justification exigible et
+   proportionnée à l'ampleur de la baisse revendiquée.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var SAF_SEV_ORDER = {A:5, B:4, C:3, D:2, E:1};
+var SAF_GENERIC_RATIONALES = [
+  'residual probability reduced by documented barriers; consequence severity retained from the initial credible outcome.'
+];
+function _safNorm(t){ return String(t||'').toLowerCase().replace(/\s+/g,' ').trim(); }
+
+function safRatingGuard(initial, residual, rationale){
+  var res = { level:'ok', drop:0, sevDrop:0, need:0, msg:'' };
+  var ip = parseInt(String(initial||'').charAt(0),10), is = String(initial||'').charAt(1);
+  var rp = parseInt(String(residual||'').charAt(0),10), rs = String(residual||'').charAt(1);
+  if(!ip || !rp || !SAF_SEV_ORDER[is] || !SAF_SEV_ORDER[rs]) return res;
+  res.drop    = ip - rp;
+  res.sevDrop = SAF_SEV_ORDER[is] - SAF_SEV_ORDER[rs];
+
+  var txt = _safNorm(rationale);
+  var generic = SAF_GENERIC_RATIONALES.some(function(g){ return txt === _safNorm(g); });
+  var len = txt.length;
+
+  var reasons = [];
+  // Exigence de longueur/spécificité croissante avec l'ampleur de la baisse.
+  if(res.drop >= 3){ res.need = 150; reasons.push('baisse de ' + res.drop + ' classes de probabilité'); }
+  else if(res.drop === 2){ res.need = 90; reasons.push('baisse de 2 classes de probabilité'); }
+  if(res.sevDrop > 0){
+    res.need = Math.max(res.need, 120);
+    reasons.push('gravité réduite de ' + is + ' à ' + rs + ' — une barrière ne réduit la gravité que si elle change le scénario le plus grave crédible');
+  }
+  if(!res.need) return res;
+
+  if(generic || !len){
+    res.level = (res.drop >= 3 || res.sevDrop > 0) ? 'block' : 'warn';
+    res.msg = 'Justification ' + (len ? 'générique' : 'absente') + ' pour une ' + reasons.join(' et ')
+            + '. Indiquez le mécanisme : quelle barrière agit, sur quel enchaînement, avec quelle preuve.';
+    return res;
+  }
+  if(len < res.need){
+    res.level = (res.drop >= 3 || res.sevDrop > 0) ? 'block' : 'warn';
+    res.msg = 'Justification trop sommaire (' + len + ' caractères, ' + res.need + ' attendus) pour une '
+            + reasons.join(' et ') + '.';
+    return res;
+  }
+  res.level = 'ok';
+  res.msg = 'Justification spécifique enregistrée pour une ' + reasons.join(' et ') + '.';
+  return res;
+}
+
+/* Retour visuel en direct dans la modale d'édition. */
+function safRatingGuardRefresh(){
+  var box = document.getElementById('em-rr-guard');
+  var req = document.getElementById('em-rr-req');
+  if(!box) return;
+  var ir = (document.getElementById('em-initial-risk')||{}).value || '';
+  var rr = (document.getElementById('em-residual-risk')||{}).value || '';
+  var tx = (document.getElementById('em-rating-rationale')||{}).value || '';
+  var g = safRatingGuard(ir, rr, tx);
+  if(req) req.textContent = g.need ? '*' : '';
+  if(!g.need){ box.textContent=''; box.style.color=''; return; }
+  var col = g.level==='block' ? '#f85149' : (g.level==='warn' ? '#e3b341' : '#3fb950');
+  var icon = g.level==='block' ? '⛔' : (g.level==='warn' ? '⚠' : '✓');
+  box.style.color = col;
+  box.textContent = icon + ' ' + g.msg;
+}
+
 function safResidualIsAchieved(r){
   if(!r) return false;
   if(r.acceptance_status === 'accepted') return true;
@@ -9504,6 +9659,24 @@ function safResidualNote(r){
 }
 
 /* Cellule « résiduel » du registre : rating COURANT + rappel de la cible. */
+/* Rendu documentaire du résiduel : rating COURANT, avec la cible en rappel.
+   Utilisé par tous les exports imprimés pour qu'un document remis à l'autorité
+   dise la même chose que l'écran. */
+function safResidualDocHTML(r, colorMap){
+  var cur = safResidualCurrent(r), tgt = safResidualTarget(r);
+  var c = riskColor(cur);
+  var map = colorMap || { red:'#CC2200', orange:'#E05000', yellow:'#C9A227', green:'#1A7A32' };
+  var bg = map[c] || '#888', fg = (c === 'yellow') ? '#000' : '#fff';
+  var badge = '<span style="background:' + bg + ';color:' + fg + ';padding:2px 7px;border-radius:4px;'
+            + 'font-family:monospace;font-weight:700;">' + (cur || '—') + '</span>';
+  if(safResidualIsAchieved(r)) return badge;
+  return badge + '<div style="font-size:8px;color:#666;margin-top:2px;white-space:nowrap;">target ' + (tgt || '—') + ' — not accepted</div>';
+}
+function safResidualDocText(r){
+  var cur = safResidualCurrent(r);
+  return safResidualIsAchieved(r) ? cur : (cur + ' (target ' + (safResidualTarget(r) || '—') + ' — not accepted)');
+}
+
 function safResidualCellHTML(r){
   var cur = safResidualCurrent(r), tgt = safResidualTarget(r);
   var badge = riskBadgeHTML(cur);
@@ -9801,6 +9974,15 @@ function riskTrend(r) {
   const residual = riskScore(r.residual_risk);
   if(!initial || !residual) return 0;
   return initial - residual;
+}
+
+/* Réduction RÉELLEMENT obtenue : nulle tant que la cible résiduelle n'est pas
+   acceptée formellement. riskTrend() reste la réduction VISÉE. */
+function riskTrendCurrent(r) {
+  const initial = riskScore(r.initial_risk);
+  const current = riskScore(safResidualCurrent(r));
+  if(!initial || !current) return 0;
+  return initial - current;
 }
 
 function pct(n, d) {
@@ -10234,11 +10416,11 @@ function renderSafetyIndicators() {
   if(!el) return;
 
   const total = DB.length || 1;
-  const improved = DB.filter(r => riskTrend(r) > 0).length;
-  const unchangedOrWorse = DB.filter(r => riskTrend(r) <= 0).length;
+  const improved = DB.filter(r => riskTrendCurrent(r) > 0).length;
+  const unchangedOrWorse = DB.filter(r => riskTrendCurrent(r) <= 0).length;
   const residualHigh = DB.filter(r => ['red','orange'].includes(riskColor(safResidualCurrent(r)))).length;
   const missingControls = DB.filter(needsControlReview).length;
-  const avgReduction = DB.reduce((sum,r) => sum + Math.max(riskTrend(r), 0), 0) / total;
+  const avgReduction = DB.reduce((sum,r) => sum + Math.max(riskTrendCurrent(r), 0), 0) / total;
   const criticalResidual = DB.filter(r => riskColor(safResidualCurrent(r)) === 'red').length;
 
   /* ── helpers ── */
@@ -10309,7 +10491,7 @@ function renderSafetyIndicators() {
     {
       lbl:'Risk reduction rate',
       val: pct(improved, total),
-      note:`${improved}/${total} risks reduced from initial to residual`,
+      note:`${improved}/${total} risks with an evidenced reduction from initial to accepted residual`,
       state: rateState,
       visual: donutSVG(Math.round(rateRatio * 100), rateState)
     },
@@ -10892,6 +11074,8 @@ function editEntry(id) {
   document.getElementById('em-effectiveness-verification').value = r.effectiveness_verification || '';
   document.getElementById('em-effectiveness-due-date').value = r.effectiveness_due_date || '';
   document.getElementById('em-acceptance-basis').value = r.acceptance_basis || '';
+  var _emRR = document.getElementById('em-rating-rationale');
+  if(_emRR){ _emRR.value = r.rating_rationale || ''; _emRR.oninput = safRatingGuardRefresh; }
 
   // Build and set risk matrices
   _buildEmMatrix('em-init-matrix',  'em-init-preview',  'em-initial-risk',  r.initial_risk  || '');
@@ -10942,6 +11126,8 @@ function _emUpdatePreview(previewId, hiddenId, code) {
     preview.style.fontWeight = '800';
     preview.textContent = code || '–';
   }
+  // Toute modification d'une cotation réévalue le garde-fou.
+  try { if(typeof safRatingGuardRefresh === 'function') safRatingGuardRefresh(); } catch(e) {}
 }
 
 function closeEditModal() {
@@ -10969,6 +11155,22 @@ function saveEditModal() {
   const idx = DB.findIndex(x => x.id === _emEditingId);
   if(idx === -1) { showToast('Entry not found', 'error'); return; }
 
+  // Garde-fou de cotation : une baisse importante doit être motivée.
+  const _rat = (document.getElementById('em-rating-rationale')||{value:''}).value.trim();
+  const _guard = safRatingGuard(ir, rr, _rat);
+  if(_guard.level === 'block'){
+    safRatingGuardRefresh();
+    showToast('Cotation non enregistrée — ' + _guard.msg, 'error');
+    const _f = document.getElementById('em-rating-rationale');
+    if(_f) _f.focus();
+    return;
+  }
+  if(_guard.level === 'warn' && !confirm(_guard.msg + '\n\nEnregistrer malgré tout ? La justification restera signalée comme insuffisante en revue.')){
+    const _f2 = document.getElementById('em-rating-rationale');
+    if(_f2) _f2.focus();
+    return;
+  }
+
   const prev = DB[idx];
   const prevention  = document.getElementById('em-prevention').value.trim();
   const mitigation  = document.getElementById('em-mitigation').value.trim();
@@ -10978,7 +11180,7 @@ function saveEditModal() {
   const barrierEval = evaluateBarrierFailureFromValues(prevention, mitigation, recovery, description);
 
   const changedFields = [];
-  const trackFields = ['initial_risk','residual_risk','prevention','mitigation','recovery',
+  const trackFields = ['initial_risk','residual_risk','rating_rationale','prevention','mitigation','recovery',
     'control_status','last_control_date','linked_change_study','doc_ref','category','occurrence_category','family_id','event','dangers','consequences','risk_owner','safety_indicator','indicator_target','effectiveness_verification','effectiveness_due_date','acceptance_basis'];
   const updated = {
     ...prev,
@@ -11012,6 +11214,7 @@ function saveEditModal() {
     effectiveness_verification: document.getElementById('em-effectiveness-verification').value.trim(),
     effectiveness_due_date: document.getElementById('em-effectiveness-due-date').value,
     acceptance_basis:    document.getElementById('em-acceptance-basis').value.trim(),
+    rating_rationale:    (document.getElementById('em-rating-rationale')||{value:prev.rating_rationale||''}).value.trim(),
     acceptance_required: riskColor(rr) === 'yellow',
     acceptance_status:  riskColor(rr) === 'yellow' ? ((prev.residual_risk === rr && prev.risk_acceptance === 'accepted') ? 'accepted' : 'pending_formal_acceptance') : 'managed_under_approved_sms_procedure',
     risk_acceptance:     (prev.residual_risk === rr) ? (prev.risk_acceptance||'') : '',
@@ -11788,7 +11991,7 @@ function renderSurveillanceView(){
 // ══════════════════════════════════════════════════════════════════
 function _dbToCSV(rows) {
   const headers = ['ID','Level 1 Occurrence Category','Level 2 SAF Family','Record Kind','Legacy Domain','Event Title','Undesirable Event / Top Event','Dangers / Hazards','Consequences',
-    'Initial Risk','Prevention Measures','Mitigation Measures','Recovery Measures','Residual Risk','Rating Rationale',
+    'Initial Risk','Prevention Measures','Mitigation Measures','Recovery Measures','Residual Risk (current)','Residual Risk (target)','Residual Target Achieved','Rating Rationale',
     'Doc Reference','ECCAIRS Category','Event Type','Flight Phase','Risk Owner','Safety Indicator','Indicator Target',
     'Acceptance Required','Acceptance Status','Acceptance Basis','Acceptance Decision','Accepted By','Acceptance Date',
     'Effectiveness Verification Method','Effectiveness Due Date','Effectiveness Result','Effectiveness Evidence','Effectiveness Assessed By','Effectiveness Assessed Date',
@@ -11797,7 +12000,8 @@ function _dbToCSV(rows) {
   return [headers.map(esc).join(','),
     ...rows.map(r => [
       r.id, r.occurrence_category||'', r.family_id||'', r.record_kind||'risk_scenario', r.category, r.event, r.undesirable_event||r.event, r.dangers, r.consequences,
-      r.initial_risk, r.prevention, r.mitigation, r.recovery, r.residual_risk, r.rating_rationale,
+      r.initial_risk, r.prevention, r.mitigation, r.recovery,
+      safResidualCurrent(r), r.residual_risk, safResidualIsAchieved(r) ? 'Yes' : 'No', r.rating_rationale,
       r.doc_ref, r.eccairs_cat, r.event_type, r.phase, r.risk_owner, r.safety_indicator, r.indicator_target,
       r.acceptance_required ? 'Yes' : 'No', r.acceptance_status, r.acceptance_basis, r.risk_acceptance, r.risk_acceptance_by, r.risk_acceptance_date,
       r.effectiveness_verification, r.effectiveness_due_date, r.control_effectiveness, r.effectiveness_evidence, r.effectiveness_assessed_by, r.effectiveness_assessed_date,
@@ -11989,7 +12193,7 @@ function exportRisksToCMS() {
         r.recovery    ? 'Recovery: '    + r.recovery     : ''
       ].filter(Boolean).join(' — ') || '(no description)',
       date:          r.last_control_date || today,
-      level:         _riskToLevel(r.residual_risk),
+      level:         _riskToLevel(safResidualCurrent(r)),
       action:        [r.prevention, r.mitigation, r.recovery].filter(Boolean).join(' / '),
       owner:         r.doc_ref || '',
       status:        (r.control_status === 'clos') ? 'closed'
@@ -11998,8 +12202,10 @@ function exportRisksToCMS() {
       // Champs SMS conservés pour contexte dans le CMS
       sms_category:    r.category || '',
       sms_initial_risk: r.initial_risk || '',
-      sms_residual_risk: r.residual_risk || '',
-      sms_residual_label: _riskLabel(r.residual_risk),
+      sms_residual_risk: safResidualCurrent(r) || '',
+      sms_residual_target: r.residual_risk || '',
+      sms_residual_accepted: safResidualIsAchieved(r),
+      sms_residual_label: _riskLabel(safResidualCurrent(r)),
       sms_eccairs:     r.eccairs_cat || '',
       sms_linked_cs:   r.linked_change_study || '',
       sms_control_comment: r.control_comment || '',
@@ -12089,13 +12295,15 @@ function exportAllToCMS() {
       ref:         r.id || '?',
       description: [r.event, r.dangers ? r.dangers.replace(/\n/g,' | ') : ''].filter(Boolean).join(' — Dangers: ') || '(no description)',
       date:        r.last_control_date || today,
-      level:       _riskToLevel(r.residual_risk),
+      level:       _riskToLevel(safResidualCurrent(r)),
       action:      [r.prevention, r.mitigation, r.recovery].filter(Boolean).join(' / '),
       owner:       r.doc_ref || '',
       status:      (r.control_status === 'clos') ? 'closed' : (r.control_status === 'en-cours') ? 'progress' : 'open',
       sms_category:     r.category || '',
-      sms_residual_risk: r.residual_risk || '',
-      sms_residual_label: _riskLabel(r.residual_risk),
+      sms_residual_risk: safResidualCurrent(r) || '',
+      sms_residual_target: r.residual_risk || '',
+      sms_residual_accepted: safResidualIsAchieved(r),
+      sms_residual_label: _riskLabel(safResidualCurrent(r)),
       sms_eccairs:  r.eccairs_cat || '',
       _source: 'SAF_SMS_RiskRegister'
     };
@@ -12266,8 +12474,10 @@ function exportDashboardPDF() {
   const orange = DB.filter(r => riskColor(r.initial_risk) === 'orange').length;
   const yellow = DB.filter(r => riskColor(r.initial_risk) === 'yellow').length;
   const green  = DB.filter(r => riskColor(r.initial_risk) === 'green').length;
-  const residRed = DB.filter(r => riskColor(r.residual_risk) === 'red').length;
-  const improved = DB.filter(r => riskScore(r) > riskScore({initial_risk:'', residual_risk:r.residual_risk})).length;
+  // Résiduel COURANT : une cible non acceptée formellement ne réduit pas le risque porté.
+  const residRed = DB.filter(r => riskColor(safResidualCurrent(r)) === 'red').length;
+  const residPending = (typeof safResidualPendingCount === 'function') ? safResidualPendingCount() : 0;
+  const improved = DB.filter(r => riskScore(r.initial_risk) > riskScore(safResidualCurrent(r))).length;
   const scoreMap = {"5A":25,"5B":24,"5C":23,"4A":22,"4B":21,"4C":20,"3A":18,"3B":17,"3C":16,"2A":14,"2B":13,"2C":10,"1A":8,"1B":7,"1C":6};
   const top10 = [...DB].sort((a,b)=>(scoreMap[b.initial_risk]||0)-(scoreMap[a.initial_risk]||0)).slice(0,10);
   // Domain breakdown (level-2 families)
@@ -12308,7 +12518,8 @@ function exportDashboardPDF() {
       <div class="kpi"><div class="kpi-val" style="color:#E05000">${orange}</div><div class="kpi-lbl">Tolerable (ORANGE)</div></div>
       <div class="kpi"><div class="kpi-val" style="color:#1A7A32">${green}</div><div class="kpi-lbl">Acceptable (GREEN)</div></div>
       <div class="kpi"><div class="kpi-val" style="color:#D4A000">${CHANGE_STUDIES.length}</div><div class="kpi-lbl">Change Studies</div></div>
-      <div class="kpi"><div class="kpi-val" style="color:#CC2200">${residRed}</div><div class="kpi-lbl">Residual RED</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:#CC2200">${residRed}</div><div class="kpi-lbl">Residual RED (current)</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:#E05000">${residPending}</div><div class="kpi-lbl">Residual not accepted</div></div>
       <div class="kpi"><div class="kpi-val">${Math.round((total-red)/total*100)}%</div><div class="kpi-lbl">Reduced / Controlled</div></div>
       <div class="kpi"><div class="kpi-val">${DB.filter(r=>r.linked_change_study).length}</div><div class="kpi-lbl">Linked to Change Study</div></div>
     </div>
@@ -12356,7 +12567,7 @@ function rrExportPDF() {
 
   var cards = rows.map(function(r) {
     var ir = riskColor(r.initial_risk);
-    var rr = riskColor(r.residual_risk);
+    var rr = riskColor(safResidualCurrent(r));
     var irColors = { red:'#CC2200', orange:'#E05000', yellow:'#C9A227', green:'#1A7A32' };
     var rrColors = { red:'#CC2200', orange:'#E05000', yellow:'#C9A227', green:'#1A7A32' };
     var irBg = irColors[ir] || '#888';
@@ -12371,7 +12582,8 @@ function rrExportPDF() {
           '<div class="card-meta">' + (r.category || '') + (r.doc_ref ? ' &nbsp;·&nbsp; ' + r.doc_ref.replace(/\n/g,' ') : '') + '</div>' +
           '<div class="card-risks">' +
             '<span class="rbadge" style="background:' + irBg + ';color:' + irFg + ';">Initial: ' + (r.initial_risk||'—') + '</span>' +
-            '<span class="rbadge" style="background:' + rrBg + ';color:' + rrFg + ';">Residual: ' + (r.residual_risk||'—') + '</span>' +
+            '<span class="rbadge" style="background:' + rrBg + ';color:' + rrFg + ';">Residual (current): ' + (safResidualCurrent(r)||'—') + '</span>' +
+            (safResidualIsAchieved(r) ? '' : '<span class="rbadge" style="background:#eee;color:#555;border:1px dashed #999;">target ' + (r.residual_risk||'—') + ' — not accepted</span>') +
           '</div>' +
         '</div>' +
         '<div class="card-body">' +
@@ -12453,15 +12665,17 @@ function exportRegisterPDF() {
     <td>${safFamilyLabel(r.family_id)}</td>
     <td>${(r.event||'').slice(0,55)}</td>
     <td><span class="badge ${riskColor(r.initial_risk)}">${r.initial_risk}</span></td>
-    <td><span class="badge ${riskColor(r.residual_risk)}">${r.residual_risk}</span></td>
+    <td>${safResidualDocHTML(r)}</td>
+    <td><span class="badge ${riskColor(r.residual_risk)}">${r.residual_risk||'—'}</span></td>
     <td style="font-family:monospace;font-size:9px">${r.doc_ref||'—'}</td>
     <td style="font-family:monospace;font-size:9px">${r.linked_change_study||'—'}</td>
   </tr>`).join('');
   _printHTML('SAF Risk Register', `
     <h1>FULL RISK REGISTER</h1>
     <div class="sub">AS 332 C1 Super Puma · SAF International · ${_today()} · ${DB.length} risks</div>
+    <div class="sub" style="font-style:italic;">Residual (current) = risk actually carried. Where the residual target is not supported by evidenced barrier effectiveness and a recorded formal acceptance, the current rating remains the initial rating (ORO.GEN.200(a)(3) / ICAO Doc 9859).</div>
     <table>
-      <thead><tr><th>ID</th><th>Occurrence Category</th><th>SAF Family</th><th>Risk Scenario</th><th>Initial</th><th>Residual</th><th>Doc Ref</th><th>Change Study</th></tr></thead>
+      <thead><tr><th>ID</th><th>Occurrence Category</th><th>SAF Family</th><th>Risk Scenario</th><th>Initial</th><th>Residual (current)</th><th>Residual target</th><th>Doc Ref</th><th>Change Study</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`);
 }
@@ -12518,6 +12732,7 @@ function _buildChangeStudyReport(cs) {
     `<tr>
       <td style="font-family:monospace">${r.id}</td>
       <td><span class="badge ${riskColor(r.initial_risk)}">${r.initial_risk||'—'}</span></td>
+      <td>${safResidualDocHTML(r)}</td>
       <td><span class="badge ${riskColor(r.residual_risk)}">${r.residual_risk||'—'}</span></td>
       <td>${r.event||'—'}</td>
       <td style="font-size:9px;">${r.prevention||'—'}</td>
@@ -12622,7 +12837,7 @@ function _buildChangeStudyReport(cs) {
 
     ${versionRows ? `<h2>Version History</h2><table><thead><tr><th>Version</th><th>Status</th><th>Date</th><th>By</th><th>Note</th></tr></thead><tbody>${versionRows}</tbody></table>` : ''}
 
-    ${linkedRisks.length ? `<h2>Linked Risks (${linkedRisks.length})</h2><table><thead><tr><th>ID</th><th>Initial</th><th>Residual</th><th>Event</th><th>Prevention</th><th>Mitigation</th><th>Recovery</th></tr></thead><tbody>${riskRows}</tbody></table>` : ''}
+    ${linkedRisks.length ? `<h2>Linked Risks (${linkedRisks.length})</h2><table><thead><tr><th>ID</th><th>Initial</th><th>Residual (current)</th><th>Residual target</th><th>Event</th><th>Prevention</th><th>Mitigation</th><th>Recovery</th></tr></thead><tbody>${riskRows}</tbody></table>` : ''}
   `;
 
   const headerBrand = `<div style="font-family:'IBM Plex Sans',sans-serif;font-size:20px;font-weight:700;color:#0D1B2A;white-space:nowrap;">APP09 - OMM Management of change</div>`;
@@ -13010,7 +13225,116 @@ function renderSafetyPolicyHistory(){
   }).join('');
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   SAF 2026-08-25 · OBJECTIFS DE SÉCURITÉ ↔ SPI
+   AMC1 ORO.GEN.200(a)(1) et (a)(3). Les objectifs étaient une zone de texte
+   libre : rien ne reliait « réduire les événements HESLO de X% » à un
+   indicateur mesuré, donc rien ne permettait de démontrer l'atteinte.
+   Chaque objectif est désormais un enregistrement rattaché à un ou plusieurs
+   SPI, avec responsable et échéance, et la couverture est calculée dans les
+   deux sens : objectif sans indicateur, indicateur sans objectif.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function soGet(){
+  try { var v = JSON.parse(localStorage.getItem('safSafetyObjectives') || '[]'); return Array.isArray(v) ? v : []; }
+  catch(e){ return []; }
+}
+function soSave(arr){
+  try { localStorage.setItem('safSafetyObjectives', JSON.stringify(arr)); } catch(e){}
+  if(typeof saveLocal === 'function'){ try{ saveLocal(); }catch(e){} }
+}
+function soAdd(){
+  var arr = soGet();
+  arr.push({ id:'OBJ-' + (new Date().getFullYear()) + '-' + String(arr.length + 1).padStart(2,'0'),
+             text:'', owner:'', due:'', spi:[],
+             created_at:new Date().toISOString().slice(0,10),
+             created_by:(typeof safCurrentUser==='function'?safCurrentUser():'') });
+  soSave(arr); soRender();
+}
+function soRemove(i){
+  var arr = soGet();
+  if(!arr[i]) return;
+  if(!confirm('Supprimer l\'objectif ' + (arr[i].id||'') + ' ?')) return;
+  arr.splice(i,1); soSave(arr); soRender();
+}
+function soUpdate(i, field, el){
+  var arr = soGet(); if(!arr[i]) return;
+  if(field === 'spi'){
+    arr[i].spi = Array.prototype.slice.call(el.selectedOptions || []).map(function(o){ return o.value; });
+  } else {
+    arr[i][field] = el.value;
+  }
+  arr[i].updated_at = new Date().toISOString().slice(0,10);
+  soSave(arr); soRenderCoverage();
+}
+function soSpiLabel(id){
+  var t = getSPITargets().filter(function(x){ return x.id === id; })[0];
+  return t ? (t.id.toUpperCase() + ' — ' + t.name) : id;
+}
+function soRender(){
+  var el = document.getElementById('so-list'); if(!el) return;
+  var arr = soGet();
+  var targets = getSPITargets();
+  if(!arr.length){
+    el.innerHTML = '<div style="font-family:var(--font-mono);font-size:11px;color:var(--grey-400);padding:16px;text-align:center;border:1px dashed rgba(255,255,255,.14);border-radius:8px;">'
+      + 'Aucun objectif enregistré. Les objectifs de la zone de texte ci-dessus ne sont pas mesurables tant qu\'ils ne sont pas rattachés à un indicateur.</div>';
+    soRenderCoverage(); return;
+  }
+  var esc = function(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+  var html = '';
+  arr.forEach(function(o, i){
+    var linked = (o.spi||[]).length;
+    var col = linked ? '#3fb950' : '#e05000';
+    html += '<div style="border:1px solid rgba(255,255,255,.1);border-left:3px solid ' + col + ';border-radius:8px;padding:14px;margin-bottom:12px;background:rgba(255,255,255,.02);">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;">'
+      + '<span style="font-family:var(--font-mono);font-size:11px;color:var(--gold-light);font-weight:700;">' + esc(o.id) + '</span>'
+      + '<button onclick="soRemove(' + i + ')" style="background:none;border:1px solid rgba(248,81,73,.4);color:#f85149;border-radius:5px;padding:3px 10px;font-family:var(--font-mono);font-size:10px;cursor:pointer;">✕ Supprimer</button>'
+      + '</div>'
+      + '<textarea rows="2" onchange="soUpdate(' + i + ',\'text\',this)" placeholder="Objectif mesurable — ex. réduire de 30% les événements de charge suspendue incontrôlée sur 12 mois glissants." style="width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);color:var(--white);font-size:11.5px;padding:8px 10px;border-radius:6px;box-sizing:border-box;resize:vertical;margin-bottom:10px;">' + esc(o.text) + '</textarea>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:10px;align-items:start;">'
+      + '<div><label style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);display:block;margin-bottom:4px;">RESPONSABLE</label>'
+      + '<input type="text" value="' + esc(o.owner) + '" onchange="soUpdate(' + i + ',\'owner\',this)" placeholder="NPFO / NPCA…" style="width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);color:var(--white);font-family:var(--font-mono);font-size:11px;padding:7px 9px;border-radius:6px;box-sizing:border-box;"/></div>'
+      + '<div><label style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);display:block;margin-bottom:4px;">ÉCHÉANCE</label>'
+      + '<input type="date" value="' + esc(o.due) + '" onchange="soUpdate(' + i + ',\'due\',this)" style="width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);color:var(--white);font-family:var(--font-mono);font-size:11px;padding:7px 9px;border-radius:6px;box-sizing:border-box;color-scheme:dark;"/></div>'
+      + '<div><label style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);display:block;margin-bottom:4px;">INDICATEURS RATTACHÉS — Ctrl/⌘ pour en choisir plusieurs</label>'
+      + '<select multiple size="4" onchange="soUpdate(' + i + ',\'spi\',this)" style="width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);color:var(--white);font-family:var(--font-mono);font-size:10.5px;padding:5px;border-radius:6px;box-sizing:border-box;">'
+      + targets.map(function(t){
+          return '<option value="' + t.id + '"' + (((o.spi||[]).indexOf(t.id) >= 0) ? ' selected' : '')
+               + ' style="background:#0d1b2a;color:#f4f6f8;">' + esc(t.id.toUpperCase() + ' — ' + t.name) + '</option>';
+        }).join('')
+      + '</select></div></div>';
+    if(!linked){
+      html += '<div style="margin-top:9px;font-family:var(--font-mono);font-size:10px;color:#e05000;">⚠ Objectif non mesurable : aucun indicateur rattaché.</div>';
+    }
+    html += '</div>';
+  });
+  el.innerHTML = html;
+  soRenderCoverage();
+}
+function soRenderCoverage(){
+  var el = document.getElementById('so-coverage'); if(!el) return;
+  var arr = soGet(), targets = getSPITargets();
+  var linkedSpi = {};
+  arr.forEach(function(o){ (o.spi||[]).forEach(function(id){ linkedSpi[id] = 1; }); });
+  var objNoSpi = arr.filter(function(o){ return !(o.spi||[]).length; }).length;
+  var spiNoObj = targets.filter(function(t){ return !linkedSpi[t.id]; });
+  var ok = (arr.length > 0 && objNoSpi === 0);
+  el.innerHTML = '<div style="padding:12px 14px;border-radius:8px;border:1px solid ' + (ok ? 'rgba(63,185,80,.3)' : 'rgba(224,80,0,.3)')
+    + ';background:' + (ok ? 'rgba(63,185,80,.06)' : 'rgba(224,80,0,.06)') + ';font-family:var(--font-mono);font-size:10.5px;line-height:1.6;color:var(--grey-200);">'
+    + '<b style="color:' + (ok ? '#3fb950' : '#e05000') + ';">Couverture objectifs ↔ indicateurs</b><br>'
+    + arr.length + ' objectif(s) · ' + objNoSpi + ' sans indicateur rattaché · '
+    + spiNoObj.length + ' indicateur(s) sur ' + targets.length + ' ne servant aucun objectif déclaré.'
+    + (spiNoObj.length ? '<div style="margin-top:6px;color:var(--grey-400);">Non rattachés : '
+        + spiNoObj.map(function(t){ return t.id.toUpperCase(); }).join(', ')
+        + ' — un indicateur sans objectif se mesure sans qu\'on sache ce qu\'il sert à démontrer.</div>' : '')
+    + '</div>';
+}
+/* Objectifs servis par un SPI donné — utilisé dans la vue SPI. */
+function soForSpi(spiId){
+  return soGet().filter(function(o){ return (o.spi||[]).indexOf(spiId) >= 0; });
+}
+
 function renderSafetyPolicy(){
+  try { soRender(); } catch(e) {}
   var data=getSafetyPolicy();
   var cur=data.current;
   if(cur){
@@ -14505,6 +14829,39 @@ function _sptTrend(t, value){
 function _statusColour(status){ return {green:'#3fb950',amber:'#e3b341',red:'#f85149',unknown:'#8fa8c0'}[status] || '#8fa8c0'; }
 function _statusLabel(status){ return {green:'GREEN',amber:'AMBER',red:'RED',unknown:'N/A'}[status] || 'N/A'; }
 
+/* Base des seuils (statistique ou manuelle) + objectifs de sécurité servis. */
+function _spiBasisCell(t){
+  var esc = function(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+  var st = spiStats(t.id);
+  var sug = spiSuggestThresholds(t);
+  var html = '';
+  if(t.threshold_basis === 'statistical'){
+    html += '<div style="font-family:var(--font-mono);font-size:9.5px;color:#3fb950;">σ Seuils dérivés de l\'historique</div>'
+         +  '<div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-top:2px;">'
+         +  esc(t.threshold_note||'') + (t.threshold_set_on ? ' · ' + esc(t.threshold_set_on) : '') + '</div>';
+  } else {
+    html += '<div style="font-family:var(--font-mono);font-size:9.5px;color:var(--grey-400);">Seuils saisis manuellement</div>';
+    if(sug.ok){
+      html += '<div style="font-family:var(--font-mono);font-size:9px;color:#e3b341;margin-top:2px;">Proposition : vert '
+           + sug.green + ' · ambre ' + sug.amber + ' · rouge ' + sug.red + '<br>' + esc(sug.msg) + '</div>';
+    } else {
+      html += '<div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-600);margin-top:2px;">' + esc(sug.msg) + '</div>';
+    }
+  }
+  if(sug.ok){
+    html += '<button onclick="spiApplyStatThresholds(\'' + t.id + '\')" style="margin-top:6px;padding:3px 9px;background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.45);border-radius:4px;color:var(--steel-bright);font-family:var(--font-mono);font-size:9px;cursor:pointer;">σ Dériver de l\'historique</button>';
+  }
+  var objs = (typeof soForSpi === 'function') ? soForSpi(t.id) : [];
+  if(objs.length){
+    html += '<div style="margin-top:8px;font-family:var(--font-mono);font-size:9px;color:var(--gold-light);">Sert : '
+         + objs.map(function(o){ return esc(o.id); }).join(', ') + '</div>'
+         + objs.map(function(o){ return '<div style="font-size:9.5px;color:var(--grey-400);line-height:1.4;margin-top:2px;">' + esc((o.text||'(objectif non rédigé)').slice(0,110)) + '</div>'; }).join('');
+  } else {
+    html += '<div style="margin-top:8px;font-family:var(--font-mono);font-size:9px;color:#e05000;">Aucun objectif de sécurité rattaché</div>';
+  }
+  return html;
+}
+
 function renderSPIView(){
   const el=document.getElementById('spi-content'); if(!el)return;
   spiRecordMonthlySnapshot(); // enregistrement mensuel automatique
@@ -14524,6 +14881,24 @@ function renderSPIView(){
       +'<div style="font-size:10px;color:var(--grey-400);margin-top:4px;">'+k.note+'</div></div>';
   });
   html+='</div>';
+
+  (function(){
+    var objs = (typeof soGet === 'function') ? soGet() : [];
+    var linked = {}; objs.forEach(function(o){ (o.spi||[]).forEach(function(id){ linked[id]=1; }); });
+    var noObj = targets.filter(function(t){ return !linked[t.id]; }).length;
+    var noSpi = objs.filter(function(o){ return !(o.spi||[]).length; }).length;
+    var stat  = targets.filter(function(t){ return t.threshold_basis === 'statistical'; }).length;
+    var ok = objs.length && !noSpi;
+    html+='<div style="padding:12px 16px;margin-bottom:20px;border-radius:8px;border:1px solid '
+      +(ok?'rgba(63,185,80,.3)':'rgba(224,80,0,.3)')+';background:'+(ok?'rgba(63,185,80,.06)':'rgba(224,80,0,.06)')
+      +';font-family:var(--font-mono);font-size:11px;line-height:1.65;color:var(--grey-200);">'
+      +'<b style="color:'+(ok?'#3fb950':'#e05000')+';">Objectifs ↔ indicateurs ↔ seuils</b><br>'
+      +objs.length+' objectif(s) de sécurité déclaré(s) · '+noSpi+' sans indicateur · '
+      +noObj+' indicateur(s) sur '+targets.length+' ne servant aucun objectif · '
+      +stat+' seuil(s) dérivé(s) de l\'historique sur '+targets.length+'.'
+      +(objs.length?'':'<div style="margin-top:5px;color:var(--grey-400);">Déclarez les objectifs dans Safety Policy &amp; Objectives — sans eux, les indicateurs se mesurent sans qu\'on sache ce qu\'ils démontrent.</div>')
+      +'</div>';
+  })();
 
   html+='<div class="chart-card" style="padding:24px;margin-bottom:22px;">'
     +'<div class="chart-title" style="margin-bottom:14px;">Safety Performance Targets — objectives, thresholds, trend, automatic status</div>'
@@ -14564,6 +14939,7 @@ function renderSPIView(){
     +'<th style="text-align:center;padding:7px 10px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">Trend</th>'
     +'<th style="text-align:center;padding:7px 10px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">Status</th>'
     +'<th style="text-align:center;padding:7px 10px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">Trend 12M ↗</th>'
+    +'<th style="text-align:left;padding:7px 10px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">Alert basis &amp; objective</th>'
     +'</tr></thead><tbody>';
 
   targets.forEach(function(t,i){
@@ -14583,6 +14959,7 @@ function renderSPIView(){
       +'<td style="padding:9px 10px;text-align:center;font-family:var(--font-mono);color:var(--grey-200);">'+trend+'</td>'
       +'<td style="padding:9px 10px;text-align:center;"><span style="display:inline-block;min-width:62px;padding:3px 8px;border-radius:4px;background:'+colour+'22;border:1px solid '+colour+';color:'+colour+';font-family:var(--font-mono);font-size:10px;font-weight:700;">'+_statusLabel(status)+'</span></td>'
       +'<td style="padding:6px 10px;text-align:center;">'+spiDrawTrendSVG(t.id, t, t.direction)+'</td>'
+      +'<td style="padding:9px 10px;min-width:230px;">'+_spiBasisCell(t)+'</td>'
       +'</tr>';
   });
   html+='</tbody></table></div></div>';
@@ -14659,6 +15036,69 @@ function getSPIHistory(spiId){
   try{ return JSON.parse(localStorage.getItem(spiHistoryKey(spiId)) || '[]'); } catch(e){ return []; }
 }
 function saveSPIHistory(spiId, arr){ localStorage.setItem(spiHistoryKey(spiId), JSON.stringify(arr)); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SAF 2026-08-25 · NIVEAUX D'ALERTE STATISTIQUES
+   ICAO Doc 9859 4e éd., appendice sur les SPI : les seuils d'alerte se dérivent
+   de la performance observée (moyenne ± n écarts-types sur la période de
+   référence), et non d'une valeur choisie a priori. L'historique mensuel est
+   déjà enregistré par spiRecordMonthlySnapshot() — il n'était pas exploité.
+   Convention retenue :
+     · indicateur « down » (moins = mieux)  : vert = moyenne, ambre = m+1σ, rouge = m+2σ
+     · indicateur « up »   (plus = mieux)   : vert = moyenne, ambre = m−1σ, rouge = m−2σ
+   Minimum 6 points pour proposer, 12 pour considérer le seuil robuste.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function spiStats(spiId){
+  var hist = getSPIHistory(spiId) || [];
+  var vals = hist.map(function(h){ return parseFloat(h.v); }).filter(function(v){ return !isNaN(v); });
+  var n = vals.length;
+  if(!n) return { n:0 };
+  var mean = vals.reduce(function(a,b){ return a+b; }, 0) / n;
+  var variance = n > 1 ? vals.reduce(function(a,b){ return a + Math.pow(b-mean,2); }, 0) / (n-1) : 0;
+  var sd = Math.sqrt(variance);
+  return { n:n, mean:mean, sd:sd,
+           min:Math.min.apply(null,vals), max:Math.max.apply(null,vals),
+           robust:(n >= 12) };
+}
+function _spiRound(v){
+  var r = Math.round(v * 10) / 10;
+  return (Math.abs(r) < 1e-9) ? 0 : r;
+}
+function spiSuggestThresholds(t){
+  var st = spiStats(t.id);
+  if(!st.n || st.n < 6) return { ok:false, stats:st,
+    msg:'Historique insuffisant (' + (st.n||0) + ' mois) — 6 mois minimum pour dériver un seuil, 12 pour le considérer robuste.' };
+  var down = (t.direction !== 'up');
+  var g = _spiRound(st.mean);
+  var a = _spiRound(down ? st.mean + st.sd : st.mean - st.sd);
+  var r = _spiRound(down ? st.mean + 2*st.sd : st.mean - 2*st.sd);
+  if(!down){ a = Math.max(a, 0); r = Math.max(r, 0); }
+  return { ok:true, stats:st, green:g, amber:a, red:r,
+    msg:'n=' + st.n + ' mois · moyenne ' + _spiRound(st.mean) + ' · σ ' + _spiRound(st.sd)
+      + (st.robust ? '' : ' · série courte, seuil à revoir après 12 mois') };
+}
+function spiApplyStatThresholds(spiId){
+  var all = getSPITargets();
+  var t = all.filter(function(x){ return x.id === spiId; })[0];
+  if(!t){ showToast('Indicateur introuvable','error'); return; }
+  var sug = spiSuggestThresholds(t);
+  if(!sug.ok){ showToast(sug.msg, 'error'); return; }
+  if(!confirm('Dériver les seuils de ' + spiId.toUpperCase() + ' à partir de l\'historique ?\n\n'
+    + sug.msg + '\n\nVert ' + t.green + ' → ' + sug.green
+    + '\nAmbre ' + t.amber + ' → ' + sug.amber
+    + '\nRouge ' + t.red + ' → ' + sug.red
+    + '\n\nLa cible (target) reste inchangée : elle traduit une ambition, pas la performance observée.')) return;
+  var idx = -1;
+  all.forEach(function(x,i){ if(x.id === spiId) idx = i; });
+  all[idx].green = sug.green; all[idx].amber = sug.amber; all[idx].red = sug.red;
+  all[idx].threshold_basis = 'statistical';
+  all[idx].threshold_note = sug.msg;
+  all[idx].threshold_set_on = new Date().toISOString().slice(0,10);
+  all[idx].threshold_set_by = (typeof safCurrentUser === 'function') ? safCurrentUser() : '';
+  saveSPITargets(all);
+  renderSPIView();
+  showToast('✓ Seuils de ' + spiId.toUpperCase() + ' dérivés de l\'historique', 'success');
+}
 
 function spiRecordMonthlySnapshot(){
   // Appelé à l'ouverture de la vue SPI — enregistre la valeur du mois courant pour chaque SPI
@@ -14955,30 +15395,155 @@ function renderCAMOSignals(){
 // ════════════════════════════════════════════════════════════════
 // CONTROLS REVIEW
 // ════════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════
+   SAF 2026-08-25 · QUALITÉ DES DONNÉES DU REGISTRE
+   Trois constats d'audit qui ne se corrigent pas par du code — ils demandent
+   une décision du Safety Manager — mais qui restaient invisibles :
+     · barrières laconiques : « PPE », « Training », « Newer iPad » ne sont pas
+       des contrôles auditables tant qu'ils ne renvoient pas à une procédure ;
+     · champ phase non discriminant : « All phases » rend la dimension ECCAIRS
+       inexploitable en tendance ;
+     · barrières sans responsable ni preuve d'application.
+   Ce panneau les chiffre et les liste, avec accès direct à l'édition.
+   Aucun contenu n'est généré automatiquement : la rédaction reste au SM.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var SAF_QA_MIN_WORDS = 4;                 // en deçà, la barrière est jugée laconique
+var SAF_QA_VAGUE_PHASES = ['', 'all phases', 'n/a', 'na', 'toutes phases', 'unknown'];
+
+function safQaBarrierIssues(){
+  var out = [];
+  DB.forEach(function(r){
+    (r.barriers||[]).forEach(function(b){
+      if(!b || b.status === 'superseded') return;
+      var txt = String(b.text||'').replace(/\u200b/g,'').trim();
+      var words = txt ? txt.split(/\s+/).length : 0;
+      var problems = [];
+      if(words < SAF_QA_MIN_WORDS) problems.push('libellé de ' + words + ' mot(s)');
+      if(!String(b.owner||'').trim()) problems.push('sans responsable');
+      if(!(Array.isArray(b.evidence) && b.evidence.length)) problems.push('sans preuve');
+      if(problems.length) out.push({ risk:r, b:b, words:words, problems:problems, laconic:(words < SAF_QA_MIN_WORDS) });
+    });
+  });
+  return out;
+}
+function safQaPhaseIssues(){
+  return DB.filter(function(r){
+    var p = String(r.phase||'').toLowerCase().trim();
+    if(SAF_QA_VAGUE_PHASES.indexOf(p) >= 0) return true;
+    return p.indexOf('all phases') === 0;   // « All phases (…) » reste non discriminant
+  });
+}
+function safQaDocRefIssues(){
+  return DB.filter(function(r){
+    var d = String(r.doc_ref||'').trim();
+    return !d || /to be (inserted|confirmed)|à (confirmer|insérer)|tbd/i.test(d) || /§\s*$/.test(d);
+  });
+}
+function renderDataQualityPanel(){
+  var esc = function(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+  var brk = safQaBarrierIssues();
+  var laconic = brk.filter(function(x){ return x.laconic; });
+  var noOwner = brk.filter(function(x){ return x.problems.indexOf('sans responsable') >= 0; });
+  var phases = safQaPhaseIssues();
+  var docs = safQaDocRefIssues();
+  var totalBarriers = DB.reduce(function(n,r){ return n + (r.barriers||[]).length; }, 0);
+
+  var html = '<div class="chart-card" style="padding:24px;margin-bottom:20px;border-left:4px solid #e05000;">'
+    + '<div class="chart-title" style="margin-bottom:6px;color:#e05000;">DATA QUALITY — ce qui ne tiendra pas en audit</div>'
+    + '<div style="font-size:10.5px;color:var(--grey-400);line-height:1.55;margin-bottom:16px;">'
+    + 'Ces écarts demandent une décision du Safety Manager, pas un traitement automatique : une barrière se rattache à une procédure existante, une phase de vol se choisit à partir de l\'exposition réelle. Rien n\'est généré ici — le panneau chiffre le reste à faire et ouvre directement le scénario concerné.</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;">';
+  [
+    { l:'Barrières laconiques', v:laconic.length + ' / ' + totalBarriers, c:laconic.length ? '#f85149' : '#3fb950', n:'moins de ' + SAF_QA_MIN_WORDS + ' mots' },
+    { l:'Barrières sans responsable', v:noOwner.length + ' / ' + totalBarriers, c:noOwner.length ? '#e3b341' : '#3fb950', n:'propriétaire à désigner' },
+    { l:'Phase non discriminante', v:phases.length + ' / ' + DB.length, c:phases.length ? '#e3b341' : '#3fb950', n:'« All phases », vide ou N/A' },
+    { l:'Référence documentaire faible', v:docs.length + ' / ' + DB.length, c:docs.length ? '#e3b341' : '#3fb950', n:'§ manquant ou en attente' }
+  ].forEach(function(k){
+    html += '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;border-left:3px solid ' + k.c + ';">'
+      + '<div style="font-size:20px;font-weight:700;font-family:var(--font-mono);color:' + k.c + ';">' + k.v + '</div>'
+      + '<div style="font-size:10.5px;color:var(--grey-200);font-family:var(--font-mono);margin-top:5px;">' + k.l + '</div>'
+      + '<div style="font-size:9.5px;color:var(--grey-400);margin-top:3px;">' + k.n + '</div></div>';
+  });
+  html += '</div>';
+
+  if(laconic.length){
+    html += '<div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin:14px 0 8px;">BARRIÈRES À REFORMULER — ' + laconic.length + '</div>'
+      + '<div style="max-height:280px;overflow:auto;border:1px solid rgba(255,255,255,.07);border-radius:7px;">'
+      + '<table style="width:100%;border-collapse:collapse;font-size:10.5px;">';
+    laconic.slice(0,60).forEach(function(x){
+      html += '<tr style="border-bottom:1px solid rgba(255,255,255,.05);">'
+        + '<td style="padding:7px 9px;font-family:var(--font-mono);color:var(--steel-bright);white-space:nowrap;">' + esc(x.b.bid) + '</td>'
+        + '<td style="padding:7px 9px;color:var(--white);">« ' + esc(x.b.text) + ' »</td>'
+        + '<td style="padding:7px 9px;color:var(--grey-400);">' + esc(x.problems.join(' · ')) + '</td>'
+        + '<td style="padding:7px 9px;text-align:right;white-space:nowrap;">'
+        + '<button onclick="safBarrierOriginPopup(decodeURIComponent(\'' + encodeURIComponent(x.b.bid) + '\'))" style="padding:3px 9px;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.45);border-radius:4px;color:var(--gold-light);font-family:var(--font-mono);font-size:9px;cursor:pointer;">Fiche</button> '
+        + '<button onclick="editEntry(decodeURIComponent(\'' + encodeURIComponent(x.risk.id) + '\'))" style="padding:3px 9px;background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.45);border-radius:4px;color:var(--steel-bright);font-family:var(--font-mono);font-size:9px;cursor:pointer;">Éditer ' + esc(x.risk.id) + '</button></td></tr>';
+    });
+    html += '</table></div>';
+    if(laconic.length > 60) html += '<div style="font-size:10px;color:var(--grey-400);margin-top:6px;">… et ' + (laconic.length - 60) + ' autres.</div>';
+  }
+
+  if(phases.length){
+    html += '<div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin:18px 0 8px;">PHASE À PRÉCISER — ' + phases.length
+      + '<span style="color:var(--grey-600);"> · une phase non discriminante empêche toute analyse de tendance par phase de vol</span></div>'
+      + '<div style="max-height:240px;overflow:auto;border:1px solid rgba(255,255,255,.07);border-radius:7px;">'
+      + '<table style="width:100%;border-collapse:collapse;font-size:10.5px;">';
+    phases.slice(0,60).forEach(function(r){
+      html += '<tr style="border-bottom:1px solid rgba(255,255,255,.05);">'
+        + '<td style="padding:7px 9px;font-family:var(--font-mono);color:var(--steel-bright);white-space:nowrap;">' + esc(r.id) + '</td>'
+        + '<td style="padding:7px 9px;color:var(--grey-200);">' + esc((r.event||'').slice(0,80)) + '</td>'
+        + '<td style="padding:7px 9px;font-family:var(--font-mono);color:#e3b341;white-space:nowrap;">' + esc(r.phase||'—') + '</td>'
+        + '<td style="padding:7px 9px;text-align:right;"><button onclick="editEntry(decodeURIComponent(\'' + encodeURIComponent(r.id) + '\'))" style="padding:3px 9px;background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.45);border-radius:4px;color:var(--steel-bright);font-family:var(--font-mono);font-size:9px;cursor:pointer;">Éditer</button></td></tr>';
+    });
+    html += '</table></div>';
+    if(phases.length > 60) html += '<div style="font-size:10px;color:var(--grey-400);margin-top:6px;">… et ' + (phases.length - 60) + ' autres.</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
 function renderControlsView(){
   const el=document.getElementById('controls-content');if(!el)return;
   const today=new Date();
   const h=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  const yellow=DB.filter(r=>riskColor(r.residual_risk)==='yellow').sort((a,b)=>(a.id||'').localeCompare(b.id||''));
+  /* SAF 2026-08-25 — POINT 2 : le périmètre de gouvernance ne peut pas dépendre
+     de la COULEUR de la cible résiduelle. Un scénario dont la cible serait rouge
+     (donc a fortiori à gouverner) ou verte mais non maîtrisée sortait du tableau
+     et n'apparaissait alors nulle part. Critère retenu : tout scénario dont la
+     cible résiduelle n'est pas atteinte (acceptation formelle non enregistrée),
+     PLUS tout scénario explicitement soumis à acceptation, PLUS tout scénario
+     dont le résiduel courant reste rouge. */
+  const governed=DB.filter(function(r){
+    return !safResidualIsAchieved(r)
+        || r.acceptance_required === true
+        || riskColor(safResidualCurrent(r)) === 'red';
+  }).sort(function(a,b){
+    var ord={red:0,yellow:1,orange:1,green:2};
+    var da=ord[riskColor(safResidualCurrent(a))], db=ord[riskColor(safResidualCurrent(b))];
+    if(da!==db) return da-db;
+    return (a.id||'').localeCompare(b.id||'');
+  });
+  const yellow=governed;
   const overdue=DB.filter(r=>needsControlReview(r)).sort((a,b)=>new Date(a.last_control_date||0)-new Date(b.last_control_date||0));
   const needAccept=yellow.filter(r=>r.risk_acceptance!=='accepted');
   const needEffect=yellow.filter(r=>!r.control_effectiveness);
   const governanceComplete=yellow.filter(r=>r.risk_owner&&r.safety_indicator&&r.indicator_target&&r.effectiveness_verification&&r.effectiveness_due_date&&r.acceptance_basis).length;
   let html='<div style="padding:0 28px 28px;">';
+  try { html += renderDataQualityPanel(); } catch(e) {}
   html+='<div style="padding:12px 14px;margin-bottom:18px;border:1px solid rgba(227,179,65,.25);background:rgba(227,179,65,.05);border-radius:8px;font-size:11px;color:var(--grey-200);line-height:1.55;"><strong style="color:#e3b341;">Governance rule:</strong> every residual yellow risk must have a named process owner, a measurable indicator and target, a documented effectiveness-verification method, objective evidence and formal Accountable Manager acceptance. A pending field is displayed as pending; the application does not infer or fabricate approval.</div>';
   html+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;">';
   [
     {label:'Controls overdue (>12 months)',val:overdue.length,color:'#f85149'},
     {label:'Pending formal acceptance',val:needAccept.length,color:'#e3b341'},
     {label:'Effectiveness not assessed',val:needEffect.length,color:'#8fa8c0'},
-    {label:'Yellow governance fields complete',val:governanceComplete+' / '+yellow.length,color:governanceComplete===yellow.length?'#3fb950':'#e3b341'}
+    {label:'Governance fields complete',val:governanceComplete+' / '+yellow.length,color:governanceComplete===yellow.length?'#3fb950':'#e3b341'}
   ].forEach(c=>{html+=`<div style="background:var(--navy-mid);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:18px;border-left:4px solid ${c.color};"><div style="font-size:28px;font-weight:700;font-family:var(--font-mono);color:${c.color};">${c.val}</div><div style="font-size:11px;color:var(--grey-400);font-family:var(--font-mono);margin-top:6px;">${c.label}</div></div>`;});
   html+='</div>';
 
   // Demonstration table covering every residual yellow risk.
-  html+='<div class="chart-card" style="padding:24px;margin-bottom:20px;"><div class="chart-title" style="margin-bottom:6px;color:#e3b341;">YELLOW-RISK GOVERNANCE REGISTER</div><div style="font-size:10px;color:var(--grey-400);margin-bottom:14px;">Owner, indicator, target, acceptance status and effectiveness evidence for every residual yellow risk.</div><div style="max-height:540px;overflow:auto;border:1px solid rgba(255,255,255,.07);border-radius:7px;"><table style="width:100%;border-collapse:collapse;font-size:10px;min-width:1250px;"><thead style="position:sticky;top:0;z-index:2;background:var(--navy-light);"><tr><th style="text-align:left;padding:8px;">ID / residual</th><th style="text-align:left;padding:8px;">Owner</th><th style="text-align:left;padding:8px;">Indicator &amp; target</th><th style="text-align:left;padding:8px;">Formal acceptance</th><th style="text-align:left;padding:8px;">Effectiveness verification</th><th style="text-align:left;padding:8px;">Result / evidence</th></tr></thead><tbody>';
+  html+='<div class="chart-card" style="padding:24px;margin-bottom:20px;"><div class="chart-title" style="margin-bottom:6px;color:#e3b341;">RISK GOVERNANCE REGISTER — SCENARIOS UNDER ACTIVE CONTROL</div><div style="font-size:10px;color:var(--grey-400);margin-bottom:14px;">Owner, indicator, target, acceptance status and effectiveness evidence for every scenario whose residual target is not yet achieved, that is subject to formal acceptance, or whose current residual rating remains RED. Sorted by current severity.</div><div style="max-height:540px;overflow:auto;border:1px solid rgba(255,255,255,.07);border-radius:7px;"><table style="width:100%;border-collapse:collapse;font-size:10px;min-width:1250px;"><thead style="position:sticky;top:0;z-index:2;background:var(--navy-light);"><tr><th style="text-align:left;padding:8px;">ID / residual</th><th style="text-align:left;padding:8px;">Owner</th><th style="text-align:left;padding:8px;">Indicator &amp; target</th><th style="text-align:left;padding:8px;">Formal acceptance</th><th style="text-align:left;padding:8px;">Effectiveness verification</th><th style="text-align:left;padding:8px;">Result / evidence</th></tr></thead><tbody>';
   yellow.forEach(r=>{
-    const bg=ICAO_CELL_COLORS[r.residual_risk]||'#555';
+    const bg=ICAO_CELL_COLORS[safResidualCurrent(r)]||'#555';
     const accepted=r.risk_acceptance==='accepted';
     const eff=r.control_effectiveness||'';
     const effColor=eff==='effective'?'#3fb950':eff==='ineffective'?'#f85149':'#e3b341';
@@ -15001,7 +15566,7 @@ function renderControlsView(){
 
   if(needAccept.length){
     html+='<div class="chart-card" style="padding:24px;margin-bottom:20px;"><div class="chart-title" style="margin-bottom:6px;color:#e3b341;">PENDING FORMAL ALARP ACCEPTANCE</div><div style="font-size:10px;color:var(--grey-400);margin-bottom:14px;">Acceptance must be entered by the Accountable Manager or an explicitly authorised acceptance level defined in the SMS procedure.</div><div style="max-height:560px;overflow:auto;"><table style="width:100%;border-collapse:collapse;font-size:10px;min-width:1100px;"><thead><tr><th style="text-align:left;padding:7px;">Risk</th><th style="text-align:left;padding:7px;">Owner / indicator</th><th style="text-align:left;padding:7px;">Acceptance record</th></tr></thead><tbody>';
-    needAccept.forEach(r=>{const bg=ICAO_CELL_COLORS[r.residual_risk]||'#555';html+=`<tr style="border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top;"><td style="padding:10px 7px;width:170px;"><span style="font-family:var(--font-mono);color:var(--steel-bright);font-weight:700;">${h(r.id)}</span><br><span style="display:inline-block;margin-top:4px;background:${bg};color:${readableTextColor(bg)};padding:2px 7px;border-radius:3px;font-family:var(--font-mono);font-weight:700;">${h(r.residual_risk)}</span><br><span style="display:block;margin-top:6px;color:var(--grey-300);">${h(r.event||'')}</span></td><td style="padding:10px 7px;max-width:370px;line-height:1.45;"><strong style="color:var(--white);">${h(r.risk_owner||'MISSING OWNER')}</strong><br><span style="color:var(--steel-bright);">${h(r.safety_indicator||'MISSING INDICATOR')}</span><br><span style="color:var(--gold-light);">Target: ${h(r.indicator_target||'MISSING TARGET')}</span></td><td style="padding:10px 7px;"><textarea id="accept-basis-${h(r.id)}" rows="3" style="width:100%;min-width:430px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.15);border-radius:4px;color:#fff;padding:6px 8px;font-size:10px;resize:vertical;">${h(r.acceptance_basis||'')}</textarea><div style="display:flex;gap:8px;margin-top:7px;"><input id="accept-by-${h(r.id)}" type="text" placeholder="Accountable Manager name…" style="flex:1;font-family:var(--font-mono);font-size:10px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.15);border-radius:4px;color:#fff;padding:5px 8px;"/><button onclick="ctrlAcceptRisk('${h(r.id)}')" style="padding:5px 12px;background:rgba(232,160,32,.2);border:1px solid #e3b341;border-radius:4px;color:#e3b341;font-family:var(--font-mono);font-size:10px;cursor:pointer;white-space:nowrap;">FORMALLY ACCEPT</button></div></td></tr>`;});
+    needAccept.forEach(r=>{const bg=ICAO_CELL_COLORS[safResidualCurrent(r)]||'#555';html+=`<tr style="border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top;"><td style="padding:10px 7px;width:170px;"><span style="font-family:var(--font-mono);color:var(--steel-bright);font-weight:700;">${h(r.id)}</span><br><span style="display:inline-block;margin-top:4px;background:${bg};color:${readableTextColor(bg)};padding:2px 7px;border-radius:3px;font-family:var(--font-mono);font-weight:700;">${h(r.residual_risk)}</span><br><span style="display:block;margin-top:6px;color:var(--grey-300);">${h(r.event||'')}</span></td><td style="padding:10px 7px;max-width:370px;line-height:1.45;"><strong style="color:var(--white);">${h(r.risk_owner||'MISSING OWNER')}</strong><br><span style="color:var(--steel-bright);">${h(r.safety_indicator||'MISSING INDICATOR')}</span><br><span style="color:var(--gold-light);">Target: ${h(r.indicator_target||'MISSING TARGET')}</span></td><td style="padding:10px 7px;"><textarea id="accept-basis-${h(r.id)}" rows="3" style="width:100%;min-width:430px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.15);border-radius:4px;color:#fff;padding:6px 8px;font-size:10px;resize:vertical;">${h(r.acceptance_basis||'')}</textarea><div style="display:flex;gap:8px;margin-top:7px;"><input id="accept-by-${h(r.id)}" type="text" placeholder="Accountable Manager name…" style="flex:1;font-family:var(--font-mono);font-size:10px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.15);border-radius:4px;color:#fff;padding:5px 8px;"/><button onclick="ctrlAcceptRisk('${h(r.id)}')" style="padding:5px 12px;background:rgba(232,160,32,.2);border:1px solid #e3b341;border-radius:4px;color:#e3b341;font-family:var(--font-mono);font-size:10px;cursor:pointer;white-space:nowrap;">FORMALLY ACCEPT</button></div></td></tr>`;});
     html+='</tbody></table></div></div>';
   }
 
