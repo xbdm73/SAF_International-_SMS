@@ -223,6 +223,7 @@ main { flex: 1; overflow-y: auto; background: #0A1520; }
 
 /* ─── FILTER BAR ─────────────────────────────── */
 .filter-bar {
+  position: sticky; top: 0; z-index: 30;
   display: flex; gap: 10px; align-items: center;
   background: var(--navy-mid);
   border: 1px solid rgba(255,255,255,.08);
@@ -276,7 +277,26 @@ main { flex: 1; overflow-y: auto; background: #0A1520; }
   position: sticky; top: 0; z-index: 1;
   background: var(--navy-light);
 }
+/* En-tête collant sous la barre de filtres (offset mesuré au rendu). */
+.risk-table th { top: var(--rr-table-offset, 0px) !important; z-index: 20; }
 .risk-table th:hover { color: var(--gold-light); }
+
+/* Compteur permanent du registre — visible quel que soit le filtre. */
+.rr-counter {
+  position: sticky; top: var(--rr-head-offset, 0px); z-index: 25;
+  display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center;
+  background: var(--navy-mid);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  padding: 9px 14px;
+  margin: -0.9rem 0 1.1rem;
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .04em;
+  color: var(--grey-200);
+}
+.rr-counter b { font-size: 13px; font-weight: 700; }
+.rr-counter .rr-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: -1px; }
+.rr-counter .rr-seg { white-space: nowrap; }
+.rr-counter .rr-note { color: var(--grey-400); font-style: italic; }
 .risk-table th .sort-icon { margin-left: 4px; opacity: .4; }
 .risk-table th.sorted .sort-icon { opacity: 1; color: var(--gold); }
 
@@ -2005,15 +2025,14 @@ nav { top: 118px !important; }
 </div>
 <div class="filter-bar">
 <span class="filter-label">FILTER</span>
-<input id="search-input" oninput="applyFilters()" placeholder="Search event, danger, reference…" type="text"/>
+<input id="search-input" oninput="applyFiltersDebounced()" placeholder="Search event, danger, reference…" type="text"/>
 <select id="filter-occ-cat" onchange="applyFilters()"><option value="">All occurrence categories</option></select>
 <select id="filter-family" onchange="applyFilters()"><option value="">All SAF families</option></select>
 <select id="filter-risk" onchange="applyFilters()">
 <option value="" style="background:#0d1b2a;color:#f4f6f8;">All risk levels</option>
-<option value="red" style="background:#0d1b2a;color:#f4f6f8;">Intolerable (red)</option>
-<option value="orange" style="background:#0d1b2a;color:#f4f6f8;">Tolerable (orange)</option>
-<option value="yellow" style="background:#0d1b2a;color:#f4f6f8;">Tolerable (yellow)</option>
-<option value="green" style="background:#0d1b2a;color:#f4f6f8;">Acceptable (green)</option>
+<option value="red" style="background:#0d1b2a;color:#f4f6f8;">Intolerable (red) — current</option>
+<option value="yellow" style="background:#0d1b2a;color:#f4f6f8;">Tolerable (yellow) — current</option>
+<option value="green" style="background:#0d1b2a;color:#f4f6f8;">Acceptable (green) — current</option>
 </select>
 <select id="filter-phase" onchange="applyFilters()">
 <option value="" style="background:#0d1b2a;color:#f4f6f8;">All phases</option>
@@ -2022,8 +2041,14 @@ nav { top: 118px !important; }
 <option>Hover</option><option>Approach</option>
 <option>Landing</option><option>All phases</option>
 </select>
+<select id="rr-page-size" onchange="setRegisterPageSize(this.value)" title="Nombre de lignes affichées">
+<option value="100000" style="background:#0d1b2a;color:#f4f6f8;">Show all</option>
+<option value="20" style="background:#0d1b2a;color:#f4f6f8;">20 per page</option>
+<option value="50" style="background:#0d1b2a;color:#f4f6f8;">50 per page</option>
+</select>
 <button class="btn btn-ghost" onclick="clearFilters()">✕ Clear</button>
 </div>
+<div class="rr-counter" id="rr-counter"></div>
 
 <!-- ── RISK REGISTER EXPORT BAR ── -->
 <div id="rr-export-bar" style="display:flex;align-items:center;gap:8px;padding:8px 0 12px 0;flex-wrap:wrap;">
@@ -9268,7 +9293,32 @@ try {
 } catch(e) { console.warn('Seed FAM-35 night firefighting injection failed:', e); }
 
 let currentPage = 1;
-const PAGE_SIZE = 20;
+/* ═══════════════════════════════════════════════════════════════════════════
+   SAF 2026-08-25 · REGISTRE — pagination optionnelle
+   Par défaut le registre s'affiche en LISTE UNIQUE : la pagination fragmentait
+   la recherche du navigateur (Ctrl+F), le tri par colonne et la lecture de la
+   distribution des risques. L'utilisateur peut revenir à 20 ou 50 lignes ;
+   le choix est mémorisé.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const RR_PAGE_ALL = 100000;
+let PAGE_SIZE = (function(){
+  var v = parseInt(localStorage.getItem('safRegisterPageSize'), 10);
+  return (v === 20 || v === 50) ? v : RR_PAGE_ALL;
+})();
+function setRegisterPageSize(v){
+  v = parseInt(v, 10);
+  PAGE_SIZE = (v === 20 || v === 50) ? v : RR_PAGE_ALL;
+  try { localStorage.setItem('safRegisterPageSize', String(PAGE_SIZE)); } catch(e) {}
+  currentPage = 1;
+  renderTable();
+}
+/* Recherche : un rendu complet par frappe est inutile — on temporise. */
+var _rrFilterTimer = null;
+function applyFiltersDebounced(delay){
+  if(_rrFilterTimer) clearTimeout(_rrFilterTimer);
+  _rrFilterTimer = setTimeout(function(){ _rrFilterTimer = null; applyFilters(); },
+    typeof delay === 'number' ? delay : 220);
+}
 let sortCol = 'id';
 let sortDir = 1;
 let selectedInitRisk = '';
@@ -10356,7 +10406,7 @@ function renderLeadingIndicators() {
 var _legacyCategoryFilter='';
 function filterByCategory(cat){if(!DB||DB.length===0){DB=safApplyTaxonomyToDB(JSON.parse(JSON.stringify(INITIAL_DATA)));filteredDB=[...DB];}showView('database');_domainFilter='';_legacyCategoryFilter=cat||'';var oc=document.getElementById('filter-occ-cat');if(oc)oc.value=(SAF_OCCURRENCE_CATEGORIES.some(function(x){return x.id===cat;})?cat:'');applyFilters();}
 function populateRiskTaxonomyFilters(){var oc=document.getElementById('filter-occ-cat'),fam=document.getElementById('filter-family');if(oc&&oc.options.length<=1)oc.innerHTML=safOccurrenceCategoryOptions('',true);if(fam&&fam.options.length<=1)fam.innerHTML=safFamilyOptions('',true);}
-function applyFilters(){populateRiskTaxonomyFilters();safApplyTaxonomyToDB(DB);const search=(document.getElementById('search-input')?.value||'').toLowerCase(),occCat=document.getElementById('filter-occ-cat')?.value||'',family=document.getElementById('filter-family')?.value||'',risk=document.getElementById('filter-risk')?.value||'',phase=document.getElementById('filter-phase')?.value||'';filteredDB=DB.filter(r=>{if(search&&![r.id,r.event,r.undesirable_event,r.dangers,r.consequences,r.doc_ref,r.category,r.occurrence_category,r.family_id,safFamilyLabel(r.family_id),r.record_kind,r.risk_owner,r.safety_indicator,r.indicator_target].join(' ').toLowerCase().includes(search))return false;if(occCat&&r.occurrence_category!==occCat)return false;if(family&&r.family_id!==family)return false;if(_legacyCategoryFilter&&r.category!==_legacyCategoryFilter&&r.occurrence_category!==_legacyCategoryFilter)return false;if(_domainFilter){var _g=safDomainGroup(r.family_id);if(_domainFilter==='__none__'){if(_g)return false;}else if(!_g||_g.id!==_domainFilter)return false;}if(risk&&riskColor(r.residual_risk)!==risk)return false;if(phase&&!(r.phase||'').includes(phase))return false;return true;});currentPage=1;renderTable();var scopeEl=document.getElementById('rr-export-scope');if(scopeEl)scopeEl.textContent=_rrScopeLabel();}
+function applyFilters(){populateRiskTaxonomyFilters();safApplyTaxonomyToDB(DB);const search=(document.getElementById('search-input')?.value||'').toLowerCase(),occCat=document.getElementById('filter-occ-cat')?.value||'',family=document.getElementById('filter-family')?.value||'',risk=document.getElementById('filter-risk')?.value||'',phase=document.getElementById('filter-phase')?.value||'';filteredDB=DB.filter(r=>{if(search&&![r.id,r.event,r.undesirable_event,r.dangers,r.consequences,r.doc_ref,r.category,r.occurrence_category,r.family_id,safFamilyLabel(r.family_id),r.record_kind,r.risk_owner,r.safety_indicator,r.indicator_target].join(' ').toLowerCase().includes(search))return false;if(occCat&&r.occurrence_category!==occCat)return false;if(family&&r.family_id!==family)return false;if(_legacyCategoryFilter&&r.category!==_legacyCategoryFilter&&r.occurrence_category!==_legacyCategoryFilter)return false;if(_domainFilter){var _g=safDomainGroup(r.family_id);if(_domainFilter==='__none__'){if(_g)return false;}else if(!_g||_g.id!==_domainFilter)return false;}if(risk&&riskColor(safResidualCurrent(r))!==risk)return false;if(phase&&!(r.phase||'').includes(phase))return false;return true;});currentPage=1;renderTable();var scopeEl=document.getElementById('rr-export-scope');if(scopeEl)scopeEl.textContent=_rrScopeLabel();}
 function clearFilters(){['search-input','filter-occ-cat','filter-family','filter-risk','filter-phase'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});_legacyCategoryFilter='';_domainFilter='';applyFilters();if(typeof renderDomainNav==='function')renderDomainNav();}
 function sortTable(col) {
   if(sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1; }
@@ -10430,8 +10480,72 @@ function renderTable() {
         <button class="delete-btn" onclick="deleteEntry(decodeURIComponent('${encodeURIComponent(r.id)}'))">Delete</button>
       </td>
     </tr>
-    <tr id="${rowId}-detail" style="display:none;" class="expanded-row">
-      <td colspan="13">
+    <tr id="${rowId}-detail" style="display:none;" class="expanded-row" data-risk="${encodeURIComponent(r.id)}"><td colspan="13"></td></tr>`;
+  }).join('');
+
+  renderPagination();
+  renderRegisterCounter();
+  _rrSyncStickyOffset();
+}
+
+/* Compteur permanent : le total et la distribution ne dépendent jamais
+   de la page ou du filtre affiché (remplace l'information que donnait
+   la pagination, sans en avoir les inconvénients). */
+function renderRegisterCounter(){
+  const el = document.getElementById('rr-counter');
+  if(!el) return;
+  const total = DB.length;
+  const shown = filteredDB.length;
+  const cnt = c => DB.filter(r => riskColor(safResidualCurrent(r)) === c).length;
+  const red = cnt('red'), yellow = cnt('yellow'), green = cnt('green');
+  const pending = (typeof safResidualPendingCount === 'function') ? safResidualPendingCount() : 0;
+  const overdue = DB.filter(needsControlReview).length;
+  const seg = (color, label, n) =>
+    '<span class="rr-seg"><span class="rr-dot" style="background:' + color + '"></span><b>' + n + '</b> ' + label + '</span>';
+  let html = '<span class="rr-seg"><b>' + total + '</b> scenarios</span>';
+  html += seg('#CC2200', 'intolerable (current)', red);
+  html += seg('#FFD700', 'tolerable (current)', yellow);
+  html += seg('#1A7A32', 'acceptable (current)', green);
+  html += seg('#E05000', 'residual not accepted', pending);
+  html += seg('#8896A0', 'controls overdue', overdue);
+  if(shown < total){
+    html += '<span class="rr-seg" style="color:var(--steel-bright);">▸ ' + shown + ' displayed under the current filter</span>';
+  }
+  if(pending){
+    html += '<span class="rr-note">Current rating = initial rating while the residual target is not formally accepted.</span>';
+  }
+  el.innerHTML = html;
+}
+
+/* Cale l'en-tête collant et le compteur juste sous la barre de filtres,
+   dont la hauteur varie selon la largeur de l'écran (flex-wrap). */
+function _rrSyncStickyOffset(){
+  try{
+    const bar = document.querySelector('#view-database .filter-bar');
+    if(!bar) return;
+    const h = Math.round(bar.getBoundingClientRect().height);
+    const counter = document.getElementById('rr-counter');
+    const ch = counter ? Math.round(counter.getBoundingClientRect().height) : 0;
+    const view = document.getElementById('view-database');
+    if(view){
+      view.style.setProperty('--rr-head-offset', h + 'px');
+      view.style.setProperty('--rr-table-offset', (h + ch) + 'px');
+    }
+  }catch(e){}
+}
+try{ window.addEventListener('resize', function(){ if(typeof _rrSyncStickyOffset==='function') _rrSyncStickyOffset(); }); }catch(e){}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SAF 2026-08-25 · REGISTRE EN LISTE UNIQUE — rendu différé du détail
+   Le bloc de détail (taxonomie, chaîne de dangers, barrières, cotations,
+   indicateurs, acceptation) représente ~200 nœuds DOM par scénario. Il n'est
+   plus généré pour tous les scénarios au rendu du tableau, mais construit au
+   premier dépliage de la ligne. C'est ce qui rend l'affichage complet des
+   102 scénarios praticable, y compris sur tablette.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function _rrDetailHTML(r) {
+  if(!r) return '';
+  return `
         <div class="detail-grid" style="padding:16px 4px;">
 
           <div class="detail-block full-width" style="grid-column:1/-1;">
@@ -10527,12 +10641,7 @@ function renderTable() {
             <div style="margin-top:12px;padding:9px 11px;background:rgba(227,179,65,.06);border:1px solid rgba(227,179,65,.18);border-radius:6px;font-size:10px;color:var(--grey-200);line-height:1.5;"><strong style="color:#e3b341;">Acceptance basis:</strong> ${r.acceptance_basis||'—'}</div>
           </div>
 
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
-
-  renderPagination();
+        </div>`;
 }
 
 function toggleRow(rowId) {
@@ -10540,6 +10649,22 @@ function toggleRow(rowId) {
   const expand = document.querySelector('#'+rowId+'-main .row-expand');
   if(!detail) return;
   const hidden = detail.style.display === 'none';
+  const cell = detail.querySelector('td');
+  if(hidden){
+    if(cell && !cell.getAttribute('data-rendered')){
+      let rid = '';
+      try { rid = decodeURIComponent(detail.getAttribute('data-risk')||''); } catch(e) { rid = detail.getAttribute('data-risk')||''; }
+      const r = DB.find(x => x.id === rid);
+      cell.innerHTML = _rrDetailHTML(r);
+      cell.setAttribute('data-rendered','1');
+    }
+  } else if(cell) {
+    // Repli : on libère le DOM du détail. Sans cela, déplier une vingtaine de
+    // lignes d'affilée ferait regrimper le poids du registre (~200 nœuds par
+    // ligne dépliée). Le contenu est reconstruit au prochain dépliage.
+    cell.innerHTML = '';
+    cell.removeAttribute('data-rendered');
+  }
   detail.style.display = hidden ? '' : 'none';
   if(expand) expand.textContent = hidden ? '▼' : '▶';
 }
@@ -10609,11 +10734,16 @@ function copyEntry(id){
 
 
 function renderPagination() {
+  const sel = document.getElementById('rr-page-size');
+  if(sel && String(sel.value) !== String(PAGE_SIZE)) sel.value = String(PAGE_SIZE);
   const total = filteredDB.length;
   const pages = Math.ceil(total / PAGE_SIZE);
   const el = document.getElementById('pagination');
   if(!el) return;
-  if(pages <= 1) { el.innerHTML = `<span>Showing ${total} entries</span>`; return; }
+  if(pages <= 1) {
+    el.innerHTML = `<span>Showing all ${total} entr${total===1?'y':'ies'} — single page</span>`;
+    return;
+  }
 
   let html = `<span>Showing ${Math.min((currentPage-1)*PAGE_SIZE+1, total)}–${Math.min(currentPage*PAGE_SIZE, total)} of ${total}</span>`;
   html += `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹ Prev</button>`;
