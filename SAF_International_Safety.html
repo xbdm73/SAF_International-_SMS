@@ -4676,7 +4676,9 @@ function safBrkOriginLabel(o){
 function safBrkChip(b){
   var o=b.origin||{},c=SAF_BRK_COLORS[o.status]||SAF_BRK_COLORS.undocumented;
   var icon=o.type==='moc'?'◈':(o.type==='legacy'?'⌘':(o.type==='occurrence'?'⚠':'·'));
+  var lg=(o.type==='legacy'&&typeof safLegacyLabel==='function')?safLegacyLabel(o.ref):null;
   var tip=safBrkEsc(b.bid+'  —  origine '+c.lbl+'\n'+safBrkOriginLabel(o)+
+          (lg&&lg.label?'\n= '+lg.label:'')+
           (o.evidence?'\npreuve : '+o.evidence:'')+(o.rationale?'\n'+o.rationale:''));
   return '<span class="saf-brk-chip" title="'+tip+'" onclick="event.stopPropagation();safBarrierOriginPopup(\''+b.bid+'\')" '
     +'style="cursor:pointer;flex-shrink:0;font-family:var(--font-mono);font-size:8px;font-weight:700;'
@@ -4731,6 +4733,24 @@ function safBarrierOriginPopup(bid){
     +row('Type de barrière',safBrkEsc(b.kind))
     +row('Statut','<span style="background:'+c.bg+';color:'+c.fg+';padding:1px 7px;border-radius:3px;font-family:var(--font-mono);font-size:10px;font-weight:700;">'+c.lbl+'</span>')
     +row('Origine',safBrkEsc(safBrkOriginLabel(o))+' <span style="color:var(--grey-400);font-family:var(--font-mono);font-size:10px;">('+safBrkEsc(o.type||'—')+')</span>')
+    +(function(){
+        if(o.type!=='legacy'||typeof safLegacyLabel!=='function') return '';
+        var lg=safLegacyLabel(o.ref);
+        var bl={catalogue:['#3fb950','catalogue d\u2019\u00e9v\u00e9nements approuv\u00e9'],
+                sole_heir:['#3fb950','prouv\u00e9 par scission'],
+                single_heir:['#ff8c42','d\u00e9duit par \u00e9limination']};
+        if(!lg||!lg.label) return row('Sens de l\u2019identifiant',
+          '<span style="color:#f85149;">Non d\u00e9termin\u00e9 \u2014 le registre legacy n\u2019a pas \u00e9t\u00e9 conserv\u00e9 et aucune preuve interne ne permet de conclure.</span>');
+        var m=bl[lg.basis]||['var(--grey-400)',lg.basis];
+        return row('Sens de l\u2019identifiant',safBrkEsc(lg.label)
+          +'<div style="font-family:var(--font-mono);font-size:9px;color:'+m[0]+';margin-top:3px;">'
+          +safBrkEsc(lg.via)+' \u00b7 '+m[1]+'</div>');
+      })()
+    +(function(){
+        if(o.type!=='legacy'||typeof safLegacyDocRef!=='function') return '';
+        var dr=safLegacyDocRef(o.ref);
+        return dr?row('Ancrage documentaire','<span style="font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);">'+safBrkEsc(dr)+'</span>'):'';
+      })()
     +row('Preuve','<span style="font-family:var(--font-mono);font-size:10px;color:var(--gold-light);">'+safBrkEsc(o.evidence||'—')+'</span>')
     +(o.rationale?row('Motif',safBrkEsc(o.rationale)):'')
     +row('Responsable',safBrkEsc(b.owner||'—'))
@@ -4750,6 +4770,77 @@ window.safBarriersSyncAll=safBarriersSyncAll;
 window.safBarriersBackfillAll=safBarriersBackfillAll;
 window.fmtBarriers=fmtBarriers;
 window.safBarrierOriginPopup=safBarrierOriginPopup;
+
+// ── Dictionnaire des identifiants d origine legacy ──────────────────────────
+// Un identifiant comme COL-4 ne veut rien dire seul : le registre legacy n a
+// pas ete conserve. Son sens est reconstruit a partir de trois preuves
+// internes, par ordre de force decroissante. Aucune invention : si rien ne
+// permet de conclure, le libelle reste vide et le dit.
+var _safLegacyCache = null;
+function safLegacyBuild(){
+  var d = {};
+  // 1. Catalogue d evenements approuve — source primaire, libelle d origine.
+  try{
+    var cat = (typeof EVENT_CATALOG!=='undefined'&&EVENT_CATALOG.length)?EVENT_CATALOG:INITIAL_EVENT_CATALOG;
+    (cat||[]).forEach(function(e){
+      if(e&&e.id&&e.event) d[e.id]={label:e.event,basis:'catalogue',via:'Catalogue d\u00e9v\u00e9nements approuv\u00e9',rank:1};
+    });
+  }catch(e){}
+  if(typeof DB==='undefined'||!Array.isArray(DB)) return d;
+  var srcOf=function(r){return String(r.source_risk_ids||'').split(',').map(function(x){return x.trim();}).filter(Boolean);};
+  // 2. Heritier unique isole par scission : le scenario ne porte que cet
+  //    identifiant, son libelle EST celui de l identifiant. Preuve forte.
+  DB.forEach(function(r){
+    var src=srcOf(r);
+    if(src.length===1&&r.event&&(!d[src[0]]||d[src[0]].rank>2))
+      d[src[0]]={label:r.event,basis:'sole_heir',via:'Isol\u00e9 dans '+r.id+' (source unique)',rank:2};
+  });
+  // 3. Un seul enregistrement le reference encore : le perimetre restant lui
+  //    revient par elimination. Preuve faible, signalee comme telle.
+  var heirs={};
+  DB.forEach(function(r){ srcOf(r).forEach(function(t){ (heirs[t]=heirs[t]||[]).push(r); }); });
+  Object.keys(heirs).forEach(function(t){
+    if(heirs[t].length===1&&(!d[t]||d[t].rank>3))
+      d[t]={label:heirs[t][0].event||'',basis:'single_heir',
+            via:'D\u00e9duit par \u00e9limination \u2014 seul '+heirs[t][0].id+' le r\u00e9f\u00e9rence',rank:3};
+  });
+  return d;
+}
+function safLegacyLabel(ref){
+  if(!ref) return null;
+  if(!_safLegacyCache) _safLegacyCache=safLegacyBuild();
+  return _safLegacyCache[ref]||null;
+}
+function safLegacyRefresh(){ _safLegacyCache=null; return safLegacyLabel('__'); }
+// Ancrage documentaire d une origine : le doc_ref prefixe [REF] le porte.
+function safLegacyDocRef(ref){
+  if(typeof DB==='undefined'||!ref) return '';
+  for(var i=0;i<DB.length;i++){
+    var dr=String(DB[i].doc_ref||'');
+    var m=dr.match(new RegExp('\\['+ref.replace(/[-\/\\^$*+?.()|[\]{}]/g,'\\$&')+'\\]\\s*([^\\[]+)'));
+    if(m) return m[1].trim();
+  }
+  return '';
+}
+// Inventaire : quels identifiants restent sans libelle ?
+function safLegacyCoverage(){
+  var used={},out={known:[],unknown:[]};
+  DB.forEach(function(r){(r.barriers||[]).forEach(function(b){
+    var o=b.origin||{};
+    if(o.type==='legacy')[o.ref].concat(o.also_from||[]).filter(Boolean).forEach(function(f){used[f]=1;});
+  });});
+  Object.keys(used).sort().forEach(function(k){
+    var l=safLegacyLabel(k);
+    if(l&&l.label) out.known.push({ref:k,label:l.label,basis:l.basis}); else out.unknown.push(k);
+  });
+  out.pct=Object.keys(used).length?Math.round(1000*out.known.length/Object.keys(used).length)/10:0;
+  return out;
+}
+window.safLegacyLabel=safLegacyLabel;
+window.safLegacyRefresh=safLegacyRefresh;
+window.safLegacyDocRef=safLegacyDocRef;
+window.safLegacyCoverage=safLegacyCoverage;
+
 
 
 
