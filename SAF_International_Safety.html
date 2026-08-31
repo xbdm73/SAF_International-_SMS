@@ -17934,6 +17934,12 @@ function showLessonForm(editId){
   pdfOpen.addEventListener('click',function(){ if(_llPdfData)llOpenPdfData(_llPdfData,_llPdfName); });
   pdfRow.appendChild(pdfOpen);
 
+  var pdfDlBtn=document.createElement('button');
+  pdfDlBtn.type='button';pdfDlBtn.id='ll-pdf-download';pdfDlBtn.textContent='⤓ Télécharger';
+  pdfDlBtn.style.cssText='padding:6px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:6px;font-family:var(--font-mono);font-size:10px;color:var(--grey-200);cursor:pointer;'+(_llPdfData?'':'display:none;');
+  pdfDlBtn.addEventListener('click',function(){ if(_llPdfData)llDownloadPdfData(_llPdfData,_llPdfName); });
+  pdfRow.appendChild(pdfDlBtn);
+
   var pdfName=document.createElement('span');
   pdfName.id='ll-pdf-name';
   pdfName.style.cssText='font-family:var(--font-mono);font-size:10px;color:var(--grey-400);';
@@ -18027,6 +18033,8 @@ function llAttachPdf(input){
     if(nm)nm.textContent='✓ '+_llPdfName+' ('+llFmtSize(f.size)+')';
     var op=document.getElementById('ll-pdf-open');
     if(op)op.style.display='';
+    var dl=document.getElementById('ll-pdf-download');
+    if(dl)dl.style.display='';
   };
   reader.onerror=function(){ showToast('⚠ Lecture du PDF impossible','error'); };
   reader.readAsDataURL(f);
@@ -18035,23 +18043,47 @@ function llClearPdf(){
   _llPdfData=null;_llPdfName='';
   var nm=document.getElementById('ll-pdf-name');if(nm)nm.textContent='Aucun PDF';
   var op=document.getElementById('ll-pdf-open');if(op)op.style.display='none';
+  var dl=document.getElementById('ll-pdf-download');if(dl)dl.style.display='none';
   var inp=document.getElementById('ll-pdf-input');if(inp)inp.value='';
 }
-// Le data-URL est reconverti en Blob : Chrome bloque l'ouverture directe
-// d'un data:application/pdf dans un onglet.
+// Le data-URL est reconverti en Blob : Chrome refuse d'ouvrir un
+// data:application/pdf dans un onglet, un blob: est en revanche accepté
+// et s'affiche dans la visionneuse intégrée.
+function llPdfToBlobUrl(dataUrl){
+  var parts=String(dataUrl||'').split(',');
+  var bin=atob(parts[1]||'');
+  var arr=new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+  return URL.createObjectURL(new Blob([arr],{type:'application/pdf'}));
+}
+// Ouvre le PDF dans la visionneuse du navigateur. Pas d'attribut download
+// ici : il forcerait l'enregistrement du fichier au lieu de l'afficher.
 function llOpenPdfData(dataUrl,name){
   try{
-    var parts=String(dataUrl).split(',');
-    var bin=atob(parts[1]||'');
-    var arr=new Uint8Array(bin.length);
-    for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
-    var url=URL.createObjectURL(new Blob([arr],{type:'application/pdf'}));
-    var a=document.createElement('a');
-    a.href=url;a.target='_blank';a.rel='noopener';
-    a.download=name||'piece-jointe.pdf';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-    setTimeout(function(){URL.revokeObjectURL(url);},60000);
+    var url=llPdfToBlobUrl(dataUrl);
+    var w=window.open(url,'_blank','noopener');
+    if(!w){
+      // Fenêtres contextuelles bloquées : on retombe sur le téléchargement.
+      llDownloadPdfData(dataUrl,name);
+      showToast('Fenêtres contextuelles bloquées — le PDF a été téléchargé','error');
+    }
+    // Révocation tardive : trop tôt, l'onglet perdrait sa source.
+    setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},600000);
   }catch(e){ showToast('⚠ Ouverture impossible : '+e.message,'error'); }
+}
+function llDownloadPdfData(dataUrl,name){
+  try{
+    var url=llPdfToBlobUrl(dataUrl);
+    var a=document.createElement('a');
+    a.href=url;a.download=name||'piece-jointe.pdf';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},60000);
+  }catch(e){ showToast('⚠ Téléchargement impossible : '+e.message,'error'); }
+}
+function llDownloadLessonPdf(id){
+  var l=getLessons().find(function(x){return x.id===id;});
+  if(!l||!l.pdf)return;
+  llDownloadPdfData(l.pdf,l.pdf_name||(l.ref||'piece-jointe')+'.pdf');
 }
 function llOpenLessonPdf(id){
   var l=getLessons().find(function(x){return x.id===id;});
@@ -18161,9 +18193,13 @@ function renderLessonsList(){
     editBtn.addEventListener('click',(function(id){return function(){showLessonForm(id);};})(l.id));
     if(l.pdf){
       var pdfBtn=mkBtn('📄','','var(--gold-light)','rgba(201,162,39,.15)');
-      pdfBtn.title=l.pdf_name||'Pièce jointe PDF';
+      pdfBtn.title='Ouvrir '+(l.pdf_name||'la pièce jointe');
       pdfBtn.addEventListener('click',(function(id){return function(){llOpenLessonPdf(id);};})(l.id));
       rightDiv.appendChild(pdfBtn);
+      var pdfDl=mkBtn('⤓','','var(--gold-light)','rgba(201,162,39,.08)');
+      pdfDl.title='Télécharger '+(l.pdf_name||'la pièce jointe');
+      pdfDl.addEventListener('click',(function(id){return function(){llDownloadLessonPdf(id);};})(l.id));
+      rightDiv.appendChild(pdfDl);
     }
     var printBtn=mkBtn('🖨','','var(--grey-400)','rgba(255,255,255,.06)');
     printBtn.addEventListener('click',(function(id){return function(){printLessonById(id);};})(l.id));
