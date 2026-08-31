@@ -9766,7 +9766,7 @@ window.safExportForCloud = function(){
       Object.keys(item).forEach(function(f){
         var v = item[f];
         // retire les champs fichiers connus
-        if(f === 'eccairs2_pdf' || f === 'image'){ copy[f] = ''; return; }
+        if(f === 'eccairs2_pdf' || f === 'image' || f === 'pdf'){ copy[f] = ''; return; }
         // retire tout gros base64 résiduel — MAIS jamais les champs de contenu
         // rédactionnel (corps FR/EN des Lessons/Safety Alerts), sinon le texte
         // est définitivement perdu au rechargement cloud suivant.
@@ -17542,7 +17542,7 @@ function llOnTypeChange(type){
   if(!cur||/^(SA|COM)-\d{3}$/.test(cur))el.value=llNextRef(type);
 }
 
-var _llEditId=null,_llImageData=null;
+var _llEditId=null,_llImageData=null,_llPdfData=null,_llPdfName='';
 
 function showLessonForm(editId){
   _llEditId=editId||null;
@@ -17551,6 +17551,8 @@ function showLessonForm(editId){
   var defType=ex?ex.type:'alert';
   var defRef=ex?ex.ref:llNextRef(defType);
   _llImageData=ex?(ex.image||null):null;
+  _llPdfData=ex?(ex.pdf||null):null;
+  _llPdfName=ex?(ex.pdf_name||''):'';
 
   var wrap=document.getElementById('lessons-form-wrap');
   if(!wrap)return;
@@ -17900,6 +17902,51 @@ function showLessonForm(editId){
   imgSection.appendChild(posWrap);
   card.appendChild(imgSection);
 
+  // ── Piece jointe PDF ───────────────────────────────────────────────
+  var pdfSection=document.createElement('div');
+  pdfSection.className='form-field';pdfSection.style.cssText='margin:0 0 14px;';
+  var pdfLbl=document.createElement('label');pdfLbl.className='field-label';
+  pdfLbl.textContent='Pièce jointe PDF (optionnel)';
+  pdfSection.appendChild(pdfLbl);
+
+  var pdfRow=document.createElement('div');
+  pdfRow.style.cssText='display:flex;align-items:center;gap:10px;flex-wrap:wrap;';
+
+  var pdfLabel=document.createElement('label');
+  pdfLabel.style.cssText='display:inline-flex;align-items:center;gap:8px;padding:7px 14px;background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.4);border-radius:6px;cursor:pointer;font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);';
+  pdfLabel.textContent='📄 Joindre un PDF';
+  var pdfInput=document.createElement('input');
+  pdfInput.type='file';pdfInput.id='ll-pdf-input';pdfInput.accept='application/pdf,.pdf';
+  pdfInput.style.display='none';
+  pdfInput.addEventListener('change',function(){llAttachPdf(this);});
+  pdfLabel.appendChild(pdfInput);
+  pdfRow.appendChild(pdfLabel);
+
+  var pdfClear=document.createElement('button');
+  pdfClear.type='button';pdfClear.textContent='✕ Retirer';
+  pdfClear.style.cssText='padding:6px 12px;background:rgba(204,34,0,.15);border:1px solid rgba(204,34,0,.4);border-radius:6px;font-family:var(--font-mono);font-size:10px;color:#ff7055;cursor:pointer;';
+  pdfClear.addEventListener('click',llClearPdf);
+  pdfRow.appendChild(pdfClear);
+
+  var pdfOpen=document.createElement('button');
+  pdfOpen.type='button';pdfOpen.id='ll-pdf-open';pdfOpen.textContent='◉ Ouvrir';
+  pdfOpen.style.cssText='padding:6px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:6px;font-family:var(--font-mono);font-size:10px;color:var(--grey-200);cursor:pointer;'+(_llPdfData?'':'display:none;');
+  pdfOpen.addEventListener('click',function(){ if(_llPdfData)llOpenPdfData(_llPdfData,_llPdfName); });
+  pdfRow.appendChild(pdfOpen);
+
+  var pdfName=document.createElement('span');
+  pdfName.id='ll-pdf-name';
+  pdfName.style.cssText='font-family:var(--font-mono);font-size:10px;color:var(--grey-400);';
+  pdfName.textContent=_llPdfData?('✓ '+_llPdfName+' ('+llFmtSize(_llPdfData.length*3/4)+')'):'Aucun PDF';
+  pdfRow.appendChild(pdfName);
+  pdfSection.appendChild(pdfRow);
+
+  var pdfHelp=document.createElement('div');
+  pdfHelp.style.cssText='font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-top:8px;line-height:1.5;';
+  pdfHelp.textContent="Le PDF reste dans ce navigateur et n'est pas synchronisé dans le cloud (volume). Son nom est repris automatiquement dans le mémo imprimé. Limite : 3 Mo.";
+  pdfSection.appendChild(pdfHelp);
+  card.appendChild(pdfSection);
+
   // Buttons
   var btnRow=document.createElement('div');
   btnRow.style.cssText='display:flex;gap:10px;';
@@ -17953,6 +18000,64 @@ function llClearImage(){
   if(name)name.textContent='Nonee image';
   if(inp)inp.value='';
 }
+function llFmtSize(bytes){
+  var b=Number(bytes)||0;
+  if(b<1024)return Math.round(b)+' o';
+  if(b<1024*1024)return (b/1024).toFixed(0)+' Ko';
+  return (b/1024/1024).toFixed(1)+' Mo';
+}
+var LL_PDF_MAX=3*1024*1024;   // 3 Mo — au-delà, le quota localStorage saute
+function llAttachPdf(input){
+  var f=input.files&&input.files[0];
+  if(!f)return;
+  var isPdf=(f.type==='application/pdf')||/\.pdf$/i.test(f.name||'');
+  if(!isPdf){
+    showToast('⚠ Seuls les fichiers PDF sont acceptés','error');
+    input.value='';return;
+  }
+  if(f.size>LL_PDF_MAX){
+    showToast('⚠ PDF trop volumineux ('+llFmtSize(f.size)+') — limite '+llFmtSize(LL_PDF_MAX)+'. Compressez-le avant de le joindre.','error');
+    input.value='';return;
+  }
+  var reader=new FileReader();
+  reader.onload=function(e){
+    _llPdfData=e.target.result;
+    _llPdfName=f.name||'document.pdf';
+    var nm=document.getElementById('ll-pdf-name');
+    if(nm)nm.textContent='✓ '+_llPdfName+' ('+llFmtSize(f.size)+')';
+    var op=document.getElementById('ll-pdf-open');
+    if(op)op.style.display='';
+  };
+  reader.onerror=function(){ showToast('⚠ Lecture du PDF impossible','error'); };
+  reader.readAsDataURL(f);
+}
+function llClearPdf(){
+  _llPdfData=null;_llPdfName='';
+  var nm=document.getElementById('ll-pdf-name');if(nm)nm.textContent='Aucun PDF';
+  var op=document.getElementById('ll-pdf-open');if(op)op.style.display='none';
+  var inp=document.getElementById('ll-pdf-input');if(inp)inp.value='';
+}
+// Le data-URL est reconverti en Blob : Chrome bloque l'ouverture directe
+// d'un data:application/pdf dans un onglet.
+function llOpenPdfData(dataUrl,name){
+  try{
+    var parts=String(dataUrl).split(',');
+    var bin=atob(parts[1]||'');
+    var arr=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+    var url=URL.createObjectURL(new Blob([arr],{type:'application/pdf'}));
+    var a=document.createElement('a');
+    a.href=url;a.target='_blank';a.rel='noopener';
+    a.download=name||'piece-jointe.pdf';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},60000);
+  }catch(e){ showToast('⚠ Ouverture impossible : '+e.message,'error'); }
+}
+function llOpenLessonPdf(id){
+  var l=getLessons().find(function(x){return x.id===id;});
+  if(!l||!l.pdf){ showToast('Aucun PDF joint à cette communication','error'); return; }
+  llOpenPdfData(l.pdf,l.pdf_name||(l.ref||'piece-jointe')+'.pdf');
+}
 function llGetRichHtml(id){
   var el=document.getElementById(id);
   // \u200B : ancres invisibles posées par le sélecteur de taille quand aucun
@@ -17992,7 +18097,9 @@ function saveLesson(){
     diffusion:(((document.getElementById('ll-diffusion')||{}).value)||'').trim(),
     risk_link:((document.getElementById('ll-risk-link')||{}).value)||'',
     image:_llImageData||null,
-    imagePosition:imgPosEl?imgPosEl.value:'after-title'
+    imagePosition:imgPosEl?imgPosEl.value:'after-title',
+    pdf:_llPdfData||null,
+    pdf_name:_llPdfName||''
   };
   var lessons=getLessons();
   if(_llEditId){
@@ -18000,13 +18107,13 @@ function saveLesson(){
     if(idx!==-1)lessons[idx]=Object.assign(lessons[idx],data,{updated_at:new Date().toISOString()});
     saveLessons(lessons);
     document.getElementById('lessons-form-wrap').style.display='none';
-    _llEditId=null;_llImageData=null;renderLessonsList();
+    _llEditId=null;_llImageData=null;_llPdfData=null;_llPdfName='';renderLessonsList();
     showToast('✓ '+ref+' mis à jour','success');
   }else{
     var ll=Object.assign({id:'LL-'+Date.now(),created_at:new Date().toISOString()},data);
     lessons.push(ll);saveLessons(lessons);
     document.getElementById('lessons-form-wrap').style.display='none';
-    _llEditId=null;_llImageData=null;renderLessonsList();
+    _llEditId=null;_llImageData=null;_llPdfData=null;_llPdfName='';renderLessonsList();
     showToast('✓ '+ref+' publié','success');
   }
 }
@@ -18052,6 +18159,12 @@ function renderLessonsList(){
     }
     var editBtn=mkBtn('✎','','var(--steel-bright)','rgba(74,159,224,.15)');
     editBtn.addEventListener('click',(function(id){return function(){showLessonForm(id);};})(l.id));
+    if(l.pdf){
+      var pdfBtn=mkBtn('📄','','var(--gold-light)','rgba(201,162,39,.15)');
+      pdfBtn.title=l.pdf_name||'Pièce jointe PDF';
+      pdfBtn.addEventListener('click',(function(id){return function(){llOpenLessonPdf(id);};})(l.id));
+      rightDiv.appendChild(pdfBtn);
+    }
     var printBtn=mkBtn('🖨','','var(--grey-400)','rgba(255,255,255,.06)');
     printBtn.addEventListener('click',(function(id){return function(){printLessonById(id);};})(l.id));
     var delBtn=document.createElement('button');
@@ -18066,6 +18179,7 @@ function renderLessonsList(){
     if(l.fr_body||l.description||l.en_body){var descDiv=document.createElement('div');descDiv.style.cssText='font-size:11px;color:var(--grey-400);margin-bottom:8px;line-height:1.45;';var stripPrev=function(h){var d=document.createElement('div');d.innerHTML=h||'';return (d.textContent||d.innerText||'').slice(0,160);};var frPrev=stripPrev(l.fr_body||l.description||'');var enPrev=stripPrev(l.en_body||'');descDiv.textContent=(frPrev?'FR: '+frPrev:'')+(frPrev&&enPrev?'\n':'')+(enPrev?'EN: '+enPrev:'');card.appendChild(descDiv);}
     if(l.lesson){var lesDiv=document.createElement('div');lesDiv.style.cssText='padding:10px 14px;background:rgba(255,255,255,.04);border-radius:6px;font-size:11px;color:var(--grey-200);margin-bottom:8px;';var lesStrong=document.createElement('strong');lesStrong.style.color=col;lesStrong.textContent='Leçon : ';lesDiv.appendChild(lesStrong);lesDiv.appendChild(document.createTextNode(l.lesson));card.appendChild(lesDiv);}
     if(l.image){var imgDiv=document.createElement('div');imgDiv.style.marginBottom='8px';var imgEl=document.createElement('img');imgEl.src=l.image;imgEl.style.cssText='max-width:180px;max-height:110px;border-radius:4px;border:1px solid rgba(255,255,255,.1);object-fit:contain;';imgDiv.appendChild(imgEl);card.appendChild(imgDiv);}
+    if(l.pdf){var pj=document.createElement('div');pj.style.cssText='font-family:var(--font-mono);font-size:10px;color:var(--gold-light);margin-bottom:8px;';pj.textContent='📄 Pièce jointe : '+(l.pdf_name||'document.pdf');card.appendChild(pj);}
     if(l.diffusion||l.risk_link){var metaDiv=document.createElement('div');metaDiv.style.cssText='display:flex;gap:14px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);';if(l.diffusion){var ds=document.createElement('span');ds.textContent='📨 '+l.diffusion;metaDiv.appendChild(ds);}if(l.risk_link){var rs=document.createElement('span');rs.style.color='var(--gold-light)';rs.textContent='◈ '+l.risk_link;metaDiv.appendChild(rs);}card.appendChild(metaDiv);}
     container.appendChild(card);
   });
@@ -18105,6 +18219,7 @@ function printLessonById(id){
     +'.box{padding:12px 14px;border-left:3px solid #1b6ca8;background:rgba(27,108,168,.05);border-radius:0 4px 4px 0;font-size:12.5px;color:#1a2535;line-height:1.65;margin-bottom:10px;white-space:normal;}'
     +'.uimg{max-width:100%;max-height:200px;object-fit:contain;border-radius:4px;display:block;margin-bottom:12px;}'
     +'.sig{display:block;width:386px;max-width:100%;height:auto;margin:18px 0 0;}'
+    +'.att{margin:10px 0 0;padding:8px 12px;border-left:3px solid #C9A227;background:rgba(201,162,39,.10);border-radius:0 4px 4px 0;font-family:monospace;font-size:11px;color:#5a4a12;}'
     +'.pnum{position:absolute;right:70px;bottom:34px;z-index:2;font-family:monospace;font-size:9px;color:#6b7a8d;}'
     +'@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}@page{size:A4 portrait;margin:0;}html,body{width:794px;margin:0;padding:0;}.page{width:794px;height:1123px;}}';
   var iTag=l.image?'<img class="uimg" src="'+l.image+'"/>':'';
@@ -18127,12 +18242,16 @@ function printLessonById(id){
   var meta='<div class="meta">'+(l.date?'<span><b>Date :</b> '+esc(l.date)+'</span>':'')+(l.ref?'<span><b>Réf. :</b> '+esc(l.ref)+'</span>':'')+(l.risk_link?'<span><b>Risk :</b> '+esc(l.risk_link)+'</span>':'')+(l.diffusion?'<span><b>Distribution :</b> '+esc(l.diffusion)+'</span>':'')+'</div>';
   var pagesHtml=docPages.map(function(p,idx){
     var titleHtml=p.first?'<div class="ttl">'+esc(p.title)+'</div>':'<div class="ttl">'+esc(p.title)+' — suite</div>';
+    // La pièce jointe est signalée sur la dernière page de chaque langue,
+    // juste avant la signature : le PDF lui-même ne peut pas être fusionné
+    // dans le document imprimé, il est transmis séparément.
+    var attHtml=(p.last&&l.pdf)?'<div class="att">&#128206; Pièce jointe / Attachment : '+esc(l.pdf_name||'document.pdf')+'</div>':'';
     var sigTag=_SAF_SIG_IMG();
     // La signature clôt systématiquement chaque version linguistique :
     // elle est ajoutée après le corps de texte, sur la dernière page FR puis
     // sur la dernière page EN (et jamais sur les pages intermédiaires).
     var sigHtml=(p.last&&sigTag)?'<img class="sig" src="'+sigTag+'" alt="Signature"/>':'';
-    var content=(p.first?pi('after-title'):'')+'<div class="box">'+safeHtml(p.body)+'</div>'+sigHtml;
+    var content=(p.first?pi('after-title'):'')+'<div class="box">'+safeHtml(p.body)+'</div>'+attHtml+sigHtml;
     return '<section class="page"><div class="bg">'+(bgImg?'<img src="'+bgImg+'"/>':'')+'</div><div class="ct">'+meta+(p.lang?'<div class="lang">'+p.lang+'</div>':'')+titleHtml+content+'</div><div class="pnum">Page '+(idx+1)+' / '+total+'</div></section>';
   }).join('');
   var w=window.open('','_blank');
@@ -22499,7 +22618,7 @@ setTimeout(function(){
       if(data.safLessons==null && localLes && localLes!=='[]' && localLes!=='null'){
         data.safLessons = localLes;
       }
-      if(data.safLessons!=null)     data.safLessons     = mergeHeavy(data.safLessons, localLes, 'id', ['image','fr_body','en_body','description','lesson','fr_title','en_title','title']);
+      if(data.safLessons!=null)     data.safLessons     = mergeHeavy(data.safLessons, localLes, 'id', ['image','pdf','fr_body','en_body','description','lesson','fr_title','en_title','title']);
 
       // Keep the 53 embedded families as the controlled baseline, while preserving
       // custom SMS entries created through Event Accounting (SMS-54 and above).
