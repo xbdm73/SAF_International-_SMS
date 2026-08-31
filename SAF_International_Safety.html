@@ -17633,6 +17633,87 @@ function showLessonForm(editId){
       document.execCommand(cmd,false,val||null);
       _saveRange();
     }
+    // La taille de police n'utilise PAS execCommand('fontSize') : cette
+    // commande est dépréciée, produit des <font size> aux tailles imposées
+    // par le navigateur et échoue silencieusement dès que la sélection a été
+    // perdue. On enveloppe directement la sélection dans un span en px.
+    function _applyFontSize(px){
+      var ed=_restoreRange(); if(!ed) return;
+      var sel=window.getSelection(); if(!sel||!sel.rangeCount) return;
+      var r=sel.getRangeAt(0);
+      if(!ed.contains(r.commonAncestorContainer)) return;
+
+      // Aucun texte sélectionné : point d'insertion à la nouvelle taille,
+      // la frappe suivante en hérite.
+      if(r.collapsed){
+        var s0=document.createElement('span');
+        s0.style.fontSize=px+'px';
+        s0.appendChild(document.createTextNode('\u200B'));
+        r.insertNode(s0);
+        var cr=document.createRange();
+        cr.setStart(s0.firstChild,s0.firstChild.length); cr.collapse(true);
+        sel.removeAllRanges(); sel.addRange(cr);
+        _savedRange=cr.cloneRange(); ed.focus();
+        return;
+      }
+
+      // Modification SUR PLACE : on ne fait pas d'extractContents, qui
+      // scinderait les paragraphes traversés par la sélection. On coupe
+      // seulement les nœuds de texte aux deux bornes, puis on habille les
+      // nœuds entièrement compris dans la plage.
+      var range=r.cloneRange();
+      if(range.endContainer.nodeType===3&&range.endOffset<range.endContainer.length){
+        range.endContainer.splitText(range.endOffset);
+      }
+      if(range.startContainer.nodeType===3&&range.startOffset>0){
+        var ns=range.startContainer.splitText(range.startOffset);
+        range.setStart(ns,0);
+      }
+
+      var walker=document.createTreeWalker(ed,NodeFilter.SHOW_TEXT,null);
+      var texts=[],n;
+      while((n=walker.nextNode())){
+        if(!n.nodeValue||!n.nodeValue.replace(/\u200B/g,'').length)continue;
+        try{
+          if(range.comparePoint(n,0)===0&&range.comparePoint(n,n.nodeValue.length)===0)texts.push(n);
+        }catch(e){}
+      }
+      if(!texts.length){ ed.focus(); return; }
+
+      var wrapped=[];
+      texts.forEach(function(t){
+        var parent=t.parentNode;
+        // Le nœud est déjà seul dans un span de taille : on ajuste ce span
+        // au lieu d'en imbriquer un second.
+        if(parent&&parent!==ed&&parent.tagName==='SPAN'&&parent.style&&parent.style.fontSize&&parent.childNodes.length===1){
+          parent.style.fontSize=px+'px';
+          wrapped.push(parent);
+          return;
+        }
+        var sp=document.createElement('span');
+        sp.style.fontSize=px+'px';
+        parent.replaceChild(sp,t); sp.appendChild(t);
+        wrapped.push(sp);
+      });
+
+      // Purge des tailles posées plus bas dans l'arbre, qui primeraient.
+      wrapped.forEach(function(sp){
+        Array.prototype.forEach.call(sp.querySelectorAll('font[size]'),function(f){f.removeAttribute('size');});
+        Array.prototype.forEach.call(sp.querySelectorAll('[style]'),function(e){
+          e.style.fontSize='';
+          if(!e.getAttribute('style'))e.removeAttribute('style');
+        });
+      });
+
+      var first=wrapped[0],last=wrapped[wrapped.length-1];
+      var fr=document.createRange();
+      if(first&&last&&first.parentNode&&last.parentNode){
+        fr.setStartBefore(first); fr.setEndAfter(last);
+        sel.removeAllRanges(); sel.addRange(fr);
+        _savedRange=fr.cloneRange();
+      }
+      ed.focus();
+    }
     function btn(txt,cmd,val){
       var b=document.createElement('button');b.type='button';b.textContent=txt;
       b.style.cssText='min-width:28px;padding:4px 7px;border:1px solid rgba(255,255,255,.14);border-radius:4px;background:rgba(255,255,255,.06);color:var(--grey-200);font-family:var(--font-mono);font-size:10px;cursor:pointer;';
@@ -17647,13 +17728,13 @@ function showLessonForm(editId){
     bar.appendChild(btn('←','justifyLeft'));bar.appendChild(btn('↔','justifyCenter'));bar.appendChild(btn('→','justifyRight'));
     var size=document.createElement('select');
     size.style.cssText='padding:4px 6px;border-radius:4px;background:#122238;color:var(--white);border:1px solid rgba(255,255,255,.14);font-family:var(--font-mono);font-size:10px;';
-    [['','Taille'],['2','Petit'],['3','Normal'],['4','Moyen +'],['5','Grand'],['6','Très grand']].forEach(function(o){var opt=document.createElement('option');opt.value=o[0];opt.textContent=o[1];size.appendChild(opt);});
+    [['','Taille'],['11','Petit'],['13','Normal'],['16','Moyen +'],['20','Grand'],['26','Très grand']].forEach(function(o){var opt=document.createElement('option');opt.value=o[0];opt.textContent=o[1];size.appendChild(opt);});
     // On ne peut pas preventDefault sur un <select> (ça bloquerait l'ouverture
     // de la liste) : on s'appuie donc sur la sélection mémorisée.
     size.addEventListener('focus',function(){/* la sélection a déjà été mémorisée */});
     size.addEventListener('change',function(){
       if(!this.value) return;
-      _exec('fontSize',this.value);
+      _applyFontSize(this.value);
       this.value='';
     });
     bar.appendChild(size);
@@ -17874,7 +17955,9 @@ function llClearImage(){
 }
 function llGetRichHtml(id){
   var el=document.getElementById(id);
-  return el?(el.innerHTML||'').trim():'';
+  // \u200B : ancres invisibles posées par le sélecteur de taille quand aucun
+  // texte n'était sélectionné — elles ne doivent pas partir en base.
+  return el?String(el.innerHTML||'').replace(/\u200B/g,'').trim():'';
 }
 function llStripHtml(html){
   var d=document.createElement('div');d.innerHTML=html||'';return (d.textContent||d.innerText||'').trim();
