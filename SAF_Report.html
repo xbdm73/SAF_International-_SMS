@@ -31,7 +31,7 @@ body{font-family:var(--font-b);background:var(--navy);color:var(--white);min-hei
 #hdr-top{display:flex;align-items:center;justify-content:center;width:100%;position:relative;margin-bottom:4px;}
 #hdr-logo{height:80px;width:auto;object-fit:contain;display:block;}
 #jc-badge{position:absolute;right:0;top:0;background:rgba(63,185,80,.15);border:1px solid rgba(63,185,80,.4);color:var(--green-bright);font-family:var(--font-m);font-size:9px;padding:3px 7px;border-radius:4px;letter-spacing:.5px;white-space:nowrap;}
-#hdr-title{font-family:var(--font-d);font-size:clamp(32px,8vw,48px);letter-spacing:.06em;color:var(--white);line-height:1;text-transform:uppercase;text-align:center;width:100%;}
+#hdr-title{font-family:var(--font-d);font-size:clamp(22px,5.4vw,36px);letter-spacing:.06em;color:var(--white);line-height:1;text-transform:uppercase;text-align:center;width:100%;}
 #hdr-sub{font-family:var(--font-m);font-size:9px;color:#9db8d6;letter-spacing:.04em;text-align:center;width:100%;}
 
 /* ── CONTAINER ── */
@@ -47,11 +47,39 @@ body{font-family:var(--font-b);background:var(--navy);color:var(--white);min-hei
 /* ── SECTION LABEL ── */
 .slabel{font-family:var(--font-m);font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;padding:0 0 8px;border-bottom:1px solid rgba(201,162,39,.2);margin:28px 0 16px;}
 
+/* ── BRANCHES (Safety / Security) ── */
+#form-body.hidden{display:none;}
+.saf-only,.sec-only{display:none;}
+body.mode-safety .saf-only{display:block;}
+body.mode-security .sec-only{display:block;}
+.warn{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.55;margin-bottom:12px;}
+.warn-red{background:rgba(204,34,0,.12);border:1px solid rgba(204,34,0,.4);color:#f0a89c;}
+.warn-gold{background:rgba(201,162,39,.10);border:1px solid rgba(201,162,39,.3);color:var(--gold-light);}
+.hint{font-size:11px;font-style:italic;color:var(--grey-400);line-height:1.5;margin-top:8px;}
+
+/* ── REPORT TYPE SELECTOR ── */
+#rtype{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px;}
+.rt{padding:16px 12px;border:1.5px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.04);
+    cursor:pointer;user-select:none;-webkit-user-select:none;text-align:center;transition:all .15s;}
+.rt .rt-t{font-family:var(--font-d);font-size:20px;letter-spacing:.05em;color:var(--grey-200);line-height:1.1;}
+.rt .rt-s{font-family:var(--font-m);font-size:9px;letter-spacing:.5px;color:var(--grey-600);margin-top:5px;text-transform:uppercase;}
+.rt:active{background:rgba(255,255,255,.08);}
+.rt.on{border-color:var(--gold);background:rgba(201,162,39,.12);}
+.rt.on .rt-t{color:var(--gold-light);}
+.rt.on .rt-s{color:var(--gold);}
+
+/* ── "OTHER" SPECIFY FIELD ── */
+.oth{margin-top:8px;}
+.oth input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;
+  color:var(--white);font-family:var(--font-b);font-size:15px;padding:13px 14px;outline:none;
+  -webkit-appearance:none;appearance:none;color-scheme:dark;transition:border-color .15s;}
+.oth input:focus{border-color:var(--steel-bright);}
+
 /* ── FIELD ── */
 .f{margin-bottom:14px;}
 .f>label{display:block;font-family:var(--font-m);font-size:10px;letter-spacing:1px;color:var(--grey-400);text-transform:uppercase;margin-bottom:6px;}
 .req{color:var(--gold-light);}
-.f input[type=text],.f input[type=email],.f input[type=date],.f input[type=time],.f select,.f textarea{
+.f input[type=text],.f input[type=email],.f input[type=tel],.f input[type=date],.f input[type=time],.f select,.f textarea{
   width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;
   color:var(--white);font-family:var(--font-b);font-size:15px;padding:13px 14px;outline:none;
   -webkit-appearance:none;appearance:none;color-scheme:dark;transition:border-color .15s;}
@@ -110,7 +138,7 @@ body{font-family:var(--font-b);background:var(--navy);color:var(--white);min-hei
 #anon-btn.on #anon-track::after{transform:translateX(20px);background:var(--green-bright);}
 #anon-lbl{font-size:13px;color:var(--white);font-weight:600;}
 #anon-sub{font-size:11px;color:var(--grey-400);margin-top:2px;}
-#rep-fields{overflow:hidden;transition:max-height .3s ease,opacity .3s ease;max-height:300px;opacity:1;}
+#rep-fields{overflow:hidden;transition:max-height .3s ease,opacity .3s ease;max-height:520px;opacity:1;}
 #rep-fields.h{max-height:0!important;opacity:0;pointer-events:none;}
 
 /* ── COND SECTION ── */
@@ -171,7 +199,7 @@ body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
 
 <!-- LANG BAR -->
 <div id="lang-bar" style="position:relative;">
-  <a href="index.html" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--grey-400);font-family:var(--font-m);font-size:11px;letter-spacing:.5px;text-decoration:none;display:flex;align-items:center;gap:4px;transition:color .15s;" onmouseover="this.style.color='var(--gold-light)'" onmouseout="this.style.color='var(--grey-400)'">&#8592; Accueil</a>
+  <a href="Archives/index.html" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--grey-400);font-family:var(--font-m);font-size:11px;letter-spacing:.5px;text-decoration:none;display:flex;align-items:center;gap:4px;transition:color .15s;" onmouseover="this.style.color='var(--gold-light)'" onmouseout="this.style.color='var(--grey-400)'">&#8592; Accueil</a>
   <button class="lb on" id="lb-fr" onclick="setLang('fr')">&#127467;&#127479; Fran&#231;ais</button>
   <button class="lb"    id="lb-en" onclick="setLang('en')">&#127468;&#127463; English</button>
 </div>
@@ -183,7 +211,7 @@ body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
       <img id="hdr-logo" src="data:image/png;base64,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" alt="SAF International"/>
       <div id="jc-badge">JUST CULTURE</div>
     </div>
-    <div id="hdr-title">Safety Report</div>
+    <div id="hdr-title">Safety Report &mdash; Security Report</div>
     <div id="hdr-sub">CH.AOC.3052 &nbsp;&middot;&nbsp; CH.CAMO.3052 &nbsp;&middot;&nbsp; AS 332 C1</div>
   </div>
 </div>
@@ -201,8 +229,29 @@ body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
     </div>
   </div>
 
-  <!-- S1 REDACTEUR -->
-  <div class="slabel">01 &mdash; <span class="fr">R&#233;dacteur</span><span class="en">Editor</span></div>
+  <!-- REPORT TYPE -->
+  <div id="rtype">
+    <div class="rt" onclick="pickType(this,'Safety')">
+      <div class="rt-t">SAFETY</div>
+      <div class="rt-s"><span class="fr">&#201;v&#232;nement s&#233;curit&#233; des vols</span><span class="en">Flight safety occurrence</span></div>
+    </div>
+    <div class="rt" onclick="pickType(this,'Security')">
+      <div class="rt-t">SECURITY</div>
+      <div class="rt-s"><span class="fr">S&#251;ret&#233; &amp; Part-IS</span><span class="en">Security &amp; Part-IS event</span></div>
+    </div>
+  </div>
+
+  <!-- FORM BODY (affich&#233; une fois le type choisi) -->
+  <div id="form-body" class="hidden">
+
+  <!-- AVERTISSEMENTS S&#219;RET&#201; -->
+  <div class="sec-only">
+    <div class="warn warn-red"><span class="fr">Si l&#39;&#233;v&#232;nement est en cours &mdash; intrusion, menace, colis suspect, cyberattaque active &mdash; alertez les secours et l&#39;Accountable Manager <strong>avant</strong> de remplir ce formulaire.</span><span class="en">If the event is still in progress &mdash; intrusion, threat, suspicious item, ongoing cyber attack &mdash; call the emergency services and inform the Accountable Manager <strong>before</strong> filling in this form.</span></div>
+    <div class="warn warn-gold"><span class="fr">Ne d&#233;crivez pas ici en d&#233;tail une vuln&#233;rabilit&#233; exploitable. Ce signalement est trait&#233; par le Security Manager en diffusion restreinte.</span><span class="en">Do not describe an exploitable vulnerability in detail here. This report is handled by the Security Manager under restricted distribution.</span></div>
+  </div>
+
+  <!-- S1 R&#201;DACTEUR -->
+  <div class="slabel" data-fr="R&#233;dacteur" data-en="Editor"></div>
 
   <div id="anon-btn" onclick="toggleAnon()">
     <div id="anon-track"></div>
@@ -212,53 +261,99 @@ body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
     </div>
   </div>
 
+  <div class="sec-only"><div class="warn warn-gold"><span class="fr">Un signalement s&#251;ret&#233; anonyme est accept&#233;, mais il emp&#234;che toute investigation de suivi. Laisser un contact est fortement recommand&#233;.</span><span class="en">An anonymous security report is accepted, but it prevents any follow-up investigation. Leaving a contact is strongly recommended.</span></div></div>
+
   <div id="rep-fields">
     <div class="frow">
       <div class="f"><label><span class="fr">Pr&#233;nom</span><span class="en">First name</span></label><input type="text" id="f-fn" placeholder="Pr&#233;nom / First name"/></div>
       <div class="f"><label><span class="fr">Nom</span><span class="en">Last name</span></label><input type="text" id="f-ln" placeholder="NOM / LAST NAME"/></div>
     </div>
     <div class="f"><label>Email</label><input type="email" id="f-em" placeholder="prenom.nom@saf-helico.com"/></div>
+    <div class="f"><label><span class="fr">T&#233;l&#233;phone</span><span class="en">Phone</span></label><input type="tel" id="f-tel" placeholder="+41 79 000 00 00"/></div>
+    <div class="f"><label><span class="fr">Votre fonction</span><span class="en">Your function</span></label><input type="text" id="f-role" placeholder="CDB, TSOP, m&#233;canicien, personnel au sol, dispatch&#8230;"/></div>
   </div>
 
-  <!-- S2 ENTITE -->
-  <div class="slabel">02 &mdash; <span class="fr">Entit&#233; concern&#233;e</span><span class="en">Entity concerned</span></div>
+  <!-- S2 ENTIT&#201; -->
+  <div class="slabel" data-fr="Entit&#233; concern&#233;e" data-en="Entity concerned"></div>
   <div class="f">
     <div class="rg" id="g-entity">
       <div class="ri" onclick="pickRadio(this,'entity','SAF International')"><span class="rm"></span><span class="it">SAF International</span></div>
       <div class="ri" onclick="pickRadio(this,'entity','Aero Support Force')"><span class="rm"></span><span class="it">Aero Support Force</span></div>
+      <div class="ri" onclick="pickRadio(this,'entity','Autre')"><span class="rm"></span><span class="it"><span class="fr">Autre</span><span class="en">Other</span></span></div>
+    </div>
+    <div class="oth"><input type="text" id="f-entity-oth" placeholder="Autre &mdash; pr&#233;ciser&#8230; / Other &mdash; please specify&#8230;"/></div>
+  </div>
+
+  <!-- S3 TYPE D'&#201;V&#200;NEMENT — SAFETY -->
+  <div class="saf-only">
+    <div class="slabel" data-fr="Type d&#39;&#233;v&#232;nement" data-en="Type of event" data-req="1"></div>
+    <div class="f">
+      <label>Aviation</label>
+      <div class="cg cg2" id="g-avi">
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it">Incident</span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Incident grave</span><span class="en">Major incident</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it">Accident</span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it">Airprox</span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Situation &#224; risque</span><span class="en">Situation at risk</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it">Incident MD</span></div>
+        <div class="ci" onclick="tickBox(this)" style="grid-column:span 2"><span class="cm">&#10003;</span><span class="it"><span class="fr">Autre</span><span class="en">Other</span></span></div>
+      </div>
+      <div class="oth"><input type="text" id="f-avi-oth" placeholder="Autre &mdash; pr&#233;ciser&#8230; / Other &mdash; please specify&#8230;"/></div>
     </div>
   </div>
 
-  <!-- S3 TYPE -->
-  <div class="slabel">03 &mdash; <span class="fr">Type d&#39;&#233;v&#232;nement</span><span class="en">Type of event</span> <span class="req">*</span></div>
+  <!-- S3 TYPE D'&#201;V&#200;NEMENT — SECURITY -->
+  <div class="sec-only">
+    <div class="slabel" data-fr="Type d&#39;&#233;v&#232;nement s&#251;ret&#233;" data-en="Type of security event" data-req="1"></div>
+    <div class="f">
+      <label><span class="fr">S&#251;ret&#233; / intervention illicite</span><span class="en">Security / unlawful interference</span></label>
+      <div class="cg" id="g-sec">
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Acc&#232;s non autoris&#233; &mdash; a&#233;ronef, hangar, aire de trafic, DZ</span><span class="en">Unauthorised access &mdash; aircraft, hangar, apron, landing site</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Malveillance ou sabotage suspect&#233;</span><span class="en">Tampering or suspected sabotage</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Vol ou perte &mdash; cl&#233;s, badge, documents, outillage, pi&#232;ces</span><span class="en">Theft or loss &mdash; keys, badge, documents, tooling, parts</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">A&#233;ronef laiss&#233; non s&#233;curis&#233; / visite s&#251;ret&#233; non effectu&#233;e</span><span class="en">Aircraft left unsecured / security check not performed</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Menace, objet suspect ou alerte &#224; la bombe</span><span class="en">Threat, suspicious item or bomb threat</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Incursion de drone / UAS</span><span class="en">Drone / UAS incursion</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">&#201;blouissement laser</span><span class="en">Laser illumination</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Observation ou surveillance suspecte des installations</span><span class="en">Suspicious observation or surveillance of facilities</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Menace ou agression envers le personnel</span><span class="en">Threat or aggression against staff</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Arme ou objet prohib&#233; &#224; bord</span><span class="en">Weapon or prohibited item on board</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Passager clandestin</span><span class="en">Stowaway</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Autre</span><span class="en">Other</span></span></div>
+      </div>
+      <div class="oth"><input type="text" id="f-sec-oth" placeholder="Autre &mdash; pr&#233;ciser&#8230; / Other &mdash; please specify&#8230;"/></div>
+    </div>
 
-  <div class="f">
-    <label><span class="fr">Aviation</span><span class="en">Aviation</span></label>
-    <div class="cg cg2" id="g-avi">
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it">Incident</span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Incident grave</span><span class="en">Major incident</span></span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it">Accident</span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it">Airprox</span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Situation &#224; risque</span><span class="en">Situation at risk</span></span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it">Incident MD</span></div>
-      <div class="ci" onclick="tickBox(this)" style="grid-column:span 2"><span class="cm">&#10003;</span><span class="it"><span class="fr">Autre</span><span class="en">Other</span></span></div>
+    <div class="slabel" data-fr="S&#233;curit&#233; de l&#39;information (Part-IS)" data-en="Information security (Part-IS)"></div>
+    <div class="f">
+      <label><span class="fr">&#201;v&#232;nement de s&#233;curit&#233; de l&#39;information</span><span class="en">Information security event</span></label>
+      <div class="cg" id="g-is">
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Phishing / mail suspect</span><span class="en">Phishing / suspicious email</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Malware / ran&#231;ongiciel</span><span class="en">Malware / ransomware</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Acc&#232;s non autoris&#233; &#224; un syst&#232;me ou un compte</span><span class="en">Unauthorised access to a system or account</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Fuite ou exfiltration de donn&#233;es</span><span class="en">Data leak or exfiltration</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">EFB ou tablette compromis</span><span class="en">Compromised EFB or tablet</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Compromission d&#39;un fournisseur ou sous-traitant</span><span class="en">Supplier or subcontractor compromise</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Perte ou vol d&#39;un &#233;quipement contenant des donn&#233;es</span><span class="en">Lost or stolen device holding company data</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Comportement anormal du poste de travail</span><span class="en">Abnormal workstation behaviour</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Envoi &#224; un mauvais destinataire</span><span class="en">Wrong recipient</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Autre</span><span class="en">Other</span></span></div>
+      </div>
+      <div class="oth"><input type="text" id="f-is-oth" placeholder="Autre &mdash; pr&#233;ciser&#8230; / Other &mdash; please specify&#8230;"/></div>
+    </div>
+    <div class="f"><label><span class="fr">Syst&#232;me ou actif concern&#233;</span><span class="en">System or asset concerned</span></label><input type="text" id="f-asset" placeholder="AMOS, EFB, bo&#238;te ops, porte hangar, HB-ZKN&#8230;"/></div>
+    <div class="f">
+      <label><span class="fr">Cet actif supporte-t-il une fonction li&#233;e &#224; la s&#233;curit&#233; ?</span><span class="en">Does that asset support a safety-related function?</span></label>
+      <div class="rg" id="g-asset-fn" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div class="ri" onclick="pickRadio(this,'assetFn','Oui')"><span class="rm"></span><span class="it"><span class="fr">Oui</span><span class="en">Yes</span></span></div>
+        <div class="ri" onclick="pickRadio(this,'assetFn','Non')"><span class="rm"></span><span class="it"><span class="fr">Non</span><span class="en">No</span></span></div>
+        <div class="ri" onclick="pickRadio(this,'assetFn','Inconnu')"><span class="rm"></span><span class="it"><span class="fr">Inconnu</span><span class="en">Unknown</span></span></div>
+      </div>
     </div>
   </div>
 
-  <div class="f">
-    <label><span class="fr">Cybers&#233;curit&#233;</span><span class="en">Cybersecurity</span></label>
-    <div class="cg cg2" id="g-cyber">
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it">Mail / Phishing</span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Comportement PC &#233;trange</span><span class="en">Strange PC behavior</span></span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Perte / vol &#233;quipement</span><span class="en">Lost / stolen device</span></span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Envoi erron&#233;</span><span class="en">Wrong recipient</span></span></div>
-      <div class="ci" onclick="tickBox(this)" style="grid-column:span 2"><span class="cm">&#10003;</span><span class="it"><span class="fr">Autre</span><span class="en">Other</span></span></div>
-    </div>
-  </div>
-
-  <!-- S4 AERONEF -->
-  <div class="slabel">04 &mdash; <span class="fr">A&#233;ronef &amp; Personnel</span><span class="en">Aircraft &amp; Personnel</span></div>
-
+  <!-- S4 A&#201;RONEF -->
+  <div class="slabel" data-fr="A&#233;ronef &amp; Personnel" data-en="Aircraft &amp; Personnel"></div>
   <div class="frow">
     <div class="f">
       <label><span class="fr">Mod&#232;le</span><span class="en">Aircraft type</span></label>
@@ -270,89 +365,145 @@ body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
     </div>
   </div>
   <div class="f"><label><span class="fr">Pilote commandant de bord</span><span class="en">Pilot in command</span></label><input type="text" id="f-pic" placeholder="Pr&#233;nom NOM"/></div>
+  <div class="f"><label><span class="fr">Copilote</span><span class="en">Copilot</span></label><input type="text" id="f-copilot" placeholder="Pr&#233;nom NOM"/></div>
   <div class="f"><label>TSOP</label><input type="text" id="f-tsop" placeholder="Nom(s) du/des TSOP"/></div>
   <div class="f"><label><span class="fr">Autres personnes</span><span class="en">Other people</span></label><input type="text" id="f-oth" placeholder="Passagers, t&#233;moins&#8230;"/></div>
 
   <!-- S5 DATE LIEU -->
-  <div class="slabel">05 &mdash; <span class="fr">Date, Lieu &amp; Base</span><span class="en">Date, Location &amp; Base</span></div>
+  <div class="slabel" data-fr="Date, Lieu &amp; Base" data-en="Date, Location &amp; Base"></div>
   <div class="frow">
-    <div class="f"><label><span class="fr">Date</span><span class="en">Date</span> <span class="req">*</span></label><input type="date" id="f-date"/></div>
+    <div class="f"><label>Date <span class="req">*</span></label><input type="date" id="f-date"/></div>
     <div class="f"><label><span class="fr">Heure locale</span><span class="en">Local time</span></label><input type="time" id="f-time"/></div>
   </div>
   <div class="f"><label><span class="fr">N&#176; de dossier</span><span class="en">File number</span></label><input type="text" id="f-dos" placeholder="R&#233;f. interne ou n&#176; de vol"/></div>
   <div class="f"><label><span class="fr">Lieu de l&#39;&#233;v&#232;nement</span><span class="en">Location of event</span> <span class="req">*</span></label><input type="text" id="f-loc" placeholder="Ex : Sion, chantier EDF&#8230;"/></div>
   <div class="f">
     <label><span class="fr">Base de rattachement</span><span class="en">Home base</span></label>
-    <select id="f-base"><option value=""></option><option>Albertville</option><option>Sion</option></select>
+    <select id="f-base"><option value=""></option><option>Albertville</option><option>Sion</option><option>Autre / Other</option></select>
+    <div class="oth"><input type="text" id="f-base-oth" placeholder="Autre base &mdash; pr&#233;ciser&#8230; / Other base &mdash; please specify&#8230;"/></div>
   </div>
-  <div class="f">
-    <label><span class="fr">Phase de vol</span><span class="en">Flight phase</span></label>
-    <div class="cg cg2" id="g-phase">
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Sol</span><span class="en">Ground</span></span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Stationnaire</span><span class="en">Hover</span></span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">D&#233;collage</span><span class="en">Take-off</span></span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Mont&#233;e</span><span class="en">Climb</span></span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Croisi&#232;re</span><span class="en">Cruise</span></span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Descente</span><span class="en">Descent</span></span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Atterrissage</span><span class="en">Landing</span></span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Autre</span><span class="en">Other</span></span></div>
+  <div class="saf-only">
+    <div class="f">
+      <label><span class="fr">Phase de vol</span><span class="en">Flight phase</span></label>
+      <div class="cg cg2" id="g-phase">
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Sol</span><span class="en">Ground</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Stationnaire</span><span class="en">Hover</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">D&#233;collage</span><span class="en">Take-off</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Mont&#233;e</span><span class="en">Climb</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Croisi&#232;re</span><span class="en">Cruise</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Descente</span><span class="en">Descent</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Atterrissage</span><span class="en">Landing</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Autre</span><span class="en">Other</span></span></div>
+      </div>
+      <div class="oth"><input type="text" id="f-phase-oth" placeholder="Autre &mdash; pr&#233;ciser&#8230; / Other &mdash; please specify&#8230;"/></div>
     </div>
   </div>
 
-  <!-- S6 MAINTENANCE -->
-  <div class="slabel">06 &mdash; Maintenance &amp; CAMO</div>
-  <div class="f">
-    <label><span class="fr">L&#39;&#233;v&#232;nement concerne-t-il le Part 145 ou le CAMO ?</span><span class="en">Does the event concern Part 145 or CAMO?</span></label>
-    <div class="rg" id="g-maint" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <div class="ri" onclick="pickRadio(this,'maint','Oui');showMaint(true)"><span class="rm"></span><span class="it"><span class="fr">Oui</span><span class="en">Yes</span></span></div>
-      <div class="ri" onclick="pickRadio(this,'maint','Non');showMaint(false)"><span class="rm"></span><span class="it"><span class="fr">Non</span><span class="en">No</span></span></div>
-    </div>
-  </div>
-  <div class="cond h" id="maint-det" style="max-height:500px;">
+  <!-- S6 MAINTENANCE — SAFETY -->
+  <div class="saf-only">
+    <div class="slabel" data-fr="Maintenance &amp; CAMO" data-en="Maintenance &amp; CAMO"></div>
     <div class="f">
-      <label><span class="fr">Type d&#39;erreur maintenance</span><span class="en">Maintenance error type</span></label>
-      <div class="cg cg2" id="g-maint-type">
-        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Erreur d&#39;entretien</span><span class="en">Maintenance error</span></span></div>
-        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Proc&#233;dure inad&#233;quate</span><span class="en">Inadequate procedure</span></span></div>
-        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Infrastructure inad&#233;quate</span><span class="en">Inadequate infrastructure</span></span></div>
-        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Outillage inadapt&#233;</span><span class="en">Unsuitable tools</span></span></div>
-        <div class="ci" onclick="tickBox(this)" style="grid-column:span 2"><span class="cm">&#10003;</span><span class="it"><span class="fr">Autre</span><span class="en">Other</span></span></div>
+      <label><span class="fr">L&#39;&#233;v&#232;nement concerne-t-il le Part 145 ou le CAMO ?</span><span class="en">Does the event concern Part 145 or CAMO?</span></label>
+      <div class="rg" id="g-maint" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="ri" onclick="pickRadio(this,'maint','Oui');showMaint(true)"><span class="rm"></span><span class="it"><span class="fr">Oui</span><span class="en">Yes</span></span></div>
+        <div class="ri" onclick="pickRadio(this,'maint','Non');showMaint(false)"><span class="rm"></span><span class="it"><span class="fr">Non</span><span class="en">No</span></span></div>
       </div>
     </div>
-    <div class="f"><label>ATA / PN / SN / CT / BLT</label><textarea id="f-mref" placeholder="Ex : ATA 63 &mdash; MGB &middot; PN 332A310002 &middot; SN 1234" style="min-height:70px;"></textarea></div>
-  </div>
-
-  <!-- S7 CONSEQUENCES -->
-  <div class="slabel">07 &mdash; <span class="fr">Cons&#233;quences &amp; Pression</span><span class="en">Consequences &amp; Pressure</span></div>
-  <div class="f">
-    <label><span class="fr">Cons&#233;quence de l&#39;&#233;v&#232;nement</span><span class="en">Consequences of the event</span></label>
-    <div class="cpg">
-      <div class="cp" data-v="none"  onclick="pickCons(this)"><span class="dot"></span><span class="lbl"><span class="fr">Aucune</span><span class="en">None</span></span></div>
-      <div class="cp" data-v="minor" onclick="pickCons(this)"><span class="dot"></span><span class="lbl"><span class="fr">L&#233;g&#232;re</span><span class="en">Minor</span></span></div>
-      <div class="cp" data-v="med"   onclick="pickCons(this)"><span class="dot"></span><span class="lbl"><span class="fr">Moyenne</span><span class="en">Medium</span></span></div>
-      <div class="cp" data-v="major" onclick="pickCons(this)"><span class="dot"></span><span class="lbl"><span class="fr">Grave</span><span class="en">Major</span></span></div>
-      <div class="cp" data-v="other" onclick="pickCons(this)"><span class="dot"></span><span class="lbl"><span class="fr">Autre</span><span class="en">Other</span></span></div>
+    <div class="cond h" id="maint-det" style="max-height:600px;">
+      <div class="f">
+        <label><span class="fr">Type d&#39;erreur maintenance</span><span class="en">Maintenance error type</span></label>
+        <div class="cg cg2" id="g-maint-type">
+          <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Erreur d&#39;entretien</span><span class="en">Maintenance error</span></span></div>
+          <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Proc&#233;dure inad&#233;quate</span><span class="en">Inadequate procedure</span></span></div>
+          <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Infrastructure inad&#233;quate</span><span class="en">Inadequate infrastructure</span></span></div>
+          <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Outillage inadapt&#233;</span><span class="en">Unsuitable tools</span></span></div>
+          <div class="ci" onclick="tickBox(this)" style="grid-column:span 2"><span class="cm">&#10003;</span><span class="it"><span class="fr">Autre</span><span class="en">Other</span></span></div>
+        </div>
+        <div class="oth"><input type="text" id="f-maint-oth" placeholder="Autre &mdash; pr&#233;ciser&#8230; / Other &mdash; please specify&#8230;"/></div>
+      </div>
+      <div class="f"><label>ATA / PN / SN / CT / BLT</label><textarea id="f-mref" placeholder="Ex : ATA 63 &mdash; MGB &middot; PN 332A310002 &middot; SN 1234" style="min-height:70px;"></textarea></div>
     </div>
   </div>
-  <div class="f">
-    <label><span class="fr">Pression ressentie pour cette mission</span><span class="en">Did you feel pressured?</span></label>
-    <div class="cg cg2" id="g-pressure">
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Pression commerciale</span><span class="en">Commercial pressure</span></span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Pression hi&#233;rarchique</span><span class="en">Hierarchical pressure</span></span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Pression client</span><span class="en">Customer pressure</span></span></div>
-      <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Aucune pression</span><span class="en">No pressure</span></span></div>
+
+  <!-- S7 CONS&#201;QUENCES &amp; PRESSION — SAFETY -->
+  <div class="saf-only">
+    <div class="slabel" data-fr="Cons&#233;quences &amp; Pression" data-en="Consequences &amp; Pressure"></div>
+    <div class="f">
+      <label><span class="fr">Cons&#233;quence de l&#39;&#233;v&#232;nement</span><span class="en">Consequences of the event</span></label>
+      <div class="cpg">
+        <div class="cp" data-v="none"  onclick="pickCons(this)"><span class="dot"></span><span class="lbl"><span class="fr">Aucune</span><span class="en">None</span></span></div>
+        <div class="cp" data-v="minor" onclick="pickCons(this)"><span class="dot"></span><span class="lbl"><span class="fr">L&#233;g&#232;re</span><span class="en">Minor</span></span></div>
+        <div class="cp" data-v="med"   onclick="pickCons(this)"><span class="dot"></span><span class="lbl"><span class="fr">Moyenne</span><span class="en">Medium</span></span></div>
+        <div class="cp" data-v="major" onclick="pickCons(this)"><span class="dot"></span><span class="lbl"><span class="fr">Grave</span><span class="en">Major</span></span></div>
+        <div class="cp" data-v="other" onclick="pickCons(this)"><span class="dot"></span><span class="lbl"><span class="fr">Autre</span><span class="en">Other</span></span></div>
+      </div>
+    </div>
+    <div class="f">
+      <label><span class="fr">Pression ressentie pour cette mission</span><span class="en">Did you feel pressured?</span></label>
+      <div class="cg cg2" id="g-pressure">
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Pression commerciale</span><span class="en">Commercial pressure</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Pression hi&#233;rarchique</span><span class="en">Hierarchical pressure</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Pression client</span><span class="en">Customer pressure</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Aucune pression</span><span class="en">No pressure</span></span></div>
+        <div class="ci" onclick="tickBox(this)" style="grid-column:span 2"><span class="cm">&#10003;</span><span class="it"><span class="fr">Autre</span><span class="en">Other</span></span></div>
+      </div>
+      <div class="oth"><input type="text" id="f-pressure-oth" placeholder="Autre &mdash; pr&#233;ciser&#8230; / Other &mdash; please specify&#8230;"/></div>
+    </div>
+  </div>
+
+  <!-- S7 IMPACT &amp; R&#201;PONSE — SECURITY -->
+  <div class="sec-only">
+    <div class="slabel" data-fr="Impact &amp; r&#233;ponse" data-en="Impact &amp; response"></div>
+    <div class="f">
+      <label><span class="fr">Cet &#233;v&#232;nement a-t-il, ou pourrait-il avoir, un impact sur la s&#233;curit&#233; des vols ?</span><span class="en">Does this event have, or could it have, an impact on aviation safety?</span></label>
+      <div class="rg" id="g-safimp" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div class="ri" onclick="pickRadio(this,'safImpact','Oui')"><span class="rm"></span><span class="it"><span class="fr">Oui</span><span class="en">Yes</span></span></div>
+        <div class="ri" onclick="pickRadio(this,'safImpact','Non')"><span class="rm"></span><span class="it"><span class="fr">Non</span><span class="en">No</span></span></div>
+        <div class="ri" onclick="pickRadio(this,'safImpact','Inconnu')"><span class="rm"></span><span class="it"><span class="fr">Inconnu</span><span class="en">Unknown</span></span></div>
+      </div>
+      <div class="hint"><span class="fr">Un &laquo;&nbsp;Oui&nbsp;&raquo; ou un &laquo;&nbsp;Inconnu&nbsp;&raquo; qualifie l&#39;&#233;v&#232;nement d&#39;incident de s&#233;curit&#233; de l&#39;information au sens du Part-IS et d&#233;clenche le d&#233;lai de notification &#224; l&#39;autorit&#233;.</span><span class="en">A &ldquo;Yes&rdquo; or &ldquo;Unknown&rdquo; makes this an information security incident under Part-IS and starts the notification clock to the authority.</span></div>
+    </div>
+    <div class="f">
+      <label><span class="fr">Notification externe d&#233;j&#224; effectu&#233;e</span><span class="en">External notification already made</span></label>
+      <div class="cg cg2" id="g-notif">
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Police</span><span class="en">Police</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">S&#251;ret&#233; a&#233;roportuaire</span><span class="en">Airport security</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it">OFAC / FOCA</span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it">DGAC</span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Client / op&#233;rateur</span><span class="en">Client / operator</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Aucune &#224; ce stade</span><span class="en">None yet</span></span></div>
+      </div>
+      <div class="oth"><input type="text" id="f-notif-ref" placeholder="Qui, quand, r&#233;f. dossier ou main courante&#8230;"/></div>
+    </div>
+    <div class="f">
+      <label><span class="fr">A&#233;ronef s&#233;curis&#233; et visite s&#251;ret&#233; effectu&#233;e avant le vol suivant ?</span><span class="en">Aircraft secured and security search performed before the next flight?</span></label>
+      <div class="rg" id="g-acsec" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div class="ri" onclick="pickRadio(this,'acSecured','Oui')"><span class="rm"></span><span class="it"><span class="fr">Oui</span><span class="en">Yes</span></span></div>
+        <div class="ri" onclick="pickRadio(this,'acSecured','Non')"><span class="rm"></span><span class="it"><span class="fr">Non</span><span class="en">No</span></span></div>
+        <div class="ri" onclick="pickRadio(this,'acSecured','N/A')"><span class="rm"></span><span class="it">N/A</span></div>
+      </div>
+    </div>
+    <div class="f"><label><span class="fr">Comment et quand l&#39;&#233;v&#232;nement a-t-il &#233;t&#233; d&#233;tect&#233;</span><span class="en">How and when was it detected</span></label><input type="text" id="f-detect" placeholder="Qui l&#39;a remarqu&#233;, par quel moyen, &#224; quelle heure&#8230;"/></div>
+    <div class="f">
+      <label><span class="fr">&#201;l&#233;ments de preuve disponibles</span><span class="en">Evidence available</span></label>
+      <div class="cg cg2" id="g-evid">
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Vid&#233;osurveillance</span><span class="en">CCTV</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Journaux syst&#232;me / acc&#232;s</span><span class="en">System / access logs</span></span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it">Photos</span></div>
+        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">T&#233;moins</span><span class="en">Witnesses</span></span></div>
+      </div>
+      <div class="hint"><span class="fr">Ne modifiez pas les lieux et ne supprimez rien &mdash; conservez enregistrements, journaux et messages jusqu&#39;&#224; la prise en charge par le Security Manager.</span><span class="en">Do not alter the scene and do not delete anything &mdash; preserve recordings, logs and messages until the Security Manager has taken over.</span></div>
     </div>
   </div>
 
   <!-- S8 DESCRIPTION -->
-  <div class="slabel">08 &mdash; Description</div>
+  <div class="slabel" data-fr="Description" data-en="Description" data-req="1"></div>
   <div class="f"><label><span class="fr">Description de l&#39;&#233;v&#232;nement</span><span class="en">Event description</span> <span class="req">*</span></label><textarea id="f-desc" style="min-height:140px;" placeholder="D&#233;crire les faits objectivement&#8230; / Describe facts objectively&#8230;"></textarea></div>
-  <div class="f"><label><span class="fr">Description cybers&#233;curit&#233;</span><span class="en">Cybersecurity description</span> <span style="font-size:9px;font-style:italic;color:var(--grey-600);text-transform:none;font-family:var(--font-b);letter-spacing:0;"><span class="fr">si applicable</span><span class="en">if applicable</span></span></label><textarea id="f-cyber" style="min-height:70px;" placeholder="Lien cliqu&#233;, pi&#232;ce jointe ouverte&#8230; / Link clicked, attachment opened&#8230;"></textarea></div>
   <div class="f"><label><span class="fr">Mesures prises imm&#233;diatement apr&#232;s</span><span class="en">Actions taken immediately after</span></label><textarea id="f-act" style="min-height:80px;" placeholder="AOG, signalement M.A.308&#8230;"></textarea></div>
   <div class="f"><label><span class="fr">Commentaires / Suggestions</span><span class="en">Comments / Suggestions</span></label><textarea id="f-com" style="min-height:70px;"></textarea></div>
 
   <!-- S9 PHOTOS -->
-  <div class="slabel">09 &mdash; <span class="fr">Photos &amp; Fichiers</span><span class="en">Photos &amp; Files</span></div>
+  <div class="slabel" data-fr="Photos &amp; Fichiers" data-en="Photos &amp; Files"></div>
   <div class="f">
     <label><span class="fr">Photos</span><span class="en">Photos</span></label>
     <div class="fu" onclick="document.getElementById('f-ph').click()">
@@ -371,6 +522,8 @@ body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
     </div>
     <div class="fl" id="fl-fi"></div>
   </div>
+
+  </div><!-- /form-body -->
 
   <!-- SUBMIT -->
   <div style="margin-top:28px;">
@@ -408,12 +561,32 @@ body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
 <script>
 'use strict';
 /* ── CONFIG ── */
-const SURL='https://qaqehmxoehcvzcojcqkm.supabase.co';
+/* ============================================================
+   SAF BACKEND — doit pointer sur le projet Supabase SAF.
+   Ne jamais réutiliser le projet Supabase d'une autre entité.
+   ============================================================ */
+const SAF_REF='qaqehmxoehcvzcojcqkm';
+const SURL='https://'+SAF_REF+'.supabase.co';
 const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q';
+const STABLE='saf_reports';
+const SPENDING='safPendingReports';
+const SOPERATOR='SAF';
 const SDB=window.supabase.createClient(SURL,SKEY,{auth:{persistSession:false}});
 
+/* Garde-fou : la clé anon doit appartenir au projet SAF, pas à un autre.
+   Décode le payload JWT et compare son ref projet avec SAF_REF. */
+function _keyRef(k){
+  try{
+    let b=k.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    b+='='.repeat((4-b.length%4)%4);
+    return JSON.parse(atob(b)).ref||null;
+  }catch(e){return null;}
+}
+const CFG_OK = _keyRef(SKEY)===SAF_REF;
+if(!CFG_OK) console.error('SAF Report: la clé backend n\'appartient pas au projet SAF — envoi désactivé.');
+
 /* ── STATE ── */
-let ANON=false, FILES=[], DATA={entity:'',maint:'',cons:'',checks:{}};
+let ANON=false, FILES=[], DATA={rtype:'',entity:'',maint:'',cons:'',checks:{}};
 
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded',()=>{
@@ -426,6 +599,29 @@ function setLang(l){
   document.body.className=document.body.className.replace(/L-\S+/g,'').trim()+' L-'+l;
   document.getElementById('lb-fr').classList.toggle('on',l==='fr');
   document.getElementById('lb-en').classList.toggle('on',l==='en');
+}
+
+/* ── TYPE DE SIGNALEMENT (Safety / Security) ── */
+function pickType(el,val){
+  document.querySelectorAll('.rt').forEach(r=>r.classList.remove('on'));
+  el.classList.add('on');
+  DATA.rtype=val;
+  document.body.classList.toggle('mode-safety',val==='Safety');
+  document.body.classList.toggle('mode-security',val==='Security');
+  document.getElementById('form-body').classList.remove('hidden');
+  renumber();
+  document.getElementById('form-body').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ── NUMÉROTATION DES SECTIONS (dépend de la branche affichée) ── */
+function renumber(){
+  let i=0;
+  document.querySelectorAll('#form-body .slabel').forEach(l=>{
+    if(l.offsetParent===null) return;          // branche masquée
+    i++;
+    const req=l.dataset.req?' <span class="req">*</span>':'';
+    l.innerHTML=String(i).padStart(2,'0')+' \u2014 <span class="fr">'+l.dataset.fr+'</span><span class="en">'+l.dataset.en+'</span>'+req;
+  });
 }
 
 /* ── ANON TOGGLE ── */
@@ -506,6 +702,7 @@ function setStatus(type,txt){
 
 /* ── VALIDATE ── */
 function validate(){
+  if(!DATA.rtype){setStatus('error','Choisir Safety ou Security / Choose Safety or Security');return false;}
   if(!g('f-date')){setStatus('error','Date obligatoire / Date required');return false;}
   if(!DATA.entity){setStatus('error','Entité obligatoire / Entity required');return false;}
   if(!g('f-loc')){setStatus('error','Lieu obligatoire / Location required');return false;}
@@ -518,6 +715,7 @@ function validate(){
 async function submit(){
   if(!validate()) return;
   const btn=document.getElementById('btn-submit');
+  if(!CFG_OK){setStatus('error','Backend non configuré pour SAF — envoi bloqué');return;}
   btn.disabled=true;
   setStatus('saving','Envoi en cours… / Sending…');
   const ref=genRef(), now=new Date().toISOString();
@@ -528,34 +726,53 @@ async function submit(){
     return (fr?fr.textContent:e.querySelector('.it').textContent).trim().split('\n')[0].trim();
   });
 
+  const infosec=allChecked('#g-is');
+
   const occ={
-    id:ref, date:g('f-date'), time_local:g('f-time'),
-    entity:DATA.entity,
+    id:ref, report_type:DATA.rtype, date:g('f-date'), time_local:g('f-time'),
+    entity:DATA.entity, entity_other:g('f-entity-oth'),
     event_types_avi:allChecked('#g-avi'),
-    event_types_cyber:allChecked('#g-cyber'),
-    severity:allChecked('#g-avi')[0]||allChecked('#g-cyber')[0]||'hazard',
+    event_type_avi_other:g('f-avi-oth'),
+    security_types:allChecked('#g-sec'),
+    security_type_other:g('f-sec-oth'),
+    infosec_types:infosec,
+    event_types_cyber:infosec,
+    infosec_type_other:g('f-is-oth'),
+    infosec_asset:g('f-asset'),
+    infosec_asset_safety_function:DATA.assetFn||'',
+    safety_impact:DATA.safImpact||'',
+    external_notification:allChecked('#g-notif'),
+    external_notification_ref:g('f-notif-ref'),
+    aircraft_secured:DATA.acSecured||'',
+    detection:g('f-detect'),
+    evidence:allChecked('#g-evid'),
+    severity:DATA.rtype==='Security'?'security':(allChecked('#g-avi')[0]||'hazard'),
     aircraft_type:g('f-ac'), aircraft_reg:g('f-reg'),
-    pic:g('f-pic'), tsop:g('f-tsop'), other_persons:g('f-oth'),
-    dossier_ref:g('f-dos'), location:g('f-loc'), base:g('f-base'),
+    pic:g('f-pic'), copilot:g('f-copilot'), tsop:g('f-tsop'), other_persons:g('f-oth'),
+    dossier_ref:g('f-dos'), location:g('f-loc'), base:g('f-base'), base_other:g('f-base-oth'),
     phase:allChecked('#g-phase').join(', '),
+    phase_other:g('f-phase-oth'),
     maintenance_concern:DATA.maint,
     maintenance_types:allChecked('#g-maint-type'),
+    maintenance_type_other:g('f-maint-oth'),
     maintenance_ref:g('f-mref'),
     consequence:DATA.cons,
     pressure:allChecked('#g-pressure'),
-    description:g('f-desc'), cyber_description:g('f-cyber'),
+    pressure_other:g('f-pressure-oth'),
+    description:g('f-desc'),
     actions:g('f-act')?[{text:g('f-act'),status:'open',owner:'',owner_custom:'',actionDate:''}]:[],
     comments:g('f-com'),
     attachments_count:FILES.length,
-    reporter:reporter, reporter_email:ANON?'':g('f-em'),
-    source:'mobile_report_form', status:'pending_review',
+    reporter:reporter, reporter_email:ANON?'':g('f-em'), reporter_phone:ANON?'':g('f-tel'),
+    reporter_role:g('f-role'),
+    source:'mobile_report_form', operator:SOPERATOR, status:'pending_review',
     classification:'', just_culture:null, five_whys:null, contributing_factors:[],
     created_at:now, updated_at:now,
   };
 
   try{
     /* Écriture dans saf_reports — accès anon autorisé par RLS */
-    const {error}=await SDB.from('saf_reports').insert({
+    const {error}=await SDB.from(STABLE).insert({
       report_id:   ref,
       submitted_at: now,
       report_data:  occ,
@@ -576,9 +793,9 @@ async function submit(){
     console.error('SAF Report error:', err);
     /* Sauvegarde locale en dernier recours (hors-ligne, réseau coupé) */
     try{
-      const q=JSON.parse(localStorage.getItem('safPendingReports')||'[]');
+      const q=JSON.parse(localStorage.getItem(SPENDING)||'[]');
       q.push(occ);
-      localStorage.setItem('safPendingReports',JSON.stringify(q));
+      localStorage.setItem(SPENDING,JSON.stringify(q));
     }catch(e2){}
     const msg=(err&&err.message)||'erreur réseau';
     setStatus('error','Échec envoi ('+msg+'). Réf. conservée : '+ref);
@@ -591,13 +808,15 @@ function resetForm(){
   document.getElementById('ok-wrap').classList.remove('show');
   document.getElementById('form-wrap').style.display='';
   document.getElementById('footer').style.display='';
-  document.querySelectorAll('input[type=text],input[type=email],input[type=time],textarea,select').forEach(e=>e.value='');
+  document.querySelectorAll('input[type=text],input[type=email],input[type=tel],input[type=time],textarea,select').forEach(e=>e.value='');
   document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
-  document.querySelectorAll('.ci,.ri').forEach(e=>e.classList.remove('on'));
+  document.querySelectorAll('.ci,.ri,.rt').forEach(e=>e.classList.remove('on'));
   document.querySelectorAll('.cp').forEach(e=>e.classList.remove('on'));
   document.getElementById('fl-ph').innerHTML='';
   document.getElementById('fl-fi').innerHTML='';
-  FILES=[];DATA={entity:'',maint:'',cons:'',checks:{}};
+  FILES=[];DATA={rtype:'',entity:'',maint:'',cons:'',checks:{}};
+  document.body.classList.remove('mode-safety','mode-security');
+  document.getElementById('form-body').classList.add('hidden');
   if(ANON)toggleAnon();
   document.getElementById('status').className='';
   document.getElementById('btn-submit').disabled=false;
