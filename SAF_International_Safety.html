@@ -277,8 +277,16 @@ main { flex: 1; overflow-y: auto; background: #0A1520; }
   position: sticky; top: 0; z-index: 1;
   background: var(--navy-light);
 }
-/* En-tête collant sous la barre de filtres (offset mesuré au rendu). */
-.risk-table th { top: var(--rr-table-offset, 0px) !important; z-index: 20; }
+/* En-tête de tableau collant.
+   Correctif 2026-09-02 : .table-wrap porte overflow-x:auto, ce qui en fait le
+   conteneur de défilement de référence pour position:sticky (overflow-y est
+   alors calculé à auto par le navigateur). Un décalage `top` non nul y était
+   donc appliqué comme un décalage VERS LE BAS depuis le haut du conteneur,
+   qui ne défile pas verticalement : la ligne d'en-tête descendait d'environ
+   100 px et recouvrait la première ligne du registre (SMS-01).
+   Le décalage n'a de sens que pour les éléments collants situés hors du
+   conteneur (barre de filtres, compteur), qui le conservent. */
+.risk-table th { top: 0 !important; z-index: 20; }
 .risk-table th:hover { color: var(--gold-light); }
 
 /* Compteur permanent du registre — visible quel que soit le filtre. */
@@ -10718,7 +10726,8 @@ function _rrSyncStickyOffset(){
     const view = document.getElementById('view-database');
     if(view){
       view.style.setProperty('--rr-head-offset', h + 'px');
-      view.style.setProperty('--rr-table-offset', (h + ch) + 'px');
+      /* --rr-table-offset supprimé : voir le commentaire sur .risk-table th. */
+      view.style.removeProperty('--rr-table-offset');
     }
   }catch(e){}
 }
