@@ -1751,6 +1751,7 @@ nav { top: 118px !important; }
 <div class="nav-label">SMS Modules</div>
 <div class="nav-item" onclick="showView('safetypolicy')"><span class="icon">🔒</span> Safety Policy &amp; Objectives</div>
 <div class="nav-item" onclick="showView('controls')"><span class="icon">⏱</span> Controls Review</div>
+<div class="nav-item" onclick="showView('barrierreg')"><span class="icon">📑</span> Registre des barrières</div>
 <div class="nav-item" onclick="showView('bowtie')"><span class="icon">🎯</span> Bow-Tie Analysis</div>
 <div class="nav-item" onclick="showView('lessons')"><span class="icon">📢</span> Lessons Learned</div>
 <div class="nav-item" onclick="showView('safetyassurance')"><span class="icon">🔍</span> Safety Assurance</div>
@@ -2928,6 +2929,7 @@ function updateOaciDefinitionDropdown(sel) {
 <div class="view" id="view-controls">
 <div class="dash-header"><div><div class="dash-title">CONTROLS REVIEW</div><div class="dash-subtitle">Reg. (EU) 376/2014 — Periodic review of safety control measures, ALARP acceptance, effectiveness</div></div><button class="btn btn-ghost" onclick="renderControlsView()">↺ Refresh</button></div>
 <div id="controls-content"></div></div>
+<div class="view" id="view-barrierreg"><div class="dash-header"><div><div class="dash-title">REGISTRE DES BARRIÈRES</div><div class="dash-subtitle">ICAO Doc 9859 §2.13 / ORO.GEN.200(a)(3) — Origine, document d'établissement, date de création et cycle de vérification de chaque mesure de prévention, d'atténuation et de récupération</div></div><button class="btn btn-ghost" onclick="renderBarrierRegister()">↺ Actualiser</button></div><div id="barrierreg-content"></div></div>
 <div class="view" id="view-bowtie">
 <div class="dash-header"><div><div class="dash-title">BOW-TIE ANALYSIS</div><div class="dash-subtitle">ICAO Doc 9859 §6 — Causes → Undesirable Event → Consequences with barriers</div></div></div>
 <div id="bowtie-panel" style="padding:0 28px 28px;">
@@ -11863,6 +11865,7 @@ function showView(name) {
   if(name==='export')      renderExportView();
   if(name==='spi')         renderSPIView();
   if(name==='controls')    renderControlsView();
+  if(name==='barrierreg')  renderBarrierRegister();
   if(name==='bowtie')    { btPopulateSelect(); renderBowtie(); }
   if(name==='occurrences'){ renderOccurrenceList(); if(typeof updatePendingBadge==='function') updatePendingBadge(); }
   if(name==='eventaccounting') renderEventAccounting();
@@ -23587,6 +23590,419 @@ function occRestoreHFACS(hfacs,severity){
     setTimeout(function(){ scanExact(document); patchToast(); },6000);
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
+})();
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   SAF · TRAÇABILITÉ DES BARRIÈRES — v1.0 (2026-09-02)
+   ---------------------------------------------------------------------------
+   Objet : pour CHAQUE mesure de prévention, d'atténuation et de récupération,
+   rendre consultable et éditable :
+     · son ORIGINE          (d'où elle vient : analyse legacy, MOC, revue SM…)
+     · le DOCUMENT          (document contrôlé + paragraphe où elle est établie)
+     · la DATE DE CRÉATION  (et par qui)
+     · la DATE DE VÉRIFICATION (dernière, par qui, méthode, prochaine échéance)
+
+   Principe EASA/ICAO retenu : on ne fabrique AUCUNE donnée. La migration
+   reprend uniquement ce qui est déjà prouvable dans le registre, et marque
+   explicitement la nature de chaque valeur (dérivée / héritée / à confirmer).
+   Tout ce qui n'est pas prouvable est laissé vide et signalé comme lacune.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+
+var TRAC_VER = '1.0';
+function _t(){ return new Date().toISOString().slice(0,10); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+/* ── Statuts ──────────────────────────────────────────────────────────────── */
+var DOC_ST = {
+  confirmed : {lbl:'Confirmé',      bg:'rgba(63,185,80,.16)',  fg:'#3fb950'},
+  derived   : {lbl:'Dérivé',        bg:'rgba(88,166,255,.16)', fg:'#58a6ff'},
+  to_confirm: {lbl:'À confirmer',   bg:'rgba(255,140,66,.16)', fg:'#ff8c42'},
+  missing   : {lbl:'Absent',        bg:'rgba(248,81,73,.16)',  fg:'#f85149'}
+};
+var VER_ST = {
+  in_date       : {lbl:'En date',        bg:'rgba(63,185,80,.16)',  fg:'#3fb950'},
+  due_soon      : {lbl:'Échéance < 30 j',bg:'rgba(201,162,39,.16)', fg:'#c9a227'},
+  overdue       : {lbl:'Échue',          bg:'rgba(248,81,73,.16)',  fg:'#f85149'},
+  never_verified: {lbl:'Jamais vérifiée',bg:'rgba(255,140,66,.16)', fg:'#ff8c42'},
+  no_plan       : {lbl:'Non planifiée',  bg:'rgba(150,150,150,.16)',fg:'#9aa4ad'}
+};
+var ORIG_LBL = {
+  legacy   : 'Analyse de risque initiale (registre legacy)',
+  moc      : 'Étude de changement / MOC',
+  sm_review: 'Revue Safety Manager (comblement de lacune)',
+  occurrence:'Événement / retour d\'expérience',
+  audit    : 'Constat d\'audit / CMS',
+  regulation:'Exigence réglementaire',
+  manual   : 'Saisie manuelle'
+};
+
+/* ── Découpe le doc_ref d'un risque en segments indexés par tag [XXX] ─────── */
+function docSegments(docRef){
+  var segs = {}, s = String(docRef||'');
+  if(s.indexOf('[') < 0) return segs;
+  var parts = s.split(/(\[[^\]]+\])/).filter(function(p){ return p !== ''; });
+  var cur = null;
+  parts.forEach(function(p){
+    if(/^\[[^\]]+\]$/.test(p)) { cur = p.slice(1,-1); if(!segs[cur]) segs[cur]=''; }
+    else if(cur) { segs[cur] += p; }
+  });
+  Object.keys(segs).forEach(function(k){ segs[k] = segs[k].replace(/\s+/g,' ').trim(); });
+  return segs;
+}
+
+/* ── MIGRATION — idempotente, ne réécrit jamais une saisie manuelle ───────── */
+function tracMigrate(opts){
+  opts = opts || {};
+  var n = 0;
+  (window.DB||[]).forEach(function(r){
+    var segs = docSegments(r.doc_ref);
+    (r.barriers||[]).forEach(function(b){
+      if(b.trac && b.trac.v && !opts.force) return;
+      var o = b.origin || {};
+      var doc = { ref:'', section:'', status:'missing', source:'none' };
+
+      if(o.type==='moc' && o.ref){
+        doc.ref = o.ref; doc.status='derived'; doc.source='moc_reference';
+      } else if(segs[o.ref] && segs[o.ref].length){
+        doc.ref = segs[o.ref]; doc.status='derived'; doc.source='risk_doc_ref_tagged';
+      } else if(String(r.doc_ref||'').trim()){
+        doc.ref = String(r.doc_ref||'').replace(/\s+/g,' ').trim();
+        doc.status='to_confirm'; doc.source='risk_doc_ref_inherited';
+      }
+
+      b.trac = {
+        v: TRAC_VER,
+        doc: doc,
+        created: {
+          date  : b.created_at || r.created_at || r.timestamp || '',
+          by    : b.created_by || '',
+          source: b.created_at ? 'barrier_record' : (r.created_at||r.timestamp ? 'inherited_risk_created_at' : 'none')
+        },
+        verif: {
+          last  : r.effectiveness_assessed_date || '',
+          by    : r.effectiveness_assessed_by   || '',
+          next  : r.effectiveness_due_date      || '',
+          method: '',
+          source: 'inherited_risk_effectiveness'
+        },
+        migrated_at: _t()
+      };
+      n++;
+    });
+  });
+  if(n){
+    try{
+      (window.DB||[]).forEach(function(r){
+        if(!Array.isArray(r.history)) r.history=[];
+      });
+      var host = (window.DB||[])[0];
+      if(host) host.history.push({action:'barrier_traceability_migrated', date:new Date().toISOString(),
+        reason:'Initialisation du bloc de traçabilité (document / création / vérification) sur '+n+' barrières — valeurs héritées marquées « à confirmer », aucune donnée inventée.'});
+    }catch(e){}
+    try{ saveDB(); }catch(e){}
+  }
+  return n;
+}
+
+/* ── Statut de vérification calculé ───────────────────────────────────────── */
+function verifStatus(v){
+  v = v || {};
+  var today = _t();
+  if(!v.next && !v.last) return 'no_plan';
+  if(!v.last) return v.next && v.next < today ? 'overdue' : 'never_verified';
+  if(!v.next) return 'in_date';
+  if(v.next < today) return 'overdue';
+  var d = (new Date(v.next) - new Date(today)) / 86400000;
+  return d <= 30 ? 'due_soon' : 'in_date';
+}
+
+/* ── Aplatissement : une ligne par barrière ───────────────────────────────── */
+function tracRows(){
+  var out = [];
+  (window.DB||[]).forEach(function(r){
+    (r.barriers||[]).forEach(function(b){
+      var t = b.trac || {}, o = b.origin || {};
+      out.push({
+        bid:b.bid, risk:r.id, event:r.event||'', family:r.family_id||'',
+        kind:b.kind, text:b.text||'', bstatus:b.status||'active',
+        owner:b.owner||'', riskOwner:r.risk_owner||'',
+        origType:o.type||'', origRef:o.ref||'', origStatus:o.status||'',
+        docRef:(t.doc||{}).ref||'', docSection:(t.doc||{}).section||'',
+        docStatus:(t.doc||{}).status||'missing', docSource:(t.doc||{}).source||'',
+        cDate:(t.created||{}).date||'', cBy:(t.created||{}).by||'', cSource:(t.created||{}).source||'',
+        vLast:(t.verif||{}).last||'', vBy:(t.verif||{}).by||'', vNext:(t.verif||{}).next||'',
+        vMethod:(t.verif||{}).method||'', vStatus:verifStatus(t.verif),
+        evid:(Array.isArray(b.evidence)?b.evidence.length:0)
+      });
+    });
+  });
+  return out;
+}
+
+/* ── KPI de complétude ────────────────────────────────────────────────────── */
+function tracStats(){
+  var rows = tracRows(), s = {total:rows.length, docConfirmed:0, docDerived:0, docToConfirm:0,
+    docMissing:0, dated:0, datedOwn:0, verified:0, overdue:0, owner:0, evid:0};
+  rows.forEach(function(x){
+    if(x.docStatus==='confirmed') s.docConfirmed++;
+    else if(x.docStatus==='derived') s.docDerived++;
+    else if(x.docStatus==='to_confirm') s.docToConfirm++;
+    else s.docMissing++;
+    if(x.cDate) s.dated++;
+    if(x.cSource==='barrier_record') s.datedOwn++;
+    if(x.vLast) s.verified++;
+    if(x.vStatus==='overdue') s.overdue++;
+    if(x.owner) s.owner++;
+    if(x.evid) s.evid++;
+  });
+  return s;
+}
+
+/* ── Vue « Registre des barrières » ───────────────────────────────────────── */
+var F = {q:'', risk:'', kind:'', doc:'', ver:''};
+
+function chip(m){ return '<span style="background:'+m.bg+';color:'+m.fg+';padding:1px 7px;border-radius:3px;'
+  +'font-family:var(--font-mono);font-size:9px;font-weight:700;white-space:nowrap;">'+m.lbl+'</span>'; }
+
+function kpi(lbl,val,sub,col){
+  return '<div class="chart-card" style="padding:12px 14px;flex:1;min-width:150px;">'
+   +'<div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);letter-spacing:.5px;">'+esc(lbl)+'</div>'
+   +'<div style="font-size:22px;font-weight:700;color:'+(col||'var(--white)')+';line-height:1.3;">'+esc(val)+'</div>'
+   +'<div style="font-size:10px;color:var(--grey-400);">'+esc(sub||'')+'</div></div>';
+}
+
+function renderBarrierRegister(){
+  var host = document.getElementById('barrierreg-content');
+  if(!host) return;
+  if(!(window.DB||[]).length){ host.innerHTML='<div style="padding:28px;color:var(--grey-400);">Registre vide.</div>'; return; }
+  tracMigrate();
+
+  var s = tracStats(), rows = tracRows();
+  var risks = Array.from(new Set(rows.map(function(x){return x.risk;}))).sort();
+
+  var f = rows.filter(function(x){
+    if(F.risk && x.risk!==F.risk) return false;
+    if(F.kind && x.kind!==F.kind) return false;
+    if(F.doc  && x.docStatus!==F.doc) return false;
+    if(F.ver  && x.vStatus!==F.ver) return false;
+    if(F.q){
+      var q=F.q.toLowerCase();
+      if((x.text+' '+x.bid+' '+x.docRef+' '+x.origRef+' '+x.event).toLowerCase().indexOf(q)<0) return false;
+    }
+    return true;
+  });
+
+  var pctDoc = s.total? Math.round(100*(s.docConfirmed+s.docDerived)/s.total) : 0;
+
+  var head = '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;">'
+    + kpi('BARRIÈRES', s.total, 'prévention + atténuation + récupération')
+    + kpi('DOCUMENT ÉTABLI', pctDoc+' %', s.docConfirmed+' confirmé(s) · '+s.docDerived+' dérivé(s)', pctDoc>=80?'#3fb950':(pctDoc>=50?'#c9a227':'#ff8c42'))
+    + kpi('À CONFIRMER', s.docToConfirm, 'référence héritée du risque', '#ff8c42')
+    + kpi('SANS DOCUMENT', s.docMissing, 'aucune référence documentaire', s.docMissing?'#f85149':'#3fb950')
+    + kpi('DATE PROPRE', s.datedOwn, 'sur '+s.dated+' datées (reste hérité du risque)')
+    + kpi('VÉRIFIÉES', s.verified, s.overdue+' échéance(s) dépassée(s)', s.verified?'#3fb950':'#ff8c42')
+    + '</div>';
+
+  var note = '<div class="chart-card" style="padding:12px 16px;margin-bottom:18px;border-left:3px solid var(--steel-bright);">'
+    +'<div style="font-size:11px;color:var(--grey-200);line-height:1.65;">'
+    +'<b>Lecture.</b> « Dérivé » = la référence documentaire est rattachée à la barrière par une preuve interne '
+    +'(tag <code>[XXX]</code> du <code>doc_ref</code> concordant avec l\'origine, ou référence MOC). '
+    +'« À confirmer » = la barrière hérite du <code>doc_ref</code> global de son risque : le document est probablement le bon, '
+    +'mais le paragraphe exact n\'est pas rattaché à cette mesure précise — c\'est à valider une par une. '
+    +'Les dates de création héritées du risque sont marquées comme telles : elles datent l\'analyse, pas la mesure. '
+    +'Aucune donnée n\'a été inventée.'
+    +'</div></div>';
+
+  var opt=function(v,l,cur){return '<option value="'+esc(v)+'"'+(cur===v?' selected':'')+' style="background:#0d1b2a;color:#f4f6f8;">'+esc(l)+'</option>';};
+  var inp='background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.14);color:var(--white);font-family:var(--font-mono);font-size:11px;padding:7px 9px;border-radius:6px;';
+
+  var bar = '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">'
+    +'<input id="trac-q" type="text" placeholder="Rechercher (libellé, BID, document, origine…)" value="'+esc(F.q)+'" style="'+inp+'flex:1;min-width:260px;"/>'
+    +'<select id="trac-risk" style="'+inp+'">'+opt('','Tous les risques',F.risk)+risks.map(function(r){return opt(r,r,F.risk);}).join('')+'</select>'
+    +'<select id="trac-kind" style="'+inp+'">'+opt('','Tous les types',F.kind)+opt('prevention','Prévention',F.kind)+opt('mitigation','Atténuation',F.kind)+opt('recovery','Récupération',F.kind)+'</select>'
+    +'<select id="trac-doc" style="'+inp+'">'+opt('','Document : tous',F.doc)+Object.keys(DOC_ST).map(function(k){return opt(k,'Doc. '+DOC_ST[k].lbl,F.doc);}).join('')+'</select>'
+    +'<select id="trac-ver" style="'+inp+'">'+opt('','Vérification : toutes',F.ver)+Object.keys(VER_ST).map(function(k){return opt(k,VER_ST[k].lbl,F.ver);}).join('')+'</select>'
+    +'<button class="btn btn-ghost" onclick="safTracExportCSV()">⤓ Export CSV</button>'
+    +'</div>';
+
+  var th='padding:8px 8px;text-align:left;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);'
+        +'letter-spacing:.5px;border-bottom:1px solid rgba(255,255,255,.14);white-space:nowrap;';
+  var td='padding:8px 8px;font-size:11px;color:var(--grey-100);border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top;';
+
+  var body = f.map(function(x){
+    var kc={prevention:'#58a6ff',mitigation:'#c9a227',recovery:'#ff8c42'}[x.kind]||'#9aa4ad';
+    return '<tr style="cursor:pointer;" onclick="safBarrierOriginPopup(decodeURIComponent(\''+encodeURIComponent(x.bid)+'\'))">'
+      +'<td style="'+td+'"><span style="font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);">'+esc(x.bid)+'</span></td>'
+      +'<td style="'+td+'"><span style="font-family:var(--font-mono);font-size:9px;color:'+kc+';">'+esc(x.kind)+'</span></td>'
+      +'<td style="'+td+'max-width:300px;">'+esc(x.text)+'</td>'
+      +'<td style="'+td+'"><div style="font-size:10px;">'+esc(ORIG_LBL[x.origType]||x.origType||'—')+'</div>'
+        +'<div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);">'+esc(x.origRef||'—')+'</div></td>'
+      +'<td style="'+td+'max-width:230px;"><div style="font-size:10px;">'+esc(x.docRef||'—')+(x.docSection?' <b>'+esc(x.docSection)+'</b>':'')+'</div>'
+        +'<div style="margin-top:3px;">'+chip(DOC_ST[x.docStatus]||DOC_ST.missing)+'</div></td>'
+      +'<td style="'+td+'"><span style="font-family:var(--font-mono);font-size:10px;">'+esc(x.cDate||'—')+'</span>'
+        +(x.cSource==='inherited_risk_created_at'?'<div style="font-size:9px;color:#ff8c42;">hérité du risque</div>':'')
+        +(x.cBy?'<div style="font-size:9px;color:var(--grey-400);">'+esc(x.cBy)+'</div>':'')+'</td>'
+      +'<td style="'+td+'"><span style="font-family:var(--font-mono);font-size:10px;">'+esc(x.vLast||'—')+'</span>'
+        +'<div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);">éch. '+esc(x.vNext||'—')+'</div>'
+        +'<div style="margin-top:3px;">'+chip(VER_ST[x.vStatus]||VER_ST.no_plan)+'</div></td>'
+      +'<td style="'+td+'"><span style="font-size:10px;">'+esc(x.owner||'—')+'</span></td>'
+      +'</tr>';
+  }).join('');
+
+  host.innerHTML = '<div style="padding:0 28px 28px;">'+head+note+bar
+    +'<div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-bottom:8px;">'+f.length+' barrière(s) affichée(s) sur '+rows.length+' — cliquer une ligne ouvre la fiche complète.</div>'
+    +'<div class="chart-card" style="padding:0;overflow-x:auto;"><table style="width:100%;border-collapse:collapse;min-width:1180px;">'
+    +'<thead><tr>'
+    +['BID','TYPE','MESURE','ORIGINE','DOCUMENT','CRÉÉE LE','VÉRIFIÉE LE','RESPONSABLE']
+      .map(function(h){return '<th style="'+th+'">'+h+'</th>';}).join('')
+    +'</tr></thead><tbody>'+(body||'<tr><td colspan="8" style="'+td+'color:var(--grey-400);font-style:italic;">Aucune barrière ne correspond aux filtres.</td></tr>')+'</tbody></table></div></div>';
+
+  ['q','risk','kind','doc','ver'].forEach(function(k){
+    var el=document.getElementById('trac-'+k); if(!el) return;
+    el.addEventListener(k==='q'?'input':'change',function(){ F[k]=el.value; renderBarrierRegister();
+      if(k==='q'){ var n=document.getElementById('trac-q'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } } });
+  });
+}
+
+/* ── Export CSV (séparateur ; + BOM UTF-8 pour Excel FR) ──────────────────── */
+function safTracExportCSV(){
+  tracMigrate();
+  var cols=['BID','Risque','Événement','Famille','Type','Mesure','Origine (type)','Origine (réf.)',
+    'Origine (statut preuve)','Document','Paragraphe','Statut document','Source document',
+    'Date de création','Créée par','Source de la date','Dernière vérification','Vérifiée par',
+    'Méthode de vérification','Prochaine échéance','Statut vérification','Responsable','Nb preuves','Statut barrière'];
+  var q=function(v){ return '"'+String(v==null?'':v).replace(/"/g,'""').replace(/\r?\n/g,' ')+'"'; };
+  var lines=[cols.map(q).join(';')];
+  tracRows().forEach(function(x){
+    lines.push([x.bid,x.risk,x.event,x.family,x.kind,x.text,
+      ORIG_LBL[x.origType]||x.origType,x.origRef,x.origStatus,
+      x.docRef,x.docSection,(DOC_ST[x.docStatus]||{}).lbl||x.docStatus,x.docSource,
+      x.cDate,x.cBy,x.cSource,x.vLast,x.vBy,x.vMethod,x.vNext,
+      (VER_ST[x.vStatus]||{}).lbl||x.vStatus,x.owner,x.evid,x.bstatus].map(q).join(';'));
+  });
+  var csv='\ufeff'+lines.join('\r\n');
+  if(typeof _download==='function') _download('SAF_registre_barrieres_'+_t()+'.csv',csv,'text/csv;charset=utf-8;');
+  else { var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+         a.download='SAF_registre_barrieres_'+_t()+'.csv'; a.click(); }
+}
+
+/* ── Carte éditable ajoutée à la fiche barrière ───────────────────────────── */
+function tracCardHTML(bid){
+  var b=null,risk=null;
+  (window.DB||[]).forEach(function(r){ (r.barriers||[]).concat(r.barriers_archive||[]).forEach(function(x){
+    if(x.bid===bid && !b){ b=x; risk=r; } }); });
+  if(!b) return '';
+  if(!b.trac) tracMigrate();
+  var t=b.trac||{}, d=t.doc||{}, c=t.created||{}, v=t.verif||{};
+  var inp='width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.14);color:var(--white);'
+        +'font-family:var(--font-mono);font-size:11px;padding:8px 10px;border-radius:6px;box-sizing:border-box;';
+  var lab='font-family:var(--font-mono);font-size:10px;color:var(--grey-400);display:block;margin-bottom:5px;';
+  var srcNote=function(txt){ return txt?'<div style="font-family:var(--font-mono);font-size:9px;color:#ff8c42;margin-top:4px;">'+esc(txt)+'</div>':''; };
+
+  var docSrcTxt = {risk_doc_ref_tagged:'dérivé du tag ['+esc(b.origin&&b.origin.ref||'')+'] du doc_ref du risque',
+                   moc_reference:'dérivé de la référence MOC',
+                   risk_doc_ref_inherited:'hérité du doc_ref global du risque — paragraphe à rattacher à cette mesure',
+                   manual:'saisi manuellement', none:'aucune source — à renseigner'}[d.source]||'';
+  var dateSrcTxt = c.source==='inherited_risk_created_at'
+    ? 'hérité de la date de création du risque — date de l\'analyse, pas de la mesure' : '';
+  var verSrcTxt = v.source==='inherited_risk_effectiveness'
+    ? 'échéance héritée du cycle de vérification d\'efficacité du risque ('+esc(risk.id)+')' : '';
+
+  return '<div class="chart-card" style="padding:16px 18px;margin-top:16px;border-left:3px solid var(--steel-bright);">'
+   +'<div class="chart-title" style="margin:0 0 4px;">📑 Ancrage documentaire et cycle de vérification</div>'
+   +'<div style="font-size:10px;color:var(--grey-400);margin-bottom:12px;line-height:1.5;">Document contrôlé dans lequel cette mesure est établie, paragraphe applicable, date de création de la mesure et cycle de vérification qui lui est propre.</div>'
+   +'<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;">'
+   +'<div><label style="'+lab+'">DOCUMENT DE RÉFÉRENCE</label>'
+     +'<input id="trac-doc-ref" type="text" value="'+esc(d.ref||'')+'" placeholder="ex. SOP HESLO, OM-A, MOC-AS332C1-…" style="'+inp+'"/>'+srcNote(docSrcTxt)+'</div>'
+   +'<div><label style="'+lab+'">PARAGRAPHE</label>'
+     +'<input id="trac-doc-sec" type="text" value="'+esc(d.section||'')+'" placeholder="ex. § 6.4.2" style="'+inp+'"/></div>'
+   +'<div><label style="'+lab+'">STATUT</label><select id="trac-doc-st" style="'+inp+'">'
+     +Object.keys(DOC_ST).map(function(k){return '<option value="'+k+'"'+((d.status||'missing')===k?' selected':'')+' style="background:#0d1b2a;color:#f4f6f8;">'+DOC_ST[k].lbl+'</option>';}).join('')
+     +'</select></div></div>'
+   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">'
+   +'<div><label style="'+lab+'">DATE DE CRÉATION DE LA MESURE</label>'
+     +'<input id="trac-c-date" type="date" value="'+esc(c.date||'')+'" style="'+inp+'"/>'+srcNote(dateSrcTxt)+'</div>'
+   +'<div><label style="'+lab+'">CRÉÉE PAR</label>'
+     +'<input id="trac-c-by" type="text" value="'+esc(c.by||'')+'" placeholder="ex. Safety Manager, NPFO…" style="'+inp+'"/></div>'
+   +'</div>'
+   +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px;">'
+   +'<div><label style="'+lab+'">DERNIÈRE VÉRIFICATION</label>'
+     +'<input id="trac-v-last" type="date" value="'+esc(v.last||'')+'" style="'+inp+'"/></div>'
+   +'<div><label style="'+lab+'">VÉRIFIÉE PAR</label>'
+     +'<input id="trac-v-by" type="text" value="'+esc(v.by||'')+'" placeholder="ex. NPFO + SM" style="'+inp+'"/></div>'
+   +'<div><label style="'+lab+'">PROCHAINE ÉCHÉANCE</label>'
+     +'<input id="trac-v-next" type="date" value="'+esc(v.next||'')+'" style="'+inp+'"/>'+srcNote(verSrcTxt)+'</div>'
+   +'</div>'
+   +'<div style="margin-top:12px;"><label style="'+lab+'">MÉTHODE DE VÉRIFICATION</label>'
+     +'<input id="trac-v-meth" type="text" value="'+esc(v.method||'')+'" placeholder="ex. échantillonnage 3 dossiers de chantier + entretien équipage" style="'+inp+'"/></div>'
+   +'<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap;">'
+   +'<span id="trac-fb" style="font-family:var(--font-mono);font-size:10px;min-height:14px;"></span>'
+   +'<button onclick="safTracSave(decodeURIComponent(\''+encodeURIComponent(bid)+'\'))" style="padding:8px 18px;background:rgba(88,166,255,.16);border:1px solid var(--steel-bright);border-radius:6px;color:var(--steel-bright);font-family:var(--font-mono);font-size:11px;font-weight:700;cursor:pointer;">💾 Enregistrer la traçabilité</button>'
+   +'</div></div>';
+}
+
+function safTracSave(bid){
+  var fb=document.getElementById('trac-fb');
+  var set=function(m,c){ if(fb){ fb.textContent=m; fb.style.color=c; } };
+  var b=null,risk=null;
+  (window.DB||[]).forEach(function(r){ (r.barriers||[]).forEach(function(x){ if(x.bid===bid && !b){ b=x; risk=r; } }); });
+  if(!b){ set('✗ Barrière introuvable','#ff8080'); return; }
+  if(!b.trac) tracMigrate();
+  var g=function(id){ var e=document.getElementById(id); return e? String(e.value||'').trim() : ''; };
+  var before=JSON.stringify(b.trac);
+  b.trac.doc = { ref:g('trac-doc-ref'), section:g('trac-doc-sec'),
+                 status:g('trac-doc-st')||'missing',
+                 source:(g('trac-doc-ref')!==(b.trac.doc||{}).ref ? 'manual' : (b.trac.doc||{}).source||'manual') };
+  b.trac.created = { date:g('trac-c-date'), by:g('trac-c-by'),
+                     source:(g('trac-c-date')!==(b.trac.created||{}).date ? 'manual' : (b.trac.created||{}).source||'manual') };
+  b.trac.verif = { last:g('trac-v-last'), by:g('trac-v-by'), next:g('trac-v-next'),
+                   method:g('trac-v-meth'),
+                   source:'manual' };
+  b.created_at = b.trac.created.date || b.created_at || '';
+  b.created_by = b.trac.created.by   || b.created_by || '';
+  if(before===JSON.stringify(b.trac)){ set('Aucune modification','var(--grey-400)'); return; }
+  if(!Array.isArray(risk.history)) risk.history=[];
+  risk.history.push((typeof safStamp==='function')
+    ? safStamp({action:'barrier_traceability_updated',bid:bid,reason:'Ancrage documentaire / dates de création et de vérification mis à jour.'})
+    : {action:'barrier_traceability_updated',date:new Date().toISOString(),bid:bid,reason:'Ancrage documentaire / dates mis à jour.'});
+  risk.updated_at=new Date().toISOString();
+  try{ saveDB(); }catch(e){}
+  set('✓ Traçabilité enregistrée','#5cc990');
+  if(typeof showToast==='function') showToast('✓ Traçabilité '+bid+' enregistrée','success');
+  try{ if(document.getElementById('view-barrierreg') && document.getElementById('view-barrierreg').classList.contains('active')) renderBarrierRegister(); }catch(e){}
+}
+
+/* ── Greffe la carte dans la fiche barrière existante ─────────────────────── */
+(function(){
+  var orig = window.safBarrierOriginPopup;
+  if(typeof orig!=='function') return;
+  window.safBarrierOriginPopup = function(bid){
+    orig(bid);
+    try{
+      var ov=document.getElementById('saf-brk-popup'); if(!ov) return;
+      var host=ov.firstElementChild; if(!host) return;
+      host.insertAdjacentHTML('beforeend', tracCardHTML(bid));
+    }catch(e){}
+  };
+})();
+
+/* ── Exports ─────────────────────────────────────────────────────────────── */
+window.safTracMigrate        = tracMigrate;
+window.safTracRows           = tracRows;
+window.safTracStats          = tracStats;
+window.safTracExportCSV      = safTracExportCSV;
+window.safTracSave           = safTracSave;
+window.renderBarrierRegister = renderBarrierRegister;
+
+/* Migration au chargement, sans bloquer l'init existante. */
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(function(){ try{tracMigrate();}catch(e){} },1200); });
+else setTimeout(function(){ try{tracMigrate();}catch(e){} },1200);
+
 })();
 </script>
 
