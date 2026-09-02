@@ -80,7 +80,7 @@ main{flex:1;overflow-y:auto;background:#0A1520;}
 .tbl td a:hover{text-decoration:underline;color:var(--gold-light);}
 .tbl td[contenteditable]{outline:none;}
 .tbl td[contenteditable]:focus{background:rgba(74,159,224,.12);box-shadow:inset 0 0 0 1px var(--steel-bright);border-radius:3px;}
-.file-select{background:rgba(255,255,255,.06);border:1px solid rgba(245,180,0,.45);color:var(--white);font-family:var(--font-mono);font-size:11.5px;padding:5px 7px;border-radius:5px;outline:none;cursor:pointer;max-width:230px;}
+.file-select{background:rgba(255,255,255,.06);border:1px solid rgba(245,180,0,.45);color:var(--white);font-family:var(--font-mono);font-size:11.5px;padding:5px 7px;border-radius:5px;outline:none;cursor:pointer;width:100%;max-width:100%;min-width:0;box-sizing:border-box;}
 .file-select:focus{border-color:var(--steel-bright);box-shadow:0 0 0 1px var(--steel-bright);}
 .file-select option{background:var(--navy-mid);color:var(--white);}
 .info-list{list-style:none;margin:.4rem 0 1rem;}
@@ -243,6 +243,8 @@ main{flex:1;overflow-y:auto;background:#0A1520;}
 #t-omm col.c-ver{width:7%;}
 #t-omm col.c-date{width:11%;}
 #t-omm col.c-act{width:36px;}
+#t-omm td:nth-child(2){overflow:hidden;}
+#t-omm td:nth-child(3){overflow-wrap:anywhere;word-break:normal;}
 #t-oma col.c-doc,#t-omb col.c-doc,#t-omc col.c-doc,#t-omd col.c-doc,#t-ome col.c-doc,
 #t-heslo col.c-doc,#t-mcf col.c-doc{width:14%;}
 #t-oma col.c-title,#t-omb col.c-title,#t-omc col.c-title,#t-omd col.c-title,#t-ome col.c-title,
@@ -269,7 +271,8 @@ tr.row-red td:first-child strong{color:#fff !important;}
 /* SMS training validity alarms */
 #t-sms-training td[data-validity="true"],#t-sms-training td[data-alarm="true"]{font-weight:700;}
 /* Alarm cell — éclatant avec fond coloré */
-#t-sms-training td[data-alarm="true"]{text-align:center;border-radius:5px;padding:3px 7px;}
+#t-sms-training td[data-alarm="true"]{text-align:center;vertical-align:middle;border-radius:5px;padding:3px 7px;}
+#t-sms-training th:nth-child(8),#t-sms-training td:nth-child(8){vertical-align:middle;text-align:center;}
 #t-sms-training tr.sms-valid    td[data-alarm="true"]{background:#0d7a2e;color:#c6ffd6;border:1.5px solid #1aab44;}
 #t-sms-training tr.sms-warning  td[data-alarm="true"]{background:#8a6000;color:#fff59d;border:1.5px solid #ffd600;}
 #t-sms-training tr.sms-expired  td[data-alarm="true"]{background:#8b0000;color:#ffd0d0;border:1.5px solid #ff1a1a;}
@@ -422,7 +425,7 @@ button .bi, a .bi{vertical-align:middle;}
   <div style="max-width:1800px;margin:auto;display:flex;align-items:center;gap:4px;overflow-x:auto;">
     <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
-    <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
+    <a href="Archives/SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
     <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
     <a href="SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
   </div>
