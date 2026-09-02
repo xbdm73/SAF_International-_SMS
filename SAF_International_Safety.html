@@ -1927,7 +1927,7 @@ nav { top: 118px !important; }
         <input type="hidden" id="em-initial-risk"/>
       </div>
       <div>
-        <label style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);letter-spacing:.06em;display:block;margin-bottom:10px;">RESIDUAL RISK <span style="color:#e05000;">*</span></label>
+        <label style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);letter-spacing:.06em;display:block;margin-bottom:10px;">RESIDUAL RISK — <span style="color:var(--gold-light);">CIBLE</span> <span style="color:#e05000;">*</span></label>
         <div style="display:flex;gap:12px;align-items:flex-start;">
           <div class="icao-matrix-selector" id="em-resid-matrix" style="font-size:10px;"></div>
           <div id="em-resid-preview" style="background:#333;color:#fff;border-radius:6px;width:64px;height:44px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:18px;font-weight:800;flex-shrink:0;margin-top:36px;">–</div>
@@ -1935,6 +1935,8 @@ nav { top: 118px !important; }
         <input type="hidden" id="em-residual-risk"/>
       </div>
     </div>
+    <!-- Rappel du risque effectivement porté, identique au sommaire du registre. -->
+    <div id="em-current-rating" style="margin:-8px 0 20px;font-family:var(--font-mono);font-size:10.5px;line-height:1.5;"></div>
 
     <!-- Row 6b: justification de la cotation (ICAO Doc 9859 §2.5) -->
     <div style="margin-bottom:16px;">
@@ -2136,7 +2138,8 @@ function updateOaciDefinitionDropdown(sel) {
 <th onclick="sortTable('family_id')">SAF Family <span class="sort-icon">↕</span></th>
 <th onclick="sortTable('event')">Risk Scenario <span class="sort-icon">↕</span></th>
 <th onclick="sortTable('initial_risk')">Initial Risk <span class="sort-icon">↕</span></th>
-<th onclick="sortTable('residual_risk')">Residual Risk <span class="sort-icon">↕</span></th>
+<th onclick="sortTable('residual_risk')" title="Cotation visée une fois les barrières efficaces">Residual Risk<br><span style="color:var(--gold-light);">(target)</span> <span class="sort-icon">↕</span></th>
+<th title="Risque effectivement porté aujourd'hui : cotation initiale tant que la cible n'est pas atteinte">Carried Risk<br><span style="color:var(--steel-bright);">(today)</span></th>
 <th style="min-width:150px;">Prevention</th>
 <th style="min-width:150px;">Mitigation</th>
 <th style="min-width:150px;">Recovery</th>
@@ -9625,6 +9628,23 @@ function safRatingGuard(initial, residual, rationale){
   return res;
 }
 
+/* Bandeau « risque porté aujourd'hui » dans la modale d'édition : la modale
+   édite une CIBLE résiduelle, elle ne doit pas laisser croire que cette cible
+   est déjà la cotation courante du scénario. */
+function safEmCurrentRatingRefresh(r){
+  var el = document.getElementById('em-current-rating');
+  if(!el) return;
+  if(!r){ el.innerHTML=''; return; }
+  var cur = safResidualCurrent(r), ok = safResidualIsAchieved(r);
+  var bg = riskBg(cur), fg = readableTextColor(bg);
+  var badge = '<span style="background:'+bg+';color:'+fg+';padding:2px 9px;border-radius:4px;font-weight:800;">'+(cur||'—')+'</span>';
+  el.innerHTML = ok
+    ? '<span style="color:#3fb950;">✓ Cible atteinte — risque porté aujourd\'hui : </span>'+badge
+    : '<span style="color:#ff8080;">⛔ Cible non atteinte — risque porté aujourd\'hui : </span>'+badge
+      + '<span style="color:var(--grey-400);"> (cotation initiale). La cotation résiduelle saisie ci-dessus reste une cible tant que '
+      + 'l\'efficacité des barrières n\'est pas démontrée et l\'acceptation formelle non enregistrée.</span>';
+}
+
 /* Retour visuel en direct dans la modale d'édition. */
 function safRatingGuardRefresh(){
   var box = document.getElementById('em-rr-guard');
@@ -9685,6 +9705,82 @@ function safResidualDocHTML(r, colorMap){
 function safResidualDocText(r){
   var cur = safResidualCurrent(r);
   return safResidualIsAchieved(r) ? cur : (cur + ' (target ' + (safResidualTarget(r) || '—') + ' — not accepted)');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SAF 2026-09-02 · COHÉRENCE DE COTATION ENTRE LE SOMMAIRE ET LE DÉTAIL
+   Le sommaire du registre applique déjà la règle ORO.GEN.200(a)(3) :
+   tant que l'efficacité n'est pas démontrée et que l'acceptation formelle
+   n'est pas enregistrée, le risque PORTÉ reste la cotation initiale et le
+   résiduel n'est qu'une CIBLE. Le bloc déplié n'affichait aucune cotation,
+   et la modale d'édition présentait le champ « residual_risk » brut — d'où
+   une lecture contradictoire (SMS-01 : 4B rouge au sommaire, 2B jaune à
+   l'ouverture). Le bloc ci-dessous rétablit une lecture unique.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function safRatingBlockHTML(r){
+  if(!r) return '';
+  var ini = r.initial_risk || '—';
+  var tgt = safResidualTarget(r) || '—';
+  var cur = safResidualCurrent(r) || '—';
+  var ok  = safResidualIsAchieved(r);
+  var box = function(lbl, code, sub, dim){
+    var bg = riskBg(code), fg = readableTextColor(bg);
+    return '<div style="text-align:center;min-width:96px;'+(dim?'opacity:.55;':'')+'">'
+      + '<div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);letter-spacing:.5px;margin-bottom:5px;">'+lbl+'</div>'
+      + '<div style="background:'+bg+';color:'+fg+';border-radius:6px;padding:7px 0;font-family:var(--font-mono);font-size:19px;font-weight:800;">'+(code||'—')+'</div>'
+      + '<div style="font-size:9px;color:var(--grey-400);margin-top:4px;line-height:1.35;">'+sub+'</div></div>';
+  };
+  var arrow = '<div style="color:var(--grey-400);font-size:17px;align-self:center;padding-top:14px;">→</div>';
+  var note = ok
+    ? '<div style="margin-top:12px;padding:8px 11px;background:rgba(63,185,80,.07);border:1px solid rgba(63,185,80,.22);border-radius:6px;font-size:10px;color:var(--grey-200);line-height:1.5;">'
+      + '<strong style="color:#3fb950;">Cible atteinte.</strong> '
+      + (r.acceptance_required === false
+          ? 'Résiduel VERT géré sous procédure SMS approuvée, statut de maîtrise « controlled » : le risque porté est la cotation résiduelle.'
+          : 'Acceptation formelle enregistrée : le risque porté est la cotation résiduelle.')
+      + '</div>'
+    : '<div style="margin-top:12px;padding:8px 11px;background:rgba(204,34,0,.07);border:1px solid rgba(204,34,0,.25);border-radius:6px;font-size:10px;color:var(--grey-200);line-height:1.5;">'
+      + '<strong style="color:#ff8080;">Cible NON atteinte.</strong> Efficacité des barrières non démontrée et/ou acceptation formelle non enregistrée. '
+      + 'Le risque effectivement porté par l\'organisation reste la cotation initiale <strong>'+ini+'</strong> ; '
+      + '<strong>'+tgt+'</strong> n\'est qu\'une cible. C\'est cette cotation courante qui est comptée au sommaire, au tableau de bord et dans les SPI.'
+      + '</div>';
+  return '<div class="detail-block full-width" style="grid-column:1/-1;border-left:3px solid '+(ok?'#3fb950':'#CC2200')+';">'
+    + '<span class="detail-label">◈ COTATION DU RISQUE</span>'
+    + '<div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">'
+    + box('INITIALE', ini, 'avant barrières', false)
+    + arrow
+    + box('CIBLE RÉSIDUELLE', tgt, 'après barrières, si efficacité prouvée', !ok)
+    + '<div style="width:1px;align-self:stretch;background:rgba(255,255,255,.12);margin:0 6px;"></div>'
+    + box('RISQUE PORTÉ AUJOURD\'HUI', cur, ok ? 'cible atteinte' : 'cible non atteinte', false)
+    + '</div>' + note + '</div>';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SAF 2026-09-02 · LE RÉSIDUEL EST VISIBLE AU SOMMAIRE
+   L'ancienne cellule unique affichait la cotation COURANTE (donc l'initiale
+   tant que la cible n'est pas atteinte) et reléguait la cible en note grise :
+   le registre montrait « 4B / 4B » pour SMS-01 alors que le résiduel du
+   scénario est 2B. Le sommaire porte désormais deux colonnes distinctes —
+   cible résiduelle et risque porté — sans rien perdre de la règle
+   ORO.GEN.200(a)(3) : c'est toujours le risque porté qui alimente filtres,
+   compteurs, tableau de bord et SPI.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function safResidualTargetCellHTML(r){
+  var tgt = safResidualTarget(r);
+  var ok  = safResidualIsAchieved(r);
+  var badge = riskBadgeHTML(tgt);
+  if(ok) return badge + '<div style="font-family:var(--font-mono);font-size:8.5px;color:#3fb950;margin-top:3px;white-space:nowrap;">✓ atteinte</div>';
+  return '<span style="opacity:.62;">' + badge + '</span>'
+       + '<div style="font-family:var(--font-mono);font-size:8.5px;color:var(--grey-400);margin-top:3px;white-space:nowrap;" '
+       + 'title="' + safResidualNote(r).replace(/"/g,'&quot;') + '">cible visée</div>';
+}
+
+function safCarriedCellHTML(r){
+  var cur = safResidualCurrent(r);
+  var ok  = safResidualIsAchieved(r);
+  var badge = riskBadgeHTML(cur);
+  if(ok) return badge + '<div style="font-family:var(--font-mono);font-size:8.5px;color:#3fb950;margin-top:3px;white-space:nowrap;">= résiduel</div>';
+  return badge + '<div style="font-family:var(--font-mono);font-size:8.5px;color:#ff8080;margin-top:3px;white-space:nowrap;" '
+       + 'title="' + safResidualNote(r).replace(/"/g,'&quot;') + '">⌛ = initiale</div>';
 }
 
 function safResidualCellHTML(r){
@@ -10629,7 +10725,7 @@ function renderTable() {
   const page = filteredDB.slice(start, start+PAGE_SIZE);
 
   if(page.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="13"><div class="empty-state"><div class="empty-icon">◉</div>No risks match the current filters.</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="14"><div class="empty-state"><div class="empty-icon">◉</div>No risks match the current filters.</div></td></tr>`;
     document.getElementById('pagination').innerHTML = '';
     return;
   }
@@ -10653,7 +10749,8 @@ function renderTable() {
       <td><span class="ea-level-pill ea-level-2" title="${(SAF_FAMILY_BY_ID[r.family_id]||{}).description||''}">${r.family_id||'—'}<br>${(SAF_FAMILY_BY_ID[r.family_id]||{}).name||'Not classified'}</span></td>
       <td><span class="event-text">${r.event}</span>${r.record_kind==='governance_precursor'?'<div style="margin-top:4px"><span class="ea-status ea-status-candidate_review">GOVERNANCE PRECURSOR</span></div>':''}</td>
       <td>${riskBadgeHTML(r.initial_risk)}</td>
-      <td>${safResidualCellHTML(r)}</td>
+      <td>${safResidualTargetCellHTML(r)}</td>
+      <td>${safCarriedCellHTML(r)}</td>
       <td>${fmtBarrierCell(r.prevention,'prevention')}</td>
       <td>${fmtBarrierCell(r.mitigation,'mitigation')}</td>
       <td>${fmtBarrierCell(r.recovery,'recovery')}</td>
@@ -10677,7 +10774,7 @@ function renderTable() {
         <button class="delete-btn" onclick="deleteEntry(decodeURIComponent('${encodeURIComponent(r.id)}'))">Delete</button>
       </td>
     </tr>
-    <tr id="${rowId}-detail" style="display:none;" class="expanded-row" data-risk="${encodeURIComponent(r.id)}"><td colspan="13"></td></tr>`;
+    <tr id="${rowId}-detail" style="display:none;" class="expanded-row" data-risk="${encodeURIComponent(r.id)}"><td colspan="14"></td></tr>`;
   }).join('');
 
   renderPagination();
@@ -10758,6 +10855,8 @@ function _rrDetailHTML(r) {
             </div>
             <div style="font-size:10px;color:var(--grey-400);margin-top:7px;">Domain: ${safDomainLabel(r.family_id)} &nbsp;·&nbsp; legacy domain retained for traceability: ${r.category||'—'}</div>
           </div>
+
+          ${safRatingBlockHTML(r)}
 
           <!-- Hazard chain: hazards → top event → consequences -->
           <div class="detail-block">
@@ -11096,6 +11195,7 @@ function editEntry(id) {
   // Build and set risk matrices
   _buildEmMatrix('em-init-matrix',  'em-init-preview',  'em-initial-risk',  r.initial_risk  || '');
   _buildEmMatrix('em-resid-matrix', 'em-resid-preview', 'em-residual-risk', r.residual_risk || '');
+  safEmCurrentRatingRefresh(r);
 
   // Show modal
   const overlay = document.getElementById('edit-modal-overlay');
