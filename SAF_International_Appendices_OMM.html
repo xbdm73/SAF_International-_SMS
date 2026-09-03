@@ -3248,22 +3248,18 @@ h1 {
 
   // ── ACCÈS INVITÉ PAR DÉFAUT ──────────────────────────────────────────────
   async function applyGuestRole(){
-    overlay.style.display = 'none';
+    // Connexion obligatoire — plus d'accès invité, aucune donnée n'est chargée
+    // sans session (RLS : lecture réservée aux comptes déclarés dans user_roles).
+    overlay.style.display = 'flex';
     logoutBtn.style.display = 'none';
-    loginTriggerBtn.style.display = 'inline-block';
+    loginTriggerBtn.style.display = 'none';
+    var cancelBtn = document.getElementById('saf-login-cancel-btn');
+    if(cancelBtn) cancelBtn.style.display = 'none';
     SAF_ROLE = 'reader';
     var badge = document.getElementById('saf-role-badge');
-    if(badge){
-      badge.textContent = 'READ ONLY';
-      badge.style.color = '#9fc4e8';
-      badge.style.borderColor = 'rgba(106,130,165,.3)';
-      badge.style.display = 'inline-block';
-    }
-    try { localStorage.setItem('saf_role', 'reader|guest'); } catch(e){}
-    await cloudLoad();
-    ready = true;
-    setBar('ok','Mode invité — lecture seule');
-    applyReadOnly();
+    if(badge) badge.style.display = 'none';
+    try { localStorage.removeItem('saf_role'); } catch(e){}
+    ready = false;
   }
   // ────────────────────────────────────────────────────────────────────────
 

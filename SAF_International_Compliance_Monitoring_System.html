@@ -1883,9 +1883,9 @@ function safExportPDF() {
 <div style="display:flex;align-items:center;gap:4px;overflow-x:auto;">
 <a href="index.html" onmouseout="this.style.color='#6a82a5'" onmouseover="this.style.color='#e8f0fe'" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;">⌂ HOME</a>
 <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
-<a class="saf-nav-link" href="SAF_International_Safety.html" onmouseout="this.style.color='#6a82a5'" onmouseover="this.style.color='#e07070'" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;"><span style="color:#e07070">■</span> SMS</a>
+<a class="saf-nav-link" href="Archives/SAF_International_Safety.html" onmouseout="this.style.color='#6a82a5'" onmouseover="this.style.color='#e07070'" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;"><span style="color:#e07070">■</span> SMS</a>
 <a class="saf-nav-link" href="SAF_International_Compliance_Monitoring_System.html" onmouseout="this.style.color='#6a82a5'" onmouseover="this.style.color='#70a8e0'" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;"><span style="color:#70a8e0">■</span> CMS</a>
-<a class="saf-nav-link" href="SAF_International_Appendices_OMM.html" onmouseout="this.style.color='#6a82a5'" onmouseover="this.style.color='#70d0a0'" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;"><span style="color:#70d0a0">■</span> OMM</a>
+<a class="saf-nav-link" href="Archives/SAF_International_Appendices_OMM.html" onmouseout="this.style.color='#6a82a5'" onmouseover="this.style.color='#70d0a0'" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;"><span style="color:#70d0a0">■</span> OMM</a>
 </div>
 </div>
 <script>
@@ -20495,22 +20495,18 @@ window.safSmsConfirmImport=safSmsConfirmImport;
 
   // ── ACCÈS INVITÉ PAR DÉFAUT ──────────────────────────────────────────────
   async function applyGuestRole(){
-    overlay.style.display = 'none';
+    // Connexion obligatoire — plus d'accès invité, aucune donnée n'est chargée
+    // sans session (RLS : lecture réservée aux comptes déclarés dans user_roles).
+    overlay.style.display = 'flex';
     logoutBtn.style.display = 'none';
-    loginTriggerBtn.style.display = 'inline-block';
+    loginTriggerBtn.style.display = 'none';
+    var cancelBtn = document.getElementById('saf-login-cancel-btn');
+    if(cancelBtn) cancelBtn.style.display = 'none';
     SAF_ROLE = 'reader';
     var badge = document.getElementById('saf-role-badge');
-    if(badge){
-      badge.textContent = 'READ ONLY';
-      badge.style.color = '#7dd3fc';
-      badge.style.borderColor = 'rgba(106,130,165,.3)';
-      badge.style.display = 'inline-block';
-    }
-    try { localStorage.setItem('saf_role', 'reader|guest'); } catch(e){}
-    await cloudLoad();
-    ready = true;
-    setBar('ok','Mode invité — lecture seule');
-    applyReadOnly();
+    if(badge) badge.style.display = 'none';
+    try { localStorage.removeItem('saf_role'); } catch(e){}
+    ready = false;
   }
   // ────────────────────────────────────────────────────────────────────────
 

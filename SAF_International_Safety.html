@@ -1542,7 +1542,7 @@ nav { top: 118px !important; }
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
     <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
     <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
-    <a href="SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
+    <a href="Archives/SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
   </div>
 </div>
 <script>
@@ -54918,7 +54918,7 @@ setTimeout(function(){
   // --- Sauvegarde vers la base ---
   async function cloudSave(){
     if(CC_CONFLICT){ return; }   // bloqué jusqu'à résolution du conflit
-    if(isGuest){ setBar('ok','Mode invité — lecture seule'); return; }
+    if(isGuest){ setBar('ok','Connexion requise'); return; }
     if(saving){ dirty = true; return; }
     if(!authenticated){ setBar('ok','Mode local — non connecté'); return; }
     if(typeof window.safExportForCloud !== 'function'){ return; }
@@ -55031,7 +55031,7 @@ setTimeout(function(){
       var orig = window[name];
       if(typeof orig === 'function' && !orig.__safGuarded){
         var guarded = function(){
-          if(typeof showToast === 'function') showToast('Mode invité — lecture seule. Connectez-vous en admin pour modifier.', 'error');
+          if(typeof showToast === 'function') showToast('Connexion requise pour accéder aux données.', 'error');
           return;
         };
         guarded.__safGuarded = true;
@@ -55227,15 +55227,16 @@ setTimeout(function(){
     if(session){
       onAuthenticated(session);
     } else {
-      // Pas de session active — visiteur anonyme : on charge les données
-      // (lecture seule, autorisée par Supabase RLS) et on affiche l'ensemble
-      // du site normalement, sans aucune possibilité d'écriture.
+      // Pas de session active — connexion obligatoire. Aucune donnée n'est
+      // chargée : la lecture de saf_data est réservée aux comptes déclarés
+      // dans user_roles (politique RLS saf_data_select_declared).
       isGuest = true;
       guardWriteFunctions();
-      await cloudLoad();
-      ready = true;
-      bar.style.display='flex'; bar.querySelector('.dot').style.background='#E07020'; barTxt.textContent='Mode invité — lecture seule'; document.getElementById('saf-logout-btn').style.display='none';
-      if(typeof updateCAMOBadge==='function') updateCAMOBadge(); if(typeof updatePendingBadge==='function') updatePendingBadge();
+      ready = false;
+      document.getElementById('saf-logout-btn').style.display = 'none';
+      if(loginTriggerBtn) loginTriggerBtn.style.display = 'none';
+      if(loginCancelBtn) loginCancelBtn.style.display = 'none';
+      overlay.style.display = 'flex';
       applyReadOnly();
       applyGuestMode();
     }
