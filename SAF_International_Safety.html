@@ -14954,7 +14954,7 @@ function occGetFiveWhys(){
   var becauses=[];for(var i=0;i<n;i++){var el=document.getElementById('occ-fw-because-'+i);if(el)becauses.push((el.value||'').trim());}
   // trim trailing empty entries (keep at least 5)
   while(whys.length>5&&!whys[whys.length-1]&&!becauses[becauses.length-1]){whys.pop();becauses.pop();}
-  var root=(document.getElementById('occ-fw-root-cause')?.value||'').trim();
+  var root=(document.getElementById('occ-fw-root-cause')?.value||document.getElementById('fw-root-cause')?.value||'').trim();
   var actions=[...document.querySelectorAll('#occ-fw-actions-list .occ-fw-action-row')].map(function(row){
     var text=(row.querySelector('.occ-fw-action-input')?.value||'').trim();
     var owner=row.querySelector('.occ-fw-action-owner')?.value||'';
@@ -14985,6 +14985,7 @@ function occRestoreFiveWhys(fw){
     var bel=document.getElementById('occ-fw-because-'+i); if(bel)bel.value=becauses[i]||'';
   }
   var rc=document.getElementById('occ-fw-root-cause'); if(rc)rc.value=fw.root_cause||'';
+  var rcm=document.getElementById('fw-root-cause'); if(rcm)rcm.value=fw.root_cause||'';
   var nt=document.getElementById('occ-fw-notes'); if(nt)nt.value=fw.notes||'';
   var cl=document.getElementById('occ-fw-conclusion'); if(cl)cl.value=fw.conclusion||'';
   var list=document.getElementById('occ-fw-actions-list'); if(list){list.innerHTML=''; (fw.corrective_actions&&fw.corrective_actions.length?fw.corrective_actions:['']).forEach(function(a){occAddFWAction(a);});}
@@ -16396,6 +16397,7 @@ function openFiveWhys(occId){
     chain.appendChild(addBtn);
   }
   const rc=document.getElementById('fw-root-cause');if(rc)rc.value=saved.root_cause||'';
+  const rci=document.getElementById('occ-fw-root-cause');if(rci&&saved.root_cause)rci.value=saved.root_cause;
   const cl=document.getElementById('fw-corrective-list');if(cl){cl.innerHTML='';(saved.corrective_actions&&saved.corrective_actions.length?saved.corrective_actions:['']). forEach(a=>fwAddCorrectiveAction(a));}
   const rl=document.getElementById('fw-risk-link');if(rl)rl.innerHTML='<option value="" style="background:#0d1b2a;color:#f4f6f8;">None</option>'+DB.map(r=>'<option value="'+r.id+'"'+(saved.risk_link===r.id?' selected':'')+'>'+r.id+' — '+(r.event||'').slice(0,45)+'</option>').join('');
   const da=document.getElementById('fw-db-action');if(da&&saved.db_action)da.value=saved.db_action;
@@ -16491,7 +16493,7 @@ function saveFiveWhys(){
   const nWhys=chain2?chain2.querySelectorAll('[data-fw-idx]').length:5;
   const whys=[];for(let i=0;i<nWhys;i++){const el=document.getElementById('fw-why-'+i);whys.push(el?(el.value||'').trim():'');}
   const becauses=[];for(let i=0;i<nWhys;i++){const el=document.getElementById('fw-because-'+i);becauses.push(el?(el.value||'').trim():'');}
-  const root_cause=(document.getElementById('fw-root-cause')?.value||'').trim();
+  const root_cause=(document.getElementById('fw-root-cause')?.value||document.getElementById('occ-fw-root-cause')?.value||'').trim();
   const risk_link=document.getElementById('fw-risk-link')?.value||'';
   const db_action=document.getElementById('fw-db-action')?.value||'';
   const corrective_actions=[...document.querySelectorAll('#fw-corrective-list > div')].map(row=>{
