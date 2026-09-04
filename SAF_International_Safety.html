@@ -2994,7 +2994,7 @@ function updateOaciDefinitionDropdown(sel) {
     <div><div style="font-size:20px;font-weight:700;color:#fff;">🎯 5 WHYS — Root Cause Analysis</div>
     <div id="fw-occ-meta" style="font-size:11px;color:var(--grey-400);font-family:var(--font-mono);margin-top:4px;"></div></div>
     <div style="display:flex;gap:10px;">
-      <button onclick="saveFiveWhys()" style="padding:8px 18px;background:rgba(26,122,74,.3);border:1px solid #4DB848;border-radius:6px;color:#4DB848;font-family:var(--font-mono);font-size:11px;font-weight:700;cursor:pointer;">✓ Save</button>
+      <button onclick="fwEditInForm()" style="padding:8px 18px;background:rgba(232,160,32,.15);border:1px solid #e3b341;border-radius:6px;color:#e3b341;font-family:var(--font-mono);font-size:11px;font-weight:700;cursor:pointer;">✎ Edit in occurrence form</button>
       <button onclick="printFiveWhys()" style="padding:8px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:var(--grey-400);font-family:var(--font-mono);font-size:11px;cursor:pointer;">🖨 Print</button>
       <button onclick="closeFiveWhys()" style="padding:8px 14px;background:rgba(255,60,60,.15);border:1px solid rgba(255,80,80,.3);border-radius:6px;color:#ff9090;font-family:var(--font-mono);font-size:11px;cursor:pointer;">✕ Close</button>
     </div>
@@ -7891,6 +7891,22 @@ function occEventAccountingToggle(mode){var ex=document.getElementById('occ-even
 function occEventAccountingFilter(){eventAccountingEnsure();var sh=document.getElementById('occ-catalog-sheet')?.value||'',sel=document.getElementById('occ-catalog-event');if(!sel)return;var keep=sel.value;sel.innerHTML='<option value="">Select an approved event…</option>'+EVENT_CATALOG.filter(function(e){return e.review_status==='approved'&&(!sh||e.source_sheet===sh);}).map(function(e){return '<option value="'+eventAccountingEsc(e.id)+'">'+eventAccountingEsc(e.id+' — '+e.event)+'</option>';}).join('');if(Array.from(sel.options).some(function(o){return o.value===keep;}))sel.value=keep;occEventAccountingSelected();}
 function occEventAccountingSelected(){eventAccountingEnsure();var id=document.getElementById('occ-catalog-event')?.value||'',p=document.getElementById('occ-catalog-preview'),e=EVENT_CATALOG.find(function(x){return x.id===id;});if(!e){if(p)p.textContent='Select an approved event. Its counter is incremented when this occurrence is saved.';return;}var st=eventAccountingCounts()[id]||{count:0,last_date:''},risk=e.linked_risk_id?DB.find(function(r){return r.id===e.linked_risk_id;}):null;if(p)p.innerHTML='<strong style="color:var(--steel-bright)">'+eventAccountingEsc(e.id)+'</strong> · '+eventAccountingEsc(e.source_sheet)+'<br/>'+eventAccountingEsc(e.event)+'<br/><span class="ea-level-pill ea-level-1">'+eventAccountingEsc(e.occurrence_category||'OTHR')+'</span> <span class="ea-level-pill ea-level-2">'+eventAccountingEsc(safFamilyLabel(e.family_id))+'</span> '+(risk?'<span class="ea-level-pill ea-level-3">'+eventAccountingEsc(risk.id+' — '+risk.event)+'</span>':'<span style="color:var(--grey-400)">No linked risk scenario</span>')+'<br/><span style="color:'+(st.count>0?'#3fb950':'var(--grey-400)')+'">Current count: <strong>'+st.count+'</strong>'+(st.last_date?' · Last occurrence: '+eventAccountingEsc(st.last_date):'')+'</span>';var riskSel=document.getElementById('occ-risk-link');if(riskSel&&e.linked_risk_id&&!riskSel.value)riskSel.value=e.linked_risk_id;}
 function occRestoreEventAccounting(occ){eventAccountingEnsure();occ=occ||{};var item=occ.catalog_event_id?EVENT_CATALOG.find(function(e){return e.id===occ.catalog_event_id;}):null,mode=occ.catalog_event_mode||(item&&item.custom?'new':'existing'),radio=document.querySelector('input[name="occ-event-mode"][value="'+mode+'"]');if(radio)radio.checked=true;occEventAccountingToggle(mode);if(mode==='existing'&&item){var sh=document.getElementById('occ-catalog-sheet');if(sh)sh.value=item.source_sheet||'';occEventAccountingFilter();var sel=document.getElementById('occ-catalog-event');if(sel)sel.value=item.id;occEventAccountingSelected();}else if(mode==='new'&&item){var set=function(id,v){var el=document.getElementById(id);if(el)el.value=v||'';};set('occ-new-event-title',item.event);set('occ-new-event-source',item.source_sheet);set('occ-new-event-family',item.family_id);set('occ-new-event-dangers',item.dangers);set('occ-new-event-prevention',item.prevention);set('occ-new-event-initial',item.initial_risk);set('occ-new-event-residual',item.residual_risk);set('occ-new-event-eccairs',item.occurrence_category||item.eccairs_cat);set('occ-new-event-doc',item.doc_ref);}}
+function occMarkDirty(){
+  window.__occDirty = true;
+  var f=document.getElementById('occ-dirty-flag');
+  if(f) f.style.display='inline-flex';
+}
+function occClearDirty(){
+  window.__occDirty = false;
+  var f=document.getElementById('occ-dirty-flag');
+  if(f) f.style.display='none';
+}
+function occCancelForm(){
+  if(window.__occDirty && !confirm('Des modifications ne sont pas enregistrées et seront perdues.\n\nFermer quand même ?')) return;
+  occClearDirty();
+  var w=document.getElementById('occ-form-wrap');
+  if(w) w.style.display='none';
+}
 function occHighlightEventBlock(soft){
   var wrap=document.getElementById('occ-event-accounting-wrap');
   if(!wrap)return;
@@ -14965,8 +14981,10 @@ function occGetFiveWhys(){
   }).filter(Boolean);
   var notes=(document.getElementById('occ-fw-notes')?.value||'').trim();
   var conclusion=(document.getElementById('occ-fw-conclusion')?.value||'').trim();
-  if(!whys.some(Boolean)&&!becauses.some(Boolean)&&!root&&!actions.length&&!notes&&!conclusion) return null;
-  return {whys:whys,becauses:becauses,root_cause:root,corrective_actions:actions,notes:notes,conclusion:conclusion,saved_at:new Date().toISOString()};
+  var riskLink=(document.getElementById('occ-fw-risk-link')?.value||document.getElementById('fw-risk-link')?.value||'').trim();
+  var dbAction=(document.getElementById('occ-fw-db-action')?.value||document.getElementById('fw-db-action')?.value||'').trim();
+  if(!whys.some(Boolean)&&!becauses.some(Boolean)&&!root&&!actions.length&&!notes&&!conclusion&&!riskLink&&!dbAction) return null;
+  return {whys:whys,becauses:becauses,root_cause:root,corrective_actions:actions,notes:notes,conclusion:conclusion,risk_link:riskLink,db_action:dbAction,saved_at:new Date().toISOString()};
 }
 function occRestoreFiveWhys(fw){
   fw=fw||{}; var whys=fw.whys||['','','','',''];var becauses=fw.becauses||['','','','',''];
@@ -14989,6 +15007,15 @@ function occRestoreFiveWhys(fw){
   var nt=document.getElementById('occ-fw-notes'); if(nt)nt.value=fw.notes||'';
   var cl=document.getElementById('occ-fw-conclusion'); if(cl)cl.value=fw.conclusion||'';
   var list=document.getElementById('occ-fw-actions-list'); if(list){list.innerHTML=''; (fw.corrective_actions&&fw.corrective_actions.length?fw.corrective_actions:['']).forEach(function(a){occAddFWAction(a);});}
+  var rl=document.getElementById('occ-fw-risk-link');
+  if(rl){
+    var src=(typeof DB!=='undefined'&&DB&&DB.length)?DB:[];
+    rl.innerHTML='<option value="" style="background:#0d1b2a;color:#f4f6f8;">None</option>'+src.map(function(r){
+      return '<option value="'+r.id+'"'+(fw.risk_link===r.id?' selected':'')+' style="background:#0d1b2a;color:#f4f6f8;">'+r.id+' — '+String(r.event||r.title||'').slice(0,70)+'</option>';
+    }).join('');
+    rl.value=fw.risk_link||'';
+  }
+  var da=document.getElementById('occ-fw-db-action'); if(da)da.value=fw.db_action||'';
 }
 
 function occVal(name){var el=document.querySelector('input[name="'+name+'"]:checked');return el?el.value:'';}
@@ -15714,6 +15741,7 @@ function _occMobileReportDetailsHtml(occ){
 }
 function showOccurrenceForm(editId){
   eventAccountingEnsure();
+  if(typeof occClearDirty==='function') occClearDirty();
   const w=document.getElementById('occ-form-wrap');if(!w)return;w.style.display='';
   const _occ = editId ? (getOccurrences().find(function(o){return o.id===editId;})||{}) : {};
   const _isEdit = !!editId;
@@ -15826,6 +15854,13 @@ function showOccurrenceForm(editId){
         <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(232,160,32,.18);">
           <div class="form-field" style="margin:0 0 12px;"><label class="field-label">Corrective / preventive actions</label><div id="occ-fw-actions-list"></div><button type="button" onclick="occAddFWAction()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 12px;background:rgba(232,160,32,.1);border:1px dashed #e3b341;border-radius:5px;color:#e3b341;font-family:var(--font-mono);font-size:11px;cursor:pointer;"><span style="font-size:14px;font-weight:700;">+</span> Add action</button><button type="button" onclick="occResetActionEmailMap()" title="Réinitialiser les adresses email mémorisées" style="margin-left:6px;display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:5px;color:var(--grey-400);font-family:var(--font-mono);font-size:10px;cursor:pointer;">Emails ↺</button></div>
           <div class="occ-fw-summary"><div class="occ-jc-result-title" style="margin-bottom:6px;">Expected conclusion</div><textarea id="occ-fw-conclusion" rows="3" placeholder="The root cause should describe why the system allowed the event to occur, not just the active error…" style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(232,160,32,.35);border-radius:6px;color:var(--white);font-size:11px;padding:8px 10px;resize:vertical;"></textarea></div>
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(232,160,32,.18);">
+            <div class="occ-jc-result-title" style="margin-bottom:10px;">Link to risk database</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div class="form-field" style="margin:0;"><label class="field-label">Linked risk ID</label><select id="occ-fw-risk-link" style="width:100%;"></select></div>
+              <div class="form-field" style="margin:0;"><label class="field-label">Recommended DB action</label><select id="occ-fw-db-action" style="width:100%;"><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option><option value="update_barriers" style="background:#0d1b2a;color:#f4f6f8;">Update barriers of existing risk</option><option value="create_change_study" style="background:#0d1b2a;color:#f4f6f8;">Create a Change Study</option><option value="new_risk" style="background:#0d1b2a;color:#f4f6f8;">Add as new risk to database</option><option value="none" style="background:#0d1b2a;color:#f4f6f8;">No action required</option></select></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -15973,17 +16008,20 @@ function showOccurrenceForm(editId){
     <input type="hidden" id="occ-edit-id" value=""/>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
       <button onclick="saveOccurrence()" class="btn btn-primary">✓ Save occurrence</button>
+      <span id="occ-dirty-flag" style="display:none;align-items:center;gap:6px;padding:5px 12px;background:rgba(227,179,65,.12);border:1px solid rgba(227,179,65,.45);border-radius:5px;color:#e3b341;font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.4px;">● MODIFICATIONS NON ENREGISTRÉES</span>
       <button onclick="saveAndExportE5X()" class="btn btn-gold" style="display:inline-flex;align-items:center;gap:6px;">📤 Save &amp; Export E5X</button>
-      <button onclick="document.getElementById('occ-form-wrap').style.display='none'" class="btn btn-ghost">Cancel</button>
+      <button onclick="occCancelForm()" class="btn btn-ghost">Cancel</button>
       ${_isEdit && _occ.five_whys ? `<button type="button"
         onclick="closeFiveWhysFromEdit();openFiveWhys('${_occ.id}')"
+        title="Vue de consultation et impression de la version enregistrée. La saisie se fait dans le panneau 5 Whys ci-dessus."
         style="padding:6px 14px;background:rgba(232,160,32,.15);border:1px solid rgba(232,160,32,.4);border-radius:6px;color:#e3b341;font-family:var(--font-mono);font-size:11px;cursor:pointer;">
-        🎯 View/Edit 5 Whys ${_occ.five_whys.root_cause ? '(✓ Done)' : '(Incomplete)'}
-      </button>` : (_isEdit ? `<button type="button"
-        onclick="closeFiveWhysFromEdit();openFiveWhys('${_occ.id}')"
+        🖨 View / print 5 Whys ${_occ.five_whys.root_cause ? '(✓ Done)' : '(Incomplete)'}
+      </button>` : ''}
+      ${_isEdit ? `<button type="button"
+        onclick="var p=document.getElementById('occ-fw-body'); if(p){try{p.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){p.scrollIntoView();}}"
         style="padding:6px 14px;background:rgba(232,160,32,.08);border:1px dashed rgba(232,160,32,.3);border-radius:6px;color:#e3b341;font-family:var(--font-mono);font-size:11px;cursor:pointer;">
-        🎯 + 5 Whys analysis
-      </button>` : '')}
+        🎯 Go to 5 Whys panel
+      </button>` : ''}
     </div>
     <div id="occ-form-feedback" style="margin-top:8px;font-family:var(--font-mono);font-size:10px;min-height:14px;"></div>
   </div>`;
@@ -16146,6 +16184,7 @@ function saveOccurrence(){
       taxonomy_pending: _taxoMissing || false
     };
     saveOccurrences(occs);
+    occClearDirty();
     if(_taxoMissing){
       renderOccurrenceList();
       if(typeof updatePendingBadge==='function') updatePendingBadge();
@@ -16193,6 +16232,7 @@ function saveOccurrence(){
     };
     occs.push(occ);
     saveOccurrences(occs);
+    occClearDirty();
     if(_taxoMissing){
       var _ef=document.getElementById('occ-edit-id'); if(_ef) _ef.value=occ.id;
       renderOccurrenceList();
@@ -16402,10 +16442,45 @@ function openFiveWhys(occId){
   const rl=document.getElementById('fw-risk-link');if(rl)rl.innerHTML='<option value="" style="background:#0d1b2a;color:#f4f6f8;">None</option>'+DB.map(r=>'<option value="'+r.id+'"'+(saved.risk_link===r.id?' selected':'')+'>'+r.id+' — '+(r.event||'').slice(0,45)+'</option>').join('');
   const da=document.getElementById('fw-db-action');if(da&&saved.db_action)da.value=saved.db_action;
   const fb=document.getElementById('fw-save-feedback');if(fb)fb.textContent='';
+  fwLockReadOnly();
 }
 function closeFiveWhysFromEdit(){
   // When opening 5 Whys from edit form, keep the form open underneath
   document.getElementById('occ-form-wrap').style.display='none';
+}
+// ── La fenêtre 🎯 est une vue de consultation et d'impression ──────────────
+// Toute la saisie se fait dans le panneau intégré au formulaire d'occurrence :
+// une seule source, plus de champs en double (root cause, WHY, actions) dont
+// chaque bouton n'enregistrait que sa moitié.
+function fwEditInForm(){
+  const occId=_fwCurrentOccId;
+  const modal=document.getElementById('five-whys-modal');
+  if(modal)modal.style.display='none';
+  document.body.style.overflow='';
+  _fwCurrentOccId=null;
+  if(occId){
+    showOccurrenceForm(occId);
+    const wrap=document.getElementById('occ-form-wrap');
+    if(wrap){wrap.style.display='';try{wrap.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}}
+    setTimeout(function(){
+      const p=document.getElementById('occ-fw-body');
+      if(p){try{p.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}}
+    },350);
+  }
+}
+function fwLockReadOnly(){
+  const modal=document.getElementById('five-whys-modal');
+  if(!modal)return;
+  modal.querySelectorAll('textarea,input').forEach(function(el){
+    el.readOnly=true; el.style.opacity='.85'; el.style.cursor='default';
+  });
+  modal.querySelectorAll('select').forEach(function(el){ el.disabled=true; el.style.opacity='.85'; });
+  modal.querySelectorAll('button').forEach(function(b){
+    const fn=b.getAttribute('onclick')||'';
+    if(/fwAddCorrectiveAction|saveFiveWhys/.test(fn)) b.style.display='none';
+  });
+  const fb=document.getElementById('fw-save-feedback');
+  if(fb){fb.textContent='Lecture seule — la saisie se fait dans le formulaire d\'occurrence (✎ ci-dessus).';fb.style.color='#8896a0';}
 }
 function closeFiveWhys(){
   const modal=document.getElementById('five-whys-modal');
@@ -22013,7 +22088,7 @@ setTimeout(function(){
 
   // Avertit avant de quitter si des modifications ne sont pas encore montées.
   window.addEventListener('beforeunload', function(e){
-    if(CC_PENDING || saving || CC_CONFLICT){ e.preventDefault(); e.returnValue = ''; return ''; }
+    if(CC_PENDING || saving || CC_CONFLICT || window.__occDirty){ e.preventDefault(); e.returnValue = ''; return ''; }
   });
 
   // ── Lecture cross-fichier en lecture seule (utilisé par le MOC pour retrouver
@@ -22311,10 +22386,25 @@ setTimeout(function(){
   window.safImportMobileReports = importMobileReports;
 
   function attachAutoSave(){
-    document.addEventListener('input',  scheduleSave, true);
-    document.addEventListener('change', scheduleSave, true);
+    // La frappe dans le formulaire d'occurrence ne modifie PAS encore les
+    // données : tant que « Save occurrence » n'est pas cliqué, elle ne vit que
+    // dans les champs. La déclencher ici afficherait « Synchronisé ✓ » alors
+    // que la saisie en cours n'est dans aucune sauvegarde — c'est ce malentendu
+    // qui a coûté une analyse 5 Whys le 4 sept. 2026.
+    function inOccForm(t){
+      return !!(t && t.closest && (t.closest('#occ-form-wrap') || t.closest('#five-whys-modal')));
+    }
+    function onEdit(e){
+      if(inOccForm(e.target)){ if(typeof occMarkDirty==='function') occMarkDirty(); return; }
+      scheduleSave();
+    }
+    document.addEventListener('input',  onEdit, true);
+    document.addEventListener('change', onEdit, true);
     document.addEventListener('blur', function(e){
-      if(e.target && e.target.isContentEditable) scheduleSave();
+      if(e.target && e.target.isContentEditable){
+        if(inOccForm(e.target)){ if(typeof occMarkDirty==='function') occMarkDirty(); return; }
+        scheduleSave();
+      }
     }, true);
   }
 
