@@ -4451,12 +4451,31 @@ window.__SAF_E5X_RIT_PATCH='V2_2026-07-03';
 
   function safeKey(k){ return k.replace(/[:\/\'"\\]/g,'-'); }
 
+  // v4 — write-through vers le VRAI localStorage du navigateur.
+  // Sans cela (GitHub Pages : window.storage n'existe pas), rien n'est
+  // conservé localement : toute donnée non encore montée au cloud est perdue
+  // au rechargement de la page.
+  var _native = window._nativeLocalStorage || null;
+  function nativeSet(k,v){
+    if(!_native) return;
+    try{ _native.setItem(k,v); }
+    catch(e){
+      if(!window.__safQuotaWarned){
+        window.__safQuotaWarned = true;
+        console.warn('SAF storage : quota localStorage atteint sur "'+k+'" — '+(e&&e.message));
+      }
+    }
+  }
+  function nativeDel(k){ if(_native){ try{ _native.removeItem(k); }catch(e){} } }
+
   function persist(k,v){
+    nativeSet(k,v);
     if(window.storage && typeof window.storage.set==='function'){
       window.storage.set(safeKey(k), v).catch(function(){});
     }
   }
   function pdel(k){
+    nativeDel(k);
     if(window.storage && typeof window.storage.delete==='function'){
       window.storage.delete(safeKey(k)).catch(function(){});
     }
@@ -4482,8 +4501,21 @@ window.__SAF_E5X_RIT_PATCH='V2_2026-07-03';
     'safOccurrences','safLessons','safTrainingRecords','safERPExercises','safSRBMeetings','safAudits',
     'safSAR','safALoS','safCAMOSignals','lastModified',
     'ejsPublicKey','ejsServiceId','ejsTemplateId',
-    'saf_international_safety_management_header_v1'
+    'saf_international_safety_management_header_v1',
+    'saf-seeds-done'
   ];
+
+  // ── Restauration SYNCHRONE depuis le vrai localStorage (v4) ──
+  // Exécutée avant tout le reste du code : les seeds, cloudLoad et l'import
+  // des rapports mobiles voient donc l'état réellement laissé par la session
+  // précédente, même si la dernière sauvegarde cloud n'a pas abouti.
+  (function(){
+    if(!_native) return;
+    for(var i=0;i<SAF_KEYS.length;i++){
+      var k=SAF_KEYS[i];
+      try{ var v=_native.getItem(k); if(v!=null) _cache[k]=v; }catch(e){}
+    }
+  })();
 
   // Intercepte DOMContentLoaded pour bloquer le démarrage le temps du restore
   var _domCbs = [];
@@ -16433,9 +16465,25 @@ function saveFiveWhys(){
       saveDB();
     }
   }
-  if(fb){fb.textContent='✓ Analysis saved.';fb.style.color='#3fb950';}
-  showToast('✓ 5 Whys saved for '+_fwCurrentOccId,'success');
   setTimeout(renderOccurrenceList,600);
+  // On n'annonce « enregistré » qu'après confirmation d'écriture dans Supabase.
+  var _fwId=_fwCurrentOccId;
+  if(typeof window.safCloudSaveNow==='function'){
+    if(fb){fb.textContent='Enregistrement…';fb.style.color='#e3b341';}
+    window.safCloudSaveNow().then(function(r){
+      if(r&&r.ok){
+        if(fb){fb.textContent='✓ Analyse enregistrée et synchronisée.';fb.style.color='#3fb950';}
+        showToast('✓ 5 Whys enregistrés et synchronisés ('+_fwId+')','success');
+      }else{
+        var m=(r&&r.conflict)?'conflit de version':((r&&r.error)||'erreur inconnue');
+        if(fb){fb.textContent='⚠ Enregistré localement mais NON synchronisé ('+m+'). Ne rechargez pas la page avant résolution.';fb.style.color='#f85149';}
+        showToast('⚠ 5 Whys non synchronisés : '+m,'error');
+      }
+    });
+  }else{
+    if(fb){fb.textContent='✓ Analysis saved.';fb.style.color='#3fb950';}
+    showToast('✓ 5 Whys saved for '+_fwId,'success');
+  }
 }
 function printFiveWhys(){if(!_fwCurrentOccId)return;const occ=getOccurrences().find(o=>o.id===_fwCurrentOccId);if(!occ)return;const fw=occ.five_whys||{};const whys=fw.whys||[];const becauses=fw.becauses||[];const whyRows=whys.map((w,i)=>{if(!w)return '';var bc=becauses[i]?'<tr><td style="padding:2px 12px 10px 12px;font-weight:700;font-size:10px;color:#8896a0;font-family:monospace;vertical-align:top;white-space:nowrap;">BECAUSE</td><td style="padding:2px 12px 10px 12px;border-left:3px solid #e3b341;font-style:italic;color:#475569;">'+becauses[i]+'</td></tr>':'';return '<tr><td style="padding:8px 12px 2px 12px;font-weight:800;color:#C98000;font-size:13px;vertical-align:top;white-space:nowrap;">WHY #'+(i+1)+'</td><td style="padding:8px 12px 2px 12px;border-left:3px solid #C98000;">'+w+'</td></tr>'+bc;}).join('');const corrHTML=(fw.corrective_actions||[]).length?'<ul style="margin:6px 0 0;padding-left:18px;">'+(fw.corrective_actions.map(a=>'<li>'+occFWActionLabel(a)+'</li>').join(''))+'</ul>':'<em>None defined</em>';const w=window.open('','_blank');w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>5 Whys — '+occ.id+'</title><style>body{font-family:"Segoe UI",Arial,sans-serif;max-width:820px;margin:28px auto;color:#1a2535;font-size:12px;}h1{font-size:18px;font-weight:700;color:#C98000;margin-bottom:4px;}.meta{font-size:10px;color:#6b7a8d;font-family:monospace;margin-bottom:18px;}.problem{background:#fff3e0;border-left:4px solid #C98000;padding:12px 16px;border-radius:0 6px 6px 0;margin-bottom:20px;font-weight:600;font-size:13px;}table{width:100%;border-collapse:collapse;margin-bottom:20px;}td{padding:8px 12px;border-bottom:1px solid #e8ecf0;vertical-align:top;}.box{padding:12px 16px;border-radius:0 6px 6px 0;margin-bottom:20px;}.label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}.footer{margin-top:28px;padding-top:10px;border-top:1px solid #e0e8f0;font-size:9px;color:#8896a0;font-family:monospace;display:flex;justify-content:space-between;}@media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style></head><body><h1>&#127919; 5 WHYS — Root Cause Analysis</h1><div class="meta">'+occ.id+' · '+occ.date+' · '+(occ.severity||'').toUpperCase()+' · SAF International · AS 332 C1 Super Puma</div><div class="problem"><strong>Problem:</strong> '+(occ.description||'—')+'</div><table>'+whyRows+'</table>'+(fw.root_cause?'<div class="box" style="background:#fffde7;border-left:4px solid #e3b341;"><div class="label" style="color:#C98000;">Root Cause</div>'+fw.root_cause+'</div>':'')+'<div class="box" style="background:#f1f8f1;border-left:4px solid #1a7a4a;"><div class="label" style="color:#1a7a4a;">Corrective Actions</div>'+corrHTML+'</div>'+(fw.risk_link?'<p><strong>Linked risk:</strong> '+fw.risk_link+'</p>':'')+'<div class="footer"><span>SAF International — SMS 5 Whys — '+occ.id+'</span><span>Generated '+new Date().toLocaleDateString('en-GB')+'</span></div><script>window.onload=function(){window.print();}<\/script></body></html>');w.document.close();}
 
@@ -21717,6 +21765,7 @@ setTimeout(function(){
   var CC_ROW_EXISTS = false;  // la ligne du module existe-t-elle en base ?
   var CC_CONFLICT   = false;  // sauvegardes bloquées jusqu'à résolution
   var CC_NOTIFIED   = null;   // dernier updated_at distant déjà signalé
+  var CC_PENDING    = false;  // modifications locales pas encore montées au cloud
 
   function ccPayload(){ try{ return window.safExportForCloud(); }catch(e){ return null; } }
 
@@ -21855,8 +21904,8 @@ setTimeout(function(){
       var payload = window.safExportForCloud();
       var out = await ccWrite(payload);
       if(out.conflict){ CC_CONFLICT = true; ccShowConflict(payload); setBar('error','⚠ Conflit de version — sauvegarde suspendue'); }
-      else if(out.error) setBar('ok','Erreur sauvegarde: '+out.error);
-      else setBar('ok','Synchronisé ✓ '+new Date().toLocaleTimeString());
+      else if(out.error) setBar('error','Erreur sauvegarde: '+out.error);
+      else { CC_PENDING = false; setBar('ok','Synchronisé ✓ '+new Date().toLocaleTimeString()); }
     }catch(e){ setBar('ok','Sauvegarde impossible: '+e.message); }
     saving = false;
     if(dirty){ dirty = false; scheduleSave(); }
@@ -21864,11 +21913,42 @@ setTimeout(function(){
 
   function scheduleSave(){
     if(!ready) return;
+    CC_PENDING = true;
     clearTimeout(saveTimer);
     setBar('saving','Modification detectee...');
     saveTimer = setTimeout(cloudSave, 1500);
   }
   window.safCloudScheduleSave = scheduleSave;
+
+  // ── Sauvegarde immédiate ET vérifiée ────────────────────────────────────
+  // Utilisée par les enregistrements critiques (5 Whys, occurrences) pour ne
+  // plus annoncer « enregistré » alors que rien n'est parti vers Supabase.
+  // Renvoie {ok:true} | {conflict:true} | {error:'…'}
+  window.safCloudSaveNow = async function(){
+    clearTimeout(saveTimer);
+    if(CC_CONFLICT)     return {error:'conflit de version non résolu'};
+    if(isGuest)         return {error:'connexion requise'};
+    if(!authenticated)  return {error:'non connecté — rien n\'a été envoyé au cloud'};
+    if(typeof window.safExportForCloud !== 'function') return {error:'export indisponible'};
+    var guard = 0;
+    while(saving && guard < 100){ await new Promise(function(r){ setTimeout(r,120); }); guard++; }
+    saving = true; setBar('saving','Sauvegarde...');
+    var out;
+    try{
+      var payload = window.safExportForCloud();
+      out = await ccWrite(payload);
+      if(out.conflict){ CC_CONFLICT = true; ccShowConflict(payload); setBar('error','⚠ Conflit de version — sauvegarde suspendue'); }
+      else if(out.error){ setBar('error','Erreur sauvegarde: '+out.error); }
+      else { CC_PENDING = false; setBar('ok','Synchronisé ✓ '+new Date().toLocaleTimeString()); }
+    }catch(e){ out = {error:e.message}; setBar('error','Sauvegarde impossible: '+e.message); }
+    saving = false;
+    return out;
+  };
+
+  // Avertit avant de quitter si des modifications ne sont pas encore montées.
+  window.addEventListener('beforeunload', function(e){
+    if(CC_PENDING || saving || CC_CONFLICT){ e.preventDefault(); e.returnValue = ''; return ''; }
+  });
 
   // ── Lecture cross-fichier en lecture seule (utilisé par le MOC pour retrouver
   //    la root cause d'un CAP/finding enregistré dans la CMS — module 'cms_data').
