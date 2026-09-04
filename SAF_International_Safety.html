@@ -10580,10 +10580,18 @@ async function csLookupRootCause(){
   if(!ref){ preview.style.display='none'; preview.innerHTML=''; return; }
 
   // 1) Try to match an Occurrence Log entry in this same file (5 Whys root cause)
+  //    Correspondance tolérante : les fiches instruites portent souvent le titre
+  //    accolé à la référence ("RPT-260722-9BDS - Elingue prise sur la jambe…").
+  //    On accepte donc l'égalité stricte, puis le préfixe, puis l'inclusion.
   let occ = null;
   try {
     const occs = (typeof getOccurrences === 'function') ? getOccurrences() : [];
-    occ = occs.find(o => o && o.id && o.id.toLowerCase() === ref.toLowerCase());
+    const needle = ref.toLowerCase();
+    const idOf = o => (o && o.id ? String(o.id).toLowerCase() : '');
+    occ = occs.find(o => idOf(o) === needle)
+       || occs.find(o => idOf(o).startsWith(needle + ' -') || idOf(o).startsWith(needle + '-') || idOf(o).startsWith(needle + ' '))
+       || occs.find(o => needle.length >= 8 && idOf(o).indexOf(needle) === 0)
+       || occs.find(o => needle.length >= 8 && needle.indexOf(idOf(o)) === 0 && idOf(o).length >= 8);
   } catch(e) {}
 
   if(occ){
