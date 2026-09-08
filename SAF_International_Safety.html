@@ -22084,6 +22084,7 @@ setTimeout(function(){
     if(!res.data || res.data.length === 0) return { conflict:true }; // updated_at périmé
     CC_LAST_SYNC = res.data[0].updated_at;
     CC_ROW_EXISTS = true;
+    try{ safPublishRegisterIfChanged(); }catch(e){}
     return { ok:true };
   }
 
@@ -22096,6 +22097,7 @@ setTimeout(function(){
     if(res.error) return { error: res.error.message };
     CC_LAST_SYNC = (res.data && res.data[0]) ? res.data[0].updated_at : stamp;
     CC_ROW_EXISTS = true;
+    try{ safPublishRegisterIfChanged(); }catch(e){}
     return { ok:true };
   }
 
@@ -22171,6 +22173,7 @@ setTimeout(function(){
 
   // Veille passive : prévient tôt qu'une nouvelle version existe sur le serveur.
   async function ccPoll(){
+    if(SAF_RR_READER) return;
     if(CC_CONFLICT || !CC_ROW_EXISTS || !CC_LAST_SYNC) return;
     try{
       var r = await db.from('saf_data').select('updated_at').eq('module', MODULE).single();
@@ -22475,6 +22478,235 @@ setTimeout(function(){
     }
   }
 
+
+  /* ══ PROJECTION REGISTRE PUBLIEE — cloisonnement du role reader ═══════════
+     Le module `sms_data` porte le registre ET l'occurrence log, les audits, le
+     SRB. Un reader autorise a lire cette ligne peut la recuperer entiere : le
+     masquage de la navigation ne protege rien. On publie donc une copie du seul
+     registre dans une ligne distincte `sms_risk_register`, seule ligne que la
+     politique RLS ouvre au role reader.
+     Le chemin d'ecriture existant (shim, verrou optimiste) n'est pas modifie :
+     la publication se greffe en aval d'une ecriture deja reussie.
+     ───────────────────────────────────────────────────────────────────────── */
+  var SAF_RR_MODULE = 'sms_risk_register';
+
+  // false : le registre est publie COMPLET, traceabilite nominative comprise
+  //          (choix du 8 sept. 2026 — les lecteurs voient tout le registre)
+  // true  : les noms de personnes sont retires de la projection
+  // `risk_owner` (NPFO, NPGO, CMM…) est une fonction, pas une personne : conserve.
+  var SAF_RR_STRIP_NAMES = false;
+
+  var SAF_RR_LAST_HASH = null;   // empreinte de la derniere projection publiee
+  var SAF_RR_READER    = false;  // session en mode « registre seul »
+
+  function rrHash(s){
+    var h = 5381, i = s.length;
+    while(i) h = (h * 33 ^ s.charCodeAt(--i)) >>> 0;
+    return h.toString(36) + '.' + s.length;
+  }
+
+  // Copie profonde du registre, expurgee des noms si demande.
+  function rrProjection(){
+    var src = (typeof DB !== 'undefined' && Array.isArray(DB)) ? DB : [];
+    var arr = JSON.parse(JSON.stringify(src));
+    if(SAF_RR_STRIP_NAMES){
+      arr.forEach(function(r){
+        if(!r || typeof r !== 'object') return;
+        ['created_by','risk_acceptance_by','effectiveness_assessed_by'].forEach(function(f){
+          if(f in r) r[f] = '';
+        });
+        if(Array.isArray(r.history)) r.history.forEach(function(h){ if(h && 'by' in h) h.by = ''; });
+        (r.barriers || []).forEach(function(b){
+          if(!b || typeof b !== 'object') return;
+          if('owner'      in b) b.owner      = '';
+          if('created_by' in b) b.created_by = '';
+          if(b.trac && b.trac.created && 'by' in b.trac.created) b.trac.created.by = '';
+          if(b.trac && b.trac.verif   && 'by' in b.trac.verif)   b.trac.verif.by   = '';
+        });
+      });
+    }
+    return arr;
+  }
+
+  // Ecrit la projection. force=true : publie meme si rien n'a change.
+  async function safPublishRegister(force){
+    try{
+      if(SAF_RR_READER) return { skipped:'reader' };
+      var arr  = rrProjection();
+      if(!arr.length) return { skipped:'registre vide' };
+      var body = JSON.stringify(arr);
+      var h    = rrHash(body);
+      if(!force && h === SAF_RR_LAST_HASH) return { skipped:'inchange' };
+
+      var payload = {
+        published_at   : new Date().toISOString(),
+        published_by   : (typeof safCurrentUser === 'function') ? safCurrentUser() : '',
+        count          : arr.length,
+        db_version     : (typeof _DB_VERSION !== 'undefined') ? _DB_VERSION : '',
+        names_stripped : SAF_RR_STRIP_NAMES,
+        register       : arr
+      };
+      var res = await db.from('saf_data')
+        .upsert({ module: SAF_RR_MODULE, data: payload, updated_at: payload.published_at },
+                { onConflict: 'module' })
+        .select('updated_at');
+      if(res.error) return { error: res.error.message };
+      SAF_RR_LAST_HASH = h;
+      rrRenderPublishState(payload.published_at, arr.length);
+      return { ok:true, published_at: payload.published_at, count: arr.length };
+    }catch(e){ return { error: e.message }; }
+  }
+  window.safPublishRegister = safPublishRegister;
+
+  // Appelee apres chaque ecriture reussie — ne publie que si le registre a bouge.
+  function safPublishRegisterIfChanged(){
+    if(SAF_RR_READER) return;
+    setTimeout(function(){
+      safPublishRegister(false).then(function(out){
+        if(out && out.error) console.warn('Publication du registre :', out.error);
+      });
+    }, 0);
+  }
+
+  /* ── Etat de publication + bouton, dans la barre cloud (admin/editor) ───── */
+  function rrRenderPublishState(when, count){
+    var host = document.getElementById('saf-rr-pub');
+    if(!host) return;
+    var lbl = host.querySelector('.rr-pub-txt');
+    if(lbl) lbl.textContent = when
+      ? ('Registre publie ' + new Date(when).toLocaleString() + ' · ' + count + ' scenarios')
+      : 'Registre jamais publie';
+  }
+
+  function rrMountPublishControl(){
+    var bar = document.getElementById('saf-cloud-bar');
+    if(!bar || document.getElementById('saf-rr-pub')) return;
+    var wrap = document.createElement('span');
+    wrap.id = 'saf-rr-pub';
+    wrap.style.cssText = 'display:inline-flex;align-items:center;gap:8px;margin-left:14px;'
+      + 'font-family:"IBM Plex Mono",monospace;font-size:10px;color:#9fc4e8;';
+    wrap.innerHTML = '<span class="rr-pub-txt">Registre : etat de publication inconnu</span>'
+      + '<button id="saf-rr-pub-btn" title="Publier le registre pour les lecteurs" '
+      + 'style="padding:3px 9px;border-radius:4px;border:1px solid rgba(106,130,165,.45);'
+      + 'background:transparent;color:#9fc4e8;cursor:pointer;font-family:inherit;font-size:10px;">'
+      + 'PUBLIER</button>';
+    bar.appendChild(wrap);
+    document.getElementById('saf-rr-pub-btn').onclick = async function(){
+      var b = this; b.disabled = true; b.textContent = '…';
+      var out = await safPublishRegister(true);
+      b.disabled = false; b.textContent = 'PUBLIER';
+      if(out && out.error) alert('Publication impossible : ' + out.error);
+      else if(out && out.skipped) alert('Rien a publier (' + out.skipped + ').');
+    };
+    // Etat initial : on lit la date de derniere publication sans charger la donnee.
+    db.from('saf_data').select('updated_at').eq('module', SAF_RR_MODULE).maybeSingle()
+      .then(function(r){
+        if(r && r.data && r.data.updated_at) rrRenderPublishState(r.data.updated_at, '?');
+        else rrRenderPublishState(null, 0);
+      }).catch(function(){});
+  }
+
+  /* ── Boot du lecteur : ne charge QUE la projection ──────────────────────── */
+  async function safReaderBoot(){
+    SAF_RR_READER = true;
+    isGuest       = true;   // neutralise cloudSave
+    ready         = false;  // neutralise scheduleSave
+    try{
+      var res = await Promise.race([
+        db.from('saf_data').select('data, updated_at').eq('module', SAF_RR_MODULE).single(),
+        new Promise(function(_, rej){ setTimeout(function(){ rej(new Error('timeout reseau')); }, 8000); })
+      ]);
+      if(res.error) throw new Error(res.error.message);
+      var payload = res.data && res.data.data;
+      var arr = payload && (payload.register !== undefined ? payload.register : payload);
+      if(typeof arr === 'string') arr = JSON.parse(arr);
+      if(!Array.isArray(arr) || !arr.length) throw new Error('registre publie vide');
+
+      try{
+        INITIAL_DATA.length = 0;
+        INITIAL_DATA.push.apply(INITIAL_DATA, arr);
+      }catch(e){}
+      DB = arr;
+      filteredDB = DB.slice();
+      try{ if(typeof updateCounts === 'function') updateCounts(); }catch(e){}
+      try{ if(typeof renderTable  === 'function') renderTable();  }catch(e){}
+
+      applyReaderRegisterOnly(payload && payload.published_at, arr.length,
+                              payload && payload.names_stripped);
+      return true;
+    }catch(e){
+      applyReaderRegisterOnly(null, 0, null);
+      setBar('error','Registre indisponible — ' + e.message
+                   + '. Le registre n\'a peut-etre pas encore ete publie.');
+      return false;
+    }
+  }
+
+  /* ── Interface du lecteur : registre uniquement ─────────────────────────── */
+  function applyReaderRegisterOnly(publishedAt, count, stripped){
+    // 1. Verrou de navigation : toute vue demandee renvoie au registre.
+    try{
+      if(typeof window.showView === 'function' && !window.showView.__rrLocked){
+        var orig = window.showView;
+        var locked = function(){ return orig('database'); };
+        locked.__rrLocked = true;
+        window.showView = locked;
+      }
+      if(typeof window.showView === 'function') window.showView('database');
+    }catch(e){}
+
+    // 2. Masquage : sous-nav inter-outils, sections Tools et SMS Modules,
+    //    et, dans la section Navigation, tout sauf le Risk Register.
+    try{
+      var sub = document.getElementById('saf-subnav');
+      if(sub) sub.style.display = 'none';
+      var sections = document.querySelectorAll('aside .nav-section');
+      sections.forEach(function(sec){
+        var items = sec.querySelectorAll('.nav-item');
+        if(!items.length) return;   // section Domains : conservee (filtre du registre)
+        var keep = 0;
+        items.forEach(function(it){
+          var oc = it.getAttribute('onclick') || '';
+          if(oc.indexOf("'database'") !== -1){ keep++; it.classList.add('active'); }
+          else it.style.display = 'none';
+        });
+        if(!keep) sec.style.display = 'none';
+      });
+    }catch(e){}
+
+    // 3. Lecture seule effective (boutons, champs, fonctions d'ecriture).
+    try{ if(typeof guardWriteFunctions === 'function') guardWriteFunctions(); }catch(e){}
+    try{ if(typeof applyReadOnly === 'function' && !window.__safReadOnlyObserver) applyReadOnly(); }catch(e){}
+
+    // 4. Bandeau. applyReadOnly() a deja pose son propre bandeau « MODE LECTURE
+    //    SEULE » depuis loadAndApplyRole() : deux bandeaux fixes a top:0 se
+    //    superposeraient. On retire donc l'ancien avant de poser celui-ci, plus
+    //    precis puisqu'il nomme le perimetre et la date de publication.
+    try{
+      Array.prototype.slice.call(document.body.children).forEach(function(el){
+        if(el.id === 'saf-rr-banner') return;
+        if(el.tagName !== 'DIV') return;
+        var st = el.style || {};
+        if(st.position !== 'fixed' || st.top !== '0px' || st.zIndex !== '9999') return;
+        var t = (el.textContent || '');
+        if(t.length < 200 && /LECTURE SEULE|ACC\u00c8S INVIT|READ[- ]ONLY|GUEST/i.test(t)) el.remove();
+      });
+    }catch(e){}
+
+    var b = document.createElement('div');
+    b.id = 'saf-rr-banner';
+    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(30,50,80,.94);'
+      + 'border-bottom:1px solid rgba(106,130,165,.35);padding:5px 16px;'
+      + 'font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.06em;'
+      + 'color:#9fc4e8;text-align:center;pointer-events:none;';
+    b.textContent = publishedAt
+      ? ('LECTURE SEULE — RISK REGISTER UNIQUEMENT · version publiee le '
+         + new Date(publishedAt).toLocaleString() + ' · ' + count + ' scenarios'
+         + (stripped === false ? '' : ' · sans attribution nominative'))
+      : 'LECTURE SEULE — RISK REGISTER UNIQUEMENT · aucune version publiee disponible';
+    document.body.prepend(b);
+  }
+
   async function onAuthenticated(session){
     if(session){
       overlay.style.display = 'none';
@@ -22484,6 +22716,16 @@ setTimeout(function(){
       await loadAndApplyRole(session.user.email);
     }
     authenticated = true;
+
+    // Reader : la RLS ne lui ouvre que la ligne du registre publie. Charger
+    // sms_data echouerait, et l'import des rapports ne le concerne pas.
+    if(SAF_ROLE !== 'admin' && SAF_ROLE !== 'editor'){
+      await safReaderBoot();
+      if(typeof updateCAMOBadge==='function') updateCAMOBadge();
+      return;
+    }
+
+    try{ rrMountPublishControl(); }catch(e){ console.warn('Controle de publication non monte :', e.message); }
     await safLoadReferentiel();
     await cloudLoad();
     await importMobileReports();
