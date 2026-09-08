@@ -257,10 +257,62 @@ main { flex: 1; overflow-y: auto; background: #0A1520; }
   background: var(--navy-mid);
   border: 1px solid rgba(255,255,255,.08);
   border-radius: 10px;
-  overflow-x: auto;
+  /* Correctif 08.09.2026 — barre de défilement horizontale permanente.
+     `auto` laisse le système masquer la barre tant qu'on ne fait pas défiler
+     (barres superposées de Windows et macOS) : depuis le retrait du gel de la
+     colonne Actions, plus rien n'indiquait que le tableau continuait à droite.
+     `scroll` la rend permanente, et le style ci-dessous la rend lisible sur
+     fond sombre. */
+  overflow-x: scroll;
 }
+/* Correctif 08.09.2026 (4e passe) — pourquoi la barre restait invisible.
+   Chrome désactive TOUT le style ::-webkit-scrollbar dès qu'une des propriétés
+   standard `scrollbar-width` / `scrollbar-color` est posée sur le même élément.
+   Les deux règles que j'avais ajoutées annulaient donc mes propres règles
+   ::-webkit-scrollbar, et le navigateur retombait sur ses barres superposées,
+   masquées tant qu'on ne fait pas défiler. On réserve désormais les propriétés
+   standard à Firefox, qui ne comprend pas ::-webkit-scrollbar. */
+@supports (-moz-appearance: none) {
+  .table-wrap { scrollbar-width: auto; scrollbar-color: var(--gold, #C98000) rgba(255,255,255,.06); }
+}
+/* Correctif 08.09.2026 (3e passe) — la barre horizontale existait déjà mais
+   restait invisible : elle se trouve au BAS de .table-wrap, c'est-à-dire sous
+   la vingtième ligne du registre, très en dessous de l'écran. On borne donc la
+   hauteur du conteneur du registre : le tableau défile à l'intérieur, l'en-tête
+   reste collant en haut (règle .risk-table th) et la barre horizontale est
+   toujours au bas de la zone visible. Limité à #view-database pour ne pas
+   toucher les autres tableaux qui partagent la classe. */
+#view-database .table-wrap {
+  max-height: calc(100vh - 260px);
+  min-height: 320px;
+  overflow-y: auto;
+}
+.table-wrap::-webkit-scrollbar { height: 14px; width: 14px; }
+.table-wrap::-webkit-scrollbar-track {
+  background: rgba(255,255,255,.06);
+  border-radius: 0 0 10px 10px;
+}
+.table-wrap::-webkit-scrollbar-thumb {
+  background: var(--gold, #C98000);
+  border: 3px solid var(--navy-mid);
+  border-radius: 8px;
+}
+.table-wrap::-webkit-scrollbar-thumb:hover { background: var(--gold-light, #E0A030); }
 
 .risk-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+/* Correctif 08.09.2026 — chevauchement Last Modified / Actions.
+   La colonne Actions est gelée à droite (position:sticky; right:0). Sans
+   largeur réservée, le navigateur comprime les dernières colonnes sous leur
+   largeur de contenu dès que la fenêtre est étroite (ou le zoom élevé) : la
+   colonne figée vient alors recouvrir Last Modified, d'où le « LAST MODI »
+   tronqué et l'heure invisible. On force donc une largeur minimale au tableau
+   — .table-wrap porte overflow-x:auto et prend le relais en défilement — et on
+   réserve la place des deux dernières colonnes. */
+.risk-table { min-width: 1480px; }
+.risk-table thead th:nth-last-child(2),
+.risk-table tbody td:nth-last-child(2) { min-width: 124px; padding-right: 18px; }
+.risk-table thead th:last-child,
+.risk-table td.actions-cell { min-width: 196px; width: 196px; }
 .risk-table thead tr { background: var(--navy-light); }
 .risk-table th {
   padding: 10px 12px;
@@ -984,18 +1036,27 @@ select[id$="-status"].status-clos{border-left-color:#3fb950;}
   background: rgba(201,162,39,.42);
   color: #FFFFFF;
 }
+/* Correctif 08.09.2026 (2e passe) — la colonne Actions n'est plus gelée.
+   Mesure faite en console : tableau 1687 px pour 1053 px de fenêtre. La colonne
+   était donc figée à droite (position:sticky; right:0) au-dessus d'un contenu
+   qui défile dessous — et la colonne qui passe dessous est justement
+   Last Modified, sa voisine immédiate. Réserver de la largeur n'y changeait
+   rien : le recouvrement est le principe même d'une colonne gelée.
+   Actions défile désormais avec le reste du tableau ; plus aucun recouvrement,
+   quel que soit le zoom. L'en-tête reste collant verticalement (règle
+   .risk-table th), seul le gel horizontal est retiré. */
 .actions-cell {
   white-space: nowrap;
-  position: sticky;
-  right: 0;
-  background: var(--navy-mid);
-  box-shadow: -2px 0 6px rgba(0,0,0,.2);
+  position: static;
+  right: auto;
+  background: transparent;
+  box-shadow: none;
 }
 .risk-table thead th:last-child {
-  position: sticky;
-  right: 0;
+  right: auto;
   background: var(--navy-light);
-  box-shadow: -2px 0 6px rgba(0,0,0,.2);
+  box-shadow: none;
+  z-index: 20;
 }
 
 
@@ -1852,7 +1913,13 @@ nav { top: 118px !important; }
         <label style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);letter-spacing:.06em;display:block;margin-bottom:6px;">RISK ID <span style="color:#e05000;">*</span></label>
         <input id="em-id" style="width:100%;background:var(--navy-deep);border:1px solid rgba(255,255,255,.12);color:var(--white);font-family:var(--font-mono);font-size:12px;padding:8px 12px;border-radius:6px;box-sizing:border-box;" type="text"/>
       </div>
-      <div>
+      <!-- Retrait 08.09.2026 — le domaine « legacy » n'est plus affiché dans le
+           registre. Le champ reste dans le DOM, masqué : il est renseigné
+           automatiquement à partir de la famille (safLegacyDomainFor) et
+           conservé dans la donnée pour la traçabilité et l'export CSV.
+           Le supprimer casserait saveEditModal(), editEntry() et l'export,
+           qui lisent tous #em-category. -->
+      <div style="display:none;">
         <label style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);letter-spacing:.06em;display:block;margin-bottom:6px;">LEGACY DOMAIN <span style="color:var(--grey-400);font-weight:400;">(auto — traceability only)</span></label>
         <select id="em-category" style="width:100%;background:var(--navy-deep);border:1px solid rgba(255,255,255,.12);color:var(--white);font-family:var(--font-mono);font-size:12px;padding:8px 12px;border-radius:6px;box-sizing:border-box;">
           <option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option>
@@ -2508,7 +2575,7 @@ function updateOaciDefinitionDropdown(sel) {
 <div class="form-field"><label class="field-label">Level 1 — Occurrence Category <span class="req">*</span></label><select id="f-occurrence-category"><option value="">Select…</option></select></div>
 <div class="form-field"><label class="field-label">Level 2 — SAF Family <span class="req">*</span></label><select id="f-family"><option value="">Select…</option></select></div>
 </div>
-<div class="form-field">
+<div class="form-field" style="display:none;"><!-- Legacy Domain masqué 08.09.2026 : renseigné automatiquement, conservé pour la traçabilité et l'export CSV -->
 <label class="field-label">Legacy Domain <span style="color:var(--grey-400);font-weight:400;">(auto — traceability only)</span></label>
 <select id="f-saf-category">
           <option value="" style="background:#0d1b2a;color:#f4f6f8;">Sélectionner…</option>
@@ -8156,11 +8223,47 @@ function __safPreserveUserData(target, saved, seed){
       if(!sb) return;
       if(__safIsFilled(sb.owner))    b.owner = sb.owner;
       if(__safIsFilled(sb.evidence)) b.evidence = sb.evidence;
+      if(__safIsFilled(sb.trac))     b.trac = sb.trac;
       if(sb.status && sb.status !== 'active') b.status = sb.status;
       if(__safIsFilled(sb.superseded_by)) b.superseded_by = sb.superseded_by;
     });
   }
   return target;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SAF 2026-09-08 — ADOPTION DES FICHES ÉDITÉES PAR L'UTILISATEUR
+   Défaut corrigé : sur un scénario du référentiel (SMS-01…SMS-102), la fusion
+   d'ouverture ne réinjectait que SAF_USER_OWNED_FIELDS. Tout le reste de la
+   saisie — événement, dangers, conséquences, mesures de prévention /
+   atténuation / récupération, cotations, doc_ref, commentaire de contrôle,
+   propriétaire, indicateur — était réécrit par le référentiel au rechargement
+   suivant. L'enregistrement partait pourtant bien dans le cloud : la perte
+   était invisible et silencieuse (ORO.GEN.200(a)(3) — intégrité des
+   enregistrements SMS).
+   Règle retenue : une fiche portant user_edited_at est la source de vérité.
+   Le référentiel ne fournit plus que ce qu'elle ne porte pas (barrières
+   objectivées, rattachement de famille) et l'union des historiques.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function __safAdoptUserRecord(refRec, userRec){
+  var out = JSON.parse(JSON.stringify(userRec));
+  if(!Array.isArray(out.barriers) || !out.barriers.length) out.barriers = refRec.barriers;
+  ['family_id','seed_version','source_risk_ids','record_kind','workflow_status'].forEach(function(k){
+    if(!__safIsFilled(out[k]) && __safIsFilled(refRec[k])) out[k] = refRec[k];
+  });
+  var a = Array.isArray(refRec.history) ? refRec.history : [];
+  var b = Array.isArray(out.history)   ? out.history   : [];
+  var seen = {}, merged = [];
+  a.concat(b).forEach(function(h){
+    if(!h) return;
+    var k = String(h.action||'')+'|'+String(h.date||'')+'|'+String(h.by||'')+'|'+String(h.reason||h.occ_id||h.value||'');
+    if(seen[k]) return; seen[k] = 1; merged.push(h);
+  });
+  merged.sort(function(x,y){ return String(x.date||'').localeCompare(String(y.date||'')); });
+  out.history = merged;
+  out.ref_overridden = true;
+  return out;
 }
 
 function __mergeSmsDBWithCustom(){
@@ -8193,7 +8296,15 @@ function __mergeSmsDBWithCustom(){
       // Scénario du référentiel déjà travaillé : les saisies utilisateur sont
       // réappliquées champ par champ, dans l'ordre des sources (POINT 2).
       // Seules les valeurs RENSEIGNÉES écrasent : une source vide n'efface jamais.
-      if(baseById[r.id]){ __safPreserveUserData(baseById[r.id], r, seedById[r.id]); savedById[r.id]=1; }
+      if(baseById[r.id]){
+        if(r.user_edited_at){
+          baseById[r.id] = __safAdoptUserRecord(baseById[r.id], r);
+          for(var _bi=0; _bi<base.length; _bi++){ if(base[_bi] && base[_bi].id === r.id){ base[_bi] = baseById[r.id]; break; } }
+        } else {
+          __safPreserveUserData(baseById[r.id], r, seedById[r.id]);
+        }
+        savedById[r.id]=1;
+      }
     });
   });
   var _preserved=Object.keys(savedById).length;
@@ -9830,7 +9941,7 @@ function _rrDetailHTML(r) {
               <span class="ea-level-pill ea-level-3">Level 3 · ${r.id} — ${r.event}</span>
               <span class="ea-status ${r.workflow_status==='approved'?'ea-status-approved':'ea-status-candidate_review'}">${(r.record_kind||'risk_scenario').replace(/_/g,' ').toUpperCase()}</span>
             </div>
-            <div style="font-size:10px;color:var(--grey-400);margin-top:7px;">Domain: ${safDomainLabel(r.family_id)} &nbsp;·&nbsp; legacy domain retained for traceability: ${r.category||'—'}</div>
+            <div style="font-size:10px;color:var(--grey-400);margin-top:7px;">Domain: ${safDomainLabel(r.family_id)}</div>
           </div>
 
           ${safRatingBlockHTML(r)}
@@ -10321,6 +10432,8 @@ function saveEditModal() {
     barriers_declared:   barrierEval.barriers_declared,
     failure_evidence:    barrierEval.failure_evidence,
     updated_at:          new Date().toISOString(),
+    user_edited_at:      new Date().toISOString(),
+    user_edited_by:      (typeof safCurrentUser === 'function' ? safCurrentUser() : ''),
     created_at:          prev.created_at || prev.timestamp,
     history:             Array.isArray(prev.history) ? [...prev.history] : [],
   };
@@ -23714,5 +23827,45 @@ else setTimeout(function(){ try{tracMigrate();}catch(e){} },1200);
 })();
 </script>
 
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   Correctif 08.09.2026 (5e passe) — barre de défilement horizontale visible.
+   Mesure en console : conteneur 1192 px de large pour 1686 px de contenu, place
+   bien réservée pour la barre. Elle était donc rendue — mais au bas d'un
+   conteneur de 761 px de haut dont le bas tombait sous la ligne de flottaison.
+   Le `calc(100vh - 260px)` du CSS supposait que le tableau commençait à 260 px
+   du haut de la fenêtre ; en pratique la barre de filtres, le compteur et les
+   blocs du registre le repoussent bien plus bas.
+   On calcule donc la hauteur disponible à l'exécution, à partir de la position
+   réelle du conteneur, et on la réapplique au redimensionnement, au changement
+   de vue et au défilement de la page.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function(){
+  var _last = -1;
+  function fit(){
+    try{
+      var w = document.querySelector('#view-database .table-wrap');
+      if(!w || !w.offsetParent) return;                 // vue masquée : rien à faire
+      var top = w.getBoundingClientRect().top;
+      var avail = Math.round(window.innerHeight - top - 28);   // 28 px de marge basse
+      if(avail < 260) avail = 260;                      // plancher : tableau utilisable
+      if(Math.abs(avail - _last) < 4) return;           // évite les réécritures inutiles
+      _last = avail;
+      w.style.maxHeight = avail + 'px';
+      w.style.overflowY = 'auto';
+      w.style.overflowX = 'scroll';
+    }catch(e){}
+  }
+  window._rrFitTable = fit;
+  try{
+    window.addEventListener('resize', fit);
+    window.addEventListener('scroll', fit, true);
+    document.addEventListener('DOMContentLoaded', fit);
+    setInterval(fit, 800);        // couvre les changements de vue et de pagination
+    fit();
+  }catch(e){}
+})();
+</script>
 </body>
 </html>
