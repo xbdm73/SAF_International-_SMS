@@ -22717,6 +22717,10 @@ setTimeout(function(){
     }
     authenticated = true;
 
+    // Client expose en console pour les controles de cloisonnement RLS.
+    // Sans risque : la cle anon est publique, c'est la RLS qui decide.
+    try{ window.safDb = db; }catch(e){}
+
     // Reader : la RLS ne lui ouvre que la ligne du registre publie. Charger
     // sms_data echouerait, et l'import des rapports ne le concerne pas.
     if(SAF_ROLE !== 'admin' && SAF_ROLE !== 'editor'){
