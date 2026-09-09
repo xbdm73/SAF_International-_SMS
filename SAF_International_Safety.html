@@ -7997,8 +7997,27 @@ function safApplyEventTaxonomy(e){
 function safFamilyOptions(selected,includeBlank){var h=includeBlank===false?'':'<option value="">Select SAF family…</option>';SAF_EVENT_FAMILIES.forEach(function(f){h+='<option value="'+f.id+'" '+(selected===f.id?'selected':'')+'>'+eventAccountingEsc(f.id+' — '+f.name)+'</option>';});return h;}
 function safOccurrenceCategoryOptions(selected,includeBlank){var h=includeBlank===false?'':'<option value="">Select occurrence category…</option>';SAF_OCCURRENCE_CATEGORIES.forEach(function(c){h+='<option value="'+c.id+'" '+(selected===c.id?'selected':'')+'>'+eventAccountingEsc(c.id+' — '+String(c.name||c.id).replace(c.id+' — ',''))+'</option>';});return h;}
 function safPopulateTaxonomySelects(){
-  var pairs=[['ea-category-filter',safOccurrenceCategoryOptions('',true)],['ea-family-filter',safFamilyOptions('',true)],['f-occurrence-category',safOccurrenceCategoryOptions('',true)],['f-family',safFamilyOptions('',true)],['em-occurrence-category',safOccurrenceCategoryOptions('',true)],['em-family',safFamilyOptions('',true)]];
-  pairs.forEach(function(p){var el=document.getElementById(p[0]);if(el&&el.options.length<=1)el.innerHTML=p[1];});
+  var familyOptions=safFamilyOptions('',true);
+  var occurrenceOptions=safOccurrenceCategoryOptions('',true);
+  var pairs=[
+    ['filter-occ-cat',occurrenceOptions],
+    ['filter-family',familyOptions],
+    ['ea-category-filter',occurrenceOptions],
+    ['ea-family-filter',familyOptions],
+    ['f-occurrence-category',occurrenceOptions],
+    ['f-family',familyOptions],
+    ['em-occurrence-category',occurrenceOptions],
+    ['em-family',familyOptions]
+  ];
+  pairs.forEach(function(p){
+    var el=document.getElementById(p[0]);
+    if(el&&el.options.length<=1) el.innerHTML=p[1];
+  });
+  // Risk Register filters use an "All ..." first option rather than a form prompt.
+  var ff=document.getElementById('filter-family');
+  if(ff&&ff.options.length){ff.options[0].textContent='All SAF families';ff.options[0].value='';}
+  var fo=document.getElementById('filter-occ-cat');
+  if(fo&&fo.options.length){fo.options[0].textContent='All occurrence categories';fo.options[0].value='';}
 }
 document.addEventListener('DOMContentLoaded',safPopulateTaxonomySelects);
 
@@ -9864,7 +9883,7 @@ function renderLeadingIndicators() {
 // ══════════════════════════════════════════════════════════════════
 var _legacyCategoryFilter='';
 function filterByCategory(cat){if(!DB||DB.length===0){DB=safApplyTaxonomyToDB(JSON.parse(JSON.stringify(INITIAL_DATA)));filteredDB=[...DB];}showView('database');_domainFilter='';_legacyCategoryFilter=cat||'';var oc=document.getElementById('filter-occ-cat');if(oc)oc.value=(SAF_OCCURRENCE_CATEGORIES.some(function(x){return x.id===cat;})?cat:'');applyFilters();}
-function populateRiskTaxonomyFilters(){var oc=document.getElementById('filter-occ-cat'),fam=document.getElementById('filter-family');if(oc&&oc.options.length<=1)oc.innerHTML=safOccurrenceCategoryOptions('',true);if(fam&&fam.options.length<=1)fam.innerHTML=safFamilyOptions('',true);}
+function populateRiskTaxonomyFilters(){safPopulateTaxonomySelects();}
 function applyFilters(){populateRiskTaxonomyFilters();safApplyTaxonomyToDB(DB);const search=(document.getElementById('search-input')?.value||'').toLowerCase(),occCat=document.getElementById('filter-occ-cat')?.value||'',family=document.getElementById('filter-family')?.value||'',opsType=document.getElementById('filter-ops-type')?.value||'',light=document.getElementById('filter-light')?.value||'',visualAid=document.getElementById('filter-visual-aid')?.value||'',risk=document.getElementById('filter-risk')?.value||'',phase=document.getElementById('filter-phase')?.value||'';filteredDB=DB.filter(r=>{if(search&&![r.id,r.event,r.undesirable_event,r.dangers,r.consequences,r.doc_ref,r.category,r.occurrence_category,r.family_id,safFamilyLabel(r.family_id),r.ops_type,r.light_condition,r.visual_aid,r.met_condition,r.site_type,r.record_kind,r.risk_owner,r.safety_indicator,r.indicator_target].join(' ').toLowerCase().includes(search))return false;if(occCat&&r.occurrence_category!==occCat)return false;if(family&&r.family_id!==family)return false;if(opsType&&(r.ops_type||'')!==opsType)return false;if(light&&(r.light_condition||'')!==light)return false;if(visualAid&&(r.visual_aid||'')!==visualAid)return false;if(_legacyCategoryFilter&&r.category!==_legacyCategoryFilter&&r.occurrence_category!==_legacyCategoryFilter)return false;if(_domainFilter){var _g=safDomainGroup(r.family_id);if(_domainFilter==='__none__'){if(_g)return false;}else if(!_g||_g.id!==_domainFilter)return false;}if(risk&&riskColor(safResidualCurrent(r))!==risk)return false;if(phase&&!(r.phase||'').includes(phase))return false;return true;});currentPage=1;renderTable();var scopeEl=document.getElementById('rr-export-scope');if(scopeEl)scopeEl.textContent=_rrScopeLabel();}
 function clearFilters(){['search-input','filter-occ-cat','filter-family','filter-ops-type','filter-light','filter-visual-aid','filter-risk','filter-phase'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});_legacyCategoryFilter='';_domainFilter='';applyFilters();if(typeof renderDomainNav==='function')renderDomainNav();}
 function sortTable(col) {
