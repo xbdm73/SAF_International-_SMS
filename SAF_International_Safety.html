@@ -23842,6 +23842,13 @@ function occRestoreHFACS(hfacs,severity){
     preserveOptionValue(el);
     // Options/selects can't render a forced line break, so keep those inline.
     var stackable = el && el.tagName!=='OPTION' && el.tagName!=='SELECT' && !(el.classList && (el.classList.contains('sub') || el.classList.contains('saf-close-btn')));
+    /* 10.09.2026 — Risk Register : les deux langues restent affichees, mais
+       sur UNE seule ligne (« REGISTRE DES RISQUES / RISK REGISTER »,
+       « Prevention / Prevention ») au lieu d'etre empilees. L'empilement
+       coutait une ligne de titre en haut de la vue et doublait la hauteur de
+       l'en-tete du tableau, au detriment des lignes du registre. */
+    if(stackable && el.closest && el.closest('#view-database') &&
+       ((el.classList && el.classList.contains('dash-title')) || el.closest('#view-database thead'))) stackable = false;
     var finalText = repl;
     if(stackable){
       var parts=splitFrEnJoined(nKey, repl);
