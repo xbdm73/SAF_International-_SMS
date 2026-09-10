@@ -23774,7 +23774,10 @@ function occRestoreHFACS(hfacs,severity){
   }
   function excluded(el){
     if(!el || el.nodeType!==1) return false;
-    return !!el.closest('script,style,noscript,textarea,input,canvas,svg,code,pre,[contenteditable="true"],.rte,.cs-sig-wrap,.cms-title-fr,.cms-title-en');
+    /* 10.09.2026 — la ligne de titres de colonnes du Risk Register est exclue
+       de la couche bilingue : elle reste en anglais. Le titre de la vue, lui,
+       garde ses deux langues (voir la regle sur .dash-title plus bas). */
+    return !!el.closest('script,style,noscript,textarea,input,canvas,svg,code,pre,[contenteditable="true"],.rte,.cs-sig-wrap,.cms-title-fr,.cms-title-en,#view-database thead');
   }
   function preserveOptionValue(el){
     if(el && el.tagName==='OPTION' && !el.hasAttribute('value')) el.setAttribute('value', el.textContent || '');
@@ -23847,8 +23850,8 @@ function occRestoreHFACS(hfacs,severity){
        « Prevention / Prevention ») au lieu d'etre empilees. L'empilement
        coutait une ligne de titre en haut de la vue et doublait la hauteur de
        l'en-tete du tableau, au detriment des lignes du registre. */
-    if(stackable && el.closest && el.closest('#view-database') &&
-       ((el.classList && el.classList.contains('dash-title')) || el.closest('#view-database thead'))) stackable = false;
+    if(stackable && el.classList && el.classList.contains('dash-title') &&
+       el.closest && el.closest('#view-database')) stackable = false;
     var finalText = repl;
     if(stackable){
       var parts=splitFrEnJoined(nKey, repl);
