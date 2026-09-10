@@ -252,6 +252,47 @@ main { flex: 1; overflow-y: auto; background: #0A1520; }
 .filter-bar select option { background: var(--navy-mid); }
 .filter-label { font-family: var(--font-mono); font-size: 10px; color: var(--grey-400); white-space: nowrap; }
 
+/* ─── RISK REGISTER · BARRE DE FILTRES REPLIABLE ──────────────
+   Correctif 10.09.2026 — la barre atteignait 245 px de haut (9 contrôles
+   repliés sur 3 à 4 rangées par flex-wrap) sur une fenêtre de 835 px, soit
+   près de 30 % de la hauteur utile avant même l'en-tete du tableau.
+   Recherche et famille restent visibles ; les autres filtres passent dans un
+   panneau replie, et les filtres actifs sont rappeles par des puces
+   supprimables pour ne jamais filtrer a l'aveugle. */
+#rr-filter-bar { display: block; padding: .7rem .9rem; }
+#rr-filter-bar .rr-filter-main { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+#rr-filter-bar .rr-filter-adv {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+#rr-filter-bar .rr-filter-adv[hidden] { display: none; }
+#rr-filter-toggle.rr-filter-open { border-color: var(--steel-bright); color: var(--white); }
+#rr-filter-toggle.rr-filter-active { border-color: var(--gold); color: var(--gold-light); }
+.rr-filter-count {
+  display: inline-block; margin-left: 6px; min-width: 16px; padding: 0 5px;
+  background: var(--gold); color: #000; border-radius: 9px;
+  font-family: var(--font-mono); font-size: 9px; font-weight: 800; line-height: 15px; text-align: center;
+}
+.rr-filter-count[hidden] { display: none; }
+#rr-filter-bar .rr-filter-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
+#rr-filter-bar .rr-filter-chips:empty { display: none; margin-top: 0; }
+.rr-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(74,159,224,.12); border: 1px solid rgba(74,159,224,.38);
+  border-radius: 999px; padding: 2px 4px 2px 9px;
+  font-family: var(--font-mono); font-size: 10px; color: var(--grey-300);
+  max-width: 320px;
+}
+.rr-chip b { color: var(--steel-bright); font-weight: 700; }
+.rr-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rr-chip button {
+  background: transparent; border: none; color: var(--grey-400);
+  cursor: pointer; font-size: 11px; line-height: 1; padding: 2px 4px; border-radius: 50%;
+}
+.rr-chip button:hover { background: rgba(255,255,255,.12); color: var(--white); }
+
+
 /* ─── RISK TABLE ─────────────────────────────── */
 .table-wrap {
   background: var(--navy-mid);
@@ -2118,11 +2159,16 @@ nav { top: 118px !important; }
 </div>
 <button class="btn btn-gold" onclick="showView('form')">＋ NEW ENTRY</button>
 </div>
-<div class="filter-bar">
+<div class="filter-bar" id="rr-filter-bar">
+<div class="rr-filter-main">
 <span class="filter-label">FILTER</span>
 <input id="search-input" oninput="applyFiltersDebounced()" placeholder="Search event, danger, reference…" type="text"/>
-<select id="filter-occ-cat" onchange="applyFilters()"><option value="">All occurrence categories</option></select>
 <select id="filter-family" onchange="applyFilters()"><option value="">All SAF families</option></select>
+<button class="btn btn-ghost" type="button" id="rr-filter-toggle" aria-expanded="false" onclick="rrToggleFilters()" title="Afficher ou masquer les filtres détaillés">⚙ Filters<span class="rr-filter-count" id="rr-filter-count" hidden>0</span></button>
+<button class="btn btn-ghost" onclick="clearFilters()">✕ Clear</button>
+</div>
+<div class="rr-filter-adv" id="rr-filter-adv" hidden>
+<select id="filter-occ-cat" onchange="applyFilters()"><option value="">All occurrence categories</option></select>
 <select id="filter-ops-type" onchange="applyFilters()"><option value="">All operations</option><option value="CAT">CAT</option><option value="NCC">NCC</option><option value="SPO-HESLO">SPO-HESLO</option><option value="SPO-MCF">SPO-MCF</option><option value="FIREFIGHTING">FIREFIGHTING</option></select>
 <select id="filter-light" onchange="applyFilters()"><option value="">Day / night</option><option value="DAY">DAY</option><option value="NIGHT">NIGHT</option></select>
 <select id="filter-visual-aid" onchange="applyFilters()"><option value="">Visual aid</option><option value="UNAIDED">UNAIDED</option><option value="NVIS">NVIS</option><option value="N/A">N/A</option></select>
@@ -2144,7 +2190,8 @@ nav { top: 118px !important; }
 <option value="20" style="background:#0d1b2a;color:#f4f6f8;">20 per page</option>
 <option value="50" style="background:#0d1b2a;color:#f4f6f8;">50 per page</option>
 </select>
-<button class="btn btn-ghost" onclick="clearFilters()">✕ Clear</button>
+</div>
+<div class="rr-filter-chips" id="rr-filter-chips"></div>
 </div>
 <div class="rr-counter" id="rr-counter"></div>
 
@@ -9884,8 +9931,131 @@ function renderLeadingIndicators() {
 var _legacyCategoryFilter='';
 function filterByCategory(cat){if(!DB||DB.length===0){DB=safApplyTaxonomyToDB(JSON.parse(JSON.stringify(INITIAL_DATA)));filteredDB=[...DB];}showView('database');_domainFilter='';_legacyCategoryFilter=cat||'';var oc=document.getElementById('filter-occ-cat');if(oc)oc.value=(SAF_OCCURRENCE_CATEGORIES.some(function(x){return x.id===cat;})?cat:'');applyFilters();}
 function populateRiskTaxonomyFilters(){safPopulateTaxonomySelects();}
-function applyFilters(){populateRiskTaxonomyFilters();safApplyTaxonomyToDB(DB);const search=(document.getElementById('search-input')?.value||'').toLowerCase(),occCat=document.getElementById('filter-occ-cat')?.value||'',family=document.getElementById('filter-family')?.value||'',opsType=document.getElementById('filter-ops-type')?.value||'',light=document.getElementById('filter-light')?.value||'',visualAid=document.getElementById('filter-visual-aid')?.value||'',risk=document.getElementById('filter-risk')?.value||'',phase=document.getElementById('filter-phase')?.value||'';filteredDB=DB.filter(r=>{if(search&&![r.id,r.event,r.undesirable_event,r.dangers,r.consequences,r.doc_ref,r.category,r.occurrence_category,r.family_id,safFamilyLabel(r.family_id),r.ops_type,r.light_condition,r.visual_aid,r.met_condition,r.site_type,r.record_kind,r.risk_owner,r.safety_indicator,r.indicator_target].join(' ').toLowerCase().includes(search))return false;if(occCat&&r.occurrence_category!==occCat)return false;if(family&&r.family_id!==family)return false;if(opsType&&(r.ops_type||'')!==opsType)return false;if(light&&(r.light_condition||'')!==light)return false;if(visualAid&&(r.visual_aid||'')!==visualAid)return false;if(_legacyCategoryFilter&&r.category!==_legacyCategoryFilter&&r.occurrence_category!==_legacyCategoryFilter)return false;if(_domainFilter){var _g=safDomainGroup(r.family_id);if(_domainFilter==='__none__'){if(_g)return false;}else if(!_g||_g.id!==_domainFilter)return false;}if(risk&&riskColor(safResidualCurrent(r))!==risk)return false;if(phase&&!(r.phase||'').includes(phase))return false;return true;});currentPage=1;renderTable();var scopeEl=document.getElementById('rr-export-scope');if(scopeEl)scopeEl.textContent=_rrScopeLabel();}
+function applyFilters(){populateRiskTaxonomyFilters();safApplyTaxonomyToDB(DB);const search=(document.getElementById('search-input')?.value||'').toLowerCase(),occCat=document.getElementById('filter-occ-cat')?.value||'',family=document.getElementById('filter-family')?.value||'',opsType=document.getElementById('filter-ops-type')?.value||'',light=document.getElementById('filter-light')?.value||'',visualAid=document.getElementById('filter-visual-aid')?.value||'',risk=document.getElementById('filter-risk')?.value||'',phase=document.getElementById('filter-phase')?.value||'';filteredDB=DB.filter(r=>{if(search&&![r.id,r.event,r.undesirable_event,r.dangers,r.consequences,r.doc_ref,r.category,r.occurrence_category,r.family_id,safFamilyLabel(r.family_id),r.ops_type,r.light_condition,r.visual_aid,r.met_condition,r.site_type,r.record_kind,r.risk_owner,r.safety_indicator,r.indicator_target].join(' ').toLowerCase().includes(search))return false;if(occCat&&r.occurrence_category!==occCat)return false;if(family&&r.family_id!==family)return false;if(opsType&&(r.ops_type||'')!==opsType)return false;if(light&&(r.light_condition||'')!==light)return false;if(visualAid&&(r.visual_aid||'')!==visualAid)return false;if(_legacyCategoryFilter&&r.category!==_legacyCategoryFilter&&r.occurrence_category!==_legacyCategoryFilter)return false;if(_domainFilter){var _g=safDomainGroup(r.family_id);if(_domainFilter==='__none__'){if(_g)return false;}else if(!_g||_g.id!==_domainFilter)return false;}if(risk&&riskColor(safResidualCurrent(r))!==risk)return false;if(phase&&!(r.phase||'').includes(phase))return false;return true;});currentPage=1;renderTable();var scopeEl=document.getElementById('rr-export-scope');if(scopeEl)scopeEl.textContent=_rrScopeLabel();try{rrRenderFilterChips();}catch(e){}}
 function clearFilters(){['search-input','filter-occ-cat','filter-family','filter-ops-type','filter-light','filter-visual-aid','filter-risk','filter-phase'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});_legacyCategoryFilter='';_domainFilter='';applyFilters();if(typeof renderDomainNav==='function')renderDomainNav();}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SAF 2026-09-10 · RISK REGISTER — BARRE DE FILTRES REPLIABLE
+   Les filtres detailles (categorie OACI, exploitation, jour/nuit, aide
+   visuelle, cotation, phase, pagination) vivent dans #rr-filter-adv, replie
+   par defaut. Recherche et famille restent en permanence a l'ecran.
+   Un filtre actif dans le panneau replie n'est jamais invisible : il apparait
+   en puce supprimable sous la barre, et le bouton porte le compte.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var RR_FILTER_DEFS = [
+  { id: 'search-input',     label: 'Recherche',      adv: false },
+  { id: 'filter-family',    label: 'Famille',        adv: false },
+  { id: 'filter-occ-cat',   label: 'Categorie OACI', adv: true  },
+  { id: 'filter-ops-type',  label: 'Exploitation',   adv: true  },
+  { id: 'filter-light',     label: 'Jour/Nuit',      adv: true  },
+  { id: 'filter-visual-aid',label: 'Aide visuelle',  adv: true  },
+  { id: 'filter-risk',      label: 'Cotation',       adv: true  },
+  { id: 'filter-phase',     label: 'Phase',          adv: true  }
+];
+
+function _rrEscHtml(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function _rrTrunc(s, n){
+  s = String(s == null ? '' : s);
+  return s.length > n ? s.slice(0, n - 1) + '…' : s;
+}
+function _rrCtrlText(el){
+  if(!el) return '';
+  if(el.tagName === 'SELECT'){
+    var o = el.options[el.selectedIndex];
+    return o ? o.textContent.trim() : el.value;
+  }
+  return el.value;
+}
+
+/* Filtres actifs, y compris ceux poses hors de la barre (navigation par
+   domaine, filtrage par categorie depuis le tableau de bord). */
+function rrActiveFilters(){
+  var out = [];
+  RR_FILTER_DEFS.forEach(function(d){
+    var el = document.getElementById(d.id);
+    if(el && el.value) out.push({ id: d.id, label: d.label, text: _rrCtrlText(el), adv: d.adv });
+  });
+  try{
+    if(typeof _domainFilter !== 'undefined' && _domainFilter){
+      var lbl = _domainFilter;
+      if(_domainFilter === '__none__') lbl = 'Non classees';
+      else if(typeof SAF_DOMAIN_GROUPS !== 'undefined'){
+        var g = SAF_DOMAIN_GROUPS.find(function(x){ return x.id === _domainFilter; });
+        if(g) lbl = g.label;
+      }
+      out.push({ id: '__domain__', label: 'Domaine', text: lbl, adv: true });
+    }
+  }catch(e){}
+  try{
+    if(typeof _legacyCategoryFilter !== 'undefined' && _legacyCategoryFilter)
+      out.push({ id: '__legacy__', label: 'Categorie', text: _legacyCategoryFilter, adv: true });
+  }catch(e){}
+  return out;
+}
+
+function rrRenderFilterChips(){
+  var box = document.getElementById('rr-filter-chips');
+  var act = rrActiveFilters();
+  if(box){
+    box.innerHTML = act.map(function(f){
+      return '<span class="rr-chip" title="' + _rrEscHtml(f.label + ' : ' + f.text) + '">'
+           +   '<b>' + _rrEscHtml(f.label) + '</b>'
+           +   '<span>' + _rrEscHtml(_rrTrunc(f.text, 34)) + '</span>'
+           +   '<button type="button" onclick="rrClearFilter(\'' + f.id + '\')" title="Retirer ce filtre">✕</button>'
+           + '</span>';
+    }).join('');
+  }
+  /* Le compte porte sur les seuls filtres du panneau : recherche et famille
+     sont deja visibles, les compter donnerait un badge toujours allume. */
+  var nAdv = act.filter(function(f){ return f.adv; }).length;
+  var badge = document.getElementById('rr-filter-count');
+  if(badge){
+    badge.textContent = nAdv;
+    if(nAdv) badge.removeAttribute('hidden'); else badge.setAttribute('hidden','');
+  }
+  var btn = document.getElementById('rr-filter-toggle');
+  if(btn) btn.classList.toggle('rr-filter-active', nAdv > 0);
+  if(typeof _rrSyncStickyOffset === 'function') _rrSyncStickyOffset();
+}
+
+function rrClearFilter(id){
+  if(id === '__domain__'){
+    try{ if(typeof _domainFilter !== 'undefined') _domainFilter = ''; }catch(e){}
+    if(typeof renderDomainNav === 'function') renderDomainNav();
+  } else if(id === '__legacy__'){
+    try{ if(typeof _legacyCategoryFilter !== 'undefined') _legacyCategoryFilter = ''; }catch(e){}
+  } else {
+    var el = document.getElementById(id);
+    if(el) el.value = '';
+  }
+  applyFilters();
+}
+
+function rrToggleFilters(force){
+  var adv = document.getElementById('rr-filter-adv');
+  if(!adv) return;
+  var open = (typeof force === 'boolean') ? force : adv.hasAttribute('hidden');
+  if(open) adv.removeAttribute('hidden'); else adv.setAttribute('hidden','');
+  var btn = document.getElementById('rr-filter-toggle');
+  if(btn){
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.classList.toggle('rr-filter-open', open);
+  }
+  try{ localStorage.setItem('safRegisterFiltersOpen', open ? '1' : '0'); }catch(e){}
+  if(typeof _rrSyncStickyOffset === 'function') _rrSyncStickyOffset();
+}
+
+function rrInitFilterBar(){
+  var open = false;
+  try{ open = localStorage.getItem('safRegisterFiltersOpen') === '1'; }catch(e){}
+  rrToggleFilters(open);
+  rrRenderFilterChips();
+}
+try{ setTimeout(rrInitFilterBar, 0); }catch(e){}
 function sortTable(col) {
   if(sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1; }
   if(col === 'updated_at') {
