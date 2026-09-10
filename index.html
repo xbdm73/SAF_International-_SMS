@@ -179,7 +179,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   <p class="section-label">Accès aux outils<span class="bi-en">Tool access</span></p>
   <div class="tools-grid">
 
-    <a class="tool-card" href="SAF_International_Safety.html">
+    <a class="tool-card" id="card-sms" data-module="sms" href="SAF_International_Safety.html">
       <div class="tool-header">
         <div class="tool-icon icon-sms">🛡️</div>
         <span class="tool-name">Gestion de la sécurité<span class="bi-en">Safety Management</span></span>
@@ -189,7 +189,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
       <span class="tool-tag tag-sms">SMS</span>
     </a>
 
-    <a class="tool-card" href="SAF_International_Compliance_Monitoring_System.html">
+    <a class="tool-card" id="card-cms" data-module="cms" href="Archives/SAF_International_Compliance_Monitoring_System.html">
       <div class="tool-header">
         <div class="tool-icon icon-cms">📋</div>
         <span class="tool-name">Surveillance de la conformité<span class="bi-en">Compliance Monitoring</span></span>
@@ -199,7 +199,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
       <span class="tool-tag tag-cms">CMS</span>
     </a>
 
-    <a class="tool-card" href="SAF_International_Appendices_OMM.html">
+    <a class="tool-card" id="card-omm" data-module="omm" href="Archives/SAF_International_Appendices_OMM.html">
       <div class="tool-header">
         <div class="tool-icon icon-omm">📁</div>
         <span class="tool-name">Annexes OMM<span class="bi-en">OMM Appendices</span></span>
@@ -253,27 +253,60 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
 
   var SAF_ROLE = 'reader';
 
+  // Périmètre d'accès par rôle. Confort d'interface uniquement : ce qu'un
+  // compte peut réellement lire est décidé par les politiques RLS de Supabase.
+  //   reader    → registre des risques publié, dans le seul module Safety
+  //   authority → lecture intégrale (OFAC/FOCA), aucune écriture
+  var SAF_MODULE_ACCESS = {
+    admin:     ['sms','cms','omm'],
+    editor:    ['sms','cms','omm'],
+    authority: ['sms','cms','omm'],
+    reader:    ['sms']
+  };
+
+  var SAF_ROLE_BADGE = {
+    admin:     { txt:'ADMIN',                    col:'#C9A227', bor:'rgba(201,162,39,.4)'   },
+    editor:    { txt:'EDITOR',                   col:'#70d0a0', bor:'rgba(60,200,130,.4)'   },
+    authority: { txt:'AUTORITÉ / AUTHORITY',     col:'#c8a2ff', bor:'rgba(170,130,255,.45)' },
+    reader:    { txt:'LECTURE SEULE / READ ONLY',col:'#6a82a5', bor:'rgba(106,130,165,.3)'  }
+  };
+
+  function applyModuleAccess(role){
+    var allowed = SAF_MODULE_ACCESS[role] || SAF_MODULE_ACCESS.reader;
+    document.querySelectorAll('.tool-card[data-module]').forEach(function(card){
+      var ok = allowed.indexOf(card.getAttribute('data-module')) !== -1;
+      card.style.display = ok ? '' : 'none';
+    });
+  }
+
   function applyRole(role, label){
-    role = (role === 'admin' || role === 'editor') ? role : 'reader';
+    role = (role === 'admin' || role === 'editor' || role === 'authority') ? role : 'reader';
     SAF_ROLE = role;
     var badge = document.getElementById('saf-role-badge');
     if(badge){
-      badge.textContent = role === 'admin' ? 'ADMIN' : (role === 'editor' ? 'EDITOR' : 'LECTURE SEULE / READ ONLY');
-      badge.style.color = role === 'admin' ? '#C9A227' : (role === 'editor' ? '#70d0a0' : '#6a82a5');
-      badge.style.borderColor = role === 'admin' ? 'rgba(201,162,39,.4)' : (role === 'editor' ? 'rgba(60,200,130,.4)' : 'rgba(106,130,165,.3)');
-      badge.style.display = 'inline-block';
+      var bd = SAF_ROLE_BADGE[role] || SAF_ROLE_BADGE.reader;
+      badge.textContent       = bd.txt;
+      badge.style.color       = bd.col;
+      badge.style.borderColor = bd.bor;
+      badge.style.display     = 'inline-block';
     }
     // Les sauvegardes/restaurations globales restent réservées à l'administrateur.
     var bar = document.getElementById('export-bar');
     if(bar) bar.style.display = role === 'admin' ? 'flex' : 'none';
+    // Tuiles : un compte ne voit que les outils de son périmètre.
+    applyModuleAccess(role);
     // Publie le rôle pour les outils via localStorage (confort UI uniquement ; la sécurité reste côté Supabase/RLS).
     try { localStorage.setItem('saf_role', role + '|' + (label || 'guest')); } catch(e){}
   }
 
   async function loadAndApplyRole(email){
     try {
-      var res = await db.from('user_roles').select('role').eq('user_email', email).single();
-      SAF_ROLE = (res.data && res.data.role) ? res.data.role : 'reader';
+      // ilike + limit(1) : la casse de l'adresse ne doit pas décider du rôle
+      // (alignement sur SAF_International_Safety.html).
+      var res = await db.from('user_roles').select('role')
+                        .ilike('user_email', String(email||'').trim()).limit(1);
+      var row = res && res.data && res.data[0];
+      SAF_ROLE = (row && row.role) ? row.role : 'reader';
     } catch(e) { SAF_ROLE = 'reader'; }
     applyRole(SAF_ROLE, email);
   }

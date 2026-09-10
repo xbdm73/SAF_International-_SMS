@@ -425,7 +425,7 @@ button .bi, a .bi{vertical-align:middle;}
   <div style="max-width:1800px;margin:auto;display:flex;align-items:center;gap:4px;overflow-x:auto;">
     <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
-    <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
+    <a href="Archives/SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
     <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
     <a href="SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
   </div>
@@ -3066,6 +3066,10 @@ h1 {
 
   // --- Sauvegarde vers la base ---
   async function cloudSave(){
+    // Verrou de rôle : dernière ligne de défense côté client, indépendante de
+    // l'état des champs. La garantie réelle reste la RLS Supabase, qui n'ouvre
+    // l'écriture qu'aux rôles admin et editor.
+    if(SAF_ROLE !== 'admin' && SAF_ROLE !== 'editor'){ return; }
     if(CC_CONFLICT){ return; }   // bloqué jusqu'à résolution du conflit
     if(saving){ dirty = true; return; }
     if(typeof window.safSerializeAppendices !== 'function'){ return; }
@@ -3105,18 +3109,28 @@ h1 {
 
   async function loadAndApplyRole(email){
     try {
-      var res = await db.from('user_roles').select('role').eq('user_email', email).single();
-      SAF_ROLE = (res.data && res.data.role) ? res.data.role : 'reader';
+      // ilike + limit(1) : la casse de l'adresse ne doit pas décider du rôle.
+      var res = await db.from('user_roles').select('role')
+                        .ilike('user_email', String(email||'').trim()).limit(1);
+      var row = res && res.data && res.data[0];
+      SAF_ROLE = (row && row.role) ? row.role : 'reader';
     } catch(e) { SAF_ROLE = 'reader'; }
-    SAF_ROLE = (SAF_ROLE === 'admin' || SAF_ROLE === 'editor') ? SAF_ROLE : 'reader';
+    SAF_ROLE = (SAF_ROLE === 'admin' || SAF_ROLE === 'editor' || SAF_ROLE === 'authority') ? SAF_ROLE : 'reader';
     var badge = document.getElementById('saf-role-badge');
     if(badge){
-      badge.textContent = SAF_ROLE === 'admin' ? 'ADMIN' : (SAF_ROLE === 'editor' ? 'EDITOR' : 'READ ONLY');
-      badge.style.color = SAF_ROLE === 'admin' ? '#C9A227' : (SAF_ROLE === 'editor' ? '#70d0a0' : '#9fc4e8');
-      badge.style.borderColor = SAF_ROLE === 'admin' ? 'rgba(201,162,39,.4)' : (SAF_ROLE === 'editor' ? 'rgba(60,200,130,.4)' : 'rgba(106,130,165,.3)');
+      var BADGE = {
+        admin:     { txt:'ADMIN',           col:'#C9A227', bor:'rgba(201,162,39,.4)'   },
+        editor:    { txt:'EDITOR',          col:'#70d0a0', bor:'rgba(60,200,130,.4)'   },
+        authority: { txt:'AUTORITE / OFAC', col:'#c8a2ff', bor:'rgba(170,130,255,.45)' },
+        reader:    { txt:'READ ONLY',       col:'#9fc4e8', bor:'rgba(106,130,165,.3)'  }
+      };
+      var bd = BADGE[SAF_ROLE] || BADGE.reader;
+      badge.textContent       = bd.txt;
+      badge.style.color       = bd.col;
+      badge.style.borderColor = bd.bor;
       badge.style.display = 'inline-block';
     }
-    if(SAF_ROLE === 'reader') applyReadOnly();
+    if(SAF_ROLE === 'reader' || SAF_ROLE === 'authority') applyReadOnly(SAF_ROLE === 'authority');
     if(SAF_ROLE === 'editor') applyEditorMode();
     try { localStorage.setItem('saf_role', SAF_ROLE + '|' + email); } catch(e){}
   }
@@ -3215,10 +3229,15 @@ h1 {
     }
   }
 
-  function applyReadOnly(){
+  function applyReadOnly(isAuthority){
     var banner = document.createElement('div');
-    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(30,50,80,.92);border-bottom:1px solid rgba(106,130,165,.3);padding:5px 16px;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;color:#9fc4e8;text-align:center;pointer-events:none;';
-    banner.textContent = '🔒 MODE LECTURE SEULE — consultation uniquement, aucune modification possible.';
+    banner.id = isAuthority ? 'saf-authority-banner' : 'saf-readonly-banner';
+    banner.style.cssText = isAuthority
+      ? 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(48,32,74,.94);border-bottom:1px solid rgba(170,130,255,.35);padding:5px 16px;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;color:#d5c2ff;text-align:center;pointer-events:none;'
+      : 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(30,50,80,.92);border-bottom:1px solid rgba(106,130,165,.3);padding:5px 16px;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;color:#9fc4e8;text-align:center;pointer-events:none;';
+    banner.textContent = isAuthority
+      ? 'ACCÈS AUTORITÉ — consultation seule · aucune écriture possible'
+      : '🔒 MODE LECTURE SEULE — consultation uniquement, aucune modification possible.';
     document.body.prepend(banner);
 
     setTimeout(function(){ lockWriteElementsIn(document); }, 1000);
@@ -3242,8 +3261,14 @@ h1 {
     logoutBtn.style.display = '';
     await loadAndApplyRole(session.user.email);
     await cloudLoad();
-    ready = true;
-    attachAutoSave();
+    // Persistance reservee aux roles en ecriture : un lecteur ou un compte
+    // autorite ne declenche ni autosave ni sauvegarde differee.
+    if(SAF_ROLE === 'admin' || SAF_ROLE === 'editor'){
+      ready = true;
+      attachAutoSave();
+    } else {
+      ready = false;
+    }
   }
 
   // ── ACCÈS INVITÉ PAR DÉFAUT ──────────────────────────────────────────────

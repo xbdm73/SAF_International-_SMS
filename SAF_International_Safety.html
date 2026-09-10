@@ -1602,7 +1602,7 @@ nav { top: 118px !important; }
     <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
     <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
-    <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
+    <a href="Archives/SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
     <a href="Archives/SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
   </div>
 </div>
@@ -3059,8 +3059,8 @@ function updateOaciDefinitionDropdown(sel) {
 <div class="view" id="view-occurrences">
 <div class="dash-header"><div><div class="dash-title">OCCURRENCE LOG</div><div style="font-family:var(--font-mono);font-size:11px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase;margin:4px 0 2px;">APP12-OMM</div><div class="dash-subtitle">Reg. (EU) 376/2014 Art. 4 — Occurrence tracking with 5 Whys root cause analysis</div></div>
 <div style="display:flex;gap:8px;align-items:center;">
-<button class="btn" style="background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.4);color:#f85149;font-family:var(--font-mono);font-size:11px;padding:7px 14px;border-radius:6px;cursor:pointer;" onclick="if(typeof safImportMobileReports==='function') safImportMobileReports().then(function(){ showToast('Vérification terminée','success'); })" title="Vérifier les rapports mobiles en attente dans saf_reports">📱 Rapports mobiles</button>
-<button class="btn" style="background:rgba(232,160,32,.15);border:1px solid rgba(232,160,32,.45);color:#e3b341;font-family:var(--font-mono);font-size:11px;padding:7px 14px;border-radius:6px;cursor:pointer;" onclick="occBulkTaxoOpen()">∑ Rattacher la taxonomie <span id="obt-badge"></span></button>
+<button class="btn" id="btn-mobile-reports" style="background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.4);color:#f85149;font-family:var(--font-mono);font-size:11px;padding:7px 14px;border-radius:6px;cursor:pointer;" onclick="if(typeof safImportMobileReports==='function') safImportMobileReports().then(function(){ showToast('Vérification terminée','success'); })" title="Vérifier les rapports mobiles en attente dans saf_reports">📱 Rapports mobiles</button>
+<button class="btn" id="btn-bulk-taxo" style="background:rgba(232,160,32,.15);border:1px solid rgba(232,160,32,.45);color:#e3b341;font-family:var(--font-mono);font-size:11px;padding:7px 14px;border-radius:6px;cursor:pointer;" onclick="occBulkTaxoOpen()">∑ Rattacher la taxonomie <span id="obt-badge"></span></button>
 <button class="btn btn-primary" onclick="showOccurrenceForm()">＋ New Occurrence</button>
 </div></div>
 <div id="mobile-reports-banner" style="display:none;margin:0 28px 16px;padding:14px 18px;background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.35);border-left:3px solid #f85149;border-radius:0 8px 8px 0;display:flex;align-items:center;justify-content:space-between;gap:16px;">
@@ -22537,16 +22537,23 @@ setTimeout(function(){
       if(row && row.role){ declared = true; SAF_ROLE = row.role; }
       else { SAF_ROLE = 'reader'; }
     } catch(e) { SAF_ROLE = 'reader'; }
-    SAF_ROLE = (SAF_ROLE === 'admin' || SAF_ROLE === 'editor') ? SAF_ROLE : 'reader';
+    SAF_ROLE = (SAF_ROLE === 'admin' || SAF_ROLE === 'editor' || SAF_ROLE === 'authority') ? SAF_ROLE : 'reader';
     if(!declared) setTimeout(function(){ safShowNoRoleWarning(email); }, 1200);
     var badge = document.getElementById('saf-role-badge');
     if(badge){
-      badge.textContent = SAF_ROLE === 'admin' ? 'ADMIN' : (SAF_ROLE === 'editor' ? 'EDITOR' : 'READ ONLY');
-      badge.style.color = SAF_ROLE === 'admin' ? '#C9A227' : (SAF_ROLE === 'editor' ? '#70d0a0' : '#9fc4e8');
-      badge.style.borderColor = SAF_ROLE === 'admin' ? 'rgba(201,162,39,.4)' : (SAF_ROLE === 'editor' ? 'rgba(60,200,130,.4)' : 'rgba(106,130,165,.3)');
-      badge.style.display = 'inline-block';
+      var BADGE = {
+        admin:     { txt:'ADMIN',            col:'#C9A227', bor:'rgba(201,162,39,.4)'  },
+        editor:    { txt:'EDITOR',           col:'#70d0a0', bor:'rgba(60,200,130,.4)'  },
+        authority: { txt:'AUTORITE / OFAC',  col:'#c8a2ff', bor:'rgba(170,130,255,.45)'},
+        reader:    { txt:'READ ONLY',        col:'#9fc4e8', bor:'rgba(106,130,165,.3)' }
+      };
+      var bd = BADGE[SAF_ROLE] || BADGE.reader;
+      badge.textContent      = bd.txt;
+      badge.style.color      = bd.col;
+      badge.style.borderColor= bd.bor;
+      badge.style.display    = 'inline-block';
     }
-    if(SAF_ROLE === 'reader') applyReadOnly();
+    if(SAF_ROLE === 'reader' || SAF_ROLE === 'authority') applyReadOnly();
     if(SAF_ROLE === 'editor') applyEditorMode();
     try { window.SAF_SESSION_EMAIL = email; window.SAF_SESSION_ROLE = SAF_ROLE; } catch(e){}
     try { localStorage.setItem('saf_role', SAF_ROLE + '|' + email); } catch(e){}
@@ -22598,13 +22605,20 @@ setTimeout(function(){
       'saveOccurrence','saveAndExportE5X','saveLesson','saveSAR','saveALoS',
       'saveCAMOSignal','saveChangeStudy','saveSRBMeeting','saveSARRecord','saveALoSRecord',
       'saveEditModal','importJSON','saveAudit','ejsSaveConfig','csSaveNewRisk',
-      'safSaveDirectPoint','saveSafetyPolicy'
+      'safSaveDirectPoint','saveSafetyPolicy',
+      // Ajouts : ecritures qui echappaient au verrou (rattachement de taxonomie,
+      // tracabilite des barrieres, import des rapports mobiles, publication).
+      'occBulkTaxoApply','safTracSave','safImportMobileReports','safPublishRegister',
+      'safCloudSaveNow','resetToInitialData'
     ];
+    var GUARD_MSG = (SAF_ROLE === 'authority')
+      ? 'Accès autorité — consultation seule, aucune écriture possible.'
+      : 'Lecture seule — modification impossible.';
     WRITE_FN_NAMES.forEach(function(name){
       var orig = window[name];
       if(typeof orig === 'function' && !orig.__safGuarded){
         var guarded = function(){
-          if(typeof showToast === 'function') showToast('Connexion requise pour accéder aux données.', 'error');
+          if(typeof showToast === 'function') showToast(GUARD_MSG, 'error');
           return;
         };
         guarded.__safGuarded = true;
@@ -22948,6 +22962,85 @@ setTimeout(function(){
     document.body.prepend(b);
   }
 
+  /* ══ ROLE AUTORITE (OFAC/FOCA) — lecture integrale, aucune ecriture ══════
+     Difference avec le role reader : le reader ne voit que la projection
+     `sms_risk_register`; l'autorite lit `sms_data` en entier, donc toute la
+     navigation reste ouverte. Ce qui est retire n'est pas de la donnee SMS
+     mais les points d'entree en ecriture :
+       - import des rapports mobiles (table `saf_reports`, non ouverte au role
+         authority par la RLS — arbitrage du 10 sept. 2026),
+       - rattachement en masse de la taxonomie,
+       - publication du registre.
+     La garantie d'ecriture nulle reste cote Supabase : aucune politique
+     d'ecriture de `saf_data` ne mentionne 'authority'. Ce qui suit n'est que
+     la coherence de l'interface. ─────────────────────────────────────────── */
+
+  function applyAuthorityScope(){
+    // 1. Verrou fonctionnel + verrou d'affichage (applyReadOnly() a deja ete
+    //    pose par loadAndApplyRole ; on ne le redouble pas).
+    try{ if(typeof guardWriteFunctions === 'function') guardWriteFunctions(); }catch(e){}
+
+    // 2. Retrait des points d'entree en ecriture propres a l'Occurrence Log.
+    ['btn-mobile-reports','btn-bulk-taxo'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
+
+    // 3. Barre de publication du registre : reservee admin/editor.
+    var pub = document.getElementById('saf-rr-pub');
+    if(pub) pub.style.display = 'none';
+
+    // 4. Bandeau. applyReadOnly() en a deja pose un ; on le remplace par un
+    //    libelle qui nomme le perimetre, comme cote reader.
+    try{
+      Array.prototype.slice.call(document.body.children).forEach(function(el){
+        if(el.id === 'saf-authority-banner') return;
+        if(el.tagName !== 'DIV') return;
+        var st = el.style || {};
+        if(st.position !== 'fixed' || st.top !== '0px' || st.zIndex !== '9999') return;
+        var t = (el.textContent || '');
+        if(t.length < 200 && /LECTURE SEULE|ACC\u00c8S INVIT|READ[- ]ONLY|GUEST/i.test(t)) el.remove();
+      });
+    }catch(e){}
+
+    var b = document.createElement('div');
+    b.id = 'saf-authority-banner';
+    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(48,32,74,.94);'
+      + 'border-bottom:1px solid rgba(170,130,255,.35);padding:5px 16px;'
+      + 'font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.06em;'
+      + 'color:#d5c2ff;text-align:center;pointer-events:none;';
+    b.textContent = 'ACC\u00c8S AUTORIT\u00c9 \u2014 CONSULTATION DE L\u2019ENSEMBLE DU SMS \u00b7 '
+                  + 'lecture seule \u00b7 aucune \u00e9criture possible';
+    document.body.prepend(b);
+
+    // 5. Observateur : les ecrans rendus plus tard (modales, listes) doivent
+    //    perdre leurs boutons d'ecriture eux aussi. applyReadOnly() installe
+    //    deja __safReadOnlyObserver ; on ne fait ici que masquer a nouveau les
+    //    deux boutons si un re-render les recree.
+    if(!window.__safAuthorityObserver){
+      window.__safAuthorityObserver = new MutationObserver(function(){
+        ['btn-mobile-reports','btn-bulk-taxo'].forEach(function(id){
+          var el = document.getElementById(id);
+          if(el && el.style.display !== 'none') el.style.display = 'none';
+        });
+      });
+      window.__safAuthorityObserver.observe(document.body, { childList:true, subtree:true });
+    }
+  }
+
+  async function safAuthorityBoot(){
+    // Neutralise toute persistance : cloudSave sort sur isGuest, scheduleSave
+    // sort sur ready. attachAutoSave() n'est volontairement pas appele.
+    isGuest = true;
+    ready   = false;
+    await safLoadReferentiel();
+    await cloudLoad();
+    // importMobileReports() n'est PAS appele : la table saf_reports n'est pas
+    // ouverte au role authority, et l'import est une ecriture.
+    applyAuthorityScope();
+    return true;
+  }
+
   async function onAuthenticated(session){
     if(session){
       overlay.style.display = 'none';
@@ -22961,6 +23054,15 @@ setTimeout(function(){
     // Client expose en console pour les controles de cloisonnement RLS.
     // Sans risque : la cle anon est publique, c'est la RLS qui decide.
     try{ window.safDb = db; }catch(e){}
+
+    // Autorite : lecture integrale de sms_data, navigation complete, aucune
+    // ecriture, pas d'import de rapports mobiles.
+    if(SAF_ROLE === 'authority'){
+      await safAuthorityBoot();
+      if(typeof updateCAMOBadge==='function') updateCAMOBadge();
+      if(typeof updatePendingBadge==='function') updatePendingBadge();
+      return;
+    }
 
     // Reader : la RLS ne lui ouvre que la ligne du registre publie. Charger
     // sms_data echouerait, et l'import des rapports ne le concerne pas.
