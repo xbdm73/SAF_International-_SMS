@@ -3139,7 +3139,7 @@ function updateOaciDefinitionDropdown(sel) {
 <div class="dash-header"><div><div class="dash-title">CONTROLS REVIEW</div><div class="dash-subtitle">ORO.GEN.200(a)(3) · Reg. (EU) 376/2014 Art. 13 for occurrence-derived actions — Risk controls, acceptance and effectiveness review</div></div><button class="btn btn-ghost" onclick="renderControlsView()">↺ Refresh</button></div>
 <div id="controls-content"></div></div>
 <div class="view" id="view-barrierreg"><div class="dash-header"><div><div class="dash-title">REGISTRE DES BARRIÈRES</div><div class="dash-subtitle">ICAO Doc 9859 §2.13 / ORO.GEN.200(a)(3) — Origine, document d'établissement, date de création et cycle de vérification de chaque mesure de prévention, d'atténuation et de récupération</div></div><button class="btn btn-ghost" onclick="renderBarrierRegister()">↺ Actualiser</button></div><div id="barrierreg-content"></div></div>
-<div class="view" id="view-barriereff"><div class="dash-header"><div><div class="dash-title">EFFICACITÉ DES BARRIÈRES</div><div class="dash-subtitle">ORO.GEN.200(a)(3) et (a)(6) / ICAO Doc 9859 §9 — Campagne de vérification : critère de réussite, source de preuve, niveau atteint et cycle de contrôle de chaque mesure</div></div><button class="btn btn-ghost" onclick="renderBarrierEffectiveness()">↺ Actualiser</button></div><div id="barriereff-content"></div></div>
+<div class="view" id="view-barriereff"><div class="dash-header"><div><div class="dash-title">EFFICACITÉ DES BARRIÈRES</div><div class="dash-subtitle">ORO.GEN.200(a)(3) et (a)(6) / ICAO Doc 9859 §9 — Campagne de vérification : critère de réussite, source de preuve, niveau atteint et cycle de contrôle de chaque mesure</div></div><div style="display:flex;gap:8px;"><button class="btn btn-ghost" onclick="showView('database')">← Registre des risques</button><button class="btn btn-ghost" onclick="renderBarrierEffectiveness()">↺ Actualiser</button></div></div><div id="barriereff-content"></div></div>
 <div class="view" id="view-bowtie">
 <div class="dash-header"><div><div class="dash-title">BOW-TIE ANALYSIS</div><div class="dash-subtitle">ICAO Doc 9859 §6 — Causes → Undesirable Event → Consequences with barriers</div></div></div>
 <div id="bowtie-panel" style="padding:0 28px 28px;">
@@ -24555,15 +24555,21 @@ function effEnsure(b){
   return true;
 }
 
-function effMigrate(){
-  try{ if(typeof window.safTracMigrate === 'function') window.safTracMigrate(); }catch(e){}
+function effMigrate(opts){
+  opts = opts || {};
+  /* La migration de traçabilité peut déclencher un saveDB() coûteux : on ne
+     l'appelle plus depuis le chemin d'affichage, seulement au démarrage. */
+  if(opts.trac !== false){
+    try{ if(typeof window.safTracMigrate === 'function') window.safTracMigrate(); }catch(e){}
+  }
   var n = 0;
   (window.DB||[]).forEach(function(r){
-    (r.barriers||[]).forEach(function(b){ if(effEnsure(b)) n++; });
+    if(!Array.isArray(r.barriers)) return;
+    r.barriers.forEach(function(b){ if(b && effEnsure(b)) n++; });
   });
   /* Un lecteur ou l'autorité n'écrit rien : le bloc reste ouvert en mémoire
      pour l'affichage, mais n'est pas persisté ni remonté au cloud. */
-  if(n){ try{
+  if(n && opts.persist !== false){ try{
     var rl = (typeof safCurrentRole === 'function') ? safCurrentRole() : '';
     if(rl === 'admin' || rl === 'editor') saveDB();
   }catch(e){} }
@@ -24590,7 +24596,7 @@ function critReasons(r, b, kindCount){
 function effSuggestCritical(apply){
   var found = 0, changed = 0;
   (window.DB||[]).forEach(function(r){
-    var live = (r.barriers||[]).filter(function(b){ return String(b.status||'active') !== 'archived'; });
+    var live = (Array.isArray(r.barriers)?r.barriers:[]).filter(function(b){ return b && String(b.status||'active') !== 'archived'; });
     var kindCount = {};
     live.forEach(function(b){ kindCount[b.kind] = (kindCount[b.kind]||0) + 1; });
     live.forEach(function(b){
@@ -24615,8 +24621,8 @@ function effSuggestCritical(apply){
 /* ── Soutien du résiduel revendiqué par un scénario ───────────────────────── */
 function effRiskSupport(r){
   var crit = 0, ok = 0, fail = 0, over = 0, never = 0;
-  (r.barriers||[]).forEach(function(b){
-    if(String(b.status||'active') === 'archived') return;
+  (Array.isArray(r.barriers)?r.barriers:[]).forEach(function(b){
+    if(!b || String(b.status||'active') === 'archived') return;
     var e = (b.trac||{}).eff; if(!e || !e.critical) return;
     crit++;
     if(e.level === 'efficace') ok++;
@@ -24641,8 +24647,8 @@ function effRiskSupport(r){
 function effRows(){
   var out = [];
   (window.DB||[]).forEach(function(r){
-    (r.barriers||[]).forEach(function(b){
-      if(String(b.status||'active') === 'archived') return;
+    (Array.isArray(r.barriers)?r.barriers:[]).forEach(function(b){
+      if(!b || String(b.status||'active') === 'archived') return;
       var e = (b.trac||{}).eff || {}, v = (b.trac||{}).verif || {}, dc = (b.trac||{}).doc || {};
       out.push({
         bid:b.bid, risk:r.id, event:r.event||'', family:r.family_id||'', kind:b.kind||'',
@@ -24676,7 +24682,7 @@ function effStats(rows){
 }
 
 /* ══════════════════════ VUE — CAMPAGNE DE VÉRIFICATION ═══════════════════ */
-var FE = {q:'', owner:'', crit:'1', level:'', due:'', risk:''};
+var FE = {q:'', owner:'', crit:'', level:'', due:'', risk:'', limit:80};
 
 function badge(m){ return '<span style="background:'+m.bg+';color:'+m.fg+';padding:1px 7px;border-radius:3px;'
   +'font-family:var(--font-mono);font-size:9px;font-weight:700;white-space:nowrap;">'+E(m.lbl)+'</span>'; }
@@ -24688,11 +24694,39 @@ function card(lbl,val,sub,col){
    +'<div style="font-size:10px;color:var(--grey-400);">'+E(sub||'')+'</div></div>';
 }
 
+/* Filet de sécurité : une exception ne doit JAMAIS laisser une page vide et
+   sans issue. On affiche l'erreur, sa pile, et un retour vers le registre. */
 function renderBarrierEffectiveness(){
+  var host = document.getElementById('barriereff-content');
+  try{
+    _renderEff();
+  }catch(err){
+    try{
+      if(!host) return;
+      host.innerHTML = '<div style="padding:0 28px 28px;">'
+        +'<div class="chart-card" style="padding:18px 20px;border-left:3px solid #f85149;">'
+        +'<div style="font-family:var(--font-mono);font-size:11px;color:#f85149;font-weight:700;letter-spacing:.5px;">⛔ LA VUE N\'A PAS PU ÊTRE CONSTRUITE</div>'
+        +'<div style="font-size:11px;color:var(--grey-200);line-height:1.6;margin-top:8px;">'
+        +'Le reste de l\'application n\'est pas affecté : utilisez le bouton ci-dessous pour revenir au registre. '
+        +'Le message ci-dessous identifie la cause — copiez-le tel quel.</div>'
+        +'<pre style="margin-top:12px;padding:11px 13px;background:rgba(0,0,0,.35);border-radius:6px;color:#ff8c42;'
+        +'font-family:var(--font-mono);font-size:10px;line-height:1.5;white-space:pre-wrap;word-break:break-word;">'
+        + E(String(err && err.message || err)) + '\n\n' + E(String(err && err.stack || '').split('\n').slice(0,6).join('\n'))
+        +'</pre>'
+        +'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">'
+        +'<button class="btn btn-ghost" onclick="showView(\'database\')">← Registre des risques</button>'
+        +'<button class="btn btn-ghost" onclick="renderBarrierEffectiveness()">↺ Réessayer</button>'
+        +'</div></div></div>';
+    }catch(e2){}
+    try{ console.error('[SAF][efficacité barrières]', err); }catch(e3){}
+  }
+}
+
+function _renderEff(){
   var host = document.getElementById('barriereff-content');
   if(!host) return;
   if(!(window.DB||[]).length){ host.innerHTML='<div style="padding:28px;color:var(--grey-400);">Registre vide.</div>'; return; }
-  effMigrate();
+  effMigrate({trac:false, persist:false});
 
   var rows = effRows(), s = effStats(rows);
   var owners = Array.from(new Set(rows.map(function(x){return x.owner;}).filter(Boolean))).sort();
@@ -24754,7 +24788,7 @@ function renderBarrierEffectiveness(){
       +'<thead><tr>'+['RISQUE','ÉVÉNEMENT','INITIAL','RÉSIDUEL VISÉ','EN VIGUEUR','MOTIF'].map(function(h){
         return '<th style="padding:6px 8px;text-align:left;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);border-bottom:1px solid rgba(255,255,255,.12);white-space:nowrap;">'+h+'</th>';}).join('')
       +'</tr></thead><tbody>'
-      + unsupported.map(function(u){
+      + unsupported.slice(0,30).map(function(u){
           var td='padding:6px 8px;font-size:10px;color:var(--grey-100);border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top;';
           var cur=''; try{ cur = safResidualCurrent(u.r); }catch(e){ cur = u.r.residual_risk||''; }
           return '<tr style="cursor:pointer;" onclick="safEffFilterRisk(decodeURIComponent(\''+encodeURIComponent(u.r.id)+'\'))">'
@@ -24765,7 +24799,9 @@ function renderBarrierEffectiveness(){
             +'<td style="'+td+'font-family:var(--font-mono);font-weight:700;">'+E(cur||'—')+'</td>'
             +'<td style="'+td+'color:#ff8c42;">'+E(u.sup.reason)+'</td></tr>';
         }).join('')
-      +'</tbody></table></div></details>';
+      +'</tbody></table>'
+      +(unsupported.length>30?'<div style="font-size:10px;color:var(--grey-400);font-style:italic;padding:6px 8px;">… et '+(unsupported.length-30)+' autre(s) scénario(s) — voir l\'export CSV.</div>':'')
+      +'</div></details>';
   }
 
   var opt=function(v,l,cur){return '<option value="'+E(v)+'"'+(cur===v?' selected':'')+' style="background:#0d1b2a;color:#f4f6f8;">'+E(l)+'</option>';};
@@ -24793,7 +24829,8 @@ function renderBarrierEffectiveness(){
   var th='padding:8px;text-align:left;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);letter-spacing:.5px;border-bottom:1px solid rgba(255,255,255,.14);white-space:nowrap;';
   var td='padding:8px;font-size:11px;color:var(--grey-100);border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top;';
 
-  var body = f.map(function(x){
+  var shown = f.slice(0, FE.limit);
+  var body = shown.map(function(x){
     var kc={prevention:'#58a6ff',mitigation:'#c9a227',recovery:'#ff8c42'}[x.kind]||'#9aa4ad';
     return '<tr>'
       +'<td style="'+td+'">'+(x.critical
@@ -24820,28 +24857,35 @@ function renderBarrierEffectiveness(){
   }).join('');
 
   host.innerHTML = '<div style="padding:0 28px 28px;">'+head+note+unsupHTML+bar+gapHTML
-    +'<div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-bottom:8px;">'+f.length+' barrière(s) affichée(s) sur '+rows.length+' actives.</div>'
+    +'<div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-bottom:8px;">'+shown.length+' barrière(s) affichée(s) · '+f.length+' correspondent aux filtres · '+rows.length+' actives au registre.</div>'
     +'<div class="chart-card" style="padding:0;overflow-x:auto;"><table style="width:100%;border-collapse:collapse;min-width:1120px;">'
     +'<thead><tr>'+['','BID / TYPE','MESURE','CRITÈRE DE RÉUSSITE','NIVEAU','VÉRIFICATION','RESPONSABLE','']
       .map(function(h){return '<th style="'+th+'">'+h+'</th>';}).join('')
-    +'</tr></thead><tbody>'+(body||'<tr><td colspan="8" style="'+td+'color:var(--grey-400);font-style:italic;">Aucune barrière ne correspond aux filtres.</td></tr>')+'</tbody></table></div></div>';
+    +'</tr></thead><tbody>'+(body||'<tr><td colspan="8" style="'+td+'color:var(--grey-400);font-style:italic;">'
+      +(rows.length? 'Aucune barrière ne correspond aux filtres.' : 'Aucune barrière active dans le registre.')+'</td></tr>')+'</tbody></table></div>'
+    +(f.length > shown.length
+      ? '<div style="text-align:center;margin-top:12px;"><button class="btn btn-ghost" onclick="safEffMore()">▼ Afficher '
+        + Math.min(80, f.length - shown.length) + ' de plus (' + (f.length - shown.length) + ' restantes)</button></div>'
+      : '')
+    +'</div>';
 
   ['q','crit','owner','level','due','risk'].forEach(function(k){
     var el=document.getElementById('eff-'+k); if(!el) return;
     el.addEventListener(k==='q'?'input':'change',function(){
-      FE[k]=el.value; renderBarrierEffectiveness();
+      FE[k]=el.value; FE.limit=80; renderBarrierEffectiveness();
       if(k==='q'){ var n=document.getElementById('eff-q'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } }
     });
   });
 }
 
-function safEffFilterRisk(id){ FE.risk = id; FE.crit = ''; renderBarrierEffectiveness(); }
+function safEffFilterRisk(id){ FE.risk = id; FE.crit = ''; FE.limit = 80; renderBarrierEffectiveness(); }
+function safEffMore(){ FE.limit += 80; renderBarrierEffectiveness(); }
 
 /* ══════════════════════ FICHE DE VÉRIFICATION ════════════════════════════ */
 function findBarrier(bid){
   var res = {b:null, r:null};
-  (window.DB||[]).forEach(function(r){ (r.barriers||[]).forEach(function(b){
-    if(b.bid === bid && !res.b){ res.b = b; res.r = r; } }); });
+  (window.DB||[]).forEach(function(r){ (Array.isArray(r.barriers)?r.barriers:[]).forEach(function(b){
+    if(b && b.bid === bid && !res.b){ res.b = b; res.r = r; } }); });
   return res;
 }
 
@@ -25172,7 +25216,21 @@ window.safEffSaveCheck             = safEffSaveCheck;
 window.safEffSaveSetup             = safEffSaveSetup;
 window.safEffExportCSV             = safEffExportCSV;
 window.safEffFilterRisk            = safEffFilterRisk;
+window.safEffMore                  = safEffMore;
 window.renderBarrierEffectiveness  = renderBarrierEffectiveness;
+window.safEffDiag = function(){
+  var d = {db: (window.DB||[]).length, barrieres: 0, sansTableau: 0, effOuverts: 0, critiques: 0};
+  (window.DB||[]).forEach(function(r){
+    if(!Array.isArray(r.barriers)){ d.sansTableau++; return; }
+    r.barriers.forEach(function(b){ d.barrieres++;
+      if(b && b.trac && b.trac.eff){ d.effOuverts++; if(b.trac.eff.critical) d.critiques++; } });
+  });
+  d.vue    = !!document.getElementById('view-barriereff');
+  d.hote   = !!document.getElementById('barriereff-content');
+  d.active = (document.querySelector('.view.active')||{}).id || null;
+  try{ _renderEff(); d.rendu = 'OK'; }catch(e){ d.rendu = String(e && e.message || e); d.pile = String(e && e.stack||'').split('\n').slice(0,5); }
+  return d;
+};
 
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(function(){ try{effMigrate();}catch(e){} },1500); });
 else setTimeout(function(){ try{effMigrate();}catch(e){} },1500);
