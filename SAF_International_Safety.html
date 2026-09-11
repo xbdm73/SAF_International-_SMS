@@ -22389,12 +22389,21 @@ function deleteALoS(id){
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window.__supabaseFailed=true"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js" onerror="window.__supabaseFailed=true"></script>
 <style>
-  #saf-cloud-bar{position:fixed;bottom:12px;right:12px;z-index:9998;background:#0D1B2A;color:#fff;font:12px/1.4 'IBM Plex Mono',monospace;padding:7px 12px;border-radius:20px;box-shadow:0 4px 14px rgba(0,0,0,.3);display:flex;align-items:center;gap:8px;border:1px solid #2E75B6}
-  #saf-cloud-bar .dot{width:8px;height:8px;border-radius:50%;background:#888}
+  /* 11.09.2026 — barre cloud compactee : hauteur et encombrement reduits.
+     Le contenu (etat cloud + badge de role + boutons + etat de publication)
+     tient desormais sur une ligne basse, tronquee si la fenetre est etroite. */
+  #saf-cloud-bar{position:fixed;bottom:8px;right:8px;z-index:9998;background:#0D1B2A;color:#fff;font:9.5px/1.2 'IBM Plex Mono',monospace;padding:3px 8px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.3);display:flex;align-items:center;gap:6px;border:1px solid #2E75B6;max-width:calc(100vw - 16px);white-space:nowrap;overflow:hidden;opacity:.92}
+  #saf-cloud-bar:hover{opacity:1}
+  #saf-cloud-bar .dot{width:6px;height:6px;border-radius:50%;background:#888;flex:0 0 auto}
+  #saf-cloud-txt{overflow:hidden;text-overflow:ellipsis;max-width:34vw}
+  #saf-cloud-bar #saf-role-badge{font-size:8px!important;padding:0 4px!important;line-height:1.5!important;flex:0 0 auto}
+  #saf-rr-pub{margin-left:6px!important;gap:5px!important;font-size:9px!important;min-width:0}
+  #saf-rr-pub .rr-pub-txt{overflow:hidden;text-overflow:ellipsis;max-width:26vw}
+  #saf-rr-pub-btn{padding:0 6px!important;font-size:9px!important;line-height:1.6!important;flex:0 0 auto}
   #saf-cloud-bar.saving .dot{background:#FFD700}
   #saf-cloud-bar.ok .dot{background:#1A7A32}
   #saf-cloud-bar.error .dot{background:#CC2200}
-  #saf-cloud-bar button{background:none;border:1px solid #2E75B6;color:#9fc4e8;border-radius:4px;font-size:11px;padding:2px 7px;cursor:pointer}
+  #saf-cloud-bar button{background:none;border:1px solid #2E75B6;color:#9fc4e8;border-radius:4px;font-size:9px;padding:0 6px;line-height:1.6;cursor:pointer;flex:0 0 auto}
   #saf-login-overlay{position:fixed;inset:0;background:rgba(4,8,15,.95);z-index:99999;display:none;align-items:center;justify-content:center;font-family:'IBM Plex Sans',system-ui,sans-serif}
   #saf-login-box{background:#132437;border:1px solid rgba(46,117,182,.4);border-radius:12px;padding:28px;width:340px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.5)}
   #saf-login-box h2{margin:0 0 4px;font-size:18px;color:#fff}
@@ -22610,7 +22619,7 @@ setTimeout(function(){
 
       // Re-rendu : on relance les fonctions de l'outil pour refléter les données
       refreshAll();
-      setBar('ok','Données chargées depuis le cloud');
+      setBar('ok','Cloud ✓');
     }catch(e){ setBar('ok','Chargement impossible: '+e.message); }
   }
 
@@ -23172,9 +23181,14 @@ setTimeout(function(){
     var host = document.getElementById('saf-rr-pub');
     if(!host) return;
     var lbl = host.querySelector('.rr-pub-txt');
-    if(lbl) lbl.textContent = when
-      ? ('Registre publie ' + new Date(when).toLocaleString() + ' · ' + count + ' scenarios')
-      : 'Registre jamais publie';
+    if(!lbl) return;
+    if(!when){ lbl.textContent = 'Registre non publie'; lbl.title = 'Le registre n\'a jamais ete publie pour les lecteurs'; return; }
+    var d = new Date(when);
+    var hhmm = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    lbl.textContent = 'Publie ' + d.toLocaleDateString() + ' ' + hhmm
+                    + (count === '?' || count == null ? '' : ' · ' + count + ' sc.');
+    lbl.title = 'Registre publie le ' + d.toLocaleString()
+              + (count === '?' || count == null ? '' : ' — ' + count + ' scenarios');
   }
 
   function rrMountPublishControl(){
@@ -23198,11 +23212,17 @@ setTimeout(function(){
       else if(out && out.skipped) alert('Rien a publier (' + out.skipped + ').');
     };
     // Etat initial : on lit la date de derniere publication sans charger la donnee.
-    db.from('saf_data').select('updated_at').eq('module', SAF_RR_MODULE).maybeSingle()
+    db.from('saf_data').select('updated_at, nb:data->>count').eq('module', SAF_RR_MODULE).maybeSingle()
       .then(function(r){
-        if(r && r.data && r.data.updated_at) rrRenderPublishState(r.data.updated_at, '?');
+        if(r && r.data && r.data.updated_at) rrRenderPublishState(r.data.updated_at, r.data.nb || '?');
         else rrRenderPublishState(null, 0);
-      }).catch(function(){});
+      }).catch(function(){
+        db.from('saf_data').select('updated_at').eq('module', SAF_RR_MODULE).maybeSingle()
+          .then(function(r2){
+            if(r2 && r2.data && r2.data.updated_at) rrRenderPublishState(r2.data.updated_at, '?');
+            else rrRenderPublishState(null, 0);
+          }).catch(function(){});
+      });
   }
 
   /* ── Boot du lecteur : ne charge QUE la projection ──────────────────────── */
@@ -23802,7 +23822,7 @@ function occRestoreHFACS(hfacs,severity){
     /* 10.09.2026 — la ligne de titres de colonnes du Risk Register est exclue
        de la couche bilingue : elle reste en anglais. Le titre de la vue, lui,
        garde ses deux langues (voir la regle sur .dash-title plus bas). */
-    return !!el.closest('script,style,noscript,textarea,input,canvas,svg,code,pre,[contenteditable="true"],.rte,.cs-sig-wrap,.cms-title-fr,.cms-title-en,#view-database thead');
+    return !!el.closest('script,style,noscript,textarea,input,canvas,svg,code,pre,[contenteditable="true"],.rte,.cs-sig-wrap,.cms-title-fr,.cms-title-en,#view-database thead,#saf-cloud-bar');
   }
   function preserveOptionValue(el){
     if(el && el.tagName==='OPTION' && !el.hasAttribute('value')) el.setAttribute('value', el.textContent || '');
