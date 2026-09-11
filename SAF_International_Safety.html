@@ -1925,6 +1925,7 @@ nav { top: 118px !important; }
 <div class="nav-item" onclick="showView('safetypolicy')"><span class="icon">🔒</span> Safety Policy &amp; Objectives</div>
 <div class="nav-item" onclick="showView('controls')"><span class="icon">⏱</span> Controls Review</div>
 <div class="nav-item" onclick="showView('barrierreg')"><span class="icon">📑</span> Registre des barrières</div>
+<div class="nav-item" onclick="showView('barriereff')"><span class="icon">✓</span> Efficacité des barrières</div>
 <div class="nav-item" onclick="showView('bowtie')"><span class="icon">🎯</span> Bow-Tie Analysis</div>
 <div class="nav-item" onclick="showView('lessons')"><span class="icon">📢</span> Lessons Learned</div>
 <div class="nav-item" onclick="showView('training')"><span class="icon">🎓</span> SMS Training &amp; Competence</div>
@@ -3138,6 +3139,7 @@ function updateOaciDefinitionDropdown(sel) {
 <div class="dash-header"><div><div class="dash-title">CONTROLS REVIEW</div><div class="dash-subtitle">ORO.GEN.200(a)(3) · Reg. (EU) 376/2014 Art. 13 for occurrence-derived actions — Risk controls, acceptance and effectiveness review</div></div><button class="btn btn-ghost" onclick="renderControlsView()">↺ Refresh</button></div>
 <div id="controls-content"></div></div>
 <div class="view" id="view-barrierreg"><div class="dash-header"><div><div class="dash-title">REGISTRE DES BARRIÈRES</div><div class="dash-subtitle">ICAO Doc 9859 §2.13 / ORO.GEN.200(a)(3) — Origine, document d'établissement, date de création et cycle de vérification de chaque mesure de prévention, d'atténuation et de récupération</div></div><button class="btn btn-ghost" onclick="renderBarrierRegister()">↺ Actualiser</button></div><div id="barrierreg-content"></div></div>
+<div class="view" id="view-barriereff"><div class="dash-header"><div><div class="dash-title">EFFICACITÉ DES BARRIÈRES</div><div class="dash-subtitle">ORO.GEN.200(a)(3) et (a)(6) / ICAO Doc 9859 §9 — Campagne de vérification : critère de réussite, source de preuve, niveau atteint et cycle de contrôle de chaque mesure</div></div><button class="btn btn-ghost" onclick="renderBarrierEffectiveness()">↺ Actualiser</button></div><div id="barriereff-content"></div></div>
 <div class="view" id="view-bowtie">
 <div class="dash-header"><div><div class="dash-title">BOW-TIE ANALYSIS</div><div class="dash-subtitle">ICAO Doc 9859 §6 — Causes → Undesirable Event → Consequences with barriers</div></div></div>
 <div id="bowtie-panel" style="padding:0 28px 28px;">
@@ -11522,6 +11524,7 @@ function showView(name) {
   if(name==='spi')         renderSPIView();
   if(name==='controls')    renderControlsView();
   if(name==='barrierreg')  renderBarrierRegister();
+  if(name==='barriereff')  renderBarrierEffectiveness();
   if(name==='bowtie')    { btPopulateSelect(); renderBowtie(); }
   if(name==='occurrences'){ renderOccurrenceList(); if(typeof updatePendingBadge==='function') updatePendingBadge(); }
   if(name==='eventaccounting') renderEventAccounting();
@@ -22928,7 +22931,9 @@ setTimeout(function(){
       // Ajouts : ecritures qui echappaient au verrou (rattachement de taxonomie,
       // tracabilite des barrieres, import des rapports mobiles, publication).
       'occBulkTaxoApply','safTracSave','safImportMobileReports','safPublishRegister',
-      'safCloudSaveNow','resetToInitialData'
+      'safCloudSaveNow','resetToInitialData',
+      // Ajout 11.09.2026 : module d'efficacite des barrieres.
+      'safEffSaveCheck','safEffSaveSetup','safEffApplyCritical'
     ];
     var GUARD_MSG = (SAF_ROLE === 'authority')
       ? 'Accès autorité — consultation seule, aucune écriture possible.'
@@ -24426,5 +24431,754 @@ else setTimeout(function(){ try{tracMigrate();}catch(e){} },1200);
   }catch(e){}
 })();
 </script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   SAF · EFFICACITÉ DES BARRIÈRES — v1.0 (2026-09-11)
+   ---------------------------------------------------------------------------
+   Objet : démontrer — et non plus seulement déclarer — l'efficacité de chaque
+   mesure de prévention, d'atténuation et de récupération.
+
+   Référentiel : ORO.GEN.200(a)(3) et (a)(6), AMC1 ORO.GEN.200(a)(3),
+   ICAO Doc 9859 4e éd. §2.13 et §9 (Safety Assurance : les actions de
+   réduction du risque doivent faire l'objet d'une vérification d'efficacité).
+
+   Principe retenu — trois niveaux cumulatifs de preuve :
+     1. EN PLACE    la barrière est définie et approuvée dans un document
+                    contrôlé              → déjà couvert par b.trac.doc
+     2. APPLIQUÉE   son déploiement est constaté sur le terrain
+                    (formation tracée, équipement installé, audit)
+     3. EFFICACE    sa performance est prouvée par une preuve datée
+                    (indicateur, sollicitation réelle, exercice, échantillon)
+
+   Seul le niveau 3 autorise à revendiquer la réduction de cotation inscrite
+   au registre. Tout le reste laisse le résiduel « non démontré ».
+
+   Une 4e valeur, NON SOLLICITÉE, existe pour les barrières dont le scénario
+   ne s'est jamais produit (cas des 29 scénarios de nuit FAM-35 / R17) : la
+   barrière est en place mais n'a jamais été éprouvée. C'est un constat, pas
+   un oubli — et il se distingue explicitement d'un champ laissé vide.
+
+   Aucune donnée n'est inventée : la migration ne fait qu'ouvrir le bloc.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+
+var EFF_VER = '1.0';
+
+function _d(){ return new Date().toISOString().slice(0,10); }
+function E(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function _who(){ try{ return (typeof safCurrentUser==='function') ? safCurrentUser() : ''; }catch(e){ return ''; } }
+
+/* ── Échelle d'efficacité ─────────────────────────────────────────────────── */
+var EFF_LV = {
+  non_evaluee   : {lbl:'Non évaluée',    bg:'rgba(150,150,150,.16)', fg:'#9aa4ad'},
+  en_place      : {lbl:'En place',       bg:'rgba(88,166,255,.16)',  fg:'#58a6ff'},
+  appliquee     : {lbl:'Appliquée',      bg:'rgba(201,162,39,.16)',  fg:'#c9a227'},
+  efficace      : {lbl:'Efficace',       bg:'rgba(63,185,80,.16)',   fg:'#3fb950'},
+  non_sollicitee: {lbl:'Non sollicitée', bg:'rgba(163,113,247,.16)', fg:'#a371f7'},
+  defaillante   : {lbl:'Défaillante',    bg:'rgba(248,81,73,.16)',   fg:'#f85149'}
+};
+var EFF_LV_HELP = {
+  en_place      : 'Document contrôlé vérifié : la mesure est écrite, approuvée et à jour.',
+  appliquee     : 'Déploiement constaté sur le terrain : formation tracée, équipement installé, procédure connue.',
+  efficace      : 'Performance prouvée par une preuve datée : la mesure fait ce pour quoi elle existe.',
+  non_sollicitee: 'En place, mais le scénario ne s\'est jamais produit : la performance ne peut pas être établie.',
+  defaillante   : 'Preuve contraire : la mesure n\'a pas tenu, ou n\'est pas appliquée.'
+};
+
+/* ── Sources de preuve disponibles chez SAF ───────────────────────────────── */
+var EFF_SRC = {
+  occurrence : 'Occurrence Log — barrière sollicitée en situation réelle',
+  audit_cms  : 'Audit interne / CMS — grille EASA, constatation',
+  formation  : 'Formation & compétence — Crew Training Tracker, LPC/OPC',
+  camo       : 'Navigabilité / CAMO — visite, HUMS, AD/SB',
+  exercice   : 'Exercice ERP / essai dédié',
+  observation: 'Observation en ligne / contrôle sur site',
+  fdm        : 'Données de vol (FDM / HFDM)',
+  revue_doc  : 'Revue documentaire — existence et mise à jour du document',
+  autre      : 'Autre source (à préciser dans la méthode)'
+};
+
+var PERIODS = [[0,'Non planifiée'],[6,'6 mois'],[12,'12 mois'],[24,'24 mois'],[36,'36 mois']];
+
+/* ── Utilitaires cotation ─────────────────────────────────────────────────── */
+function sevRank(code){ return {A:5,B:4,C:3,D:2,E:1}[String(code||'').charAt(1)] || 0; }
+function scoreOf(code){ try{ return (typeof riskScore==='function') ? riskScore(code) : 0; }catch(e){ return 0; } }
+function reducesSeverity(r){
+  var i = sevRank(r.initial_risk), d = sevRank(r.residual_risk);
+  return !!(i && d && d < i);
+}
+function claimsReduction(r){
+  var i = scoreOf(r.initial_risk), d = scoreOf(r.residual_risk);
+  return !!(i && d && d < i);
+}
+function addMonths(iso, m){
+  if(!iso || !m) return '';
+  var d = new Date(iso); if(isNaN(d)) return '';
+  d.setMonth(d.getMonth() + Number(m));
+  return d.toISOString().slice(0,10);
+}
+function vStatus(v){
+  v = v || {}; var today = _d();
+  if(!v.next && !v.last) return 'no_plan';
+  if(!v.last) return (v.next && v.next < today) ? 'overdue' : 'never';
+  if(!v.next) return 'in_date';
+  if(v.next < today) return 'overdue';
+  return ((new Date(v.next) - new Date(today)) / 86400000) <= 30 ? 'due_soon' : 'in_date';
+}
+var VSTAT = {
+  in_date : {lbl:'En date',         bg:'rgba(63,185,80,.16)',  fg:'#3fb950'},
+  due_soon: {lbl:'Échéance < 30 j', bg:'rgba(201,162,39,.16)', fg:'#c9a227'},
+  overdue : {lbl:'Échue',           bg:'rgba(248,81,73,.16)',  fg:'#f85149'},
+  never   : {lbl:'Jamais vérifiée', bg:'rgba(255,140,66,.16)', fg:'#ff8c42'},
+  no_plan : {lbl:'Non planifiée',   bg:'rgba(150,150,150,.16)',fg:'#9aa4ad'}
+};
+
+/* ── Ouverture du bloc eff (idempotente, n'écrase jamais une saisie) ──────── */
+function effEnsure(b){
+  if(!b.trac) b.trac = {};
+  if(b.trac.eff && b.trac.eff.v) return false;
+  b.trac.eff = {
+    v: EFF_VER,
+    critical   : false,
+    crit_source: 'none',
+    crit_reason: '',
+    level      : 'non_evaluee',
+    criterion  : '',
+    source     : '',
+    period     : 0,
+    checks     : [],
+    opened_at  : _d()
+  };
+  return true;
+}
+
+function effMigrate(){
+  try{ if(typeof window.safTracMigrate === 'function') window.safTracMigrate(); }catch(e){}
+  var n = 0;
+  (window.DB||[]).forEach(function(r){
+    (r.barriers||[]).forEach(function(b){ if(effEnsure(b)) n++; });
+  });
+  /* Un lecteur ou l'autorité n'écrit rien : le bloc reste ouvert en mémoire
+     pour l'affichage, mais n'est pas persisté ni remonté au cloud. */
+  if(n){ try{
+    var rl = (typeof safCurrentRole === 'function') ? safCurrentRole() : '';
+    if(rl === 'admin' || rl === 'editor') saveDB();
+  }catch(e){} }
+  return n;
+}
+
+/* ── Proposition automatique des barrières critiques ──────────────────────────
+   Une barrière est proposée « critique » si l'un de ces trois cas s'applique.
+   Le Safety Manager reste seul décideur : la proposition ne touche jamais une
+   barrière déjà qualifiée à la main (crit_source === 'manual').              */
+function critReasons(r, b, kindCount){
+  var out = [];
+  var cur = '';
+  try{ cur = (typeof safResidualCurrent==='function') ? safResidualCurrent(r) : (r.residual_risk||''); }catch(e){ cur = r.residual_risk||''; }
+  var col = '';
+  try{ col = (typeof riskColor==='function') ? riskColor(cur) : ''; }catch(e){}
+  if(col === 'red') out.push('scénario rouge en vigueur');
+  if(reducesSeverity(r) && (b.kind === 'mitigation' || b.kind === 'recovery'))
+    out.push('porte une réduction de gravité (' + (r.initial_risk||'?') + ' → ' + (r.residual_risk||'?') + ')');
+  if((kindCount[b.kind]||0) === 1) out.push('seule mesure de ' + ({prevention:'prévention',mitigation:'atténuation',recovery:'récupération'}[b.kind]||b.kind) + ' du scénario');
+  return out;
+}
+
+function effSuggestCritical(apply){
+  var found = 0, changed = 0;
+  (window.DB||[]).forEach(function(r){
+    var live = (r.barriers||[]).filter(function(b){ return String(b.status||'active') !== 'archived'; });
+    var kindCount = {};
+    live.forEach(function(b){ kindCount[b.kind] = (kindCount[b.kind]||0) + 1; });
+    live.forEach(function(b){
+      effEnsure(b);
+      var e = b.trac.eff;
+      if(e.crit_source === 'manual') return;          // décision humaine : intouchable
+      var rs = critReasons(r, b, kindCount);
+      if(rs.length){
+        found++;
+        if(apply && !e.critical){
+          e.critical = true; e.crit_source = 'auto'; e.crit_reason = rs.join(' · ');
+          changed++;
+        } else if(apply){
+          e.crit_reason = rs.join(' · ');
+        }
+      }
+    });
+  });
+  return {found:found, changed:changed};
+}
+
+/* ── Soutien du résiduel revendiqué par un scénario ───────────────────────── */
+function effRiskSupport(r){
+  var crit = 0, ok = 0, fail = 0, over = 0, never = 0;
+  (r.barriers||[]).forEach(function(b){
+    if(String(b.status||'active') === 'archived') return;
+    var e = (b.trac||{}).eff; if(!e || !e.critical) return;
+    crit++;
+    if(e.level === 'efficace') ok++;
+    else if(e.level === 'defaillante') fail++;
+    else if(e.level === 'non_evaluee') never++;
+    if(vStatus((b.trac||{}).verif) === 'overdue') over++;
+  });
+  var claims = claimsReduction(r);
+  var supported = claims && crit > 0 && ok === crit && fail === 0 && over === 0;
+  var reason = '';
+  if(claims){
+    if(!crit) reason = 'aucune barrière critique désignée sur ce scénario';
+    else if(fail) reason = fail + ' barrière(s) critique(s) déclarée(s) défaillante(s)';
+    else if(ok < crit) reason = ok + ' / ' + crit + ' barrière(s) critique(s) démontrée(s) efficace(s)'
+                              + (never ? ' — ' + never + ' jamais évaluée(s)' : '');
+    else if(over) reason = over + ' vérification(s) d\'efficacité échue(s)';
+  }
+  return {claims:claims, crit:crit, ok:ok, fail:fail, over:over, never:never, supported:supported, reason:reason};
+}
+
+/* ── Aplatissement ────────────────────────────────────────────────────────── */
+function effRows(){
+  var out = [];
+  (window.DB||[]).forEach(function(r){
+    (r.barriers||[]).forEach(function(b){
+      if(String(b.status||'active') === 'archived') return;
+      var e = (b.trac||{}).eff || {}, v = (b.trac||{}).verif || {}, dc = (b.trac||{}).doc || {};
+      out.push({
+        bid:b.bid, risk:r.id, event:r.event||'', family:r.family_id||'', kind:b.kind||'',
+        text:b.text||'', owner:b.owner||r.risk_owner||'', ownerIsRisk:!b.owner,
+        critical:!!e.critical, critSrc:e.crit_source||'none', critWhy:e.crit_reason||'',
+        level:e.level||'non_evaluee', criterion:e.criterion||'', source:e.source||'',
+        period:Number(e.period||0), checks:(e.checks||[]).length,
+        vLast:v.last||'', vNext:v.next||'', vBy:v.by||'', vStat:vStatus(v),
+        docRef:dc.ref||'', docStatus:dc.status||'missing',
+        cur:(function(){ try{ return safResidualCurrent(r); }catch(x){ return r.residual_risk||''; } })()
+      });
+    });
+  });
+  return out;
+}
+
+function effStats(rows){
+  var s = {total:rows.length, crit:0, eff:0, critEff:0, fail:0, never:0, overdue:0,
+           noCriterion:0, noOwner:0, noPlan:0};
+  rows.forEach(function(x){
+    if(x.critical){ s.crit++; if(x.level==='efficace') s.critEff++; }
+    if(x.level==='efficace') s.eff++;
+    if(x.level==='defaillante') s.fail++;
+    if(x.level==='non_evaluee') s.never++;
+    if(x.vStat==='overdue') s.overdue++;
+    if(x.critical && !x.criterion) s.noCriterion++;
+    if(x.critical && x.ownerIsRisk) s.noOwner++;
+    if(x.critical && !x.period) s.noPlan++;
+  });
+  return s;
+}
+
+/* ══════════════════════ VUE — CAMPAGNE DE VÉRIFICATION ═══════════════════ */
+var FE = {q:'', owner:'', crit:'1', level:'', due:'', risk:''};
+
+function badge(m){ return '<span style="background:'+m.bg+';color:'+m.fg+';padding:1px 7px;border-radius:3px;'
+  +'font-family:var(--font-mono);font-size:9px;font-weight:700;white-space:nowrap;">'+E(m.lbl)+'</span>'; }
+
+function card(lbl,val,sub,col){
+  return '<div class="chart-card" style="padding:12px 14px;flex:1;min-width:148px;">'
+   +'<div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);letter-spacing:.5px;">'+E(lbl)+'</div>'
+   +'<div style="font-size:22px;font-weight:700;color:'+(col||'var(--white)')+';line-height:1.3;">'+E(val)+'</div>'
+   +'<div style="font-size:10px;color:var(--grey-400);">'+E(sub||'')+'</div></div>';
+}
+
+function renderBarrierEffectiveness(){
+  var host = document.getElementById('barriereff-content');
+  if(!host) return;
+  if(!(window.DB||[]).length){ host.innerHTML='<div style="padding:28px;color:var(--grey-400);">Registre vide.</div>'; return; }
+  effMigrate();
+
+  var rows = effRows(), s = effStats(rows);
+  var owners = Array.from(new Set(rows.map(function(x){return x.owner;}).filter(Boolean))).sort();
+  var risks  = Array.from(new Set(rows.map(function(x){return x.risk;}))).sort();
+
+  var f = rows.filter(function(x){
+    if(FE.crit === '1' && !x.critical) return false;
+    if(FE.crit === '0' && x.critical)  return false;
+    if(FE.owner && x.owner !== FE.owner) return false;
+    if(FE.level && x.level !== FE.level) return false;
+    if(FE.risk  && x.risk  !== FE.risk)  return false;
+    if(FE.due === 'overdue'  && x.vStat !== 'overdue')  return false;
+    if(FE.due === 'due_soon' && x.vStat !== 'due_soon') return false;
+    if(FE.due === 'no_plan'  && !(x.vStat==='no_plan' || !x.period)) return false;
+    if(FE.q){
+      var q = FE.q.toLowerCase();
+      if((x.text+' '+x.bid+' '+x.risk+' '+x.event+' '+x.criterion+' '+x.owner).toLowerCase().indexOf(q) < 0) return false;
+    }
+    return true;
+  });
+
+  /* Scénarios dont la réduction revendiquée n'est pas soutenue */
+  var unsupported = [];
+  (window.DB||[]).forEach(function(r){
+    var sup = effRiskSupport(r);
+    if(sup.claims && !sup.supported) unsupported.push({r:r, sup:sup});
+  });
+  unsupported.sort(function(a,b){ return scoreOf(b.r.initial_risk) - scoreOf(a.r.initial_risk); });
+
+  var pctCrit = s.crit ? Math.round(100*s.critEff/s.crit) : 0;
+
+  var head = '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">'
+    + card('BARRIÈRES CRITIQUES', s.crit, 'sur '+s.total+' barrières actives')
+    + card('EFFICACITÉ DÉMONTRÉE', pctCrit+' %', s.critEff+' / '+s.crit+' barrières critiques', pctCrit>=80?'#3fb950':(pctCrit>=40?'#c9a227':'#ff8c42'))
+    + card('JAMAIS ÉVALUÉES', s.never, 'aucun niveau renseigné', s.never?'#ff8c42':'#3fb950')
+    + card('DÉFAILLANTES', s.fail, 'preuve contraire enregistrée', s.fail?'#f85149':'#3fb950')
+    + card('VÉRIFICATIONS ÉCHUES', s.overdue, 'échéance dépassée', s.overdue?'#f85149':'#3fb950')
+    + card('RÉSIDUEL NON SOUTENU', unsupported.length, 'scénarios revendiquant une réduction', unsupported.length?'#ff8c42':'#3fb950')
+    + '</div>';
+
+  var note = '<div class="chart-card" style="padding:12px 16px;margin-bottom:16px;border-left:3px solid var(--steel-bright);">'
+    +'<div style="font-size:11px;color:var(--grey-200);line-height:1.7;">'
+    +'<b>Trois niveaux cumulatifs de preuve.</b> '
+    +'<span style="color:#58a6ff;font-weight:700;">En place</span> = le document contrôlé est vérifié. '
+    +'<span style="color:#c9a227;font-weight:700;">Appliquée</span> = le déploiement est constaté sur le terrain. '
+    +'<span style="color:#3fb950;font-weight:700;">Efficace</span> = la performance est prouvée par une preuve datée. '
+    +'Seul le niveau <i>Efficace</i> autorise à revendiquer la réduction de cotation du scénario ; en dessous, le résiduel reste une prévision. '
+    +'<span style="color:#a371f7;font-weight:700;">Non sollicitée</span> vaut pour une barrière en place dont le scénario ne s\'est jamais produit — '
+    +'c\'est un constat explicite, à préférer à un champ laissé vide.'
+    +'</div></div>';
+
+  /* Panneau des résiduels non soutenus */
+  var unsupHTML = '';
+  if(unsupported.length){
+    unsupHTML = '<details class="chart-card" style="padding:12px 16px;margin-bottom:16px;border-left:3px solid #ff8c42;">'
+      +'<summary style="cursor:pointer;font-family:var(--font-mono);font-size:11px;color:#ff8c42;font-weight:700;">'
+      +'⚠ '+unsupported.length+' scénario(s) revendiquent une réduction de cotation sans efficacité démontrée</summary>'
+      +'<div style="margin-top:10px;overflow-x:auto;"><table style="width:100%;border-collapse:collapse;min-width:760px;">'
+      +'<thead><tr>'+['RISQUE','ÉVÉNEMENT','INITIAL','RÉSIDUEL VISÉ','EN VIGUEUR','MOTIF'].map(function(h){
+        return '<th style="padding:6px 8px;text-align:left;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);border-bottom:1px solid rgba(255,255,255,.12);white-space:nowrap;">'+h+'</th>';}).join('')
+      +'</tr></thead><tbody>'
+      + unsupported.map(function(u){
+          var td='padding:6px 8px;font-size:10px;color:var(--grey-100);border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top;';
+          var cur=''; try{ cur = safResidualCurrent(u.r); }catch(e){ cur = u.r.residual_risk||''; }
+          return '<tr style="cursor:pointer;" onclick="safEffFilterRisk(decodeURIComponent(\''+encodeURIComponent(u.r.id)+'\'))">'
+            +'<td style="'+td+'font-family:var(--font-mono);color:var(--steel-bright);">'+E(u.r.id)+'</td>'
+            +'<td style="'+td+'max-width:300px;">'+E(u.r.event||'')+'</td>'
+            +'<td style="'+td+'font-family:var(--font-mono);">'+E(u.r.initial_risk||'—')+'</td>'
+            +'<td style="'+td+'font-family:var(--font-mono);">'+E(u.r.residual_risk||'—')+'</td>'
+            +'<td style="'+td+'font-family:var(--font-mono);font-weight:700;">'+E(cur||'—')+'</td>'
+            +'<td style="'+td+'color:#ff8c42;">'+E(u.sup.reason)+'</td></tr>';
+        }).join('')
+      +'</tbody></table></div></details>';
+  }
+
+  var opt=function(v,l,cur){return '<option value="'+E(v)+'"'+(cur===v?' selected':'')+' style="background:#0d1b2a;color:#f4f6f8;">'+E(l)+'</option>';};
+  var inp='background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.14);color:var(--white);font-family:var(--font-mono);font-size:11px;padding:7px 9px;border-radius:6px;';
+
+  var bar = '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">'
+    +'<input id="eff-q" type="text" placeholder="Rechercher (mesure, BID, risque, critère, responsable…)" value="'+E(FE.q)+'" style="'+inp+'flex:1;min-width:240px;"/>'
+    +'<select id="eff-crit" style="'+inp+'">'+opt('1','Barrières critiques seules',FE.crit)+opt('','Toutes les barrières',FE.crit)+opt('0','Non critiques seules',FE.crit)+'</select>'
+    +'<select id="eff-owner" style="'+inp+'">'+opt('','Tous les responsables',FE.owner)+owners.map(function(o){return opt(o,o,FE.owner);}).join('')+'</select>'
+    +'<select id="eff-level" style="'+inp+'">'+opt('','Tous les niveaux',FE.level)+Object.keys(EFF_LV).map(function(k){return opt(k,EFF_LV[k].lbl,FE.level);}).join('')+'</select>'
+    +'<select id="eff-due" style="'+inp+'">'+opt('','Échéance : toutes',FE.due)+opt('overdue','Échues',FE.due)+opt('due_soon','< 30 jours',FE.due)+opt('no_plan','Non planifiées',FE.due)+'</select>'
+    +'<select id="eff-risk" style="'+inp+'">'+opt('','Tous les risques',FE.risk)+risks.map(function(x){return opt(x,x,FE.risk);}).join('')+'</select>'
+    +'<button class="btn btn-ghost" onclick="safEffApplyCritical()">⚑ Proposer les barrières critiques</button>'
+    +'<button class="btn btn-ghost" onclick="safEffExportCSV()">⤓ Export CSV</button>'
+    +'</div>';
+
+  var gaps = [];
+  if(s.noOwner)     gaps.push(s.noOwner+' barrière(s) critique(s) sans responsable propre');
+  if(s.noCriterion) gaps.push(s.noCriterion+' sans critère de réussite');
+  if(s.noPlan)      gaps.push(s.noPlan+' sans périodicité');
+  var gapHTML = gaps.length
+    ? '<div style="font-size:10px;color:#ff8c42;font-family:var(--font-mono);margin-bottom:10px;">⚠ Préalables manquants : '+E(gaps.join(' · '))+' — sans propriétaire ni critère, aucune preuve ne sera produite.</div>'
+    : '';
+
+  var th='padding:8px;text-align:left;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);letter-spacing:.5px;border-bottom:1px solid rgba(255,255,255,.14);white-space:nowrap;';
+  var td='padding:8px;font-size:11px;color:var(--grey-100);border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top;';
+
+  var body = f.map(function(x){
+    var kc={prevention:'#58a6ff',mitigation:'#c9a227',recovery:'#ff8c42'}[x.kind]||'#9aa4ad';
+    return '<tr>'
+      +'<td style="'+td+'">'+(x.critical
+          ? '<span title="'+E(x.critWhy||'désignée manuellement')+'" style="color:#f85149;font-size:13px;">⚑</span>'
+          : '<span style="color:var(--grey-400);font-size:11px;">·</span>')+'</td>'
+      +'<td style="'+td+'"><span style="font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);">'+E(x.bid)+'</span>'
+        +'<div style="font-family:var(--font-mono);font-size:9px;color:'+kc+';">'+E(x.kind)+'</div></td>'
+      +'<td style="'+td+'max-width:280px;">'+E(x.text)
+        +'<div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-top:3px;">'+E(x.risk)+' — '+E((x.event||'').slice(0,64))+'</div></td>'
+      +'<td style="'+td+'max-width:210px;">'+(x.criterion
+          ? E(x.criterion)
+          : '<span style="color:#ff8c42;font-style:italic;font-size:10px;">critère à définir</span>')
+        +(x.source?'<div style="font-size:9px;color:var(--grey-400);margin-top:3px;">'+E((EFF_SRC[x.source]||x.source).split('—')[0])+'</div>':'')+'</td>'
+      +'<td style="'+td+'">'+badge(EFF_LV[x.level]||EFF_LV.non_evaluee)
+        +(x.checks?'<div style="font-size:9px;color:var(--grey-400);margin-top:3px;">'+x.checks+' vérif.</div>':'')+'</td>'
+      +'<td style="'+td+'"><span style="font-family:var(--font-mono);font-size:10px;">'+E(x.vLast||'—')+'</span>'
+        +'<div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);">éch. '+E(x.vNext||'—')+(x.period?' · '+x.period+' m':'')+'</div>'
+        +'<div style="margin-top:3px;">'+badge(VSTAT[x.vStat]||VSTAT.no_plan)+'</div></td>'
+      +'<td style="'+td+'"><span style="font-size:10px;">'+E(x.owner||'—')+'</span>'
+        +(x.ownerIsRisk && x.owner?'<div style="font-size:9px;color:#ff8c42;">hérité du risque</div>':'')+'</td>'
+      +'<td style="'+td+'white-space:nowrap;">'
+        +'<button onclick="safEffOpenCheck(decodeURIComponent(\''+encodeURIComponent(x.bid)+'\'))" style="padding:4px 10px;background:rgba(88,166,255,.15);border:1px solid rgba(88,166,255,.45);border-radius:4px;color:#58a6ff;font-family:var(--font-mono);font-size:9px;font-weight:700;cursor:pointer;">Vérifier</button>'
+        +'</td></tr>';
+  }).join('');
+
+  host.innerHTML = '<div style="padding:0 28px 28px;">'+head+note+unsupHTML+bar+gapHTML
+    +'<div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-bottom:8px;">'+f.length+' barrière(s) affichée(s) sur '+rows.length+' actives.</div>'
+    +'<div class="chart-card" style="padding:0;overflow-x:auto;"><table style="width:100%;border-collapse:collapse;min-width:1120px;">'
+    +'<thead><tr>'+['','BID / TYPE','MESURE','CRITÈRE DE RÉUSSITE','NIVEAU','VÉRIFICATION','RESPONSABLE','']
+      .map(function(h){return '<th style="'+th+'">'+h+'</th>';}).join('')
+    +'</tr></thead><tbody>'+(body||'<tr><td colspan="8" style="'+td+'color:var(--grey-400);font-style:italic;">Aucune barrière ne correspond aux filtres.</td></tr>')+'</tbody></table></div></div>';
+
+  ['q','crit','owner','level','due','risk'].forEach(function(k){
+    var el=document.getElementById('eff-'+k); if(!el) return;
+    el.addEventListener(k==='q'?'input':'change',function(){
+      FE[k]=el.value; renderBarrierEffectiveness();
+      if(k==='q'){ var n=document.getElementById('eff-q'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } }
+    });
+  });
+}
+
+function safEffFilterRisk(id){ FE.risk = id; FE.crit = ''; renderBarrierEffectiveness(); }
+
+/* ══════════════════════ FICHE DE VÉRIFICATION ════════════════════════════ */
+function findBarrier(bid){
+  var res = {b:null, r:null};
+  (window.DB||[]).forEach(function(r){ (r.barriers||[]).forEach(function(b){
+    if(b.bid === bid && !res.b){ res.b = b; res.r = r; } }); });
+  return res;
+}
+
+function safEffOpenCheck(bid){
+  var h = findBarrier(bid); if(!h.b){ if(typeof showToast==='function') showToast('Barrière introuvable','error'); return; }
+  effEnsure(h.b);
+  var e = h.b.trac.eff, v = h.b.trac.verif || {}, dc = h.b.trac.doc || {};
+  var old = document.getElementById('saf-eff-modal'); if(old) old.remove();
+
+  var lab='display:block;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);letter-spacing:.5px;margin-bottom:4px;';
+  var inp='width:100%;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.16);color:var(--white);font-family:var(--font-mono);font-size:11px;padding:8px 10px;border-radius:6px;box-sizing:border-box;';
+
+  var hist = (e.checks||[]).slice().reverse().map(function(c){
+    return '<div style="border-left:2px solid '+((EFF_LV[c.result]||EFF_LV.non_evaluee).fg)+';padding:5px 10px;margin-bottom:6px;">'
+      +'<div style="font-family:var(--font-mono);font-size:10px;color:var(--white);">'+E(c.date||'')+' — '+E((EFF_LV[c.result]||{}).lbl||c.result||'')+'</div>'
+      +'<div style="font-size:10px;color:var(--grey-300);line-height:1.5;">'+E(c.method||'')+(c.evidence?' · preuve : '+E(c.evidence):'')+'</div>'
+      +'<div style="font-size:9px;color:var(--grey-400);">'+E(c.by||'')+'</div>'
+      +(c.note?'<div style="font-size:10px;color:var(--grey-300);margin-top:3px;">'+E(c.note)+'</div>':'')
+      +'</div>';
+  }).join('') || '<div style="font-size:10px;color:var(--grey-400);font-style:italic;">Aucune vérification enregistrée.</div>';
+
+  var ov = document.createElement('div');
+  ov.id = 'saf-eff-modal';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(3,8,16,.78);z-index:99999;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:34px 16px;';
+  ov.addEventListener('click', function(ev){ if(ev.target === ov) safEffClose(); });
+
+  ov.innerHTML = '<div class="chart-card" style="max-width:860px;width:100%;padding:22px 24px;">'
+   +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:4px;">'
+     +'<div><div style="font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);">'+E(bid)+' · '+E(h.r.id)+'</div>'
+     +'<div style="font-size:14px;color:var(--white);font-weight:700;line-height:1.4;margin-top:3px;">Vérification d\'efficacité</div></div>'
+     +'<button onclick="safEffClose()" style="background:none;border:none;color:var(--grey-400);font-size:20px;cursor:pointer;line-height:1;">×</button>'
+   +'</div>'
+   +'<div style="font-size:11px;color:var(--grey-200);line-height:1.6;background:rgba(255,255,255,.04);padding:10px 12px;border-radius:6px;margin:10px 0 16px;">'
+     +E(h.b.text||'')
+     +'<div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-top:6px;">Document : '+E(dc.ref||'non renseigné')+(dc.section?' § '+E(dc.section):'')+'</div>'
+   +'</div>'
+
+   +'<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.25);border-radius:6px;margin-bottom:14px;">'
+     +'<input type="checkbox" id="eff-critical" '+(e.critical?'checked':'')+' style="width:15px;height:15px;cursor:pointer;"/>'
+     +'<label for="eff-critical" style="font-size:11px;color:var(--grey-100);cursor:pointer;">'
+     +'<b>Barrière critique</b> — elle tient seule un scénario rouge ou porte une réduction de gravité. Cycle de vérification court.'
+     +(e.crit_reason?'<div style="font-size:9px;color:#ff8c42;font-family:var(--font-mono);margin-top:3px;">Motif proposé : '+E(e.crit_reason)+'</div>':'')
+     +'</label></div>'
+
+   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
+     +'<div style="grid-column:1/-1;"><label style="'+lab+'">CRITÈRE DE RÉUSSITE — MESURABLE</label>'
+       +'<input id="eff-criterion" type="text" value="'+E(e.criterion||'')+'" placeholder="ex. 100 % des équipages HESLO ont effectué le briefing bucket en 2026 — 0 écart sur 12 observations" style="'+inp+'"/>'
+       +'<div style="font-size:9px;color:var(--grey-400);margin-top:4px;">« Procédure appliquée » n\'est pas un critère. Il faut un seuil, un dénombrement ou un échantillon.</div></div>'
+     +'<div><label style="'+lab+'">SOURCE DE PREUVE</label><select id="eff-source" style="'+inp+'">'
+       +'<option value="" style="background:#0d1b2a;">— à choisir —</option>'
+       +Object.keys(EFF_SRC).map(function(k){ return '<option value="'+k+'"'+(e.source===k?' selected':'')+' style="background:#0d1b2a;color:#f4f6f8;">'+E(EFF_SRC[k])+'</option>'; }).join('')
+       +'</select></div>'
+     +'<div><label style="'+lab+'">PÉRIODICITÉ DE VÉRIFICATION</label><select id="eff-period" style="'+inp+'">'
+       +PERIODS.map(function(p){ return '<option value="'+p[0]+'"'+(Number(e.period||0)===p[0]?' selected':'')+' style="background:#0d1b2a;color:#f4f6f8;">'+p[1]+'</option>'; }).join('')
+       +'</select></div>'
+   +'</div>'
+
+   +'<div style="height:1px;background:rgba(255,255,255,.1);margin:18px 0 14px;"></div>'
+   +'<div style="font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);letter-spacing:.5px;margin-bottom:10px;">ENREGISTRER UNE VÉRIFICATION</div>'
+
+   +'<div><label style="'+lab+'">RÉSULTAT — NIVEAU ATTEINT</label>'
+     +'<div style="display:flex;flex-direction:column;gap:6px;">'
+     +['en_place','appliquee','efficace','non_sollicitee','defaillante'].map(function(k){
+        return '<label style="display:flex;gap:9px;align-items:flex-start;padding:7px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:5px;cursor:pointer;">'
+          +'<input type="radio" name="eff-result" value="'+k+'" style="margin-top:2px;cursor:pointer;"/>'
+          +'<span><span style="color:'+EFF_LV[k].fg+';font-weight:700;font-size:11px;font-family:var(--font-mono);">'+E(EFF_LV[k].lbl)+'</span>'
+          +'<div style="font-size:10px;color:var(--grey-300);line-height:1.45;">'+E(EFF_LV_HELP[k])+'</div></span></label>';
+      }).join('')
+     +'</div></div>'
+
+   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">'
+     +'<div><label style="'+lab+'">DATE DE LA VÉRIFICATION</label><input id="eff-date" type="date" value="'+_d()+'" style="'+inp+'"/></div>'
+     +'<div><label style="'+lab+'">VÉRIFIÉE PAR</label><input id="eff-by" type="text" value="'+E(_who())+'" style="'+inp+'"/></div>'
+     +'<div style="grid-column:1/-1;"><label style="'+lab+'">MÉTHODE EMPLOYÉE</label>'
+       +'<input id="eff-method" type="text" value="'+E(v.method||'')+'" placeholder="ex. échantillonnage de 3 dossiers de chantier + entretien équipage" style="'+inp+'"/></div>'
+     +'<div style="grid-column:1/-1;"><label style="'+lab+'">RÉFÉRENCE DE LA PREUVE</label>'
+       +'<input id="eff-evidence" type="text" placeholder="ex. RPT-260722-9BDS · AUD-2026-04 constat n°3 · registre de formation 2026-06" style="'+inp+'"/>'
+       +'<div style="font-size:9px;color:var(--grey-400);margin-top:4px;">Une vérification sans référence de preuve n\'est pas opposable en audit.</div></div>'
+     +'<div style="grid-column:1/-1;"><label style="'+lab+'">CONCLUSION / OBSERVATIONS</label>'
+       +'<textarea id="eff-note" rows="2" placeholder="Ce qui a été constaté, et ce qui en découle (action, révision de cotation, nouvelle barrière…)" style="'+inp+'resize:vertical;"></textarea></div>'
+   +'</div>'
+
+   +'<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px;flex-wrap:wrap;">'
+     +'<span id="eff-fb" style="font-family:var(--font-mono);font-size:10px;min-height:14px;"></span>'
+     +'<div style="display:flex;gap:8px;">'
+     +'<button onclick="safEffSaveSetup(decodeURIComponent(\''+encodeURIComponent(bid)+'\'))" style="padding:8px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);border-radius:6px;color:var(--grey-100);font-family:var(--font-mono);font-size:11px;cursor:pointer;">Enregistrer le paramétrage seul</button>'
+     +'<button onclick="safEffSaveCheck(decodeURIComponent(\''+encodeURIComponent(bid)+'\'))" style="padding:8px 18px;background:rgba(63,185,80,.16);border:1px solid #3fb950;border-radius:6px;color:#3fb950;font-family:var(--font-mono);font-size:11px;font-weight:700;cursor:pointer;">✓ Enregistrer la vérification</button>'
+     +'</div></div>'
+
+   +'<div style="height:1px;background:rgba(255,255,255,.1);margin:18px 0 12px;"></div>'
+   +'<div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);letter-spacing:.5px;margin-bottom:8px;">HISTORIQUE DES VÉRIFICATIONS</div>'
+   + hist
+   +'</div>';
+
+  document.body.appendChild(ov);
+}
+
+function safEffClose(){ var o=document.getElementById('saf-eff-modal'); if(o) o.remove(); }
+
+function readSetup(b){
+  var g=function(id){ var e=document.getElementById(id); return e? String(e.value||'').trim() : ''; };
+  var c=document.getElementById('eff-critical');
+  var e=b.trac.eff;
+  var wasCrit = e.critical;
+  e.critical  = !!(c && c.checked);
+  if(e.critical !== wasCrit) e.crit_source = 'manual';
+  e.criterion = g('eff-criterion');
+  e.source    = g('eff-source');
+  e.period    = Number(g('eff-period')||0);
+}
+
+function safEffSaveSetup(bid){
+  var h=findBarrier(bid), fb=document.getElementById('eff-fb');
+  var set=function(m,c){ if(fb){ fb.textContent=m; fb.style.color=c; } };
+  if(!h.b){ set('✗ Barrière introuvable','#ff8080'); return; }
+  effEnsure(h.b);
+  readSetup(h.b);
+  /* l'échéance suit la périodicité si une vérification existe déjà */
+  if(!h.b.trac.verif) h.b.trac.verif = {last:'',by:'',next:'',method:'',source:'manual'};
+  if(h.b.trac.verif.last && h.b.trac.eff.period)
+    h.b.trac.verif.next = addMonths(h.b.trac.verif.last, h.b.trac.eff.period);
+  stampRisk(h.r, 'barrier_effectiveness_setup', bid,
+    'Critère de réussite, source de preuve et périodicité de vérification renseignés.');
+  try{ saveDB(); }catch(e){}
+  set('✓ Paramétrage enregistré','#5cc990');
+  if(typeof showToast==='function') showToast('✓ Paramétrage '+bid+' enregistré','success');
+  refresh();
+}
+
+function safEffSaveCheck(bid){
+  var h=findBarrier(bid), fb=document.getElementById('eff-fb');
+  var set=function(m,c){ if(fb){ fb.textContent=m; fb.style.color=c; } };
+  if(!h.b){ set('✗ Barrière introuvable','#ff8080'); return; }
+  effEnsure(h.b);
+  var g=function(id){ var e=document.getElementById(id); return e? String(e.value||'').trim() : ''; };
+  var sel=document.querySelector('input[name="eff-result"]:checked');
+  if(!sel){ set('✗ Choisir le niveau atteint','#ff8080'); return; }
+  var result = sel.value;
+  var date   = g('eff-date') || _d();
+  var method = g('eff-method');
+  var evid   = g('eff-evidence');
+  if(!method){ set('✗ La méthode de vérification est obligatoire','#ff8080'); return; }
+  if(result==='efficace' && !evid){
+    set('✗ Une efficacité démontrée exige une référence de preuve','#ff8080'); return;
+  }
+
+  readSetup(h.b);
+  var e = h.b.trac.eff;
+  var chk = { date:date, by:g('eff-by')||_who(), result:result, method:method,
+              evidence:evid, note:g('eff-note'), criterion:e.criterion,
+              source:e.source, recorded_at:new Date().toISOString() };
+  if(!Array.isArray(e.checks)) e.checks = [];
+  e.checks.push(chk);
+  e.level = result;
+
+  if(!h.b.trac.verif) h.b.trac.verif = {};
+  h.b.trac.verif.last   = date;
+  h.b.trac.verif.by     = chk.by;
+  h.b.trac.verif.method = method;
+  h.b.trac.verif.next   = e.period ? addMonths(date, e.period) : (h.b.trac.verif.next||'');
+  h.b.trac.verif.source = 'effectiveness_check';
+
+  /* Trace la preuve au niveau de la barrière (champ evidence[] préexistant) */
+  if(evid){
+    if(!Array.isArray(h.b.evidence)) h.b.evidence = [];
+    h.b.evidence.push({ref:evid, kind:'effectiveness_check', date:date, by:chk.by});
+  }
+
+  stampRisk(h.r, 'barrier_effectiveness_checked', bid,
+    'Vérification d\'efficacité : ' + (EFF_LV[result]||{}).lbl + ' — ' + method
+    + (evid ? ' — preuve : ' + evid : ' — sans référence de preuve'));
+
+  /* Remontée au niveau du scénario si toutes les barrières critiques tiennent */
+  var sup = effRiskSupport(h.r);
+  if(sup.claims){
+    h.r.control_effectiveness      = sup.supported ? 'effective' : (sup.fail ? 'ineffective' : 'partial');
+    h.r.effectiveness_assessed_date = date;
+    h.r.effectiveness_assessed_by   = chk.by;
+    var line = date+' · '+bid+' · '+(EFF_LV[result]||{}).lbl+(evid?' · '+evid:'');
+    h.r.effectiveness_evidence = String(h.r.effectiveness_evidence||'').trim();
+    h.r.effectiveness_evidence = h.r.effectiveness_evidence ? (h.r.effectiveness_evidence+'\n'+line) : line;
+  }
+  h.r.updated_at = new Date().toISOString();
+
+  try{ saveDB(); }catch(e){}
+  set('✓ Vérification enregistrée','#5cc990');
+  if(typeof showToast==='function') showToast('✓ Vérification '+bid+' enregistrée','success');
+  setTimeout(function(){ safEffClose(); refresh(); }, 500);
+}
+
+function stampRisk(r, action, bid, reason){
+  if(!r) return;
+  if(!Array.isArray(r.history)) r.history = [];
+  r.history.push((typeof safStamp==='function')
+    ? safStamp({action:action, bid:bid, reason:reason})
+    : {action:action, date:new Date().toISOString(), bid:bid, reason:reason});
+}
+
+function refresh(){
+  try{
+    var v = document.getElementById('view-barriereff');
+    if(v && v.classList.contains('active')) renderBarrierEffectiveness();
+    if(typeof window.renderBarrierRegister === 'function'){
+      var t = document.getElementById('view-barrierreg');
+      if(t && t.classList.contains('active')) window.renderBarrierRegister();
+    }
+    if(typeof renderTable === 'function'){
+      var d = document.getElementById('view-database');
+      if(d && d.classList.contains('active')) renderTable();
+    }
+  }catch(e){}
+}
+
+/* ── Proposition des barrières critiques ──────────────────────────────────── */
+function safEffApplyCritical(){
+  var pre = effSuggestCritical(false);
+  if(!pre.found){ if(typeof showToast==='function') showToast('Aucune barrière ne remplit les critères de criticité','info'); return; }
+  var msg = 'Proposer ' + pre.found + ' barrière(s) comme CRITIQUES ?\n\n'
+    + 'Critères appliqués :\n'
+    + '  · barrière d\'un scénario rouge en vigueur\n'
+    + '  · barrière d\'atténuation ou de récupération portant une réduction de gravité\n'
+    + '  · seule mesure de son type sur le scénario (point de défense unique)\n\n'
+    + 'Les barrières que vous avez déjà qualifiées à la main ne sont pas touchées.\n'
+    + 'La désignation reste modifiable barrière par barrière.';
+  if(!confirm(msg)) return;
+  var res = effSuggestCritical(true);
+  try{ saveDB(); }catch(e){}
+  if(typeof showToast==='function') showToast('✓ '+res.changed+' barrière(s) nouvellement désignées critiques ('+res.found+' répondent aux critères)','success');
+  renderBarrierEffectiveness();
+}
+
+/* ── Export CSV de la campagne ────────────────────────────────────────────── */
+function safEffExportCSV(){
+  effMigrate();
+  var rows = effRows();
+  var H = ['BID','Risque','Evenement','Famille','Type','Mesure','Critique','Motif criticite',
+           'Niveau','Critere de reussite','Source de preuve','Periodicite (mois)',
+           'Derniere verification','Verifiee par','Prochaine echeance','Statut echeance',
+           'Nb verifications','Responsable','Document','Cotation en vigueur'];
+  var q = function(s){ return '"' + String(s==null?'':s).replace(/"/g,'""') + '"'; };
+  var lines = [H.map(q).join(';')];
+  rows.forEach(function(x){
+    lines.push([x.bid,x.risk,x.event,x.family,x.kind,x.text,
+      x.critical?'OUI':'', x.critWhy,
+      (EFF_LV[x.level]||{}).lbl||x.level, x.criterion, EFF_SRC[x.source]||x.source, x.period||'',
+      x.vLast,x.vBy,x.vNext,(VSTAT[x.vStat]||{}).lbl||x.vStat,
+      x.checks, x.owner, x.docRef, x.cur].map(q).join(';'));
+  });
+  var blob = new Blob(['\ufeff'+lines.join('\r\n')], {type:'text/csv;charset=utf-8;'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'SAF_Efficacite_Barrieres_' + _d() + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  if(typeof showToast==='function') showToast('✓ Export CSV généré','success');
+}
+
+/* ══════════ GREFFE 1 — bandeau dans la fiche détaillée du risque ═════════ */
+(function(){
+  var orig = window._rrDetailHTML;
+  if(typeof orig !== 'function') return;
+  window._rrDetailHTML = function(r){
+    var base = orig.apply(this, arguments);
+    try{
+      if(!r) return base;
+      var sup = effRiskSupport(r);
+      if(!sup.claims) return base;
+      var col = sup.supported ? '#3fb950' : '#ff8c42';
+      var icon = sup.supported ? '✓' : '⚠';
+      var txt = sup.supported
+        ? 'Réduction de cotation soutenue : les ' + sup.crit + ' barrière(s) critique(s) de ce scénario sont démontrées efficaces, vérifications à jour.'
+        : 'Réduction de cotation revendiquée (' + (r.initial_risk||'?') + ' → ' + (r.residual_risk||'?') + ') NON soutenue par une vérification d\'efficacité — ' + sup.reason
+          + '. Tant que la démonstration n\'est pas faite, le risque porté reste la cotation initiale.';
+      var banner = '<div style="grid-column:1/-1;display:flex;gap:9px;align-items:flex-start;padding:10px 13px;margin-bottom:4px;'
+        +'background:rgba(' + (sup.supported?'63,185,80':'255,140,66') + ',.08);border:1px solid ' + col + '55;border-left:3px solid ' + col + ';border-radius:6px;">'
+        +'<span style="color:' + col + ';font-size:13px;line-height:1.2;">' + icon + '</span>'
+        +'<div><div style="font-family:var(--font-mono);font-size:9px;color:' + col + ';letter-spacing:.5px;font-weight:700;">EFFICACITÉ DES BARRIÈRES</div>'
+        +'<div style="font-size:11px;color:var(--grey-100);line-height:1.55;margin-top:3px;">' + E(txt) + '</div>'
+        +'<div style="margin-top:6px;"><button onclick="event.stopPropagation();showView(\'barriereff\');safEffFilterRisk(decodeURIComponent(\'' + encodeURIComponent(r.id) + '\'))" '
+        +'style="padding:3px 10px;background:rgba(88,166,255,.14);border:1px solid rgba(88,166,255,.42);border-radius:4px;color:#58a6ff;font-family:var(--font-mono);font-size:9px;cursor:pointer;">Ouvrir la campagne de vérification</button></div>'
+        +'</div></div>';
+      return base.replace('<div class="detail-grid" style="padding:16px 4px;">',
+                          '<div class="detail-grid" style="padding:16px 4px;">' + banner);
+    }catch(e){ return base; }
+  };
+})();
+
+/* ══════════ GREFFE 2 — bloc efficacité dans la fiche barrière ═══════════ */
+(function(){
+  var orig = window.safBarrierOriginPopup;
+  if(typeof orig !== 'function') return;
+  window.safBarrierOriginPopup = function(bid){
+    orig(bid);
+    try{
+      var ov = document.getElementById('saf-brk-popup'); if(!ov) return;
+      var host = ov.firstElementChild; if(!host) return;
+      var h = findBarrier(bid); if(!h.b) return;
+      effEnsure(h.b);
+      var e = h.b.trac.eff, v = h.b.trac.verif || {};
+      var last = (e.checks||[]).slice(-1)[0];
+      host.insertAdjacentHTML('beforeend',
+        '<div style="margin-top:14px;padding:13px 15px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:8px;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:9px;">'
+        +'<span style="font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);letter-spacing:.5px;">EFFICACITÉ'+(e.critical?' · <span style="color:#f85149;">BARRIÈRE CRITIQUE ⚑</span>':'')+'</span>'
+        +badge(EFF_LV[e.level]||EFF_LV.non_evaluee)+'</div>'
+        +'<div style="font-size:11px;color:var(--grey-200);line-height:1.6;">'
+        +'<b>Critère :</b> '+(e.criterion?E(e.criterion):'<i style="color:#ff8c42;">non défini</i>')+'<br>'
+        +'<b>Source de preuve :</b> '+(e.source?E(EFF_SRC[e.source]||e.source):'<i style="color:#ff8c42;">non définie</i>')+'<br>'
+        +'<b>Dernière vérification :</b> '+(v.last?E(v.last)+' ('+E(v.by||'—')+')':'<i style="color:#ff8c42;">jamais</i>')
+        +(v.next?' · prochaine échéance '+E(v.next):'')+'<br>'
+        +(last && last.evidence ? '<b>Preuve :</b> '+E(last.evidence) : '<b>Preuve :</b> <i style="color:#ff8c42;">aucune référence enregistrée</i>')
+        +'</div>'
+        +'<button onclick="safEffOpenCheck(decodeURIComponent(\''+encodeURIComponent(bid)+'\'))" style="margin-top:10px;padding:6px 14px;background:rgba(63,185,80,.14);border:1px solid rgba(63,185,80,.45);border-radius:5px;color:#3fb950;font-family:var(--font-mono);font-size:10px;font-weight:700;cursor:pointer;">✓ Vérifier l\'efficacité</button>'
+        +'</div>');
+    }catch(e){}
+  };
+})();
+
+/* ── Exports ──────────────────────────────────────────────────────────────── */
+window.safEffMigrate               = effMigrate;
+window.safEffRows                  = effRows;
+window.safEffStats                 = function(){ return effStats(effRows()); };
+window.safEffRiskSupport           = effRiskSupport;
+window.safEffSuggestCritical       = effSuggestCritical;
+window.safEffApplyCritical         = safEffApplyCritical;
+window.safEffOpenCheck             = safEffOpenCheck;
+window.safEffClose                 = safEffClose;
+window.safEffSaveCheck             = safEffSaveCheck;
+window.safEffSaveSetup             = safEffSaveSetup;
+window.safEffExportCSV             = safEffExportCSV;
+window.safEffFilterRisk            = safEffFilterRisk;
+window.renderBarrierEffectiveness  = renderBarrierEffectiveness;
+
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(function(){ try{effMigrate();}catch(e){} },1500); });
+else setTimeout(function(){ try{effMigrate();}catch(e){} },1500);
+
+})();
+</script>
+
 </body>
 </html>
