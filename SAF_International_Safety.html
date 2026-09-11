@@ -886,6 +886,26 @@ main { flex: 1; overflow-y: auto; background: #0A1520; }
   text-align: center;
 }
 
+/* ── Correctif 11.09.2026 — débordement de la cotation OACI dans la modale ──
+   _buildEmMatrix() réduit les cellules en ligne à 36×28 px, mais le gabarit de
+   grille restait celui de la matrice pleine taille (90 px + 5×44 px + gouttières
+   + marge = 354 px). Avec l'aperçu de 64 px, chaque colonne réclamait 430 px,
+   soit 884 px pour les deux — au-delà des 860 px de la modale : la matrice
+   résiduelle sortait du cadre. On accorde le gabarit à la taille réelle des
+   cellules et on laisse les deux blocs s'empiler sur écran étroit. */
+#em-init-matrix, #em-resid-matrix {
+  grid-template-columns: 60px repeat(5, 36px);
+  gap: 3px;
+  padding: 9px;
+  max-width: 100%;
+}
+#em-init-matrix .icao-ms-label, #em-resid-matrix .icao-ms-label {
+  width: 60px; height: 28px; font-size: 8px; padding-right: 4px;
+}
+#em-init-matrix .icao-ms-head, #em-resid-matrix .icao-ms-head {
+  width: 36px; height: 28px;
+}
+
 /* ─── FORM SUBMIT ZONE ───────────────────────── */
 /* ── Action cards ── */
 /* ── Action email send ── */
@@ -2097,18 +2117,18 @@ nav { top: 118px !important; }
     </div>
 
     <!-- Row 6: Risk matrices -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:20px;">
-      <div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:24px;margin-bottom:20px;">
+      <div style="min-width:0;">
         <label style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);letter-spacing:.06em;display:block;margin-bottom:10px;">INITIAL RISK <span style="color:#e05000;">*</span></label>
-        <div style="display:flex;gap:12px;align-items:flex-start;">
+        <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
           <div class="icao-matrix-selector" id="em-init-matrix" style="font-size:10px;"></div>
           <div id="em-init-preview" style="background:#333;color:#fff;border-radius:6px;width:64px;height:44px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:18px;font-weight:800;flex-shrink:0;margin-top:36px;">–</div>
         </div>
         <input type="hidden" id="em-initial-risk"/>
       </div>
-      <div>
+      <div style="min-width:0;">
         <label style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);letter-spacing:.06em;display:block;margin-bottom:10px;">RESIDUAL RISK — <span style="color:var(--gold-light);">CIBLE</span> <span style="color:#e05000;">*</span></label>
-        <div style="display:flex;gap:12px;align-items:flex-start;">
+        <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
           <div class="icao-matrix-selector" id="em-resid-matrix" style="font-size:10px;"></div>
           <div id="em-resid-preview" style="background:#333;color:#fff;border-radius:6px;width:64px;height:44px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:18px;font-weight:800;flex-shrink:0;margin-top:36px;">–</div>
         </div>
