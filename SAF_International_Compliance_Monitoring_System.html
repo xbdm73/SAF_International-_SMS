@@ -1973,6 +1973,7 @@ function safExportPDF() {
 <div class="cms-nav-label">Outils / Tools</div>
 <button class="tab" onclick="showMainTab('grille_easa',this)"><span class="cms-nav-icon">🔍</span><span class="cms-nav-text"><span class="cms-nav-title">Grille d’audit EASA / EASA Audit Grid</span></span></button>
 <button class="tab" onclick="showMainTab('compliance_matrix',this)"><span class="cms-nav-icon">◫</span><span class="cms-nav-text"><span class="cms-nav-title">Matrice de conformité / Compliance matrix <span id="cmx-count" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#00d4ff;">0</span></span></span></button>
+<button class="tab" onclick="showMainTab('regulatory_watch',this);rwRender()"><span class="cms-nav-icon">↻</span><span class="cms-nav-text"><span class="cms-nav-title">Veille réglementaire / Regulatory watch</span></span></button>
 <button class="tab" onclick="showMainTab('sms_bridge',this);smsBridgeLoad()"><span class="cms-nav-icon">🛟</span><span class="cms-nav-text"><span class="cms-nav-title">Sécurité (SMS) / Safety (SMS)</span></span></button>
 <button class="tab" onclick="showMainTab('cmsx_audits',this)"><span class="cms-nav-icon">📁</span><span class="cms-nav-text"><span class="cms-nav-title">Audits et autorité / Audits &amp; Authority</span></span></button>
 <button class="tab" onclick="showMainTab('cmsx_rapport_annuel',this)"><span class="cms-nav-icon">📊</span><span class="cms-nav-text"><span class="cms-nav-title">Rapport annuel / Annual Report</span></span></button>
@@ -20047,7 +20048,12 @@ window.safSmsConfirmImport=safSmsConfirmImport;
 <!-- ===== PONT SMS → CMS (lecture seule) ===== -->
 <section class="panel" id="compliance_matrix">
 <div style="padding:18px 22px 0;"><div style="font-size:19px;font-weight:700;color:#e8f0fe;">MATRICE DE CONFORMITÉ EASA / EASA COMPLIANCE MATRIX</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6a82a5;margin-top:5px;line-height:1.6;">ORO.GEN.120 · ORO.GEN.130 · ORO.GEN.200(a)(5) et (a)(6) — Exigence, AMC/GM, documentation SAF International (document + chapitre), implémenté (Oui / Non). Exigences issues de la base réglementaire de la grille d’audit de cet outil.</div></div>
+<div id="regwatch-banner"></div>
 <div id="cmx-content" style="padding:18px 22px;"></div>
+</section>
+<section class="panel" id="regulatory_watch">
+<div style="padding:18px 22px 0;"><div style="font-size:19px;font-weight:700;color:#e8f0fe;">VEILLE RÉGLEMENTAIRE / REGULATORY WATCH</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6a82a5;margin-top:5px;line-height:1.6;">Veille officielle EASA / EUR-Lex. La détection d’une publication ne vaut pas automatiquement applicabilité : l’analyse et la décision restent à valider par le Compliance Monitoring Manager. IR + AMC uniquement ; GM exclu de la matrice.</div></div>
+<div id="regwatch-content" style="padding:18px 22px;"></div>
 </section>
 <section class="panel" id="sms_bridge">
 <div style="padding:18px 22px;">
@@ -20211,7 +20217,7 @@ window.safSmsConfirmImport=safSmsConfirmImport;
               'cmsx_findings','saf_findings_cmsx','kpiv2_kpi5_days',
               'saf_trainers',
               'cmsx_findings_v1','cmsx_missions_v1','cmsx_reports_v1','cmsx_auth_v1','cmsx_targets_v1',
-              'cmsx_compliance_v1'];
+              'cmsx_compliance_v1','cmsx_regwatch_v1'];
 
   var overlay = document.getElementById('saf-login-overlay');
   var bar     = document.getElementById('saf-cloud-bar');
@@ -21064,7 +21070,7 @@ window.safSmsConfirmImport=safSmsConfirmImport;
    ORO.GEN.200(a)(5) et (a)(6) (documentation et suivi de conformité)
 
    Structure retenue (14.09.2026) : pour chaque exigence — intitulé officiel,
-   texte de la règle d'application, AMC/GM associés, UNE référence de
+   texte de la règle d'application, AMC associés, UNE référence de
    documentation SAF International (document + chapitre) et UNE colonne
    Implémenté (Oui / Non).
 
@@ -21083,6 +21089,7 @@ window.safSmsConfirmImport=safSmsConfirmImport;
 'use strict';
 
 var CMX_KEY = 'cmsx_compliance_v1';
+var CMX_SAFETY_URL = 'SAF_International_Safety.html';
 
 /* ── Utilitaires ──────────────────────────────────────────────────────── */
 function X(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -21100,7 +21107,7 @@ function myRole(){
 function canWrite(){ var r = myRole(); return r!=='reader' && r!=='authority' && r!=='guest'; }
 function deny(){ alert('Lecture seule — modification impossible avec ce compte.'); }
 /* Recopie dans chaque ligne l'intitulé officiel, la source et les références
-   AMC/GM résolus depuis la base réglementaire. Cette base n'existe que dans
+   AMC résolus depuis la base réglementaire. Cette base n'existe que dans
    ce fichier : sans cette recopie, le module Safety — qui annexe la matrice
    au PDF de l'étude de changement — n'aurait que des références nues. */
 function denormalise(list){
@@ -21111,6 +21118,7 @@ function denormalise(list){
         l.title = d.title || '';
         l.src = (REG_LABEL[d.reg]||('Règl. '+d.reg)) + ' — Part-' + (d.part||'') + (d.sub?(' / '+d.sub):'');
         l.amc_refs = (Array.isArray(d.amc)?d.amc:[]).map(function(a){ return (a&&a.ref)?String(a.ref):''; }).filter(Boolean);
+        l.amc_data = (Array.isArray(d.amc)?d.amc:[]).map(function(a){ return {ref:(a&&a.ref)?String(a.ref):'', subtitle:(a&&a.subtitle)?String(a.subtitle):'', text:(a&&a.text)?String(a.text):''}; }).filter(function(a){return a.ref;});
       } else if(!Array.isArray(l.amc_refs)) {
         l.amc_refs = [];
       }
@@ -21213,6 +21221,12 @@ var MSTATUS = { draft:'Brouillon', review:'En revue', submitted:'Soumise', accep
 var V = { open:null, fImpl:'', fPart:'', q:'', line:null };
 var MOCS = null;
 
+
+function cmxMocDeepLink(){
+  try{ var m=V.open&&find(V.open); if(!m||!m.moc_ref)return; window.open(CMX_SAFETY_URL+'?moc='+encodeURIComponent(m.moc_ref),'_blank'); }catch(e){}
+}
+window.cmxMocDeepLink=cmxMocDeepLink;
+
 /* ── Statistiques ─────────────────────────────────────────────────────── */
 function stats(m){
   var s = { total:0, yes:0, no:0, documented:0, rate:0 };
@@ -21237,6 +21251,7 @@ function cmxRender(){
       + '<button class="btn-ghost" onclick="cmxBack()">← Liste des matrices</button></div>';
   }
   var c = document.getElementById('cmx-count'); if(c) c.textContent = load().length;
+  if(V.open){try{var mm=find(V.open);if(mm&&mm.moc_ref&&!host.querySelector('.cmx-moc-deep')){var dd=document.createElement('div');dd.className='cmx-moc-deep';dd.style.cssText='margin:0 0 14px;display:flex;justify-content:flex-end;';dd.innerHTML='<button class=\"btn-ghost\" onclick=\"cmxMocDeepLink()\">↗ Ouvrir la MoC dans Safety / Open MoC in Safety</button>';host.insertBefore(dd,host.firstChild);}}catch(e){}}
 }
 
 function list(){
@@ -21244,7 +21259,7 @@ function list(){
   h += '<div class="card card-accent">'
      + '<span class="step-badge">MATRICES</span>'
      + '<div class="step-title">Matrices de conformité / Compliance matrices</div>'
-     + '<p class="sub-text">Pour chaque exigence : intitulé officiel, texte de la règle d\'application, AMC/GM associés, '
+     + '<p class="sub-text">Pour chaque exigence : intitulé officiel, texte de la règle d\'application, AMC associés, '
      + 'référence de la documentation SAF International qui la met en œuvre (document et chapitre) et état d\'implémentation. '
      + 'Les exigences sont reprises de la base réglementaire de la grille d\'audit de cet outil. '
      + 'Une matrice peut être rattachée à une étude de changement (MOC) du module Safety.</p>'
@@ -21335,7 +21350,7 @@ function detail(m){
   h += '<div class="card card-accent">'
      + '<span class="step-badge">AJOUT D\'EXIGENCES</span>'
      + '<div class="step-title">Puiser dans la base réglementaire de l\'outil</div>'
-     + '<p class="sub-text">' + Object.keys(db).length + ' articles disponibles avec leur intitulé officiel, le texte de la règle d\'application et les blocs AMC/GM — la même base que la grille d\'audit EASA.</p>'
+     + '<p class="sub-text">' + Object.keys(db).length + ' articles disponibles avec leur intitulé officiel, le texte de la règle d\'application et les blocs AMC — la même base que la grille d\'audit EASA.</p>'
      + '<div class="sel-row" style="flex-wrap:wrap;gap:14px;margin-top:12px;align-items:flex-end;">'
      + f('Partie','<select class="sel-select" id="cmx-part" onchange="cmxSubs()"><option value="">— Choisir —</option>'
          + Object.keys(parts).sort().map(function(p){ return '<option value="'+X(p)+'">Part-'+X(p)+'</option>'; }).join('') + '</select>')
@@ -21380,7 +21395,7 @@ function detail(m){
      + '<table class="lst cmx-matrix-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:1000px;">'
      + '<thead>'
      + '<tr><th colspan="6" class="cmx-matrix-title">Matrice de conformité / Compliance matrix — ' + X(m.title||m.id) + '</th></tr>'
-     + '<tr>' + ['Référence','Exigence','AMC / GM','Documentation SAF International (doc. + chapitre)','Implémenté','']
+     + '<tr>' + ['Référence','Exigence','AMC','Documentation SAF International (doc. + chapitre)','Implémenté','']
        .map(function(t){ return '<th class="cmx-col-head">'+t+'</th>'; }).join('')
      + '</tr></thead><tbody>';
 
@@ -21392,7 +21407,7 @@ function detail(m){
          + '<div class="cmx-src">' + X(i.src||'') + (i.official?'':' <span style="color:var(--amber);">· hors base</span>') + '</div></td>'
        + '<td class="cmx-req-cell"><b>' + X(i.title||'—') + '</b>'
          + (i.ir ? '<div class="cmx-ir-text">' + X(String(i.ir)) + '</div>' : '') + '</td>'
-       + '<td class="cmx-amc-summary">' + (amcs.length ? '<span class="cmx-amc-count">' + amcs.length + ' AMC / GM associé' + (amcs.length>1?'s':'') + '</span>' : '<span style="color:var(--muted);">—</span>') + '</td>'
+       + '<td class="cmx-amc-summary">' + (amcs.length ? '<span class="cmx-amc-count">' + amcs.length + ' AMC associé' + (amcs.length>1?'s':'') + '</span>' : '<span style="color:var(--muted);">—</span>') + '</td>'
        + '<td class="cmx-doc-cell" style="color:' + ((l.doc_ref||'').trim()?'var(--text)':'var(--muted)') + ';">' + X((l.doc_ref||'').trim() || '—') + '</td>'
        + '<td class="cmx-status-cell"><span style="display:inline-block;padding:2px 10px;border-radius:10px;font-family:var(--mono);font-size:10px;font-weight:700;background:' + im.c + '22;border:1px solid ' + im.c + '66;color:' + im.c + ';">' + im.lbl + '</span></td>'
        + '<td class="cmx-action-cell">'
@@ -21614,12 +21629,12 @@ function cmxEdit(id){
 
   var amcHTML = (i.amc && i.amc.length)
     ? '<div style="margin-top:14px;">'
-      + '<div style="font-family:var(--mono);font-size:11px;color:var(--gold);margin-bottom:8px;">AMC / GM ASSOCIÉS (' + i.amc.length + ')</div>'
+      + '<div style="font-family:var(--mono);font-size:11px;color:var(--gold);margin-bottom:8px;">AMC ASSOCIÉS (' + i.amc.length + ')</div>'
       + i.amc.map(function(a){ return '<details style="margin-bottom:8px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;">'
         + '<summary style="cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--cyan);">' + X(a.ref||'') + (a.subtitle?' — '+X(a.subtitle):'') + '</summary>'
         + '<div style="font-size:11.5px;color:var(--muted);margin-top:8px;white-space:pre-wrap;max-height:220px;overflow:auto;">' + X(a.text||'') + '</div></details>'; }).join('')
       + '</div>'
-    : '<p class="sub-text" style="margin-top:12px;">Aucun bloc AMC/GM associé à cette référence dans la base de l\'outil.</p>';
+    : '<p class="sub-text" style="margin-top:12px;">Aucun bloc AMC associé à cette référence dans la base de l\'outil.</p>';
 
   document.getElementById('cmx-modal-box').innerHTML =
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">'
@@ -21690,7 +21705,7 @@ function cmxSaveLine(){
 function cmxCSV(id){
   var m = find(id||V.open); if(!m) return;
   var q = function(v){ return '"' + String(v==null?'':v).replace(/"/g,'""') + '"'; };
-  var head = ['Matrice','Titre','MOC associee','Reference','Source','Intitule','AMC / GM',
+  var head = ['Matrice','Titre','MOC associee','Reference','Source','Intitule','AMC',
               'Documentation SAF International (doc + chapitre)','Implemente','Notes'];
   var rows = [head.map(q).join(';')];
   (m.lines||[]).forEach(function(l){
@@ -21716,7 +21731,7 @@ function cmxPrint(id){
     var out = '<tr class="pir">'
       + '<td><b>IR · ' + X(l.ref||'—') + '</b><br><span style="font-size:9px;color:#777;">' + X(i.src||'') + '</span></td>'
       + '<td><b>' + X(i.title||'—') + '</b>' + (i.ir?'<div style="font-size:9px;color:#555;margin-top:3px;white-space:pre-wrap;">'+X(String(i.ir))+'</div>':'') + '</td>'
-      + '<td style="font-size:9px;color:#555;">' + (amcs.length ? amcs.length + ' AMC / GM associé' + (amcs.length>1?'s':'') : '—') + '</td>'
+      + '<td style="font-size:9px;color:#555;">' + (amcs.length ? amcs.length + ' AMC associé' + (amcs.length>1?'s':'') : '—') + '</td>'
       + '<td>' + X((l.doc_ref||'').trim() || '—') + '</td>'
       + '<td style="white-space:nowrap;color:' + im.p + ';font-weight:bold;">' + im.lbl + '</td></tr>';
     amcs.forEach(function(a,idx){
@@ -21748,11 +21763,11 @@ function cmxPrint(id){
     + '<div class="stat"><div class="n n1">' + s.no + '</div>Non implémentées</div>'
     + '</div>'
     + '<h2>Matrice de conformité</h2>'
-    + '<table class="lst"><thead><tr><th colspan="5" class="ptitle">Matrice de conformité / Compliance matrix — ' + X(m.title||m.id) + '</th></tr><tr><th>Référence</th><th>Intitulé / exigence</th><th>AMC / GM</th><th>Documentation SAF International (doc. + chapitre)</th><th>Implémenté</th></tr></thead>'
+    + '<table class="lst"><thead><tr><th colspan="5" class="ptitle">Matrice de conformité / Compliance matrix — ' + X(m.title||m.id) + '</th></tr><tr><th>Référence</th><th>Intitulé / exigence</th><th>AMC</th><th>Documentation SAF International (doc. + chapitre)</th><th>Implémenté</th></tr></thead>'
     + '<tbody>' + (rows || '<tr><td colspan="5">Aucune exigence.</td></tr>') + '</tbody></table>'
     + '<h2>Déclaration</h2>'
     + '<p>Les exigences listées ci-dessus ont été revues pour le périmètre indiqué. La colonne « Documentation SAF International » identifie le document et le chapitre qui mettent en œuvre chaque exigence ; ces documents sont tenus à la disposition de l\'autorité compétente. '
-    + 'Les intitulés des exigences et les références AMC/GM sont repris de la base réglementaire de l\'outil ; les références signalées « hors base » portent un intitulé abrégé et ne comportent pas d\'AMC.</p>'
+    + 'Les intitulés des exigences et les références AMC sont repris de la base réglementaire de l\'outil ; les références signalées « hors base » portent un intitulé abrégé et ne comportent pas d\'AMC.</p>'
     + '<div class="sign"><div>Établi par — ' + X(m.owner||'') + '</div><div>Approuvé par — Compliance Monitoring Manager</div></div>';
 
   printWindow('Matrice de conformité — ' + m.id, inner);
@@ -21859,4 +21874,147 @@ setTimeout(graftNav, 2500);
 
 })();
 
+</script>
+
+<script id="cms-regulatory-watch-module">
+/* Regulatory watch — official source status + auditable local history.
+   Automatic web checking uses /.netlify/functions/regulatory-watch when deployed.
+   Direct browser fetching is attempted only as a fallback and may be blocked by CORS. */
+(function(){
+'use strict';
+var RW_KEY='cmsx_regwatch_v1';
+var RW_BASE={
+ schema:2,
+ baseline:{ear_revision:'24',ear_date:'2026-03-27',eurlex_consolidated:'02012R0965-20260222',xml_hash:'',xml_name:'',embedded_hash:''},
+ alerts:[
+  {id:'EU-2026-781',kind:'IR',title:'Commission Implementing Regulation (EU) 2026/781 — amendment to Regulation (EU) No 965/2012',published:'2026-04-10',source:'EUR-Lex / EASA',url:'https://eur-lex.europa.eu/eli/reg_impl/2026/781/oj',reviewed:false,reviewed_at:'',reviewed_by:'',impact:'',note:'Published after EAR Air OPS Revision 24 baseline; applicability/impact review required.'},
+  {id:'ED-2026-007-R',kind:'AMC',title:'ED Decision 2026/007/R — AMC & GM to Part-ORO, Issue 2 Amendment 30',published:'2026-07-15',source:'EASA',url:'https://www.easa.europa.eu/en/document-library/agency-decisions/ed-decision-2026007r',reviewed:false,reviewed_at:'',reviewed_by:'',impact:'',note:'Post-baseline Part-ORO AMC publication; review applicable AMC. GM is not imported into the compliance matrix.'}
+ ],
+ checks:[], last_check:null, current:null
+};
+var SOURCES={
+ ear:'https://www.easa.europa.eu/en/document-library/easy-access-rules/easy-access-rules-air-operations',
+ regs:'https://www.easa.europa.eu/en/regulations/air-operations',
+ eurlex:'https://eur-lex.europa.eu/eli/reg/2012/965',
+ decisions:'https://www.easa.europa.eu/en/document-library/agency-decisions'
+};
+function X(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function now(){return new Date().toISOString();}
+function who(){try{var v=(localStorage.getItem('saf_role')||'').split('|');return v[1]||v[0]||'';}catch(e){return '';}}
+function canWrite(){try{var r=(localStorage.getItem('saf_role')||'').split('|')[0];return !['reader','authority','guest'].includes(r);}catch(e){return true;}}
+function cloneBase(){return JSON.parse(JSON.stringify(RW_BASE));}
+function load(){
+ var s=cloneBase(); try{var v=JSON.parse(localStorage.getItem(RW_KEY)||'null'); if(v&&typeof v==='object'){
+   s=Object.assign(s,v); s.baseline=Object.assign(cloneBase().baseline,v.baseline||{});
+   if(Array.isArray(v.alerts)) s.alerts=v.alerts; if(Array.isArray(v.checks)) s.checks=v.checks;
+ }}catch(e){}
+ // ensure seeded official publications remain visible after upgrades without duplicating
+ RW_BASE.alerts.forEach(function(a){if(!s.alerts.some(function(x){return x.id===a.id;}))s.alerts.push(JSON.parse(JSON.stringify(a)));});
+ return s;
+}
+function save(s){try{localStorage.setItem(RW_KEY,JSON.stringify(s));}catch(e){} try{if(typeof window.safCloudScheduleSave==='function')window.safCloudScheduleSave();}catch(e){} render();}
+function daysSince(iso){if(!iso)return 99999;var d=new Date(iso);return isNaN(d)?99999:Math.floor((Date.now()-d.getTime())/86400000);}
+function getStatus(s){
+ var pending=(s.alerts||[]).filter(function(a){return !a.reviewed;});
+ if(s.current&&s.current.changed) return {code:'obsolete',lbl:'BASE À REVOIR / BASE REVIEW REQUIRED',c:'#ff4444',bg:'rgba(255,68,68,.12)'};
+ if(pending.length) return {code:'review',lbl:'REVUE RÉGLEMENTAIRE REQUISE / REGULATORY REVIEW REQUIRED',c:'#f5a623',bg:'rgba(245,166,35,.12)'};
+ if(s.last_check&&s.last_check.ok&&daysSince(s.last_check.at)<=14) return {code:'current',lbl:'À JOUR / CURRENT',c:'#00c48c',bg:'rgba(0,196,140,.12)'};
+ return {code:'unverified',lbl:'NON VÉRIFIÉ / NOT VERIFIED',c:'#94a3b8',bg:'rgba(148,163,184,.10)'};
+}
+function srcCard(title,val,url){return '<div style="background:#0b1628;border:1px solid #1a2840;border-radius:9px;padding:12px 14px;min-width:220px;flex:1;">'+
+ '<div style="font:700 10px IBM Plex Mono,monospace;color:#6a82a5;text-transform:uppercase;letter-spacing:.06em;">'+X(title)+'</div><div style="font:700 13px IBM Plex Mono,monospace;color:#e8f0fe;margin-top:5px;">'+X(val||'—')+'</div>'+
+ '<a href="'+X(url)+'" target="_blank" rel="noopener" style="font-size:10px;color:#00d4ff;text-decoration:none;display:inline-block;margin-top:6px;">↗ Source officielle / Official source</a></div>';}
+function renderBanner(){
+ var s=load(),st=getStatus(s),h=document.getElementById('regwatch-banner'); if(!h)return;
+ var pending=(s.alerts||[]).filter(function(a){return !a.reviewed;}).length;
+ h.innerHTML='<div style="margin:14px 22px 0;padding:12px 14px;border:1px solid '+st.c+';background:'+st.bg+';border-radius:9px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">'+
+ '<span style="width:10px;height:10px;border-radius:50%;background:'+st.c+';box-shadow:0 0 8px '+st.c+';"></span><div style="flex:1;min-width:260px;"><b style="color:'+st.c+';font:700 11px IBM Plex Mono,monospace;">'+st.lbl+'</b><div style="font-size:10px;color:#94a3b8;margin-top:3px;">EAR Air OPS baseline: Rev. '+X(s.baseline.ear_revision)+' · '+X(s.baseline.ear_date)+' · '+pending+' publication(s) awaiting disposition · last online check: '+X(s.last_check?new Date(s.last_check.at).toLocaleString():'never')+'</div></div>'+
+ '<button class="btn" onclick="rwCheckNow()">↻ Vérifier / Check now</button><button class="btn" onclick="rwOpenPanel()">Détails / Details</button></div>';
+}
+function render(){
+ renderBanner(); var s=load(),host=document.getElementById('regwatch-content'); if(!host)return; var st=getStatus(s),pending=(s.alerts||[]).filter(function(a){return !a.reviewed;});
+ var curr=s.current||{};
+ var cards='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">'+
+ srcCard('EASA Easy Access Rules','Rev. '+s.baseline.ear_revision+' — '+s.baseline.ear_date,SOURCES.ear)+
+ srcCard('EUR-Lex baseline',s.baseline.eurlex_consolidated||'—',SOURCES.eurlex)+
+ srcCard('Dernière vérification / Last check',s.last_check?(new Date(s.last_check.at).toLocaleString()+(s.last_check.ok?' ✓':' ✕')):'Jamais / Never',SOURCES.regs)+'</div>';
+ var rows=(s.alerts||[]).slice().sort(function(a,b){return String(b.published).localeCompare(String(a.published));}).map(function(a){
+  var c=a.reviewed?'#00c48c':'#f5a623';
+  return '<tr><td><b style="font-family:IBM Plex Mono,monospace;color:#67e8f9;">'+X(a.id)+'</b><div style="font-size:9px;color:#6a82a5;">'+X(a.kind||'')+'</div></td><td>'+X(a.published||'—')+'</td><td><div style="font-weight:600;color:#e8f0fe;">'+X(a.title)+'</div><div style="font-size:10px;color:#6a82a5;margin-top:3px;">'+X(a.note||'')+'</div></td><td>'+X(a.source||'')+'</td><td><span style="color:'+c+';font-weight:700;">'+(a.reviewed?'ANALYSÉ / REVIEWED':'À ANALYSER / REVIEW')+'</span>'+(a.reviewed?'<div style="font-size:9px;color:#6a82a5;">'+X(a.reviewed_by||'')+' · '+X(a.reviewed_at?new Date(a.reviewed_at).toLocaleDateString():'')+'</div>':'')+'</td><td style="min-width:180px;"><select onchange="rwSetImpact(\''+X(a.id)+'\',this.value)" '+(canWrite()?'':'disabled')+' style="width:100%;background:#071220;color:#e8f0fe;border:1px solid #253d5e;border-radius:5px;padding:5px;font-size:10px;"><option value="" '+(!a.impact?'selected':'')+'>Impact à déterminer</option><option value="none" '+(a.impact==='none'?'selected':'')+'>Sans impact / No impact</option><option value="applicable" '+(a.impact==='applicable'?'selected':'')+'>Applicable — action requise</option><option value="not_applicable" '+(a.impact==='not_applicable'?'selected':'')+'>Non applicable</option></select><div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap;"><a href="'+X(a.url||SOURCES.regs)+'" target="_blank" class="btn" style="padding:4px 8px;text-decoration:none;">↗ Source</a>'+(canWrite()?'<button class="btn" style="padding:4px 8px;" onclick="rwToggleReviewed(\''+X(a.id)+'\')">'+(a.reviewed?'Réouvrir':'Marquer analysé')+'</button>':'')+'</div></td></tr>';
+ }).join('');
+ var hist=(s.checks||[]).slice(-12).reverse().map(function(c){return '<tr><td>'+X(new Date(c.at).toLocaleString())+'</td><td>'+X(c.via||'')+'</td><td style="color:'+(c.ok?'#00c48c':'#ff4444')+';font-weight:700;">'+(c.ok?'OK':'ÉCHEC')+'</td><td>'+X(c.summary||'')+'</td></tr>';}).join('');
+ host.innerHTML='<div style="border:1px solid '+st.c+';background:'+st.bg+';border-radius:10px;padding:15px 16px;margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><span style="width:12px;height:12px;border-radius:50%;background:'+st.c+';"></span><b style="color:'+st.c+';font-family:IBM Plex Mono,monospace;">'+st.lbl+'</b><span style="font-size:10px;color:#94a3b8;">'+pending.length+' publication(s) awaiting disposition</span><div style="margin-left:auto;display:flex;gap:7px;flex-wrap:wrap;"><button class="btn primary" onclick="rwCheckNow()">↻ Vérifier maintenant / Check now</button><button class="btn" onclick="document.getElementById(\'rw-file\').click()"># Import XML/ZIP EASA & hash</button><input id="rw-file" type="file" accept=".xml,.zip,application/xml,application/zip" style="display:none" onchange="rwImportRegFile(this)">'+(s.current&&s.current.changed&&canWrite()?'<button class="btn" onclick="rwAdoptCurrent()">✓ Adopter baseline vérifiée / Adopt verified baseline</button>':'')+(s.pending_xml_hash&&canWrite()?'<button class="btn" onclick="rwAdoptFileHash()"># Adopter empreinte importée / Adopt imported hash</button>':'')+'</div></div><div style="font-size:10px;color:#94a3b8;margin-top:8px;line-height:1.5;">A green status requires a successful official-source check within the last 14 days and no unresolved publication. A detected publication is not automatically considered applicable.</div></div>'+cards+
+ '<div style="font-size:13px;font-weight:700;color:#e8f0fe;margin:18px 0 8px;">Publications détectées / Detected publications</div><div style="overflow:auto;"><table style="min-width:980px;"><thead><tr><th>Référence</th><th>Date</th><th>Publication</th><th>Source</th><th>Statut</th><th>Disposition</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+ 
+ '<div style="font-size:13px;font-weight:700;color:#e8f0fe;margin:20px 0 8px;">Traçabilité / Audit trail</div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;"><div class="badge">Embedded DB SHA-256: <span id="rw-dbhash">'+X(s.baseline.embedded_hash||'calcul…')+'</span></div><div class="badge">Imported EASA file SHA-256: '+X(s.baseline.xml_hash||'not set')+'</div><div class="badge">File: '+X(s.baseline.xml_name||'—')+'</div></div><div style="overflow:auto;"><table><thead><tr><th>Date</th><th>Mode</th><th>Résultat</th><th>Détail</th></tr></thead><tbody>'+hist+'</tbody></table></div>';
+ hashEmbeddedDB();
+}
+function addCheck(s,ok,via,summary){var c={at:now(),ok:!!ok,via:via||'',summary:summary||''};s.last_check=c;s.checks=s.checks||[];s.checks.push(c);if(s.checks.length>100)s.checks=s.checks.slice(-100);}
+function slug(s){return String(s||'').toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80);}
+function mergeDetected(s,data){
+ var detected=[];
+ (data.regulations||[]).forEach(function(r){if(!r||!r.title)return;var dt=r.date||'';if(dt && dt<=s.baseline.ear_date)return;var id=r.id||slug(r.title);if(!s.alerts.some(function(a){return a.id===id;})){s.alerts.push({id:id,kind:'IR',title:r.title,published:dt,source:'EASA Air Operations',url:r.url||SOURCES.regs,reviewed:false,reviewed_at:'',reviewed_by:'',impact:'',note:'Automatically detected after the recorded EAR baseline; applicability review required.'});detected.push(id);}});
+ (data.decisions||[]).forEach(function(r){if(!r||!r.title)return;var dt=r.date||'';if(dt && dt<=s.baseline.ear_date)return;var id=r.id||slug(r.title);if(!s.alerts.some(function(a){return a.id===id;})){s.alerts.push({id:id,kind:'AMC',title:r.title,published:dt,source:'EASA Agency Decision',url:r.url||SOURCES.decisions,reviewed:false,reviewed_at:'',reviewed_by:'',impact:'',note:'Automatically detected Part-ORO/Air OPS decision; review AMC applicability. GM remains excluded from the matrix.'});detected.push(id);}});
+ return detected;
+}
+function compare(s,data){
+ var reasons=[]; if(data.ear_revision && String(data.ear_revision)!==String(s.baseline.ear_revision))reasons.push('EAR Revision '+data.ear_revision+' (baseline '+s.baseline.ear_revision+')');
+ if(data.eurlex_consolidated && s.baseline.eurlex_consolidated && data.eurlex_consolidated!==s.baseline.eurlex_consolidated)reasons.push('EUR-Lex '+data.eurlex_consolidated+' (baseline '+s.baseline.eurlex_consolidated+')');
+ var add=mergeDetected(s,data); if(add.length)reasons.push(add.length+' new publication(s)');
+ s.current={at:now(),changed:reasons.length>0,reasons:reasons,ear_revision:data.ear_revision||'',ear_date:data.ear_date||'',eurlex_consolidated:data.eurlex_consolidated||'',source_status:data.sources||{}};
+ return reasons;
+}
+function parseEar(html){var rev=(html.match(/Revision\s*(\d+)/i)||[])[1]||'';var d=(html.match(/Publication Date[\s\S]{0,200}?(\d{2})\/(\d{2})\/(\d{4})/i)||[]);return {ear_revision:rev,ear_date:d.length?d[3]+'-'+d[2]+'-'+d[1]:''};}
+function parseEurlex(html){var a=html.match(/02012R0965-\d{8}/g)||[];a.sort();return a.length?a[a.length-1]:'';}
+async function fallbackCheck(){
+ var out={regulations:[],decisions:[],sources:{}};
+ var jobs=[['ear',SOURCES.ear],['regs',SOURCES.regs],['eurlex',SOURCES.eurlex],['decisions',SOURCES.decisions]];
+ for(var i=0;i<jobs.length;i++){try{var r=await fetch(jobs[i][1],{cache:'no-store'});var t=await r.text();out.sources[jobs[i][0]]={ok:r.ok,status:r.status};if(jobs[i][0]==='ear')Object.assign(out,parseEar(t));if(jobs[i][0]==='eurlex')out.eurlex_consolidated=parseEurlex(t);}catch(e){out.sources[jobs[i][0]]={ok:false,error:String(e.message||e)};}}
+ return out;
+}
+async function checkNow(){
+ var s=load(); var data=null,via='';
+ try{var r=await fetch('/.netlify/functions/regulatory-watch',{cache:'no-store'});if(r.ok){data=await r.json();via='Netlify function';}}
+ catch(e){}
+ if(!data){try{data=await fallbackCheck();via='direct browser fallback';}catch(e){}}
+ var ok=!!(data && data.ear_revision);
+ if(ok){var reasons=compare(s,data);addCheck(s,true,via,(reasons.length?('Change detected: '+reasons.join(' | ')):'Official sources checked; no version change against baseline.'));}
+ else addCheck(s,false,via||'web check','Official-source verification unavailable. No green status granted.');
+ save(s);
+ if(typeof showToast==='function')showToast(ok?(s.current&&s.current.changed?'⚠ Regulatory change detected':'✓ Regulatory sources checked'):'Regulatory check unavailable',''+(ok?'success':'error'));
+}
+async function sha256(buf){var h=await crypto.subtle.digest('SHA-256',buf);return Array.from(new Uint8Array(h)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');}
+async function hashEmbeddedDB(){var el=document.getElementById('rw-dbhash');if(!el)return;var s=load();if(s.baseline.embedded_hash){el.textContent=s.baseline.embedded_hash;return;}try{var db=(typeof DB!=='undefined'?DB:{});var refs=Object.keys(db).sort();var payload=refs.map(function(k){var d=db[k]||{};return k+'|'+(d.ir||'')+'|'+((d.amc||[]).map(function(a){return (a.ref||'')+'|'+(a.text||'');}).join('|'));}).join('\n');var h=await sha256(new TextEncoder().encode(payload));s.baseline.embedded_hash=h;localStorage.setItem(RW_KEY,JSON.stringify(s));el.textContent=h;try{if(typeof window.safCloudScheduleSave==='function')window.safCloudScheduleSave();}catch(e){}}catch(e){el.textContent='unavailable';}}
+async function importFile(inp){var f=inp&&inp.files&&inp.files[0];if(!f)return;var s=load();try{var h=await sha256(await f.arrayBuffer());if(!s.baseline.xml_hash){s.baseline.xml_hash=h;s.baseline.xml_name=f.name;addCheck(s,true,'manual EASA file','Reference SHA-256 recorded for '+f.name);}
+ else if(s.baseline.xml_hash===h){addCheck(s,true,'manual EASA file','SHA-256 unchanged: '+f.name);}
+ else {s.pending_xml_hash=h;s.pending_xml_name=f.name;var id='FILE-HASH-'+new Date().toISOString().slice(0,10);if(!s.alerts.some(function(a){return a.id===id;}))s.alerts.push({id:id,kind:'SOURCE',title:'Imported EASA regulatory file hash changed',published:new Date().toISOString().slice(0,10),source:'Manual XML/ZIP import',url:SOURCES.ear,reviewed:false,reviewed_at:'',reviewed_by:'',impact:'',note:'Previous SHA-256: '+s.baseline.xml_hash+'; new SHA-256: '+h+'. Verify official publication/version before adopting a new baseline.'});addCheck(s,true,'manual EASA file','Different SHA-256 detected for '+f.name);}
+ save(s);}catch(e){addCheck(s,false,'manual EASA file','Hash failed: '+String(e.message||e));save(s);}finally{try{inp.value='';}catch(e){}}}
+function adoptCurrent(){
+ var s=load(); if(!canWrite()||!s.current||!s.current.changed)return;
+ var pending=(s.alerts||[]).filter(function(a){return !a.reviewed;});
+ if(pending.length){alert('Analyse requise : '+pending.length+' publication(s) ne sont pas encore clôturées / reviewed.');return;}
+ if(!confirm('Adopter les versions vérifiées comme nouvelle baseline réglementaire ? Cette action est tracée.'))return;
+ if(s.current.ear_revision)s.baseline.ear_revision=s.current.ear_revision;
+ if(s.current.ear_date)s.baseline.ear_date=s.current.ear_date;
+ if(s.current.eurlex_consolidated)s.baseline.eurlex_consolidated=s.current.eurlex_consolidated;
+ s.current.changed=false;s.current.reasons=[];
+ addCheck(s,true,'baseline adoption','Verified regulatory baseline adopted by '+(who()||'user')+'.');save(s);
+}
+function adoptFileHash(){
+ var s=load();if(!canWrite()||!s.pending_xml_hash)return;
+ var pending=(s.alerts||[]).filter(function(a){return !a.reviewed && a.kind==='SOURCE';});
+ if(pending.length){alert('Analyse requise : la modification de fichier importé doit d’abord être marquée analysée.');return;}
+ if(!confirm('Adopter cette empreinte SHA-256 comme nouvelle référence du fichier EASA importé ?'))return;
+ s.baseline.xml_hash=s.pending_xml_hash;s.baseline.xml_name=s.pending_xml_name||s.baseline.xml_name;s.pending_xml_hash='';s.pending_xml_name='';
+ addCheck(s,true,'file hash baseline','Imported EASA file SHA-256 baseline adopted by '+(who()||'user')+'.');save(s);
+}
+function toggleReviewed(id){if(!canWrite())return;var s=load(),a=s.alerts.find(function(x){return x.id===id;});if(!a)return;a.reviewed=!a.reviewed;a.reviewed_at=a.reviewed?now():'';a.reviewed_by=a.reviewed?who():'';save(s);}
+function setImpact(id,v){if(!canWrite())return;var s=load(),a=s.alerts.find(function(x){return x.id===id;});if(!a)return;a.impact=v||'';save(s);}
+function openPanel(){try{var b=Array.from(document.querySelectorAll('button.tab')).find(function(x){return (x.getAttribute('onclick')||'').indexOf("'regulatory_watch'")>=0;});if(typeof showMainTab==='function')showMainTab('regulatory_watch',b||null);else{document.getElementById('regulatory_watch').classList.add('active');}setTimeout(render,20);}catch(e){}}
+window.rwCheckNow=checkNow;window.rwImportRegFile=importFile;window.rwAdoptCurrent=adoptCurrent;window.rwAdoptFileHash=adoptFileHash;window.rwToggleReviewed=toggleReviewed;window.rwSetImpact=setImpact;window.rwOpenPanel=openPanel;window.rwRender=render;
+var oldShow=window.showMainTab;if(typeof oldShow==='function'&&!oldShow.__rw){var w=function(id){var r=oldShow.apply(this,arguments);if(id==='regulatory_watch'||id==='compliance_matrix')setTimeout(render,20);return r;};w.__rw=true;window.showMainTab=w;}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(render,400);});else setTimeout(render,400);
+})();
+</script>
+<script id="saf-cms-moc-deeplink">
+(function(){function boot(){try{var q=new URLSearchParams(location.search),ref=q.get('moc');if(!ref)return;var b=Array.from(document.querySelectorAll('button.tab')).find(function(x){return (x.getAttribute('onclick')||'').indexOf("'compliance_matrix'")>=0;});if(typeof showMainTab==='function')showMainTab('compliance_matrix',b||null);var tries=0,t=setInterval(function(){tries++;try{var arr=JSON.parse(localStorage.getItem('cmsx_compliance_v1')||'[]');var m=arr.find(function(x){return String(x.moc_ref||'').trim().toLowerCase()===String(ref).trim().toLowerCase();});if(m&&typeof cmxOpen==='function'){clearInterval(t);cmxOpen(m.id);return;}}catch(e){}if(tries>15)clearInterval(t);},300);}catch(e){}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(boot,700);});else setTimeout(boot,700);})();
 </script>
