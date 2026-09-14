@@ -20003,7 +20003,7 @@ window.safSmsConfirmImport=safSmsConfirmImport;
 </script>
 <!-- ===== PONT SMS → CMS (lecture seule) ===== -->
 <section class="panel" id="compliance_matrix">
-<div style="padding:18px 22px 0;"><div style="font-size:19px;font-weight:700;color:#e8f0fe;">MATRICE DE CONFORMITÉ EASA / EASA COMPLIANCE MATRIX</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6a82a5;margin-top:5px;line-height:1.6;">ORO.GEN.120 · ORO.GEN.130 · ORO.GEN.200(a)(5) et (a)(6) — Exigence, moyen de conformité (MoC), preuve, écart et vérification. Exigences issues de la base réglementaire de la grille d’audit de cet outil.</div></div>
+<div style="padding:18px 22px 0;"><div style="font-size:19px;font-weight:700;color:#e8f0fe;">MATRICE DE CONFORMITÉ EASA / EASA COMPLIANCE MATRIX</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6a82a5;margin-top:5px;line-height:1.6;">ORO.GEN.120 · ORO.GEN.130 · ORO.GEN.200(a)(5) et (a)(6) — Exigence, AMC/GM, documentation SAF International (document + chapitre), implémenté (Oui / Non). Exigences issues de la base réglementaire de la grille d’audit de cet outil.</div></div>
 <div id="cmx-content" style="padding:18px 22px;"></div>
 </section>
 <section class="panel" id="sms_bridge">
@@ -21020,13 +21020,18 @@ window.safSmsConfirmImport=safSmsConfirmImport;
    ORO.GEN.120 (moyens de conformité) · ORO.GEN.130 (changements)
    ORO.GEN.200(a)(5) et (a)(6) (documentation et suivi de conformité)
 
+   Structure retenue (14.09.2026) : pour chaque exigence — intitulé officiel,
+   texte de la règle d'application, AMC/GM associés, UNE référence de
+   documentation SAF International (document + chapitre) et UNE colonne
+   Implémenté (Oui / Non).
+
    Les exigences sont tirées de la base réglementaire DÉJÀ embarquée dans ce
    fichier (const DB — 1235 articles des Règl. (UE) 965/2012 et 1321/2014 avec
-   leur intitulé officiel, le texte de l'IR et les blocs AMC). Aucun intitulé
-   n'est réécrit : la matrice cite le texte de la grille d'audit.
+   intitulé officiel, texte de l'IR et blocs AMC). Seule la référence est
+   stockée : intitulé, IR et AMC sont résolus à l'affichage.
 
-   Deux référentiels ne figurent pas dans DB (Part-IS et Règl. 376/2014) : ils
-   sont fournis sous forme d'intitulés abrégés, signalés comme tels.
+   Part-IS et Règl. 376/2014 ne figurent pas dans DB : intitulés abrégés,
+   signalés « hors base », sans AMC.
 
    Stockage : clé localStorage `cmsx_compliance_v1`, synchronisée dans le
    module cloud `cms_data` comme les autres données du CMS.
@@ -21051,7 +21056,27 @@ function myRole(){
 }
 function canWrite(){ var r = myRole(); return r!=='reader' && r!=='authority' && r!=='guest'; }
 function deny(){ alert('Lecture seule — modification impossible avec ce compte.'); }
+/* Recopie dans chaque ligne l'intitulé officiel, la source et les références
+   AMC/GM résolus depuis la base réglementaire. Cette base n'existe que dans
+   ce fichier : sans cette recopie, le module Safety — qui annexe la matrice
+   au PDF de l'étude de changement — n'aurait que des références nues. */
+function denormalise(list){
+  (list||[]).forEach(function(m){
+    (m.lines||[]).forEach(function(l){
+      var d = regDB()[l.ref];
+      if(d){
+        l.title = d.title || '';
+        l.src = (REG_LABEL[d.reg]||('Règl. '+d.reg)) + ' — Part-' + (d.part||'') + (d.sub?(' / '+d.sub):'');
+        l.amc_refs = (Array.isArray(d.amc)?d.amc:[]).map(function(a){ return (a&&a.ref)?String(a.ref):''; }).filter(Boolean);
+      } else if(!Array.isArray(l.amc_refs)) {
+        l.amc_refs = [];
+      }
+    });
+  });
+  return list;
+}
 function save(list){
+  try { denormalise(list); } catch(e){}
   try { localStorage.setItem(CMX_KEY, JSON.stringify(list||[])); } catch(e){}
   try { if(typeof window.safCloudScheduleSave==='function') window.safCloudScheduleSave(); } catch(e){}
 }
@@ -21065,7 +21090,6 @@ function find(id){ return load().find(function(m){ return m.id===id; }) || null;
 function regDB(){ try { return (typeof DB!=='undefined' && DB) ? DB : {}; } catch(e){ return {}; } }
 var REG_LABEL = { '965':'Règl. (UE) 965/2012', '1321':'Règl. (UE) 1321/2014' };
 
-/* Référentiels hors DB — intitulés abrégés, à vérifier contre le texte consolidé */
 var OUT_OF_DB = {
   'IS.I.OR.200':'Système de gestion de la sécurité de l\'information (SGSI) établi et mis en œuvre.',
   'IS.I.OR.205':'Évaluation des risques de sécurité de l\'information.',
@@ -21099,14 +21123,17 @@ function refInfo(l){
   if(d) return {
     title: d.title || '',
     ir: d.ir || '',
-    amc: d.amc || [],
+    amc: Array.isArray(d.amc) ? d.amc : [],
     src: (REG_LABEL[d.reg]||('Règl. '+d.reg)) + ' — Part-' + (d.part||'') + (d.sub?(' / '+d.sub):''),
     official: true
   };
   return { title: l.title || '', ir: l.requirement || '', amc: [], src: l.src || '', official:false };
 }
+function amcRefs(info){
+  return (info.amc||[]).map(function(a){ return (a && a.ref) ? String(a.ref) : ''; }).filter(Boolean);
+}
 
-/* ── Référentiels thématiques (sélections de références) ──────────────── */
+/* ── Référentiels thématiques ─────────────────────────────────────────── */
 var PRESETS = [
   { id:'ORO-SMS',   label:'ORO.GEN — Système de gestion / SGS',
     refs:['ORO.GEN.110','ORO.GEN.120','ORO.GEN.130','ORO.GEN.140','ORO.GEN.150','ORO.GEN.160',
@@ -21136,46 +21163,22 @@ var PRESETS = [
 ];
 
 /* ── Nomenclatures ────────────────────────────────────────────────────── */
-var ST = {
-  compliant    : { lbl:'Conforme',       c:'#00c48c', p:'#0a7d4f' },
-  partial      : { lbl:'Partiel',        c:'#f5a623', p:'#9a6500' },
-  planned      : { lbl:'Planifié',       c:'#00d4ff', p:'#0077aa' },
-  noncompliant : { lbl:'Non conforme',   c:'#ff4444', p:'#a00000' },
-  na           : { lbl:'Non applicable', c:'#6a82a5', p:'#666666' },
-  not_assessed : { lbl:'Non évalué',     c:'#6a82a5', p:'#666666' }
-};
-var APPLIC = { applicable:'Applicable', partial:'Partiellement applicable', na:'Non applicable' };
-var MOCT = {
-  AMC    : 'AMC/GM publié',
-  ALTMOC : 'AltMoC — ORO.GEN.120(b)',
-  PROC   : 'Procédure / manuel interne',
-  TRAIN  : 'Formation et qualification',
-  TECH   : 'Équipement / modification technique',
-  SRA    : 'Analyse de risque et barrières SMS',
-  DEROG  : 'Dérogation / exemption',
-  OTHER  : 'Autre'
-};
-var AUTH = { not_required:'Sans objet', to_submit:'À soumettre', submitted:'Soumis à l\'autorité',
-             accepted:'Accepté / approuvé', rejected:'Refusé' };
+var IMPL = { yes:{ lbl:'Oui', c:'#00c48c', p:'#0a7d4f' }, no:{ lbl:'Non', c:'#ff4444', p:'#a00000' } };
 var MSTATUS = { draft:'Brouillon', review:'En revue', submitted:'Soumise', accepted:'Acceptée', closed:'Clôturée' };
 
 /* ── État ─────────────────────────────────────────────────────────────── */
-var V = { open:null, fStatus:'', fPart:'', q:'', line:null };
-var MOCS = null;   // études de changement lues depuis le SMS (cache)
+var V = { open:null, fImpl:'', fPart:'', q:'', line:null };
+var MOCS = null;
 
 /* ── Statistiques ─────────────────────────────────────────────────────── */
 function stats(m){
-  var s = { total:0, compliant:0, partial:0, planned:0, noncompliant:0, na:0, not_assessed:0,
-            applicable:0, gaps:0, rate:0, official:0 };
+  var s = { total:0, yes:0, no:0, documented:0, rate:0 };
   ((m&&m.lines)||[]).forEach(function(l){
     s.total++;
-    var st = l.status||'not_assessed'; if(s[st]===undefined) st='not_assessed';
-    s[st]++;
-    if((l.applicability||'applicable')!=='na' && st!=='na') s.applicable++;
-    if(st==='partial'||st==='noncompliant'||st==='planned') s.gaps++;
-    if(regDB()[l.ref]) s.official++;
+    if(l.implemented==='yes') s.yes++; else s.no++;
+    if((l.doc_ref||'').trim()) s.documented++;
   });
-  s.rate = s.applicable ? Math.round(100*s.compliant/s.applicable) : 0;
+  s.rate = s.total ? Math.round(100*s.yes/s.total) : 0;
   return s;
 }
 
@@ -21198,8 +21201,9 @@ function list(){
   h += '<div class="card card-accent">'
      + '<span class="step-badge">MATRICES</span>'
      + '<div class="step-title">Matrices de conformité / Compliance matrices</div>'
-     + '<p class="sub-text">Chaque matrice recense les exigences applicables, le moyen de conformité retenu (AMC, AltMoC au sens d\'ORO.GEN.120(b), procédure interne, formation, équipement, barrière SMS), la preuve associée et l\'écart éventuel. '
-     + 'Les exigences sont reprises de la base réglementaire de la grille d\'audit de cet outil : intitulé officiel et texte de la règle d\'application. '
+     + '<p class="sub-text">Pour chaque exigence : intitulé officiel, texte de la règle d\'application, AMC/GM associés, '
+     + 'référence de la documentation SAF International qui la met en œuvre (document et chapitre) et état d\'implémentation. '
+     + 'Les exigences sont reprises de la base réglementaire de la grille d\'audit de cet outil. '
      + 'Une matrice peut être rattachée à une étude de changement (MOC) du module Safety.</p>'
      + '<div class="gen-row" style="margin-top:12px;">'
      + '<button class="btn-primary" onclick="cmxNew()">＋ Nouvelle matrice</button>'
@@ -21213,7 +21217,7 @@ function list(){
   all.slice().sort(function(a,b){ return String(b.updated_at||'').localeCompare(String(a.updated_at||'')); })
   .forEach(function(m){
     var s = stats(m);
-    var col = s.gaps ? 'var(--amber)' : 'var(--green)';
+    var col = s.no ? 'var(--amber)' : 'var(--green)';
     h += '<div class="card" style="border-left:4px solid ' + col + ';">'
        + '<div style="display:flex;gap:14px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;">'
        + '<div style="flex:1;min-width:240px;">'
@@ -21221,11 +21225,11 @@ function list(){
        + ' <span style="font-family:var(--mono);font-size:10px;color:var(--cyan);border:1px solid var(--line);border-radius:10px;padding:1px 8px;margin-left:6px;">' + X(MSTATUS[m.status]||MSTATUS.draft) + '</span></div>'
        + '<div style="font-family:var(--mono);font-size:11px;color:var(--muted);">' + X(m.id) + ' · '
        + (m.moc_ref ? 'MOC <span style="color:var(--gold);">' + X(m.moc_ref) + '</span>' : 'non rattachée à une MOC')
-       + ' · ' + s.total + ' exigence' + (s.total>1?'s':'') + ' (' + s.official + ' issues de la base) · ' + s.gaps + ' écart' + (s.gaps>1?'s':'') + '</div>'
+       + ' · ' + s.total + ' exigence' + (s.total>1?'s':'') + ' · ' + s.no + ' non implémentée' + (s.no>1?'s':'') + '</div>'
        + '<div style="display:flex;align-items:center;gap:10px;margin-top:10px;">'
        + '<div style="flex:1;max-width:340px;height:8px;border-radius:4px;background:rgba(255,255,255,.07);overflow:hidden;">'
        + '<div style="height:100%;width:' + s.rate + '%;background:' + (s.rate>=90?'var(--green)':(s.rate>=60?'var(--amber)':'var(--red)')) + ';"></div></div>'
-       + '<span style="font-family:var(--mono);font-size:11px;color:var(--text);">' + s.rate + ' % (' + s.compliant + '/' + s.applicable + ')</span></div>'
+       + '<span style="font-family:var(--mono);font-size:11px;color:var(--text);">' + s.rate + ' % implémenté (' + s.yes + '/' + s.total + ')</span></div>'
        + '</div><div style="display:flex;gap:6px;flex-wrap:wrap;">'
        + b('cmxOpen(\'' + ATTR(m.id) + '\')','✎ Ouvrir')
        + b('cmxPrint(\'' + ATTR(m.id) + '\')','▣ PDF')
@@ -21251,7 +21255,6 @@ function detail(m){
      + '<span style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto;">' + X(m.id)
      + (m.updated_at?' · maj '+X(String(m.updated_at).slice(0,10)):'') + (m.updated_by?' · '+X(m.updated_by):'') + '</span></div>';
 
-  /* Identification */
   var mocOpts = (MOCS||[]).map(function(cs){ return '<option value="' + ATTR(cs.ref) + '">' + X((cs.ref||'')+' — '+(cs.title||'')) + '</option>'; }).join('');
   h += '<div class="card">'
      + '<span class="step-badge">IDENTIFICATION</span>'
@@ -21276,20 +21279,20 @@ function detail(m){
      + (MOCS===null ? 'liste non chargée — saisie libre possible' : (MOCS.length + ' étude(s) de changement disponibles'))
      + '</span></div></div>';
 
-  /* KPI */
-  h += '<div class="stats-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px;">'
-     + k(s.total,'Exigences','var(--cyan)') + k(s.rate+' %','Conformité','var(--green)')
-     + k(s.compliant,'Conformes','var(--green)') + k(s.partial,'Partielles','var(--amber)')
-     + k(s.noncompliant,'Non conformes','var(--red)') + k(s.planned,'Planifiées','var(--cyan)')
-     + k(s.not_assessed,'Non évaluées','var(--muted)') + k(s.na,'Sans objet','var(--muted)') + '</div>';
+  h += '<div class="stats-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;">'
+     + k(s.total,'Exigences','var(--cyan)')
+     + k(s.yes,'Implémentées','var(--green)')
+     + k(s.no,'Non implémentées','var(--red)')
+     + k(s.rate + ' %','Taux d\'implémentation','var(--green)')
+     + k(s.documented,'Avec référence doc.','var(--cyan)')
+     + '</div>';
 
-  /* Ajout d'exigences */
   var db = regDB();
   var parts = {}; Object.keys(db).forEach(function(r){ var d=db[r]; if(d && d.part) parts[d.part]=1; });
   h += '<div class="card card-accent">'
      + '<span class="step-badge">AJOUT D\'EXIGENCES</span>'
      + '<div class="step-title">Puiser dans la base réglementaire de l\'outil</div>'
-     + '<p class="sub-text">' + Object.keys(db).length + ' articles disponibles avec leur intitulé officiel et le texte de la règle d\'application — la même base que la grille d\'audit EASA.</p>'
+     + '<p class="sub-text">' + Object.keys(db).length + ' articles disponibles avec leur intitulé officiel, le texte de la règle d\'application et les blocs AMC/GM — la même base que la grille d\'audit EASA.</p>'
      + '<div class="sel-row" style="flex-wrap:wrap;gap:14px;margin-top:12px;align-items:flex-end;">'
      + f('Partie','<select class="sel-select" id="cmx-part" onchange="cmxSubs()"><option value="">— Choisir —</option>'
          + Object.keys(parts).sort().map(function(p){ return '<option value="'+X(p)+'">Part-'+X(p)+'</option>'; }).join('') + '</select>')
@@ -21308,7 +21311,7 @@ function detail(m){
          return '<button onclick="cmxAddPreset(\'' + p.id + '\')" style="padding:6px 12px;background:rgba(255,215,0,.10);border:1px solid rgba(255,215,0,.3);border-radius:6px;color:var(--gold);font-family:var(--mono);font-size:11px;cursor:pointer;">'
               + X(p.label) + ' (' + p.refs.length + ')</button>'; }).join('')
      + '</div>'
-     + '<p class="sub-text" style="margin-top:10px;">Part-IS et Règl. 376/2014 ne figurent pas dans la base de l\'outil : leurs intitulés sont abrégés et signalés « hors base » dans la matrice.</p>'
+     + '<p class="sub-text" style="margin-top:10px;">Part-IS et Règl. 376/2014 ne figurent pas dans la base de l\'outil : leurs intitulés sont abrégés, signalés « hors base », et sans AMC.</p>'
      + '</div></div>';
 
   if(!m.lines || !m.lines.length){
@@ -21316,44 +21319,40 @@ function detail(m){
     return h + refDatalist();
   }
 
-  /* Filtres */
   var ps = {}; m.lines.forEach(function(l){ var i=refInfo(l); var p=(regDB()[l.ref]||{}).part || (i.src||'—'); ps[p]=1; });
   h += '<div class="card" style="padding:14px 20px;">'
      + '<div class="sel-row" style="flex-wrap:wrap;gap:12px;align-items:flex-end;">'
-     + f('Statut','<select class="sel-select" onchange="cmxFilter(\'status\',this.value)"><option value="">Tous</option>'
-        + Object.keys(ST).map(function(kk){ return '<option value="'+kk+'"'+(V.fStatus===kk?' selected':'')+'>'+X(ST[kk].lbl)+'</option>'; }).join('') + '</select>')
+     + f('Implémenté','<select class="sel-select" onchange="cmxFilter(\'impl\',this.value)"><option value="">Toutes</option>'
+        + '<option value="yes"' + (V.fImpl==='yes'?' selected':'') + '>Oui</option>'
+        + '<option value="no"'  + (V.fImpl==='no' ?' selected':'') + '>Non</option></select>')
      + f('Partie / source','<select class="sel-select" onchange="cmxFilter(\'part\',this.value)"><option value="">Toutes</option>'
         + Object.keys(ps).sort().map(function(p){ return '<option value="'+ATTR(p)+'"'+(V.fPart===p?' selected':'')+'>'+X(p)+'</option>'; }).join('') + '</select>')
-     + f('Recherche','<input class="sel-input" value="' + ATTR(V.q) + '" oninput="cmxFilter(\'q\',this.value)" placeholder="référence, intitulé, preuve, écart…"/>')
+     + f('Recherche','<input class="sel-input" value="' + ATTR(V.q) + '" oninput="cmxFilter(\'q\',this.value)" placeholder="référence, intitulé, AMC, document…"/>')
      + '</div></div>';
 
-  /* Tableau */
   var rows = filter(m);
   if(!rows.length) return h + '<div class="card"><p class="sub-text" style="text-align:center;padding:16px;">Aucune ligne ne correspond au filtre.</p></div>' + refDatalist();
 
   h += '<div class="card" style="padding:0;overflow-x:auto;">'
-     + '<table class="lst" style="width:100%;border-collapse:collapse;font-size:12px;min-width:1100px;">'
-     + '<thead><tr>' + ['Référence','Exigence','Applic.','Moyen de conformité','Preuve','Statut','Écart & action','Vérif.','']
+     + '<table class="lst" style="width:100%;border-collapse:collapse;font-size:12px;min-width:1000px;">'
+     + '<thead><tr>' + ['Référence','Exigence','AMC / GM','Documentation SAF International (doc. + chapitre)','Implémenté','']
        .map(function(t){ return '<th style="background:#0d1a30;color:var(--muted);text-align:left;padding:9px 10px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;">'+t+'</th>'; }).join('')
      + '</tr></thead><tbody>';
 
   rows.forEach(function(l){
-    var st = ST[l.status]||ST.not_assessed, i = refInfo(l);
+    var i = refInfo(l), im = IMPL[l.implemented==='yes'?'yes':'no'];
+    var refs = amcRefs(i);
     h += '<tr style="border-bottom:1px solid var(--line);vertical-align:top;">'
        + '<td style="padding:9px 10px;font-family:var(--mono);color:var(--gold);white-space:nowrap;">' + X(l.ref||'—')
          + '<div style="color:var(--muted);font-size:9px;margin-top:3px;max-width:180px;white-space:normal;">' + X(i.src||'') + (i.official?'':' <span style="color:var(--amber);">· hors base</span>') + '</div></td>'
-       + '<td style="padding:9px 10px;color:var(--text);max-width:290px;"><b>' + X(i.title||'—') + '</b>'
+       + '<td style="padding:9px 10px;color:var(--text);max-width:300px;"><b>' + X(i.title||'—') + '</b>'
          + (i.ir ? '<div style="color:var(--muted);font-size:10.5px;margin-top:4px;max-height:56px;overflow:hidden;">' + X(String(i.ir).slice(0,220)) + (String(i.ir).length>220?'…':'') + '</div>' : '') + '</td>'
-       + '<td style="padding:9px 10px;font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap;">' + X((APPLIC[l.applicability]||APPLIC.applicable).split(' ')[0]) + '</td>'
-       + '<td style="padding:9px 10px;max-width:230px;"><div style="font-family:var(--mono);font-size:9.5px;color:var(--cyan);">' + X(MOCT[l.moc_type]||'—') + (l.moc_ref?' · '+X(l.moc_ref):'') + '</div>'
-         + '<div style="color:var(--text);margin-top:3px;">' + X(l.moc_desc||'—') + '</div></td>'
-       + '<td style="padding:9px 10px;max-width:190px;color:var(--text);">' + X(l.evidence||'—')
-         + (l.evidence_section?'<div style="font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:3px;">'+X(l.evidence_section)+'</div>':'') + '</td>'
-       + '<td style="padding:9px 10px;white-space:nowrap;"><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-family:var(--mono);font-size:10px;font-weight:700;background:' + st.c + '22;border:1px solid ' + st.c + '66;color:' + st.c + ';">' + X(st.lbl) + '</span>'
-         + (l.authority_status && l.authority_status!=='not_required' ? '<div style="font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:4px;">'+X(AUTH[l.authority_status]||'')+'</div>' : '') + '</td>'
-       + '<td style="padding:9px 10px;max-width:200px;color:' + (l.gap?'var(--amber)':'var(--muted)') + ';">' + X(l.gap||'—')
-         + (l.finding_ref?'<div style="font-family:var(--mono);font-size:9.5px;color:var(--cyan);margin-top:3px;">'+X(l.finding_ref)+(l.due?' · '+X(l.due):'')+'</div>':'') + '</td>'
-       + '<td style="padding:9px 10px;font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap;">' + (l.verified_at ? X(l.verified_at)+'<div>'+X(l.verified_by||'')+'</div>' : '—') + '</td>'
+       + '<td style="padding:9px 10px;max-width:250px;font-family:var(--mono);font-size:10px;color:var(--cyan);">'
+         + (refs.length
+             ? refs.slice(0,3).map(function(r){ return X(r); }).join('<br>') + (refs.length>3 ? '<div style="color:var(--muted);margin-top:3px;">+ ' + (refs.length-3) + ' autre(s)</div>' : '')
+             : '<span style="color:var(--muted);">—</span>') + '</td>'
+       + '<td style="padding:9px 10px;max-width:240px;color:' + ((l.doc_ref||'').trim()?'var(--text)':'var(--muted)') + ';">' + X((l.doc_ref||'').trim() || '—') + '</td>'
+       + '<td style="padding:9px 10px;white-space:nowrap;"><span style="display:inline-block;padding:2px 10px;border-radius:10px;font-family:var(--mono);font-size:10px;font-weight:700;background:' + im.c + '22;border:1px solid ' + im.c + '66;color:' + im.c + ';">' + im.lbl + '</span></td>'
        + '<td style="padding:9px 10px;white-space:nowrap;">'
          + '<button onclick="cmxEdit(\'' + ATTR(l.id) + '\')" style="padding:4px 10px;background:rgba(0,212,255,.15);border:1px solid var(--line);border-radius:6px;color:var(--cyan);font-family:var(--mono);font-size:11px;cursor:pointer;">✎</button> '
          + '<button onclick="cmxDelLine(\'' + ATTR(l.id) + '\')" style="background:none;border:0;color:var(--red);cursor:pointer;font-size:14px;">✕</button></td>'
@@ -21379,14 +21378,14 @@ function k(v,l,c){
 function filter(m){
   var q = (V.q||'').toLowerCase(), db = regDB();
   return (m.lines||[]).filter(function(l){
-    if(V.fStatus && (l.status||'not_assessed')!==V.fStatus) return false;
+    if(V.fImpl){ var cur = (l.implemented==='yes') ? 'yes' : 'no'; if(cur!==V.fImpl) return false; }
     if(V.fPart){
       var i = refInfo(l), p = (db[l.ref]||{}).part || (i.src||'—');
       if(p!==V.fPart) return false;
     }
     if(q){
       var i2 = refInfo(l);
-      var hay = [l.ref,i2.title,i2.ir,l.moc_desc,l.moc_ref,l.evidence,l.evidence_section,l.gap,l.finding_ref].join(' ').toLowerCase();
+      var hay = [l.ref,i2.title,i2.ir,amcRefs(i2).join(' '),l.doc_ref,l.notes].join(' ').toLowerCase();
       if(hay.indexOf(q)===-1) return false;
     }
     return true;
@@ -21394,10 +21393,10 @@ function filter(m){
 }
 
 /* ══ ACTIONS ══════════════════════════════════════════════════════════ */
-function cmxBack(){ V.open=null; V.fStatus=''; V.fPart=''; V.q=''; cmxRender(); }
-function cmxOpen(id){ V.open=id; V.fStatus=''; V.fPart=''; V.q=''; cmxRender(); if(MOCS===null) cmxLoadMocs(false); }
+function cmxBack(){ V.open=null; V.fImpl=''; V.fPart=''; V.q=''; cmxRender(); }
+function cmxOpen(id){ V.open=id; V.fImpl=''; V.fPart=''; V.q=''; cmxRender(); if(MOCS===null) cmxLoadMocs(false); }
 function cmxFilter(kk,v){
-  if(kk==='status') V.fStatus=v; else if(kk==='part') V.fPart=v; else V.q=v;
+  if(kk==='impl') V.fImpl=v; else if(kk==='part') V.fPart=v; else V.q=v;
   cmxRender();
   if(kk==='q'){ var i=document.querySelector('#cmx-content input[placeholder^="référence"]'); if(i){ i.focus(); i.setSelectionRange(i.value.length,i.value.length); } }
 }
@@ -21438,9 +21437,7 @@ function cmxHeader(){
 
 function newLine(ref){
   var db = regDB(), d = db[ref];
-  var l = { id: uid(), ref: ref||'', applicability:'applicable', moc_type:'', moc_ref:'', moc_desc:'',
-            evidence:'', evidence_section:'', status:'not_assessed', gap:'', finding_ref:'', owner:'', due:'',
-            verified_by:'', verified_at:'', authority_status:'not_required', notes:'' };
+  var l = { id: uid(), ref: ref||'', doc_ref:'', implemented:'no', notes:'' };
   if(!d && OUT_OF_DB[ref]){
     l.title = ref;
     l.requirement = OUT_OF_DB[ref];
@@ -21558,22 +21555,15 @@ function cmxEdit(id){
   V.line = id;
   ensureModal();
   var i = refInfo(l);
-  var sel = function(eid,map,val){
-    return '<select class="sel-select" id="'+eid+'">' + Object.keys(map).map(function(kk){
-      return '<option value="'+kk+'"'+(val===kk?' selected':'')+'>'+X(map[kk])+'</option>'; }).join('') + '</select>';
-  };
-  var findings = [];
-  try { findings = JSON.parse(localStorage.getItem('cmsx_findings_v1')||'[]'); } catch(e){}
-  var fOpts = (Array.isArray(findings)?findings:[]).map(function(x){
-    var r = x.auditNum||x.ref||x.id||''; return r ? '<option value="'+ATTR(r)+'">' : ''; }).join('');
 
   var amcHTML = (i.amc && i.amc.length)
-    ? '<details style="margin-top:10px;"><summary style="cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--cyan);">'
-      + i.amc.length + ' bloc(s) AMC/GM associé(s)</summary>'
-      + i.amc.map(function(a){ return '<div style="margin-top:8px;padding:10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;">'
-        + '<div style="font-family:var(--mono);font-size:10.5px;color:var(--gold);">' + X(a.ref||'') + '</div>'
-        + '<div style="font-size:11.5px;color:var(--muted);margin-top:5px;white-space:pre-wrap;max-height:150px;overflow:auto;">' + X(a.text||'') + '</div></div>'; }).join('')
-      + '</details>' : '';
+    ? '<div style="margin-top:14px;">'
+      + '<div style="font-family:var(--mono);font-size:11px;color:var(--gold);margin-bottom:8px;">AMC / GM ASSOCIÉS (' + i.amc.length + ')</div>'
+      + i.amc.map(function(a){ return '<details style="margin-bottom:8px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;">'
+        + '<summary style="cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--cyan);">' + X(a.ref||'') + (a.subtitle?' — '+X(a.subtitle):'') + '</summary>'
+        + '<div style="font-size:11.5px;color:var(--muted);margin-top:8px;white-space:pre-wrap;max-height:220px;overflow:auto;">' + X(a.text||'') + '</div></details>'; }).join('')
+      + '</div>'
+    : '<p class="sub-text" style="margin-top:12px;">Aucun bloc AMC/GM associé à cette référence dans la base de l\'outil.</p>';
 
   document.getElementById('cmx-modal-box').innerHTML =
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">'
@@ -21582,15 +21572,17 @@ function cmxEdit(id){
     + '<div style="font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:4px;">' + X(i.src||'') + (i.official?'':' · intitulé abrégé, hors base réglementaire de l\'outil') + '</div></div>'
     + '<button class="btn-ghost" onclick="cmxClose()">✕ Fermer</button></div>'
 
-    + (i.ir ? '<div style="margin-top:14px;padding:12px 14px;background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:8px;max-height:190px;overflow:auto;">'
+    + (i.ir ? '<div style="margin-top:14px;padding:12px 14px;background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:8px;max-height:200px;overflow:auto;">'
         + '<div style="font-family:var(--mono);font-size:10px;color:var(--cyan);margin-bottom:6px;">TEXTE DE LA RÈGLE D\'APPLICATION</div>'
         + '<div style="font-size:12px;color:var(--text);white-space:pre-wrap;">' + X(i.ir) + '</div></div>' : '')
     + amcHTML
 
-    + '<div class="sel-row" style="flex-wrap:wrap;gap:14px;margin-top:16px;">'
+    + '<div class="sel-row" style="flex-wrap:wrap;gap:14px;margin-top:18px;">'
     + f('Référence','<input class="sel-input" id="cmx-l-ref" list="cmx-ref-list" value="' + ATTR(l.ref) + '"/>')
-    + f('Applicabilité', sel('cmx-l-applic', APPLIC, l.applicability||'applicable'))
-    + f('Statut de conformité', sel('cmx-l-status', (function(){ var o={}; Object.keys(ST).forEach(function(kk){ o[kk]=ST[kk].lbl; }); return o; })(), l.status||'not_assessed'))
+    + f('Documentation SAF International (document + chapitre)','<input class="sel-input" id="cmx-l-doc" value="' + ATTR(l.doc_ref||'') + '" placeholder="OMM §4.2.4.2 / OM-A §8.3 / CAME §2.1"/>')
+    + f('Implémenté','<select class="sel-select" id="cmx-l-impl">'
+        + '<option value="yes"' + (l.implemented==='yes'?' selected':'') + '>Oui</option>'
+        + '<option value="no"'  + (l.implemented!=='yes'?' selected':'') + '>Non</option></select>')
     + '</div>'
 
     + (i.official ? '' :
@@ -21600,38 +21592,6 @@ function cmxEdit(id){
        + '</div>'
        + '<div class="sel-field" style="margin-top:12px;"><label class="sel-label">Texte de l\'exigence</label>'
        + '<textarea class="sel-input" id="cmx-l-req" rows="2">' + X(l.requirement||'') + '</textarea></div>')
-
-    + '<div style="margin-top:16px;padding:14px;border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:10px;background:var(--panel2);">'
-    + '<div style="font-family:var(--mono);font-size:11px;color:var(--cyan);margin-bottom:10px;">MOYEN DE CONFORMITÉ (MoC)</div>'
-    + '<div class="sel-row" style="flex-wrap:wrap;gap:14px;">'
-    + f('Type de moyen', sel('cmx-l-moctype', MOCT, l.moc_type||''))
-    + f('Référence du moyen','<input class="sel-input" id="cmx-l-mocref" value="' + ATTR(l.moc_ref) + '" placeholder="AMC1 ORO.GEN.200(a)(3) / OMM §4.2 / AltMoC-2026-01"/>')
-    + '</div>'
-    + '<div class="sel-field" style="margin-top:12px;"><label class="sel-label">Description du moyen de conformité</label>'
-    + '<textarea class="sel-input" id="cmx-l-mocdesc" rows="3" placeholder="Comment l\'exigence est satisfaite : procédure, organisation, équipement, formation, barrière…">' + X(l.moc_desc) + '</textarea></div>'
-    + '<p class="sub-text" style="margin-top:8px;">Un AltMoC doit être notifié et approuvé par l\'autorité avant mise en œuvre (ORO.GEN.120(b)).</p>'
-    + '</div>'
-
-    + '<div class="sel-row" style="flex-wrap:wrap;gap:14px;margin-top:14px;">'
-    + f('Preuve / document','<input class="sel-input" id="cmx-l-evid" value="' + ATTR(l.evidence) + '" placeholder="OMM, CAME, SRA, dossier de formation…"/>')
-    + f('Section / paragraphe','<input class="sel-input" id="cmx-l-evidsec" value="' + ATTR(l.evidence_section) + '" placeholder="§ 4.2.4.2"/>')
-    + '</div>'
-
-    + '<div style="margin-top:16px;padding:14px;border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:10px;background:var(--panel2);">'
-    + '<div style="font-family:var(--mono);font-size:11px;color:var(--amber);margin-bottom:10px;">ÉCART ET TRAITEMENT</div>'
-    + '<div class="sel-field"><label class="sel-label">Écart constaté</label>'
-    + '<textarea class="sel-input" id="cmx-l-gap" rows="2" placeholder="Ce qui manque pour être conforme…">' + X(l.gap) + '</textarea></div>'
-    + '<div class="sel-row" style="flex-wrap:wrap;gap:14px;margin-top:12px;">'
-    + f('Constatation / CAP liée','<input class="sel-input" id="cmx-l-finding" list="cmx-finding-list" value="' + ATTR(l.finding_ref) + '" placeholder="Réf. du plan d\'actions correctives"/><datalist id="cmx-finding-list">' + fOpts + '</datalist>')
-    + f('Responsable','<input class="sel-input" id="cmx-l-owner" value="' + ATTR(l.owner) + '" placeholder="Nom / fonction"/>')
-    + f('Échéance','<input class="sel-input" id="cmx-l-due" type="date" value="' + ATTR(l.due) + '"/>')
-    + '</div></div>'
-
-    + '<div class="sel-row" style="flex-wrap:wrap;gap:14px;margin-top:14px;">'
-    + f('Vérifié par','<input class="sel-input" id="cmx-l-vby" value="' + ATTR(l.verified_by||'') + '"/>')
-    + f('Date de vérification','<input class="sel-input" id="cmx-l-vat" type="date" value="' + ATTR(l.verified_at||'') + '"/>')
-    + f('Statut vis-à-vis de l\'autorité', sel('cmx-l-auth', AUTH, l.authority_status||'not_required'))
-    + '</div>'
 
     + '<div class="sel-field" style="margin-top:14px;"><label class="sel-label">Notes</label>'
     + '<textarea class="sel-input" id="cmx-l-notes" rows="2">' + X(l.notes||'') + '</textarea></div>'
@@ -21654,22 +21614,15 @@ function cmxSaveLine(){
   var fail = function(t){ if(msg) msg.textContent = t; return null; };
 
   var ref = g('cmx-l-ref'); if(!ref) return fail('Indiquez la référence de l\'exigence.');
-  var status = g('cmx-l-status')||'not_assessed';
-  var desc = g('cmx-l-mocdesc'), evid = g('cmx-l-evid');
-  if(status==='compliant' && (!desc || !evid))
-    return fail('Une exigence déclarée conforme exige un moyen de conformité décrit ET une preuve documentaire.');
-  if((status==='partial'||status==='noncompliant') && !g('cmx-l-gap'))
-    return fail('Décrivez l\'écart pour un statut partiel ou non conforme.');
+  var impl = (g('cmx-l-impl')==='yes') ? 'yes' : 'no';
+  var doc  = g('cmx-l-doc');
+  if(impl==='yes' && !doc)
+    return fail('Une exigence déclarée implémentée exige la référence du document SAF International et son chapitre.');
 
   l.ref = ref;
   if(document.getElementById('cmx-l-title')){ l.title = g('cmx-l-title'); l.src = g('cmx-l-src'); l.requirement = g('cmx-l-req'); }
-  l.applicability = g('cmx-l-applic')||'applicable';
-  l.moc_type = g('cmx-l-moctype'); l.moc_ref = g('cmx-l-mocref'); l.moc_desc = desc;
-  l.evidence = evid; l.evidence_section = g('cmx-l-evidsec');
-  l.status = (l.applicability==='na') ? 'na' : status;
-  l.gap = g('cmx-l-gap'); l.finding_ref = g('cmx-l-finding'); l.owner = g('cmx-l-owner'); l.due = g('cmx-l-due');
-  l.verified_by = g('cmx-l-vby'); l.verified_at = g('cmx-l-vat');
-  l.authority_status = g('cmx-l-auth')||'not_required';
+  l.doc_ref = doc;
+  l.implemented = impl;
   l.notes = g('cmx-l-notes');
   l.updated_at = new Date().toISOString(); l.updated_by = who();
 
@@ -21681,15 +21634,13 @@ function cmxSaveLine(){
 function cmxCSV(id){
   var m = find(id||V.open); if(!m) return;
   var q = function(v){ return '"' + String(v==null?'':v).replace(/"/g,'""') + '"'; };
-  var head = ['Matrice','Titre','MOC associee','Reference','Source','Intitule','Applicabilite','Type de moyen',
-              'Reference du moyen','Description du moyen','Preuve','Section','Statut','Ecart','Constatation/CAP',
-              'Responsable','Echeance','Verifie par','Date verification','Statut autorite','Notes'];
+  var head = ['Matrice','Titre','MOC associee','Reference','Source','Intitule','AMC / GM',
+              'Documentation SAF International (doc + chapitre)','Implemente','Notes'];
   var rows = [head.map(q).join(';')];
   (m.lines||[]).forEach(function(l){
     var i = refInfo(l);
-    rows.push([m.id,m.title,m.moc_ref,l.ref,i.src,i.title,APPLIC[l.applicability]||'',MOCT[l.moc_type]||'',
-               l.moc_ref,l.moc_desc,l.evidence,l.evidence_section,(ST[l.status]||ST.not_assessed).lbl,
-               l.gap,l.finding_ref,l.owner,l.due,l.verified_by,l.verified_at,AUTH[l.authority_status]||'',l.notes].map(q).join(';'));
+    rows.push([m.id,m.title,m.moc_ref,l.ref,i.src,i.title,amcRefs(i).join(' | '),
+               l.doc_ref,(l.implemented==='yes'?'Oui':'Non'),l.notes].map(q).join(';'));
   });
   var blob = new Blob(['\ufeff' + rows.join('\r\n')], {type:'text/csv;charset=utf-8;'});
   var a = document.createElement('a');
@@ -21699,21 +21650,18 @@ function cmxCSV(id){
   setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 800);
 }
 
-/* ── Impression / PDF (charte du CMS) ─────────────────────────────────── */
+/* ── Impression / PDF ─────────────────────────────────────────────────── */
 function cmxPrint(id){
   var m = find(id||V.open); if(!m) return;
   var s = stats(m);
   var rows = (m.lines||[]).map(function(l){
-    var i = refInfo(l), st = ST[l.status]||ST.not_assessed;
+    var i = refInfo(l), im = IMPL[l.implemented==='yes'?'yes':'no'], refs = amcRefs(i);
     return '<tr>'
       + '<td><b>' + X(l.ref||'—') + '</b><br><span style="font-size:9px;color:#777;">' + X(i.src||'') + '</span></td>'
       + '<td>' + X(i.title||'—') + '</td>'
-      + '<td>' + X(APPLIC[l.applicability]||APPLIC.applicable) + '</td>'
-      + '<td><b>' + X(MOCT[l.moc_type]||'—') + '</b>' + (l.moc_ref?' — '+X(l.moc_ref):'') + '<br>' + X(l.moc_desc||'') + '</td>'
-      + '<td>' + X(l.evidence||'—') + (l.evidence_section?' '+X(l.evidence_section):'') + '</td>'
-      + '<td style="color:' + st.p + ';font-weight:bold;">' + X(st.lbl) + '</td>'
-      + '<td>' + X(l.gap||'—') + (l.finding_ref?'<br><span style="font-size:9px;">'+X(l.finding_ref)+(l.due?' · '+X(l.due):'')+'</span>':'') + '</td>'
-      + '<td style="font-size:9px;">' + (l.verified_at ? X(l.verified_at)+'<br>'+X(l.verified_by||'') : '—') + '</td></tr>';
+      + '<td style="font-size:9px;">' + (refs.length ? refs.map(function(r){ return X(r); }).join('<br>') : '—') + '</td>'
+      + '<td>' + X((l.doc_ref||'').trim() || '—') + '</td>'
+      + '<td style="white-space:nowrap;color:' + im.p + ';font-weight:bold;">' + im.lbl + '</td></tr>';
   }).join('');
 
   var inner = '<h1>' + X(m.title||m.id) + '</h1>'
@@ -21728,16 +21676,15 @@ function cmxPrint(id){
     + '</div>'
     + '<div class="stats">'
     + '<div class="stat"><div class="n">' + s.total + '</div>Exigences</div>'
-    + '<div class="stat"><div class="n n3">' + s.rate + '%</div>Conformité</div>'
-    + '<div class="stat"><div class="n n2">' + s.gaps + '</div>Écarts ouverts</div>'
-    + '<div class="stat"><div class="n n1">' + s.noncompliant + '</div>Non conformes</div>'
+    + '<div class="stat"><div class="n n3">' + s.rate + '%</div>Implémenté</div>'
+    + '<div class="stat"><div class="n n1">' + s.no + '</div>Non implémentées</div>'
     + '</div>'
     + '<h2>Matrice de conformité</h2>'
-    + '<table class="lst"><thead><tr><th>Référence</th><th>Intitulé</th><th>Applicabilité</th><th>Moyen de conformité</th><th>Preuve</th><th>Statut</th><th>Écart / action</th><th>Vérification</th></tr></thead>'
-    + '<tbody>' + (rows || '<tr><td colspan="8">Aucune exigence.</td></tr>') + '</tbody></table>'
+    + '<table class="lst"><thead><tr><th>Référence</th><th>Intitulé</th><th>AMC / GM</th><th>Documentation SAF International (doc. + chapitre)</th><th>Implémenté</th></tr></thead>'
+    + '<tbody>' + (rows || '<tr><td colspan="5">Aucune exigence.</td></tr>') + '</tbody></table>'
     + '<h2>Déclaration</h2>'
-    + '<p>Les exigences listées ci-dessus ont été revues pour le périmètre indiqué. Les moyens de conformité et les preuves associées sont détenus par l\'exploitant et tenus à la disposition de l\'autorité compétente. Les écarts identifiés font l\'objet des actions référencées dans la colonne « Écart / action ». '
-    + 'Les intitulés des exigences sont repris de la base réglementaire de l\'outil ; les références signalées « hors base » portent un intitulé abrégé.</p>'
+    + '<p>Les exigences listées ci-dessus ont été revues pour le périmètre indiqué. La colonne « Documentation SAF International » identifie le document et le chapitre qui mettent en œuvre chaque exigence ; ces documents sont tenus à la disposition de l\'autorité compétente. '
+    + 'Les intitulés des exigences et les références AMC/GM sont repris de la base réglementaire de l\'outil ; les références signalées « hors base » portent un intitulé abrégé et ne comportent pas d\'AMC.</p>'
     + '<div class="sign"><div>Établi par — ' + X(m.owner||'') + '</div><div>Approuvé par — Compliance Monitoring Manager</div></div>';
 
   printWindow('Matrice de conformité — ' + m.id, inner);
@@ -21805,6 +21752,7 @@ window.cmxDiag = function(){
   var all = load();
   return { matrices: all.length,
            lignes: all.reduce(function(n,m){ return n+((m.lines||[]).length); },0),
+           implementees: all.reduce(function(n,m){ return n + (m.lines||[]).filter(function(l){ return l.implemented==='yes'; }).length; },0),
            rattachees: all.filter(function(m){ return !!m.moc_ref; }).length,
            articles_base: Object.keys(regDB()).length,
            hors_base: Object.keys(OUT_OF_DB).length,
@@ -21816,8 +21764,7 @@ window.cmxDiag = function(){
    Un script du CMS retire les onclick inline de la barre latérale et ne
    recâble que l'appel showMainTab('id') : tout appel supplémentaire placé
    dans l'attribut serait perdu. On enveloppe donc showMainTab pour déclencher
-   le rendu à l'ouverture du panneau, quelle que soit la façon dont il est
-   activé (clic, appel programmatique, restauration d'onglet).            */
+   le rendu à l'ouverture du panneau.                                      */
 function graftNav(){
   var orig = window.showMainTab;
   if(typeof orig !== 'function' || orig.__cmx) return false;
