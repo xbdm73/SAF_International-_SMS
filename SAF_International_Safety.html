@@ -16809,6 +16809,27 @@ function showOccurrenceForm(editId){
       </div>
     </div>
 
+    <!-- SUPABASE STORAGE — OCCURRENCE DOCUMENTS -->
+    <div id="occ-documents-wrap" style="margin-top:18px;margin-bottom:18px;padding:16px;border:1px solid rgba(74,159,224,.25);border-radius:10px;background:rgba(74,159,224,.04);">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:1px;color:var(--steel-bright);font-weight:700;text-transform:uppercase;">📎 Documents associés</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-top:3px;">Supabase Storage · bucket privé « SMS Documents » · liens temporaires signés</div>
+        </div>
+        ${_isEdit ? `<button type="button" class="btn btn-ghost" style="padding:6px 10px;font-size:9px;" onclick="safStorageRefreshOccurrence()">↺ Actualiser</button>` : ''}
+      </div>
+      ${_isEdit ? `
+        <div id="occ-doc-upload-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <input id="occ-doc-file" type="file" accept=".pdf,.docx,.pptx,.xlsx,.jpg,.jpeg,.png" style="flex:1;min-width:260px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--grey-200);padding:6px;font-family:var(--font-mono);font-size:10px;"/>
+          <button type="button" class="btn btn-primary" style="padding:7px 12px;font-size:9px;" onclick="safStorageUploadOccurrence()">＋ Ajouter</button>
+        </div>
+        <div id="occ-doc-status" style="min-height:16px;margin-bottom:8px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);"></div>
+        <div id="occ-doc-list" data-occ-id="${occHtmlEsc(_occ.id||'')}" style="display:flex;flex-direction:column;gap:6px;">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">Chargement des documents…</div>
+        </div>` : `
+        <div style="padding:10px 12px;border:1px dashed rgba(255,255,255,.15);border-radius:6px;color:var(--grey-400);font-family:var(--font-mono);font-size:10px;line-height:1.5;">Enregistrez d’abord l’occurrence, puis rouvrez-la pour ajouter ses documents. Cela évite qu’un fichier soit rattaché à un identifiant d’occurrence qui n’existe pas encore.</div>`}
+    </div>
+
     <input type="hidden" id="occ-edit-id" value=""/>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
       <button onclick="saveOccurrence()" class="btn btn-primary">✓ Save occurrence</button>
@@ -16921,6 +16942,7 @@ function showOccurrenceForm(editId){
   var _regField=document.getElementById('occ-eccairs-aircraft_registration');
   if(_regField) occUpdateSerialFromRegistration(_regField.value);
   occRefreshEccairsDeadlinePreview();
+  if(_isEdit){ setTimeout(function(){ if(typeof safStorageRefreshOccurrence==='function') safStorageRefreshOccurrence(); }, 0); }
 }
 
 function saveOccurrence(){
@@ -22553,6 +22575,11 @@ setTimeout(function(){
     }
   });
 
+  // SAF Storage: expose the existing authenticated client for private Storage access.
+  // This deliberately reuses the same Auth session and never exposes service_role.
+  window.safSupabaseClient = db;
+  window.SAF_STORAGE_BUCKET = 'SMS Documents';
+
   var bar     = document.getElementById('saf-cloud-bar');
   var barTxt  = document.getElementById('saf-cloud-txt');
   var overlay = document.getElementById('saf-login-overlay');
@@ -25533,6 +25560,184 @@ window.cmxBridgeDiag    = function(){
 })();
 
 </script>
+
+
+
+<!-- ═══ SAF SUPABASE STORAGE — PRIVATE DOCUMENTS ═══════════════════════════ -->
+<script id="saf-storage-documents">
+(function(){
+  'use strict';
+
+  var BUCKET = 'SMS Documents';
+  var SIGNED_URL_TTL = 3600; // 1 hour
+
+  function esc(v){
+    return String(v == null ? '' : v)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function client(){ return window.safSupabaseClient || null; }
+
+  function canWrite(){
+    try{
+      var r = (typeof safCurrentRole === 'function' ? safCurrentRole() : '').toLowerCase();
+      return r === 'admin' || r === 'editor';
+    }catch(e){ return false; }
+  }
+
+  function safeSegment(v){
+    return String(v || '').trim().replace(/[\\/?#%:*|"<>\x00-\x1F]/g,'_').replace(/\s+/g,' ');
+  }
+
+  function yearFromDate(d){
+    var y = String(d || '').slice(0,4);
+    return /^\d{4}$/.test(y) ? y : String(new Date().getFullYear());
+  }
+
+  function occById(id){
+    try{
+      var arr = (typeof getOccurrences === 'function') ? getOccurrences() : [];
+      return arr.find(function(o){ return o && o.id === id; }) || null;
+    }catch(e){ return null; }
+  }
+
+  function defaultOccFolder(occ){
+    return 'Occurrences/' + yearFromDate(occ && occ.date) + '/' + safeSegment(occ && occ.id);
+  }
+
+  function currentOccurrence(){
+    var hidden = document.getElementById('occ-edit-id');
+    var id = hidden && hidden.value ? hidden.value : '';
+    return id ? occById(id) : null;
+  }
+
+  function folderForOccurrence(occ){
+    if(!occ) return '';
+    return occ.document_folder || defaultOccFolder(occ);
+  }
+
+  function setStatus(msg, kind){
+    var el = document.getElementById('occ-doc-status');
+    if(!el) return;
+    el.textContent = msg || '';
+    el.style.color = kind === 'error' ? '#f85149' : (kind === 'ok' ? '#3fb950' : '#8896A0');
+  }
+
+  function fmtSize(bytes){
+    var n = Number(bytes || 0);
+    if(!n) return '';
+    if(n < 1024) return n + ' B';
+    if(n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+    return (n/(1024*1024)).toFixed(1) + ' MB';
+  }
+
+  window.safStorageOpen = async function(path){
+    var db = client();
+    if(!db){ alert('Supabase Storage indisponible. Rechargez la page et reconnectez-vous.'); return; }
+    try{
+      var res = await db.storage.from(BUCKET).createSignedUrl(path, SIGNED_URL_TTL);
+      if(res.error) throw res.error;
+      if(!res.data || !res.data.signedUrl) throw new Error('URL signée non reçue');
+      var win = window.open(res.data.signedUrl, '_blank', 'noopener');
+      if(!win) window.location.href = res.data.signedUrl;
+    }catch(e){
+      alert('Impossible d’ouvrir le document : ' + (e && e.message ? e.message : e));
+    }
+  };
+
+  window.safStorageRefreshOccurrence = async function(){
+    var list = document.getElementById('occ-doc-list');
+    if(!list) return;
+    var occ = currentOccurrence();
+    if(!occ){ list.innerHTML = '<div style="color:#f85149;font-family:var(--font-mono);font-size:10px;">Occurrence non enregistrée.</div>'; return; }
+    var db = client();
+    if(!db){ list.innerHTML = '<div style="color:#f85149;font-family:var(--font-mono);font-size:10px;">Supabase Storage indisponible.</div>'; return; }
+    var folder = folderForOccurrence(occ);
+    setStatus('Chargement…');
+    try{
+      var res = await db.storage.from(BUCKET).list(folder, { limit:100, sortBy:{column:'name', order:'asc'} });
+      if(res.error) throw res.error;
+      var files = (res.data || []).filter(function(x){ return x && x.name && x.id; });
+      if(!files.length){
+        list.innerHTML = '<div style="padding:9px 11px;border:1px dashed rgba(255,255,255,.12);border-radius:6px;color:var(--grey-400);font-family:var(--font-mono);font-size:10px;">Aucun document associé.</div>';
+        setStatus('Dossier : ' + folder);
+        return;
+      }
+      list.innerHTML = files.map(function(f){
+        var path = folder + '/' + f.name;
+        var meta = f.metadata || {};
+        var size = fmtSize(meta.size);
+        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:6px;">'
+          + '<span style="font-size:15px;">📄</span>'
+          + '<div style="flex:1;min-width:0;"><div style="font-family:var(--font-mono);font-size:10px;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(f.name)+'">'+esc(f.name)+'</div>'
+          + (size ? '<div style="font-family:var(--font-mono);font-size:8px;color:var(--grey-600);margin-top:2px;">'+esc(size)+'</div>' : '') + '</div>'
+          + '<button type="button" class="btn btn-ghost" style="padding:5px 9px;font-size:8px;" data-storage-path="'+esc(path)+'">Ouvrir</button>'
+          + '</div>';
+      }).join('');
+      list.querySelectorAll('[data-storage-path]').forEach(function(btn){
+        btn.addEventListener('click', function(){ window.safStorageOpen(this.getAttribute('data-storage-path')); });
+      });
+      setStatus(files.length + ' document(s) · ' + folder, 'ok');
+    }catch(e){
+      list.innerHTML = '<div style="color:#f85149;font-family:var(--font-mono);font-size:10px;">Erreur Storage : '+esc(e && e.message ? e.message : e)+'</div>';
+      setStatus('Impossible de lire le dossier Storage.', 'error');
+    }
+  };
+
+  window.safStorageUploadOccurrence = async function(){
+    if(!canWrite()){
+      setStatus('Votre rôle est en lecture seule : ajout de document non autorisé.', 'error');
+      return;
+    }
+    var occ = currentOccurrence();
+    if(!occ){ setStatus('Enregistrez d’abord l’occurrence.', 'error'); return; }
+    var input = document.getElementById('occ-doc-file');
+    var file = input && input.files && input.files[0];
+    if(!file){ setStatus('Sélectionnez un fichier.', 'error'); return; }
+    var db = client();
+    if(!db){ setStatus('Supabase Storage indisponible.', 'error'); return; }
+
+    var folder = folderForOccurrence(occ);
+    var filename = safeSegment(file.name);
+    if(!filename){ setStatus('Nom de fichier invalide.', 'error'); return; }
+    var path = folder + '/' + filename;
+    setStatus('Envoi de « ' + filename + ' »…');
+    try{
+      var res = await db.storage.from(BUCKET).upload(path, file, { cacheControl:'3600', upsert:false, contentType:file.type || undefined });
+      if(res.error) throw res.error;
+
+      // Freeze the Storage folder once the first document is attached. If the
+      // occurrence ID is later edited, its documents remain linked to it.
+      if(!occ.document_folder){
+        occ.document_folder = folder;
+        try{
+          var all = getOccurrences();
+          var idx = all.findIndex(function(o){ return o && o.id === occ.id; });
+          if(idx >= 0){ all[idx].document_folder = folder; saveOccurrences(all); }
+        }catch(e){}
+      }
+
+      if(input) input.value = '';
+      setStatus('Document envoyé avec succès.', 'ok');
+      await window.safStorageRefreshOccurrence();
+    }catch(e){
+      var msg = e && e.message ? e.message : String(e);
+      if(/duplicate|already exists/i.test(msg)) msg = 'Un fichier portant ce nom existe déjà dans cette occurrence.';
+      setStatus('Échec de l’envoi : ' + msg, 'error');
+    }
+  };
+
+  // Hide write controls for non-writing application roles. Security remains
+  // enforced by Supabase RLS; this is only a UI convenience.
+  document.addEventListener('click', function(e){
+    if(!e.target || !e.target.closest || !e.target.closest('#occ-documents-wrap')) return;
+    var row = document.getElementById('occ-doc-upload-row');
+    if(row && !canWrite()) row.style.display = 'none';
+  }, true);
+})();
+</script>
+<!-- ═══ END SAF SUPABASE STORAGE ═════════════════════════════════════════ -->
 
 </body>
 </html>
