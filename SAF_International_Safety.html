@@ -22948,9 +22948,12 @@ setTimeout(function(){
     return out;
   };
 
-  // Avertit avant de quitter si des modifications ne sont pas encore montées.
+  // Avertit uniquement en cas de risque réel de perte.
+  // Le simple état CC_PENDING/saving n'affiche plus la boîte native du navigateur :
+  // l'autosave persiste d'abord localement puis pousse immédiatement vers Supabase.
   window.addEventListener('beforeunload', function(e){
-    if(CC_PENDING || saving || CC_CONFLICT || window.__occDirty){ e.preventDefault(); e.returnValue = ''; return ''; }
+    try{ if(typeof window.safAutosaveFlushLocal==='function') window.safAutosaveFlushLocal(); }catch(_e){}
+    if(CC_CONFLICT || window.__occDirty){ e.preventDefault(); e.returnValue = ''; return ''; }
   });
 
   // ── Lecture cross-fichier en lecture seule (utilisé par le MOC pour retrouver
@@ -26029,15 +26032,16 @@ window.cmxBridgeDiag    = function(){
     var w=document.getElementById('occ-form-wrap'); if(!visible(w))return false;
     return !!((document.getElementById('occ-date')||{}).value && ((document.getElementById('occ-desc')||{}).value||'').trim() && ((document.getElementById('occ-custom-id')||{}).value||'').trim());
   }
-  function autoOccurrence(){ if(writingAllowed()&&occReady()&&typeof saveOccurrence==='function') saveOccurrence(true); }
+  function syncCloudNow(){ try{ if(typeof window.safCloudSaveNow==='function') window.safCloudSaveNow(); }catch(e){} }
+  function autoOccurrence(){ if(writingAllowed()&&occReady()&&typeof saveOccurrence==='function'){ saveOccurrence(true); syncCloudNow(); } }
   function autoMoc(){
     var f=document.getElementById('change-form'); if(!visible(f)||!writingAllowed()||typeof saveChangeStudy!=='function')return;
-    var ref=((document.getElementById('c-ref')||{}).value||'').trim(); if(!ref||ref.replace(/^MOC-?/,'').trim()==='')return; saveChangeStudy(true);
+    var ref=((document.getElementById('c-ref')||{}).value||'').trim(); if(!ref||ref.replace(/^MOC-?/,'').trim()==='')return; saveChangeStudy(true); syncCloudNow();
   }
-  function autoSrb(){ var f=document.getElementById('srb-form-wrap');if(!visible(f)||!writingAllowed()||typeof saveSRBMeeting!=='function')return;saveSRBMeeting(window.__safAutoSrbId||window.__safStorageSrbId||'',true); }
-  function autoTraining(){ var f=document.getElementById('sms-training-form');if(!visible(f)||!writingAllowed()||typeof smsTrainingStore!=='function')return;smsTrainingStore(window.__safAutoTrainingId||window.__safStorageTrainingId||'',true); }
-  function autoLesson(){ var f=document.getElementById('lessons-form-wrap');if(!visible(f)||!writingAllowed()||typeof saveLesson!=='function')return;saveLesson(true); }
-  function autoRisk(){ var f=document.getElementById('edit-modal-overlay');if(!visible(f)||!writingAllowed()||typeof saveEditModal!=='function')return;saveEditModal(true); }
+  function autoSrb(){ var f=document.getElementById('srb-form-wrap');if(!visible(f)||!writingAllowed()||typeof saveSRBMeeting!=='function')return;saveSRBMeeting(window.__safAutoSrbId||window.__safStorageSrbId||'',true);syncCloudNow(); }
+  function autoTraining(){ var f=document.getElementById('sms-training-form');if(!visible(f)||!writingAllowed()||typeof smsTrainingStore!=='function')return;smsTrainingStore(window.__safAutoTrainingId||window.__safStorageTrainingId||'',true);syncCloudNow(); }
+  function autoLesson(){ var f=document.getElementById('lessons-form-wrap');if(!visible(f)||!writingAllowed()||typeof saveLesson!=='function')return;saveLesson(true);syncCloudNow(); }
+  function autoRisk(){ var f=document.getElementById('edit-modal-overlay');if(!visible(f)||!writingAllowed()||typeof saveEditModal!=='function')return;saveEditModal(true);syncCloudNow(); }
 
   function route(t){
     if(!t||!t.closest||!writingAllowed())return;
@@ -26075,9 +26079,26 @@ window.cmxBridgeDiag    = function(){
   }
   setInterval(mark,1200); setTimeout(mark,500);
 
-  // Best-effort immediate flush when the tab goes to background.
-  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'&&typeof window.safCloudSaveNow==='function')window.safCloudSaveNow();});
-  window.addEventListener('pagehide',function(){if(typeof window.safCloudSaveNow==='function')window.safCloudSaveNow();});
+  // Force d'abord la persistance locale des formulaires visibles, puis la synchro cloud.
+  window.safAutosaveFlushLocal=function(){
+    Object.keys(timers).forEach(function(k){ clearTimeout(timers[k]); delete timers[k]; });
+    try{autoOccurrence();}catch(e){}
+    try{autoMoc();}catch(e){}
+    try{autoSrb();}catch(e){}
+    try{autoTraining();}catch(e){}
+    try{autoLesson();}catch(e){}
+    try{autoRisk();}catch(e){}
+  };
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='hidden'){
+      try{window.safAutosaveFlushLocal();}catch(e){}
+      if(typeof window.safCloudSaveNow==='function')window.safCloudSaveNow();
+    }
+  });
+  window.addEventListener('pagehide',function(){
+    try{window.safAutosaveFlushLocal();}catch(e){}
+    if(typeof window.safCloudSaveNow==='function')window.safCloudSaveNow();
+  });
 })();
 </script>
 <!-- ═══ END SAF SAFETY AUTOSAVE ═════════════════════════════════════════ -->
