@@ -567,6 +567,42 @@ function _keyRef(k){
 const CFG_OK = _keyRef(SKEY)===SAF_REF;
 if(!CFG_OK) console.error('SAF Report: la clé backend n\'appartient pas au projet SAF — envoi désactivé.');
 
+/* ── FILE D'ATTENTE LOCALE ─────────────────────────────────────────────────
+   Un envoi qui échoue (réseau coupé, backend injoignable) est conservé sur cet
+   appareil, puis retransmis à l'ouverture du formulaire. Sans cette relance la
+   file n'était jamais relue : le rapport restait sur le téléphone du déclarant
+   alors que le message affiché annonçait qu'il était conservé. */
+function pendingLoad(){
+  try{ const v=JSON.parse(localStorage.getItem(SPENDING)||'[]'); return Array.isArray(v)?v:[]; }
+  catch(e){ return []; }
+}
+function pendingSave(q){ try{ localStorage.setItem(SPENDING,JSON.stringify(q)); }catch(e){} }
+function pendingAdd(row){ const q=pendingLoad(); q.push(row); pendingSave(q); }
+/* Tolère les entrées de l'ancienne version, qui ne stockaient que l'objet occ. */
+function pendingRow(e){
+  if(e && e.report_id && e.report_data) return e;
+  return { report_id:   (e&&e.id)||genRef(),
+           submitted_at:(e&&e.created_at)||new Date().toISOString(),
+           report_data: e,
+           status:      'pending_review' };
+}
+async function pendingFlush(){
+  if(!CFG_OK) return;
+  const q=pendingLoad();
+  if(!q.length) return;
+  const left=[];
+  for(const e of q){
+    try{
+      const {error}=await SDB.from(STABLE).insert(pendingRow(e));
+      if(error) throw error;
+    }catch(err){ left.push(e); }
+  }
+  pendingSave(left);
+  const sent=q.length-left.length;
+  if(sent) setStatus('success','Signalement(s) en attente transmis : '+sent+(left.length?' — '+left.length+' encore en échec':''));
+  else     setStatus('error','Signalement(s) en attente non transmis : '+left.length+' — réessai à la prochaine ouverture');
+}
+
 /* ── STATE ── */
 let ANON=false, FILES=[], DATA={rtype:'',entity:'',maint:'',cons:'',checks:{}};
 
@@ -574,6 +610,7 @@ let ANON=false, FILES=[], DATA={rtype:'',entity:'',maint:'',cons:'',checks:{}};
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
   document.body.classList.add('L-fr');
+  pendingFlush();
 });
 
 /* ── LANG (FR / EN only, no bilingual) ── */
@@ -774,13 +811,15 @@ async function submit(){
   }catch(err){
     console.error('SAF Report error:', err);
     /* Sauvegarde locale en dernier recours (hors-ligne, réseau coupé) */
+    let kept=false;
     try{
-      const q=JSON.parse(localStorage.getItem(SPENDING)||'[]');
-      q.push(occ);
-      localStorage.setItem(SPENDING,JSON.stringify(q));
+      pendingAdd({ report_id:ref, submitted_at:now, report_data:occ, status:'pending_review' });
+      kept=true;
     }catch(e2){}
     const msg=(err&&err.message)||'erreur réseau';
-    setStatus('error','Échec envoi ('+msg+'). Réf. conservée : '+ref);
+    setStatus('error', kept
+      ? 'Échec envoi ('+msg+') — rapport conservé sur cet appareil, réf. '+ref+'. Rouvrez ce lien une fois le réseau rétabli pour le transmettre.'
+      : 'Échec envoi ('+msg+') — rapport NON conservé, réf. '+ref+'. Notez-le et recommencez.');
     btn.disabled=false;
   }
 }
