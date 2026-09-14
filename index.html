@@ -280,7 +280,11 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   }
 
   function applyRole(role, label){
-    role = (role === 'admin' || role === 'editor' || role === 'authority') ? role : 'reader';
+    // Source unique des rôles connus : les clés du badge. Comparaison en
+    // minuscules — une valeur 'Admin' dans user_roles ne doit pas retomber
+    // silencieusement en lecture seule.
+    role = String(role||'').toLowerCase();
+    if(!SAF_ROLE_BADGE[role]) role = 'reader';
     SAF_ROLE = role;
     var badge = document.getElementById('saf-role-badge');
     if(badge){

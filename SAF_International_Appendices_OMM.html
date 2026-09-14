@@ -3148,15 +3148,53 @@ h1 {
   // ── RÔLE UTILISATEUR ────────────────────────────────────────────────────
   var SAF_ROLE = 'reader';
 
+  // ── RÔLES AUTORISÉS EN ÉCRITURE ─────────────────────────────────────────
+  // Liste blanche : seuls 'admin' et 'editor' écrivent. Tout autre rôle — y
+  // compris un rôle ajouté plus tard dans user_roles — tombe en lecture seule
+  // par défaut, sans qu'il faille penser à mettre un second test à jour.
+  var WRITE_ROLES = ['admin','editor'];
+  function safCanWrite(r){ return WRITE_ROLES.indexOf(String(r||'').toLowerCase()) !== -1; }
+  // Rôles connus : sert uniquement à choisir le badge affiché.
+  var KNOWN_ROLES = ['admin','editor','authority','reader'];
+  function safNormRole(r){
+    r = String(r||'').toLowerCase();
+    return KNOWN_ROLES.indexOf(r) !== -1 ? r : 'reader';
+  }
+
+  // Bandeau d'avertissement : aucun rôle déclaré pour cette adresse.
+  // Sans lui, une simple faute de frappe dans user_roles se traduit par un
+  // accès en lecture seule indiscernable d'un choix délibéré.
+  function safShowNoRoleWarning(email){
+    if(document.getElementById('saf-norole-box')) return;
+    var box = document.createElement('div');
+    box.id = 'saf-norole-box';
+    box.style.cssText = 'position:fixed;z-index:99998;left:50%;top:16px;transform:translateX(-50%);'
+      + 'width:calc(100% - 32px);max-width:620px;background:#2b2417;border:1px solid #a2842f;'
+      + 'border-radius:8px;padding:14px 16px;color:#f2e9d8;font-family:system-ui,-apple-system,sans-serif;'
+      + 'font-size:13px;line-height:1.5;box-shadow:0 10px 40px rgba(0,0,0,.5);';
+    box.innerHTML =
+      '<div style="font-weight:600;color:#e3b341;margin-bottom:6px;">&#9888; Aucun rôle déclaré pour ce compte</div>'
+    + '<div style="margin-bottom:10px;">L\'adresse <strong>' + String(email||'').replace(/[<>&]/g,'') + '</strong> '
+    + 'ne correspond à aucune ligne de la table des rôles. L\'accès est donc limité à la <strong>lecture seule</strong>.'
+    + '<br><br>S\'il s\'agit d\'une erreur, vérifiez l\'orthographe de l\'adresse déclarée par l\'administrateur du SMS.</div>'
+    + '<button id="saf-norole-ok" style="padding:6px 14px;border-radius:5px;border:1px solid rgba(255,255,255,.2);'
+    + 'background:transparent;color:#f2e9d8;cursor:pointer;font-family:inherit;font-size:12px;">J\'ai compris</button>';
+    document.body.appendChild(box);
+    document.getElementById('saf-norole-ok').onclick = function(){ box.remove(); };
+  }
+
   async function loadAndApplyRole(email){
+    var declared = false;
     try {
       // ilike + limit(1) : la casse de l'adresse ne doit pas décider du rôle.
       var res = await db.from('user_roles').select('role')
                         .ilike('user_email', String(email||'').trim()).limit(1);
       var row = res && res.data && res.data[0];
-      SAF_ROLE = (row && row.role) ? row.role : 'reader';
+      if(row && row.role){ declared = true; SAF_ROLE = row.role; }
+      else { SAF_ROLE = 'reader'; }
     } catch(e) { SAF_ROLE = 'reader'; }
-    SAF_ROLE = (SAF_ROLE === 'admin' || SAF_ROLE === 'editor' || SAF_ROLE === 'authority') ? SAF_ROLE : 'reader';
+    SAF_ROLE = safNormRole(SAF_ROLE);
+    if(!declared) setTimeout(function(){ safShowNoRoleWarning(email); }, 1200);
     var badge = document.getElementById('saf-role-badge');
     if(badge){
       var BADGE = {
@@ -3171,7 +3209,7 @@ h1 {
       badge.style.borderColor = bd.bor;
       badge.style.display = 'inline-block';
     }
-    if(SAF_ROLE === 'reader' || SAF_ROLE === 'authority') applyReadOnly(SAF_ROLE === 'authority');
+    if(!safCanWrite(SAF_ROLE)) applyReadOnly(SAF_ROLE === 'authority');
     if(SAF_ROLE === 'editor') applyEditorMode();
     try { localStorage.setItem('saf_role', SAF_ROLE + '|' + email); } catch(e){}
   }

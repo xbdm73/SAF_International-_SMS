@@ -22931,6 +22931,19 @@ setTimeout(function(){
   // ── RÔLE UTILISATEUR ────────────────────────────────────────────────────
   var SAF_ROLE = 'reader';
 
+  // ── RÔLES AUTORISÉS EN ÉCRITURE ─────────────────────────────────────────
+  // Liste blanche : seuls 'admin' et 'editor' écrivent. Tout autre rôle — y
+  // compris un rôle ajouté plus tard dans user_roles — tombe en lecture seule
+  // par défaut, sans qu'il faille penser à mettre un second test à jour.
+  var WRITE_ROLES = ['admin','editor'];
+  function safCanWrite(r){ return WRITE_ROLES.indexOf(String(r||'').toLowerCase()) !== -1; }
+  // Rôles connus : sert uniquement à choisir le badge affiché.
+  var KNOWN_ROLES = ['admin','editor','authority','reader'];
+  function safNormRole(r){
+    r = String(r||'').toLowerCase();
+    return KNOWN_ROLES.indexOf(r) !== -1 ? r : 'reader';
+  }
+
   // Bandeau d'avertissement : aucun rôle déclaré pour cette adresse.
   // Sans lui, une simple faute de frappe dans user_roles se traduit par un
   // accès en lecture seule indiscernable d'un choix délibéré.
@@ -22963,7 +22976,7 @@ setTimeout(function(){
       if(row && row.role){ declared = true; SAF_ROLE = row.role; }
       else { SAF_ROLE = 'reader'; }
     } catch(e) { SAF_ROLE = 'reader'; }
-    SAF_ROLE = (SAF_ROLE === 'admin' || SAF_ROLE === 'editor' || SAF_ROLE === 'authority') ? SAF_ROLE : 'reader';
+    SAF_ROLE = safNormRole(SAF_ROLE);
     if(!declared) setTimeout(function(){ safShowNoRoleWarning(email); }, 1200);
     var badge = document.getElementById('saf-role-badge');
     if(badge){
@@ -22979,7 +22992,7 @@ setTimeout(function(){
       badge.style.borderColor= bd.bor;
       badge.style.display    = 'inline-block';
     }
-    if(SAF_ROLE === 'reader' || SAF_ROLE === 'authority') applyReadOnly();
+    if(!safCanWrite(SAF_ROLE)) applyReadOnly();
     if(SAF_ROLE === 'editor') applyEditorMode();
     try { window.SAF_SESSION_EMAIL = email; window.SAF_SESSION_ROLE = SAF_ROLE; } catch(e){}
     try { localStorage.setItem('saf_role', SAF_ROLE + '|' + email); } catch(e){}
