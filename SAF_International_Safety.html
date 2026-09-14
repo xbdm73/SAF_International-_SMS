@@ -8266,7 +8266,11 @@ function occClearDirty(){
   if(f) f.style.display='none';
 }
 function occCancelForm(){
-  if(window.__occDirty && !confirm('Des modifications ne sont pas enregistrées et seront perdues.\n\nFermer quand même ?')) return;
+  // En mode autosave, tenter d'abord une persistance locale synchrone.
+  // Si l'occurrence est suffisamment renseignée, saveOccurrence(true) efface
+  // __occDirty et aucune confirmation inutile n'est affichée.
+  try{ if(window.__occDirty && typeof window.safAutosaveFlushLocal==='function') window.safAutosaveFlushLocal(); }catch(e){}
+  if(window.__occDirty && !confirm('Certaines informations de cette occurrence ne peuvent pas encore être enregistrées automatiquement.\n\nFermer quand même ?')) return;
   occClearDirty();
   var w=document.getElementById('occ-form-wrap');
   if(w) w.style.display='none';
@@ -22948,12 +22952,13 @@ setTimeout(function(){
     return out;
   };
 
-  // Avertit uniquement en cas de risque réel de perte.
-  // Le simple état CC_PENDING/saving n'affiche plus la boîte native du navigateur :
-  // l'autosave persiste d'abord localement puis pousse immédiatement vers Supabase.
+  // Fermeture/navigation : l'autosave persiste d'abord localement.
+  // IMPORTANT : __occDirty ne declenche plus la boite native du navigateur.
+  // Une occurrence en cours est sauvegardee localement par safAutosaveFlushLocal() ;
+  // seul un conflit de version Supabase reel justifie encore un avertissement.
   window.addEventListener('beforeunload', function(e){
     try{ if(typeof window.safAutosaveFlushLocal==='function') window.safAutosaveFlushLocal(); }catch(_e){}
-    if(CC_CONFLICT || window.__occDirty){ e.preventDefault(); e.returnValue = ''; return ''; }
+    if(CC_CONFLICT){ e.preventDefault(); e.returnValue = ''; return ''; }
   });
 
   // ── Lecture cross-fichier en lecture seule (utilisé par le MOC pour retrouver
@@ -26020,6 +26025,7 @@ window.cmxBridgeDiag    = function(){
 <!-- ═══ END SAF STORAGE — OTHER SMS MODULES ═══════════════════════════════ -->
 
 <!-- ═══ SAF SAFETY — FORM AUTOSAVE / IMMEDIATE STORAGE UPLOAD ═════════════ -->
+<!-- NO FALSE BEFOREUNLOAD WARNING V2 | 2026-09-14 -->
 <script id="saf-safety-autosave-v1">
 (function(){
   'use strict';
