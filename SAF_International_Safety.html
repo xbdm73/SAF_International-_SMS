@@ -4434,6 +4434,7 @@ function updateOaciDefinitionDropdown(sel) {
 <div class="form-grid cols-1">
 <div class="form-field form-full"><label class="field-label">Influence on documentation and archiving</label><div id="c-doc-archiving" class="rte" contenteditable="true" data-placeholder="Manuals, SOPs, MEL, training files, records, archiving location, retention…"></div></div>
 <div class="form-field form-full"><label class="field-label">Applicable regulations</label><div id="c-regulations" class="rte" contenteditable="true" data-placeholder="EASA Air OPS, Part-CAMO/145, company manuals, national requirements, customer requirements…"></div></div>
+<div class="form-field form-full" style="margin-top:10px;padding:14px 16px;background:rgba(27,108,168,.08);border:1px solid rgba(27,108,168,.28);border-radius:10px;"><div id="cs-compliance-block"></div></div>
 </div>
 <div class="form-grid cols-3" style="margin-top:14px;">
 <div class="form-field"><label class="field-label">Assessors name <span class="req">*</span></label>
@@ -25288,6 +25289,186 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
 else setTimeout(function(){ try{effMigrate();}catch(e){} },1500);
 
 })();
+</script>
+
+<script id="saf-compliance-bridge">
+/* ══════════════════════════════════════════════════════════════════════════
+   PASSERELLE MATRICE DE CONFORMITÉ  (Safety → CMS)
+   La matrice de conformité EASA est tenue dans le Compliance Monitoring
+   System (module cloud `cms_data`, clé `cmsx_compliance_v1`), où se trouvent
+   déjà la base réglementaire, la grille d'audit et le plan d'actions
+   correctives. Ce fichier ne la duplique pas : il la LIT pour l'afficher
+   dans l'étude de changement et l'annexer au PDF de la MOC.
+   Aucune écriture — la saisie se fait dans le CMS.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+
+var CACHE = null;      // tableau de matrices lues dans le CMS
+var LOADED_AT = null;
+var LOADING = false;
+
+function X(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+var ST = {
+  compliant:{lbl:'Conforme',c:'#1A7A32'}, partial:{lbl:'Partiel',c:'#E3B341'},
+  planned:{lbl:'Planifié',c:'#4A9FE0'},   noncompliant:{lbl:'Non conforme',c:'#CC2200'},
+  na:{lbl:'Non applicable',c:'#8896A0'},  not_assessed:{lbl:'Non évalué',c:'#8896A0'}
+};
+var APPLIC = { applicable:'Applicable', partial:'Partiellement applicable', na:'Non applicable' };
+var MOCT = { AMC:'AMC/GM publié', ALTMOC:'AltMoC — ORO.GEN.120(b)', PROC:'Procédure / manuel interne',
+             TRAIN:'Formation et qualification', TECH:'Équipement / modification technique',
+             SRA:'Analyse de risque et barrières SMS', DEROG:'Dérogation / exemption', OTHER:'Autre' };
+
+function stats(m){
+  var s={total:0,compliant:0,applicable:0,gaps:0,rate:0};
+  ((m&&m.lines)||[]).forEach(function(l){
+    s.total++;
+    var st=l.status||'not_assessed';
+    if(st==='compliant') s.compliant++;
+    if((l.applicability||'applicable')!=='na' && st!=='na') s.applicable++;
+    if(st==='partial'||st==='noncompliant'||st==='planned') s.gaps++;
+  });
+  s.rate = s.applicable ? Math.round(100*s.compliant/s.applicable) : 0;
+  return s;
+}
+
+function forMoc(ref){
+  if(!CACHE || !ref) return [];
+  var r = String(ref).trim().toLowerCase();
+  return CACHE.filter(function(m){ return String(m.moc_ref||'').trim().toLowerCase()===r; });
+}
+
+async function fetchMatrices(verbose){
+  if(LOADING) return;
+  if(typeof window.safCloudReadModule !== 'function'){
+    if(verbose && typeof showToast==='function') showToast('Connexion requise pour lire le CMS.','error');
+    return;
+  }
+  LOADING = true;
+  try{
+    var data = await window.safCloudReadModule('cms_data');
+    var arr = [];
+    try { arr = JSON.parse((data && data.cmsx_compliance_v1) || '[]'); } catch(e){ arr = []; }
+    CACHE = Array.isArray(arr) ? arr : [];
+    LOADED_AT = new Date();
+    if(verbose && typeof showToast==='function') showToast('✓ ' + CACHE.length + ' matrice(s) lue(s) dans le CMS','success');
+  }catch(e){
+    if(verbose && typeof showToast==='function') showToast('Lecture du CMS impossible : ' + e.message,'error');
+  }
+  LOADING = false;
+  renderBlock();
+}
+
+function currentRef(){
+  var ref = '';
+  try { ref = (typeof getChangeVal==='function') ? String(getChangeVal('ref')||'').trim() : ''; } catch(e){}
+  if(/^MOC-?$/.test(ref)) ref = '';
+  return ref;
+}
+
+function renderBlock(){
+  var host = document.getElementById('cs-compliance-block');
+  if(!host) return;
+  var ref = currentRef();
+
+  var h = '<div style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--steel-bright);letter-spacing:.06em;margin-bottom:8px;">◫ MATRICE DE CONFORMITÉ EASA</div>'
+        + '<div style="font-size:11px;color:var(--grey-400);font-family:var(--font-mono);margin-bottom:12px;line-height:1.6;">'
+        + 'Démonstration exigence par exigence des moyens de conformité retenus pour ce changement (ORO.GEN.120 / ORO.GEN.130). '
+        + 'La matrice est tenue dans le <b>Compliance Monitoring System</b>, qui porte la base réglementaire et le plan d\'actions correctives. '
+        + 'Elle est affichée ici en lecture seule et annexée au PDF de l\'étude.</div>';
+
+  if(!ref){
+    h += '<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--gold-light);">Renseignez la référence interne (bloc 1) pour afficher la matrice rattachée.</div>';
+  } else if(CACHE === null){
+    h += '<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--grey-400);">Matrices non chargées.</div>';
+  } else {
+    var list = forMoc(ref);
+    if(!list.length){
+      h += '<div style="font-family:var(--font-mono);font-size:10.5px;color:var(--grey-400);">Aucune matrice rattachée à ' + X(ref) + ' dans le CMS. '
+         + 'Créez-la dans le CMS, onglet « Matrice de conformité », en indiquant cette référence comme étude de changement associée.</div>';
+    } else {
+      h += '<div style="display:flex;flex-direction:column;gap:8px;">';
+      list.forEach(function(m){
+        var s = stats(m);
+        h += '<div style="padding:10px 12px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.08);border-radius:8px;">'
+           + '<div style="color:var(--white);font-size:12px;font-weight:600;">' + X(m.title||m.id) + '</div>'
+           + '<div style="font-family:var(--font-mono);font-size:9.5px;color:var(--grey-400);margin-top:3px;">'
+           + X(m.id) + ' · ' + s.total + ' exigences · <span style="color:' + (s.rate>=90?'#3fb950':(s.rate>=60?'#e3b341':'#f85149')) + ';">' + s.rate + ' % conforme</span>'
+           + (s.gaps ? ' · ' + s.gaps + ' écart' + (s.gaps>1?'s':'') : '') + '</div></div>';
+      });
+      h += '</div>';
+    }
+  }
+
+  h += '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">'
+     + '<button type="button" class="btn btn-ghost" onclick="cmxBridgeRefresh()">↻ Lire les matrices du CMS</button>'
+     + '<a href="SAF_International_Compliance_Monitoring_System.html" target="_blank" class="btn btn-ghost" style="text-decoration:none;">↗ Ouvrir le CMS</a>'
+     + '<span style="font-family:var(--font-mono);font-size:9.5px;color:var(--grey-400);">'
+     + (LOADED_AT ? 'lu à ' + LOADED_AT.toLocaleTimeString('fr-FR') : 'non chargé') + '</span></div>';
+
+  host.innerHTML = h;
+}
+
+/* Tableau repris dans le PDF de l'étude de changement */
+function reportSectionHTML(mocRef){
+  var list = forMoc(mocRef);
+  if(!list.length) return '';
+  return list.map(function(m){
+    var s = stats(m);
+    var rows = (m.lines||[]).map(function(l){
+      var st = ST[l.status]||ST.not_assessed;
+      return '<tr>'
+        + '<td style="font-family:monospace;white-space:nowrap;"><b>' + X(l.ref||'—') + '</b><div style="font-size:8px;color:#8896A0;">' + X(l.src||'') + '</div></td>'
+        + '<td>' + X(l.title||'') + '</td>'
+        + '<td style="white-space:nowrap;">' + X(APPLIC[l.applicability]||APPLIC.applicable) + '</td>'
+        + '<td><b>' + X(MOCT[l.moc_type]||'—') + '</b>' + (l.moc_ref?' — '+X(l.moc_ref):'') + '<div>' + X(l.moc_desc||'') + '</div></td>'
+        + '<td>' + X(l.evidence||'—') + (l.evidence_section?' '+X(l.evidence_section):'') + '</td>'
+        + '<td style="white-space:nowrap;color:' + st.c + ';font-weight:700;">' + X(st.lbl) + '</td>'
+        + '<td>' + X(l.gap||'—') + (l.finding_ref?'<div style="font-size:8px;">'+X(l.finding_ref)+(l.due?' · '+X(l.due):'')+'</div>':'') + '</td>'
+        + '<td style="white-space:nowrap;font-size:8px;">' + (l.verified_at ? X(l.verified_at)+'<br>'+X(l.verified_by||'') : '—') + '</td></tr>';
+    }).join('');
+    return '<h2>Matrice de conformité EASA — ' + X(m.id) + '</h2>'
+      + '<p style="margin-bottom:8px;"><b>' + X(m.title||'') + '</b> · ' + s.total + ' exigences · ' + s.compliant + ' conformes · '
+      + s.gaps + ' écart(s) ouvert(s) · conformité ' + s.rate + ' %' + (m.scope?' · périmètre : '+X(m.scope):'')
+      + '<br><span style="font-size:9px;color:#8896A0;">Source : Compliance Monitoring System — ' + X(m.id) + '</span></p>'
+      + '<table><thead><tr><th>Référence</th><th>Intitulé</th><th>Applicabilité</th><th>Moyen de conformité</th><th>Preuve</th><th>Statut</th><th>Écart / action</th><th>Vérification</th></tr></thead>'
+      + '<tbody>' + (rows || '<tr><td colspan="8">Aucune exigence.</td></tr>') + '</tbody></table>';
+  }).join('');
+}
+
+/* ── Greffes ──────────────────────────────────────────────────────────── */
+(function graft(){
+  var origBuild = window._buildChangeStudyReport;
+  if(typeof origBuild === 'function' && !origBuild.__cmxb){
+    var w = function(cs){
+      var r = origBuild(cs);
+      try { var extra = reportSectionHTML(cs && cs.ref); if(extra && r && typeof r.bodyHTML==='string') r.bodyHTML += extra; } catch(e){}
+      return r;
+    };
+    w.__cmxb = true;
+    window._buildChangeStudyReport = w;
+  }
+  var origShow = window.showChangeStudyForm;
+  if(typeof origShow === 'function' && !origShow.__cmxb){
+    var w2 = function(){ var r = origShow.apply(this, arguments); setTimeout(function(){ if(CACHE===null) fetchMatrices(false); else renderBlock(); }, 80); return r; };
+    w2.__cmxb = true;
+    window.showChangeStudyForm = w2;
+  }
+})();
+
+window.cmxBridgeRefresh = function(){ fetchMatrices(true); };
+window.cmxBridgeRender  = renderBlock;
+window.cmxBridgeFor     = forMoc;
+window.cmxBridgeDiag    = function(){
+  return { chargees: CACHE===null ? 'non charge' : CACHE.length,
+           lu_a: LOADED_AT ? LOADED_AT.toISOString() : null,
+           ref_courante: currentRef(),
+           bloc: !!document.getElementById('cs-compliance-block') };
+};
+
+})();
+
 </script>
 
 </body>
