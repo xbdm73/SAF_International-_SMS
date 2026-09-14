@@ -8410,7 +8410,7 @@ function occHighlightEventBlock(soft){
   clearTimeout(window.__occTaxoHL);
   window.__occTaxoHL=setTimeout(function(){wrap.style.boxShadow='';wrap.style.borderColor='rgba(74,159,224,.35)';},8000);
 }
-function occResolveEventAccounting(existingOcc,opts){eventAccountingEnsure();opts=opts||{};var soft=!!opts.soft;var fb=document.getElementById('occ-form-feedback');function fail(msg){if(fb){fb.textContent=(soft?'⚠ Fiche enregistrée, mais NON comptabilisée dans la taxonomie — ':'')+msg;fb.style.color=soft?'#e3b341':'#f85149';}occHighlightEventBlock(soft);if(typeof showToast==='function')showToast((soft?'⚠ Taxonomie à compléter : ':'⚠ ')+msg,'error');return null;}var mode=document.querySelector('input[name="occ-event-mode"]:checked')?.value||'existing';if(mode==='existing'){var id=document.getElementById('occ-catalog-event')?.value||'',item=EVENT_CATALOG.find(function(e){return e.id===id&&e.review_status==='approved';});if(!item)return fail('Select an approved catalogue event, or record a new candidate.');var riskLink=item.linked_risk_id||document.getElementById('occ-risk-link')?.value||'';return {catalog_event_id:item.id,catalog_event_mode:'existing',risk_link:riskLink,taxonomy_occurrence_category:item.occurrence_category,taxonomy_family_id:item.family_id};}var val=function(id){return (document.getElementById(id)?.value||'').trim();},title=val('occ-new-event-title'),source=val('occ-new-event-source'),family=val('occ-new-event-family'),dangers=val('occ-new-event-dangers'),prevention=val('occ-new-event-prevention'),initial=val('occ-new-event-initial'),residual=val('occ-new-event-residual'),occCat=val('occ-new-event-eccairs'),doc=val('occ-new-event-doc');if(!title||!source||!family||!dangers||!prevention||!initial||!residual||!occCat)return fail('Complete the event title, activity, proposed occurrence category, proposed SAF family, dangers, prevention measures and risk ratings.');var item=null;if(existingOcc&&existingOcc.catalog_event_id)item=EVENT_CATALOG.find(function(e){return e.id===existingOcc.catalog_event_id&&e.custom;});if(!item){item={id:eventAccountingNextCustomId(),custom:true,created_at:new Date().toISOString(),source:'Created from SAF Occurrence Log',review_status:'candidate_review'};EVENT_CATALOG.push(item);}Object.assign(item,{source_sheet:source,event:title,dangers:dangers,initial_risk:initial,prevention:prevention,residual_risk:residual,doc_ref:doc,eccairs_cat:occCat,occurrence_category:occCat,family_id:family,review_status:item.review_status==='approved'?'approved':'candidate_review',updated_at:new Date().toISOString()});eventAccountingSave(true);return {catalog_event_id:item.id,catalog_event_mode:'new',risk_link:item.linked_risk_id||'',taxonomy_occurrence_category:item.occurrence_category,taxonomy_family_id:item.family_id};}
+function occResolveEventAccounting(existingOcc,opts){eventAccountingEnsure();opts=opts||{};var soft=!!opts.soft;var silent=!!opts.silent;var fb=document.getElementById('occ-form-feedback');function fail(msg){if(!silent&&fb){fb.textContent=(soft?'⚠ Fiche enregistrée, mais NON comptabilisée dans la taxonomie — ':'')+msg;fb.style.color=soft?'#e3b341':'#f85149';}if(!silent)occHighlightEventBlock(soft);if(!silent&&typeof showToast==='function')showToast((soft?'⚠ Taxonomie à compléter : ':'⚠ ')+msg,'error');return null;}var mode=document.querySelector('input[name="occ-event-mode"]:checked')?.value||'existing';if(mode==='existing'){var id=document.getElementById('occ-catalog-event')?.value||'',item=EVENT_CATALOG.find(function(e){return e.id===id&&e.review_status==='approved';});if(!item)return fail('Select an approved catalogue event, or record a new candidate.');var riskLink=item.linked_risk_id||document.getElementById('occ-risk-link')?.value||'';return {catalog_event_id:item.id,catalog_event_mode:'existing',risk_link:riskLink,taxonomy_occurrence_category:item.occurrence_category,taxonomy_family_id:item.family_id};}var val=function(id){return (document.getElementById(id)?.value||'').trim();},title=val('occ-new-event-title'),source=val('occ-new-event-source'),family=val('occ-new-event-family'),dangers=val('occ-new-event-dangers'),prevention=val('occ-new-event-prevention'),initial=val('occ-new-event-initial'),residual=val('occ-new-event-residual'),occCat=val('occ-new-event-eccairs'),doc=val('occ-new-event-doc');if(!title||!source||!family||!dangers||!prevention||!initial||!residual||!occCat)return fail('Complete the event title, activity, proposed occurrence category, proposed SAF family, dangers, prevention measures and risk ratings.');var item=null;if(existingOcc&&existingOcc.catalog_event_id)item=EVENT_CATALOG.find(function(e){return e.id===existingOcc.catalog_event_id&&e.custom;});if(!item){item={id:eventAccountingNextCustomId(),custom:true,created_at:new Date().toISOString(),source:'Created from SAF Occurrence Log',review_status:'candidate_review'};EVENT_CATALOG.push(item);}Object.assign(item,{source_sheet:source,event:title,dangers:dangers,initial_risk:initial,prevention:prevention,residual_risk:residual,doc_ref:doc,eccairs_cat:occCat,occurrence_category:occCat,family_id:family,review_status:item.review_status==='approved'?'approved':'candidate_review',updated_at:new Date().toISOString()});eventAccountingSave(true);return {catalog_event_id:item.id,catalog_event_mode:'new',risk_link:item.linked_risk_id||'',taxonomy_occurrence_category:item.occurrence_category,taxonomy_family_id:item.family_id};}
 
 var _savedDB = null;
 var _DB_VERSION = '11.1-sms-regulatory-corrections-20260902';
@@ -10861,7 +10861,7 @@ function closeEditModal() {
   _emEditingId = null;
 }
 
-function saveEditModal() {
+function saveEditModal(_silent) {
   const id       = document.getElementById('em-id').value.trim();
   const familyId = document.getElementById('em-family').value.trim();
   // Legacy domain is archival: derived from the family when not already set.
@@ -10873,30 +10873,31 @@ function saveEditModal() {
   const doc      = document.getElementById('em-doc-ref').value.trim();
 
   if(familyId==='R17' && getVal('em-visual-aid')==='NVIS'){ setVal('em-ops-type','FIREFIGHTING'); setVal('em-light-condition','NIGHT'); }
-  if(familyId!=='R17' && getVal('em-visual-aid')==='NVIS'){ showToast('NVIS is configured in SAF International Safety only for R17 Firefighting', 'error'); return; }
+  if(familyId!=='R17' && getVal('em-visual-aid')==='NVIS'){ if(!_silent) showToast('NVIS is configured in SAF International Safety only for R17 Firefighting', 'error'); return; }
 
   if(!occurrenceCategory || !familyId || !event || !ir || !rr || !doc) {
-    showToast('Champs obligatoires manquants (Occurrence category, SAF family, Event, Risks, Doc Ref)', 'error');
+    if(!_silent) showToast('Champs obligatoires manquants (Occurrence category, SAF family, Event, Risks, Doc Ref)', 'error');
     return;
   }
 
   const idx = DB.findIndex(x => x.id === _emEditingId);
-  if(idx === -1) { showToast('Entry not found', 'error'); return; }
+  if(idx === -1) { if(!_silent) showToast('Entry not found', 'error'); return; }
 
   // Garde-fou de cotation : une baisse importante doit être motivée.
   const _rat = (document.getElementById('em-rating-rationale')||{value:''}).value.trim();
   const _guard = safRatingGuard(ir, rr, _rat);
   if(_guard.level === 'block'){
     safRatingGuardRefresh();
-    showToast('Cotation non enregistrée — ' + _guard.msg, 'error');
-    const _f = document.getElementById('em-rating-rationale');
-    if(_f) _f.focus();
+    if(!_silent){ showToast('Cotation non enregistrée — ' + _guard.msg, 'error'); const _f = document.getElementById('em-rating-rationale'); if(_f) _f.focus(); }
     return;
   }
-  if(_guard.level === 'warn' && !confirm(_guard.msg + '\n\nEnregistrer malgré tout ? La justification restera signalée comme insuffisante en revue.')){
-    const _f2 = document.getElementById('em-rating-rationale');
-    if(_f2) _f2.focus();
-    return;
+  if(_guard.level === 'warn'){
+    if(_silent) return;
+    if(!confirm(_guard.msg + '\n\nEnregistrer malgré tout ? La justification restera signalée comme insuffisante en revue.')){
+      const _f2 = document.getElementById('em-rating-rationale');
+      if(_f2) _f2.focus();
+      return;
+    }
   }
 
   const prev = DB[idx];
@@ -10984,10 +10985,7 @@ function saveEditModal() {
 
   saveDB();
   filteredDB = [...DB];
-  renderTable();
-  renderDashboard();
-  closeEditModal();
-  showToast('✓ Entry updated successfully', 'success');
+  if(!_silent){ renderTable(); renderDashboard(); closeEditModal(); showToast('✓ Entry updated successfully', 'success'); }
 }
 
 function editEntry_LEGACY(id) {
@@ -11345,12 +11343,15 @@ function csRteFontSize(size){ if(!size) return; csRteExec('fontSize', size); }
 function csRteColor(hex){ csRteExec('foreColor', hex); }
 // collectChangeStudy defined below (full version)
 function saveChangeStudies() { localStorage.setItem('safChangeStudies', JSON.stringify(CHANGE_STUDIES)); updateCounts(); updateLastModified(); if(typeof window.safCloudScheduleSave==='function') window.safCloudScheduleSave(); }
-function saveChangeStudy() {
+function saveChangeStudy(_silent) {
   const required = [['title','Title'], ['ref','Internal reference'], ['assessment-type','Safety assessment type'], ['detailed-description','Change detailed description'], ['assessors','Assessors name'], ['conclusions','Assessment conclusions']];
   const missing = required.filter(([id]) => { var v=getChangeVal(id).trim(); if(id==='ref') v=v.replace(/^MOC-?$/,''); return !v; }).map(([,label]) => label);
-  if(missing.length) { showToast('Please fill required fields: ' + missing.join(', '), 'error'); return; }
+  if(missing.length && !_silent) { showToast('Please fill required fields: ' + missing.join(', '), 'error'); return; }
   const data = collectChangeStudy();
-  const idx = CHANGE_STUDIES.findIndex(x => x.ref === data.ref);
+  if(_silent && (!data.ref || data.ref.replace(/^MOC-?/,'').trim()==='')) return;
+  var _autoOldRef = window.__safAutoMocRef || window.__safStorageMocRef || '';
+  var idx = CHANGE_STUDIES.findIndex(x => x.ref === data.ref);
+  if(_silent && idx<0 && _autoOldRef && _autoOldRef!==data.ref) idx = CHANGE_STUDIES.findIndex(x => x.ref === _autoOldRef);
   var prev = idx >= 0 ? CHANGE_STUDIES[idx] : null;
   if(prev && prev.workflow_status !== 'approved' && data.workflow_status === 'approved') {
     if(!data.version_history) data.version_history = [];
@@ -11362,8 +11363,10 @@ function saveChangeStudy() {
   try { data.user_edited_by = safCurrentUser(); } catch(e) {}
   try { if (window.__SAF_SEED_MOCS && window.__SAF_SEED_MOCS[data.ref]) data.seed_overridden = true; } catch(e) {}
   if(idx >= 0) CHANGE_STUDIES[idx] = data; else CHANGE_STUDIES.push(data);
+  window.__safAutoMocRef = data.ref; window.__safStorageMocRef = data.ref;
   saveChangeStudies();
   csRenderWorkflowBar(data.workflow_status||'draft');
+  if(_silent){ if(typeof window.safStorageRemountModule==='function') window.safStorageRemountModule('moc'); return; }
   renderSavedCSList();
   hideChangeStudyForm();
   showToast('✓ Change study saved — ' + (data.workflow_status||'draft').toUpperCase(), 'success');
@@ -16945,13 +16948,13 @@ function showOccurrenceForm(editId){
   if(_isEdit){ setTimeout(function(){ if(typeof safStorageRefreshOccurrence==='function') safStorageRefreshOccurrence(); }, 0); }
 }
 
-function saveOccurrence(){
+function saveOccurrence(_silent){
   var date=document.getElementById('occ-date')?.value;
   var desc=(document.getElementById('occ-desc')?.value||'').trim();
   var fb=document.getElementById('occ-form-feedback');
   var editId=document.getElementById('occ-edit-id')?.value||'';
 
-  if(!date||!desc){if(fb){fb.textContent='Please fill Date and Description.';fb.style.color='#f85149';}return;}
+  if(!date||!desc){if(!_silent&&fb){fb.textContent='Please fill Date and Description.';fb.style.color='#f85149';}return;}
 
   var cfs=[...document.querySelectorAll('input[name="occ-cf"]:checked')].map(function(c){return c.value;});
   var occs=getOccurrences();
@@ -16959,17 +16962,17 @@ function saveOccurrence(){
   if(editId) {
     // ── UPDATE existing occurrence ────────────────────────────────
     var idx=occs.findIndex(function(o){return o.id===editId;});
-    if(idx===-1){if(fb){fb.textContent='Occurrence not found.';fb.style.color='#f85149';}return;}
+    if(idx===-1){if(!_silent&&fb){fb.textContent='Occurrence not found.';fb.style.color='#f85149';}return;}
     var existing=occs[idx];
     var newId=(document.getElementById('occ-custom-id')?.value||'').trim()||existing.id;
     // Check uniqueness if the ID has changed
     if(newId!==editId && occs.find(function(o,i){return o.id===newId && i!==idx;})){
-      if(fb){fb.textContent='This ID already exists. Choose a unique identifier.';fb.style.color='#f85149';}return;
+      if(!_silent&&fb){fb.textContent='This ID already exists. Choose a unique identifier.';fb.style.color='#f85149';}return;
     }
     // La taxonomie n'est plus bloquante : on enregistre d'abord le travail
     // d'instruction (5 Whys, Just Culture, ARMS, ECCAIRS…), puis on exige
     // l'événement du catalogue pour clore la fiche.
-    var eventAccounting=occResolveEventAccounting(existing,{soft:true});
+    var eventAccounting=occResolveEventAccounting(existing,{soft:true,silent:!!_silent});
     var _taxoMissing=!eventAccounting;
     if(_taxoMissing) eventAccounting={
       catalog_event_id: existing.catalog_event_id||'',
@@ -17014,22 +17017,22 @@ function saveOccurrence(){
     if(_taxoMissing){
       renderOccurrenceList();
       if(typeof updatePendingBadge==='function') updatePendingBadge();
-      showToast('✓ Saisie enregistrée — sélectionnez l\'événement du catalogue pour clore la fiche','success');
+      if(!_silent) showToast('✓ Saisie enregistrée — sélectionnez l\'événement du catalogue pour clore la fiche','success');
       return;
     }
-    document.getElementById('occ-form-wrap').style.display='none';
+    if(!_silent) document.getElementById('occ-form-wrap').style.display='none';
     renderOccurrenceList();
     if(typeof renderEventAccounting==='function' && document.getElementById('view-eventaccounting')?.classList.contains('active')) renderEventAccounting();
     if(typeof updatePendingBadge==='function') updatePendingBadge();
-    showToast('✓ Occurrence '+newId+' updated','success');
+    if(!_silent) showToast('✓ Occurrence '+newId+' updated','success');
   } else {
     // ── CREATE new occurrence ─────────────────────────────────────
     var customId=(document.getElementById('occ-custom-id')?.value||'').trim();
-    if(!customId){if(fb){fb.textContent='Veuillez saisir un ID pour l\'occurrence.';fb.style.color='#f85149';}return;}
+    if(!customId){if(!_silent&&fb){fb.textContent='Veuillez saisir un ID pour l\'occurrence.';fb.style.color='#f85149';}return;}
     if(occs.find(function(o){return o.id===customId;})){
-      if(fb){fb.textContent='This ID already exists. Choose a unique identifier.';fb.style.color='#f85149';}return;
+      if(!_silent&&fb){fb.textContent='This ID already exists. Choose a unique identifier.';fb.style.color='#f85149';}return;
     }
-    var eventAccounting=occResolveEventAccounting(null,{soft:true});
+    var eventAccounting=occResolveEventAccounting(null,{soft:true,silent:!!_silent});
     var _taxoMissing=!eventAccounting;
     if(_taxoMissing) eventAccounting={catalog_event_id:'',catalog_event_mode:'',risk_link:'',taxonomy_occurrence_category:'',taxonomy_family_id:''};
     var occ={
@@ -17059,18 +17062,19 @@ function saveOccurrence(){
     occs.push(occ);
     saveOccurrences(occs);
     occClearDirty();
+    if(_silent){ var _autoEf=document.getElementById('occ-edit-id'); if(_autoEf) _autoEf.value=occ.id; window.__safStorageOccurrenceId=occ.id; if(typeof window.safAutosaveEnableOccurrenceDocuments==='function') window.safAutosaveEnableOccurrenceDocuments(occ.id); }
     if(_taxoMissing){
       var _ef=document.getElementById('occ-edit-id'); if(_ef) _ef.value=occ.id;
       renderOccurrenceList();
       if(typeof updatePendingBadge==='function') updatePendingBadge();
-      showToast('✓ Occurrence '+occ.id+' enregistrée — sélectionnez l\'événement du catalogue pour la clore','success');
+      if(!_silent) showToast('✓ Occurrence '+occ.id+' enregistrée — sélectionnez l\'événement du catalogue pour la clore','success');
       return;
     }
-    document.getElementById('occ-form-wrap').style.display='none';
+    if(!_silent) document.getElementById('occ-form-wrap').style.display='none';
     renderOccurrenceList();
     if(typeof renderEventAccounting==='function' && document.getElementById('view-eventaccounting')?.classList.contains('active')) renderEventAccounting();
     if(typeof updatePendingBadge==='function') updatePendingBadge();
-    showToast('✓ Occurrence '+occ.id+' saved','success');
+    if(!_silent) showToast('✓ Occurrence '+occ.id+' saved','success');
     if(occ.risk_link){
       var r=DB.find(function(x){return x.id===occ.risk_link;});
       if(r){if(!r.history)r.history=[];r.history.push(safStamp({action:'occurrence_linked',date:occ.date,occ_id:occ.id}));saveDB();}
@@ -18040,12 +18044,12 @@ function llParseExtraPages(id){
   if(!llStripHtml(raw))return [];
   return raw.split(/(?:<[^>]*>\s*)?---\s*PAGE\s*---(?:\s*<[^>]*>)?/i).map(function(p){return p.trim();}).filter(function(p){return llStripHtml(p);});
 }
-function saveLesson(){
+function saveLesson(_silent){
   var frTitle=((document.getElementById('ll-fr-title')||{}).value||'').trim();
   var enTitle=((document.getElementById('ll-en-title')||{}).value||'').trim();
   var date=((document.getElementById('ll-date')||{}).value||'');
   var fb=document.getElementById('ll-feedback');
-  if(!frTitle||!enTitle||!date){if(fb){fb.textContent='Veuillez remplir la Date, le Titre (FR) et le Title (EN).';fb.style.color='#f85149';}return;}
+  if(!frTitle||!enTitle||!date){if(!_silent&&fb){fb.textContent='Veuillez remplir la Date, le Titre (FR) et le Title (EN).';fb.style.color='#f85149';}return;}
   var type=((document.getElementById('ll-type')||{}).value)||'alert';
   var ref=(((document.getElementById('ll-ref')||{}).value)||'').trim()||llNextRef(type);
   var imgPosEl=document.querySelector('input[name="ll-img-pos"]:checked');
@@ -18074,12 +18078,15 @@ function saveLesson(){
     var idx=lessons.findIndex(function(l){return l.id===_llEditId;});
     if(idx!==-1)lessons[idx]=Object.assign(lessons[idx],data,{updated_at:new Date().toISOString()});
     saveLessons(lessons);
+    window.__safStorageLessonId=_llEditId;
+    if(_silent){if(typeof window.safStorageRemountModule==='function')window.safStorageRemountModule('promotion');return;}
     document.getElementById('lessons-form-wrap').style.display='none';
     _llEditId=null;_llImageData=null;_llPdfData=null;_llPdfName='';renderLessonsList();
     showToast('✓ '+ref+' mis à jour','success');
   }else{
     var ll=Object.assign({id:'LL-'+Date.now(),created_at:new Date().toISOString()},data);
     lessons.push(ll);saveLessons(lessons);
+    if(_silent){_llEditId=ll.id;window.__safStorageLessonId=ll.id;if(typeof window.safStorageRemountModule==='function')window.safStorageRemountModule('promotion');return;}
     document.getElementById('lessons-form-wrap').style.display='none';
     _llEditId=null;_llImageData=null;_llPdfData=null;_llPdfName='';renderLessonsList();
     showToast('✓ '+ref+' publié','success');
@@ -18343,6 +18350,7 @@ function getSRBMeetings() {
 function saveSRBMeetings(m) { localStorage.setItem('safSRBMeetings', JSON.stringify(m)); updateLastModified(); if(typeof window.safCloudScheduleSave==='function') window.safCloudScheduleSave(); }
 
 function showSRBForm(editId) {
+  window.__safAutoSrbId=editId||''; window.__safStorageSrbId=editId||'';
   var w = document.getElementById('srb-form-wrap');
   if (!w) return;
   w.style.display = '';
@@ -18395,12 +18403,13 @@ function srbAddAction(existing) {
   list.appendChild(row);
 }
 
-function saveSRBMeeting(editId) {
+function saveSRBMeeting(editId, _silent) {
+  editId = editId || window.__safAutoSrbId || window.__safStorageSrbId || '';
   var fb = document.getElementById('srb-feedback');
   var date = document.getElementById('srb-date')?.value;
   var attendees = (document.getElementById('srb-attendees')?.value||'').trim();
   if (!date || !attendees) {
-    if (fb) { fb.textContent = 'Please fill Date and Attendees.'; fb.style.color = '#f85149'; }
+    if (!_silent && fb) { fb.textContent = 'Please fill Date and Attendees.'; fb.style.color = '#f85149'; }
     return;
   }
   // Collect action items
@@ -18439,6 +18448,8 @@ function saveSRBMeeting(editId) {
     meetings.push(meeting);
   }
   saveSRBMeetings(meetings);
+  window.__safAutoSrbId = meeting.id; window.__safStorageSrbId = meeting.id;
+  if(_silent){ if(typeof window.safStorageRemountModule==='function') window.safStorageRemountModule('srb'); return; }
   document.getElementById('srb-form-wrap').style.display = 'none';
   renderSRBList();
   showToast('✓ SRB minutes saved — ' + meeting.id, 'success');
@@ -18905,6 +18916,7 @@ function duplicateCS(ref){
 function smsTrainingGet(){try{return JSON.parse(localStorage.getItem('safTrainingRecords')||'[]');}catch(e){return[];}}
 function smsTrainingSave(a){localStorage.setItem('safTrainingRecords',JSON.stringify(a));updateLastModified();if(typeof window.safCloudScheduleSave==='function')window.safCloudScheduleSave();}
 function smsTrainingShowForm(editId){
+  window.__safAutoTrainingId=editId||''; window.__safStorageTrainingId=editId||'';
   var w=document.getElementById('sms-training-form');if(!w)return;w.style.display='';
   var ex=editId?(smsTrainingGet().find(function(x){return x.id===editId;})||{}):{};
   w.innerHTML='<div class="chart-card" style="padding:20px;"><div class="chart-title" style="margin-bottom:12px;">'+(editId?'Edit':'New')+' training record</div>'
@@ -18920,11 +18932,12 @@ function smsTrainingShowForm(editId){
    +'</div><div style="display:flex;gap:8px;margin-top:12px;"><button class="btn btn-primary" onclick="smsTrainingStore(\''+(editId||'')+'\')">✓ Save</button><button class="btn btn-ghost" onclick="document.getElementById(\'sms-training-form\').style.display=\'none\'">Cancel</button></div></div>';
   var t=document.getElementById('tr-type');if(t&&ex.type)t.value=ex.type;
 }
-function smsTrainingStore(editId){
+function smsTrainingStore(editId,_silent){
+  editId=editId||window.__safAutoTrainingId||window.__safStorageTrainingId||'';
   var person=(document.getElementById('tr-person')?.value||'').trim(),course=(document.getElementById('tr-course')?.value||'').trim(),date=document.getElementById('tr-date')?.value||'',evidence=(document.getElementById('tr-evidence')?.value||'').trim();
-  if(!person||!course||!date||!evidence){showToast('Person, course, completion date and evidence are mandatory','error');return;}
+  if(!person||!course||!date||!evidence){if(!_silent)showToast('Person, course, completion date and evidence are mandatory','error');return;}
   var a=smsTrainingGet(), item={id:editId||('TR-'+Date.now()),person:person,role:(document.getElementById('tr-role')?.value||'').trim(),course:course,type:document.getElementById('tr-type')?.value||'Initial',date:date,valid_until:document.getElementById('tr-valid')?.value||'',assessor:(document.getElementById('tr-assessor')?.value||'').trim(),evidence:evidence,updated_at:new Date().toISOString()};
-  var i=a.findIndex(function(x){return x.id===editId;});if(i>=0)a[i]=item;else a.push(item);smsTrainingSave(a);document.getElementById('sms-training-form').style.display='none';renderSMSTraining();showToast('Training record saved','success');
+  var i=a.findIndex(function(x){return x.id===editId;});if(i>=0)a[i]=item;else a.push(item);smsTrainingSave(a);window.__safAutoTrainingId=item.id;window.__safStorageTrainingId=item.id;if(_silent){if(typeof window.safStorageRemountModule==='function')window.safStorageRemountModule('training');return;}document.getElementById('sms-training-form').style.display='none';renderSMSTraining();showToast('Training record saved','success');
 }
 function renderSMSTraining(){
   var el=document.getElementById('sms-training-list');if(!el)return;var a=smsTrainingGet().sort(function(x,y){return String(y.date).localeCompare(String(x.date));});
@@ -22906,7 +22919,7 @@ setTimeout(function(){
     CC_PENDING = true;
     clearTimeout(saveTimer);
     setBar('saving','Modification detectee...');
-    saveTimer = setTimeout(cloudSave, 1500);
+    saveTimer = setTimeout(cloudSave, 900);
   }
   window.safCloudScheduleSave = scheduleSave;
 
@@ -25587,7 +25600,14 @@ window.cmxBridgeDiag    = function(){
   }
 
   function safeSegment(v){
-    return String(v || '').trim().replace(/[\\/?#%:*|"<>\x00-\x1F]/g,'_').replace(/\s+/g,' ');
+    var s = String(v || '').trim();
+    // Supabase Storage object keys accept a restricted ASCII character set.
+    // Normalize French/European accents (e.g. é -> e) and replace any other
+    // unsupported character so filenames never generate "requested path is invalid".
+    try { s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch(e) {}
+    s = s.replace(/[^A-Za-z0-9_\-.'!,*&$@=;:+?() ]/g, '_');
+    s = s.replace(/\s+/g, ' ').trim();
+    return s || 'document';
   }
 
   function yearFromDate(d){
@@ -25739,5 +25759,327 @@ window.cmxBridgeDiag    = function(){
 </script>
 <!-- ═══ END SAF SUPABASE STORAGE ═════════════════════════════════════════ -->
 
+
+
+<!-- ═══ SAF STORAGE — OTHER SMS MODULES ═══════════════════════════════════ -->
+<script id="saf-storage-other-modules">
+(function(){
+  'use strict';
+
+  var BUCKET = 'SMS Documents';
+  var TTL = 3600;
+  var PANELS = Object.create(null);
+
+  function client(){ return window.safSupabaseClient || null; }
+  function esc(v){ return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function safeSegment(v){
+    var s=String(v||'').trim();
+    try{s=s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');}catch(e){}
+    s=s.replace(/[^A-Za-z0-9_\-.'!,*&$@=;:+?() ]/g,'_').replace(/\s+/g,' ').trim();
+    return s||'document';
+  }
+  function yearFrom(v){
+    var m=String(v||'').match(/(?:19|20)\d{2}/);
+    return m?m[0]:String(new Date().getFullYear());
+  }
+  function canWrite(){
+    try{
+      var r=(typeof safCurrentRole==='function'?safCurrentRole():'').toLowerCase();
+      return r==='admin'||r==='editor';
+    }catch(e){return false;}
+  }
+  function fmtSize(bytes){
+    var n=Number(bytes||0); if(!n)return '';
+    if(n<1024)return n+' B'; if(n<1024*1024)return (n/1024).toFixed(1)+' KB';
+    return (n/(1024*1024)).toFixed(1)+' MB';
+  }
+  async function openFile(path){
+    var db=client(); if(!db){alert('Supabase Storage indisponible.');return;}
+    try{
+      var res=await db.storage.from(BUCKET).createSignedUrl(path,TTL);
+      if(res.error)throw res.error;
+      if(!res.data||!res.data.signedUrl)throw new Error('URL signée non reçue');
+      var w=window.open(res.data.signedUrl,'_blank','noopener');
+      if(!w)window.location.href=res.data.signedUrl;
+    }catch(e){alert('Impossible d’ouvrir le document : '+(e&&e.message?e.message:e));}
+  }
+  function status(key,msg,kind){
+    var el=document.getElementById('saf-doc-status-'+key); if(!el)return;
+    el.textContent=msg||'';
+    el.style.color=kind==='error'?'#f85149':(kind==='ok'?'#3fb950':'#8896A0');
+  }
+  function panelHTML(key,title,subtitle,hasRecord){
+    var writable=canWrite()&&hasRecord;
+    return '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;">'
+      +'<div><div style="font-family:var(--font-mono);font-size:11px;letter-spacing:1px;color:var(--steel-bright);font-weight:700;text-transform:uppercase;">📎 '+esc(title)+'</div>'
+      +'<div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-top:3px;">'+esc(subtitle||'Supabase Storage · bucket privé « SMS Documents » · liens temporaires signés')+'</div></div>'
+      +(hasRecord?'<button type="button" class="btn btn-ghost" style="padding:6px 10px;font-size:9px;" data-saf-doc-refresh="'+esc(key)+'">↺ Actualiser</button>':'')
+      +'</div>'
+      +(hasRecord?(writable?'<div id="saf-doc-upload-'+esc(key)+'" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">'
+        +'<input id="saf-doc-file-'+esc(key)+'" type="file" accept=".pdf,.docx,.pptx,.xlsx,.jpg,.jpeg,.png,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,image/jpeg,image/png" style="flex:1;min-width:220px;font-size:10px;color:var(--grey-200);"/>'
+        +'<button type="button" class="btn btn-primary" style="padding:7px 12px;font-size:9px;" data-saf-doc-upload="'+esc(key)+'">＋ Ajouter</button></div>':'')
+        +'<div id="saf-doc-list-'+esc(key)+'"></div><div id="saf-doc-status-'+esc(key)+'" style="margin-top:7px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);"></div>'
+        :'<div style="padding:9px 11px;border:1px dashed rgba(255,255,255,.12);border-radius:6px;color:var(--grey-400);font-family:var(--font-mono);font-size:10px;">Enregistrez d’abord cette fiche, puis rouvrez-la pour joindre des documents.</div>');
+  }
+  function mount(cfg){
+    var host=cfg.host&&cfg.host(); if(!host)return;
+    var old=document.getElementById('saf-doc-panel-'+cfg.key); if(old)old.remove();
+    var rec=cfg.getRecord?cfg.getRecord():null;
+    var box=document.createElement('div');
+    box.id='saf-doc-panel-'+cfg.key;
+    box.style.cssText='margin:16px 0;padding:14px 16px;background:rgba(74,159,224,.045);border:1px solid rgba(74,159,224,.22);border-radius:9px;';
+    box.innerHTML=panelHTML(cfg.key,cfg.title,cfg.subtitle,!!rec);
+    if(cfg.before&&cfg.before())host.insertBefore(box,cfg.before());else host.appendChild(box);
+    PANELS[cfg.key]=cfg;
+    box.querySelectorAll('[data-saf-doc-refresh]').forEach(function(b){b.addEventListener('click',function(){refresh(cfg.key);});});
+    box.querySelectorAll('[data-saf-doc-upload]').forEach(function(b){b.addEventListener('click',function(){upload(cfg.key);});});
+    if(rec)setTimeout(function(){refresh(cfg.key);},0);
+  }
+  async function refresh(key){
+    var cfg=PANELS[key], list=document.getElementById('saf-doc-list-'+key); if(!cfg||!list)return;
+    var rec=cfg.getRecord(); if(!rec){list.innerHTML='';status(key,'Fiche non enregistrée.','error');return;}
+    var db=client(); if(!db){list.innerHTML='<div style="color:#f85149;font-family:var(--font-mono);font-size:10px;">Supabase Storage indisponible.</div>';return;}
+    var folder=rec.document_folder||cfg.defaultFolder(rec);
+    status(key,'Chargement…');
+    try{
+      var res=await db.storage.from(BUCKET).list(folder,{limit:100,sortBy:{column:'name',order:'asc'}});
+      if(res.error)throw res.error;
+      var files=(res.data||[]).filter(function(x){return x&&x.name&&x.id;});
+      if(!files.length){
+        list.innerHTML='<div style="padding:9px 11px;border:1px dashed rgba(255,255,255,.12);border-radius:6px;color:var(--grey-400);font-family:var(--font-mono);font-size:10px;">Aucun document associé.</div>';
+        status(key,'Dossier : '+folder); return;
+      }
+      list.innerHTML=files.map(function(f){
+        var path=folder+'/'+f.name, size=fmtSize((f.metadata||{}).size);
+        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:6px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:6px;">'
+          +'<span style="font-size:15px;">📄</span><div style="flex:1;min-width:0;"><div style="font-family:var(--font-mono);font-size:10px;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(f.name)+'">'+esc(f.name)+'</div>'
+          +(size?'<div style="font-family:var(--font-mono);font-size:8px;color:var(--grey-600);margin-top:2px;">'+esc(size)+'</div>':'')+'</div>'
+          +'<button type="button" class="btn btn-ghost" style="padding:5px 9px;font-size:8px;" data-saf-doc-path="'+esc(path)+'">Ouvrir</button></div>';
+      }).join('');
+      list.querySelectorAll('[data-saf-doc-path]').forEach(function(b){b.addEventListener('click',function(){openFile(this.getAttribute('data-saf-doc-path'));});});
+      status(key,files.length+' document(s) · '+folder,'ok');
+    }catch(e){
+      list.innerHTML='<div style="color:#f85149;font-family:var(--font-mono);font-size:10px;">Erreur Storage : '+esc(e&&e.message?e.message:e)+'</div>';
+      status(key,'Impossible de lire le dossier Storage.','error');
+    }
+  }
+  async function upload(key){
+    var cfg=PANELS[key]; if(!cfg)return;
+    if(!canWrite()){status(key,'Votre rôle est en lecture seule : ajout non autorisé.','error');return;}
+    var rec=cfg.getRecord(); if(!rec){status(key,'Enregistrez d’abord cette fiche.','error');return;}
+    var input=document.getElementById('saf-doc-file-'+key), file=input&&input.files&&input.files[0];
+    if(!file){status(key,'Sélectionnez un fichier.','error');return;}
+    var db=client(); if(!db){status(key,'Supabase Storage indisponible.','error');return;}
+    var folder=rec.document_folder||cfg.defaultFolder(rec), filename=safeSegment(file.name), path=folder+'/'+filename;
+    status(key,'Envoi de « '+filename+' »…');
+    try{
+      var res=await db.storage.from(BUCKET).upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type||undefined});
+      if(res.error)throw res.error;
+      if(!rec.document_folder){rec.document_folder=folder; if(cfg.persist)cfg.persist(rec);}
+      if(input)input.value=''; status(key,'Document envoyé avec succès.','ok'); await refresh(key);
+    }catch(e){
+      var msg=e&&e.message?e.message:String(e); if(/duplicate|already exists/i.test(msg))msg='Un fichier portant ce nom existe déjà dans ce dossier.';
+      status(key,'Échec de l’envoi : '+msg,'error');
+    }
+  }
+
+  // RISK ASSESSMENTS — existing risk record, edit modal
+  if(typeof window.editEntry==='function'){
+    var _editEntry=window.editEntry;
+    window.editEntry=function(id){
+      var r=_editEntry.apply(this,arguments);
+      setTimeout(function(){
+        mount({
+          key:'risk', title:'Documents associés — Risk Assessment',
+          host:function(){var b=document.querySelector('#edit-modal-overlay button[onclick="saveEditModal()"]');return b?b.closest('div').parentElement:null;},
+          before:function(){var b=document.querySelector('#edit-modal-overlay button[onclick="saveEditModal()"]');return b?b.closest('div'):null;},
+          getRecord:function(){try{return DB.find(function(x){return x&&x.id===id;})||null;}catch(e){return null;}},
+          defaultFolder:function(x){return 'Risk Assessments/'+yearFrom(x.created_at||x.updated_at||x.timestamp)+'/'+safeSegment(x.id);},
+          persist:function(x){try{var i=DB.findIndex(function(r){return r&&r.id===x.id;});if(i>=0){DB[i].document_folder=x.document_folder;saveDB();}}catch(e){}}
+        });
+      },0);
+      return r;
+    };
+  }
+
+  // MANAGEMENT OF CHANGE — preserve Storage folder through save/edits
+  if(typeof window.collectChangeStudy==='function'){
+    var _collectCS=window.collectChangeStudy;
+    window.collectChangeStudy=function(){
+      var d=_collectCS.apply(this,arguments);
+      try{
+        var oldRef=window.__safStorageMocRef||d.ref;
+        var prev=CHANGE_STUDIES.find(function(x){return x&&x.ref===oldRef;});
+        if(prev&&prev.document_folder)d.document_folder=prev.document_folder;
+      }catch(e){}
+      return d;
+    };
+  }
+  if(typeof window.showChangeStudyForm==='function'){
+    var _showCS=window.showChangeStudyForm;
+    window.showChangeStudyForm=function(ref){
+      window.__safStorageMocRef=ref||''; window.__safAutoMocRef=ref||'';
+      var r=_showCS.apply(this,arguments);
+      setTimeout(function(){
+        mount({
+          key:'moc', title:'Documents associés — Management of Change',
+          host:function(){return document.getElementById('change-form');},
+          before:function(){return document.querySelector('#change-form .form-actions');},
+          getRecord:function(){try{var rr=window.__safStorageMocRef;return rr?CHANGE_STUDIES.find(function(x){return x&&x.ref===rr;})||null:null;}catch(e){return null;}},
+          defaultFolder:function(x){return 'Manage of Changes/'+yearFrom(x.start_date||x.saved_at)+'/'+safeSegment(x.ref);},
+          persist:function(x){try{var i=CHANGE_STUDIES.findIndex(function(c){return c&&c.ref===x.ref;});if(i>=0){CHANGE_STUDIES[i].document_folder=x.document_folder;saveChangeStudies();}}catch(e){}}
+        });
+      },20);
+      return r;
+    };
+  }
+
+  // SAFETY REVIEW BOARD — preserve folder on form save
+  if(typeof window.saveSRBMeeting==='function'){
+    var _saveSRB=window.saveSRBMeeting;
+    window.saveSRBMeeting=function(editId){
+      var folder=''; try{var p=getSRBMeetings().find(function(x){return x&&x.id===editId;});folder=p&&p.document_folder||'';}catch(e){}
+      var r=_saveSRB.apply(this,arguments);
+      if(folder&&editId){try{var a=getSRBMeetings(),i=a.findIndex(function(x){return x&&x.id===editId;});if(i>=0&&!a[i].document_folder){a[i].document_folder=folder;saveSRBMeetings(a);}}catch(e){}}
+      return r;
+    };
+  }
+  if(typeof window.showSRBForm==='function'){
+    var _showSRB=window.showSRBForm;
+    window.showSRBForm=function(editId){
+      window.__safStorageSrbId=editId||'';
+      var r=_showSRB.apply(this,arguments);
+      setTimeout(function(){
+        mount({
+          key:'srb', title:'Documents associés — Safety Review Board',
+          host:function(){var w=document.getElementById('srb-form-wrap');return w?w.querySelector('.chart-card'):null;},
+          getRecord:function(){try{var id=window.__safStorageSrbId;return id?getSRBMeetings().find(function(x){return x&&x.id===id;})||null:null;}catch(e){return null;}},
+          defaultFolder:function(x){return 'Safety Review Board/'+yearFrom(x.date)+'/'+safeSegment(x.ref||x.id);},
+          persist:function(x){try{var a=getSRBMeetings(),i=a.findIndex(function(m){return m&&m.id===x.id;});if(i>=0){a[i].document_folder=x.document_folder;saveSRBMeetings(a);}}catch(e){}}
+        });
+      },0);
+      return r;
+    };
+  }
+
+  // TRAINING — certificates, attendance records, assessments, etc.
+  if(typeof window.smsTrainingStore==='function'){
+    var _trStore=window.smsTrainingStore;
+    window.smsTrainingStore=function(editId){
+      var folder=''; try{var p=smsTrainingGet().find(function(x){return x&&x.id===editId;});folder=p&&p.document_folder||'';}catch(e){}
+      var r=_trStore.apply(this,arguments);
+      if(folder&&editId){try{var a=smsTrainingGet(),i=a.findIndex(function(x){return x&&x.id===editId;});if(i>=0&&!a[i].document_folder){a[i].document_folder=folder;smsTrainingSave(a);}}catch(e){}}
+      return r;
+    };
+  }
+  if(typeof window.smsTrainingShowForm==='function'){
+    var _trShow=window.smsTrainingShowForm;
+    window.smsTrainingShowForm=function(editId){
+      window.__safStorageTrainingId=editId||'';
+      var r=_trShow.apply(this,arguments);
+      setTimeout(function(){
+        mount({
+          key:'training', title:'Documents associés — Training',
+          host:function(){var w=document.getElementById('sms-training-form');return w?w.querySelector('.chart-card'):null;},
+          getRecord:function(){try{var id=window.__safStorageTrainingId;return id?smsTrainingGet().find(function(x){return x&&x.id===id;})||null:null;}catch(e){return null;}},
+          defaultFolder:function(x){return 'Training/'+yearFrom(x.date)+'/'+safeSegment(x.id);},
+          persist:function(x){try{var a=smsTrainingGet(),i=a.findIndex(function(t){return t&&t.id===x.id;});if(i>=0){a[i].document_folder=x.document_folder;smsTrainingSave(a);}}catch(e){}}
+        });
+      },0);
+      return r;
+    };
+  }
+
+  // SAFETY PROMOTION — safety alerts / communications
+  if(typeof window.showLessonForm==='function'){
+    var _llShow=window.showLessonForm;
+    window.showLessonForm=function(editId){
+      window.__safStorageLessonId=editId||'';
+      var r=_llShow.apply(this,arguments);
+      setTimeout(function(){
+        mount({
+          key:'promotion', title:'Documents associés — Safety Promotion',
+          host:function(){var w=document.getElementById('lessons-form-wrap');return w?w.querySelector('.chart-card'):null;},
+          getRecord:function(){try{var id=window.__safStorageLessonId;return id?getLessons().find(function(x){return x&&x.id===id;})||null:null;}catch(e){return null;}},
+          defaultFolder:function(x){return 'Safety promotion/'+yearFrom(x.date)+'/'+safeSegment(x.ref||x.id);},
+          persist:function(x){try{var a=getLessons(),i=a.findIndex(function(l){return l&&l.id===x.id;});if(i>=0){a[i].document_folder=x.document_folder;saveLessons(a);}}catch(e){}}
+        });
+      },0);
+      return r;
+    };
+  }
+
+  window.safStorageRefreshModule=function(key){return refresh(key);};
+  window.safStorageUploadModule=function(key){return upload(key);};
+  window.safStorageRemountModule=function(key){var cfg=PANELS[key];if(cfg)return mount(cfg);};
+})();
+</script>
+<!-- ═══ END SAF STORAGE — OTHER SMS MODULES ═══════════════════════════════ -->
+
+<!-- ═══ SAF SAFETY — FORM AUTOSAVE / IMMEDIATE STORAGE UPLOAD ═════════════ -->
+<script id="saf-safety-autosave-v1">
+(function(){
+  'use strict';
+  var timers=Object.create(null), DELAY=900;
+  function later(key,fn){ clearTimeout(timers[key]); timers[key]=setTimeout(function(){try{fn();}catch(e){console.warn('SAF autosave '+key,e);}},DELAY); }
+  function visible(el){ if(!el)return false; var cs=window.getComputedStyle?getComputedStyle(el):null; return !cs || (cs.display!=='none' && cs.visibility!=='hidden'); }
+  function writingAllowed(){ try{var r=(typeof safCurrentRole==='function'?safCurrentRole():'').toLowerCase();return r==='admin'||r==='editor';}catch(e){return false;} }
+
+  function occReady(){
+    var w=document.getElementById('occ-form-wrap'); if(!visible(w))return false;
+    return !!((document.getElementById('occ-date')||{}).value && ((document.getElementById('occ-desc')||{}).value||'').trim() && ((document.getElementById('occ-custom-id')||{}).value||'').trim());
+  }
+  function autoOccurrence(){ if(writingAllowed()&&occReady()&&typeof saveOccurrence==='function') saveOccurrence(true); }
+  function autoMoc(){
+    var f=document.getElementById('change-form'); if(!visible(f)||!writingAllowed()||typeof saveChangeStudy!=='function')return;
+    var ref=((document.getElementById('c-ref')||{}).value||'').trim(); if(!ref||ref.replace(/^MOC-?/,'').trim()==='')return; saveChangeStudy(true);
+  }
+  function autoSrb(){ var f=document.getElementById('srb-form-wrap');if(!visible(f)||!writingAllowed()||typeof saveSRBMeeting!=='function')return;saveSRBMeeting(window.__safAutoSrbId||window.__safStorageSrbId||'',true); }
+  function autoTraining(){ var f=document.getElementById('sms-training-form');if(!visible(f)||!writingAllowed()||typeof smsTrainingStore!=='function')return;smsTrainingStore(window.__safAutoTrainingId||window.__safStorageTrainingId||'',true); }
+  function autoLesson(){ var f=document.getElementById('lessons-form-wrap');if(!visible(f)||!writingAllowed()||typeof saveLesson!=='function')return;saveLesson(true); }
+  function autoRisk(){ var f=document.getElementById('edit-modal-overlay');if(!visible(f)||!writingAllowed()||typeof saveEditModal!=='function')return;saveEditModal(true); }
+
+  function route(t){
+    if(!t||!t.closest||!writingAllowed())return;
+    if(t.closest('#occ-form-wrap')){ later('occ',autoOccurrence); return; }
+    if(t.closest('#change-form')){ later('moc',autoMoc); return; }
+    if(t.closest('#srb-form-wrap')){ later('srb',autoSrb); return; }
+    if(t.closest('#sms-training-form')){ later('training',autoTraining); return; }
+    if(t.closest('#lessons-form-wrap')){ later('lesson',autoLesson); return; }
+    if(t.closest('#edit-modal-overlay')){ later('risk',autoRisk); return; }
+  }
+  document.addEventListener('input',function(e){route(e.target);},true);
+  document.addEventListener('change',function(e){
+    var t=e.target;
+    if(t&&t.id==='occ-doc-file'&&t.files&&t.files.length&&typeof window.safStorageUploadOccurrence==='function'){window.safStorageUploadOccurrence();return;}
+    if(t&&t.id&&t.id.indexOf('saf-doc-file-')===0&&t.files&&t.files.length&&typeof window.safStorageUploadModule==='function'){
+      window.safStorageUploadModule(t.id.slice('saf-doc-file-'.length)); return;
+    }
+    route(t);
+  },true);
+  document.addEventListener('blur',function(e){if(e.target&&e.target.isContentEditable)route(e.target);},true);
+
+  // Once a new occurrence has been automatically created, enable its Storage panel immediately.
+  window.safAutosaveEnableOccurrenceDocuments=function(id){
+    var wrap=document.getElementById('occ-documents-wrap'); if(!wrap||!id)return;
+    wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;"><div><div style="font-family:var(--font-mono);font-size:11px;letter-spacing:1px;color:var(--steel-bright);font-weight:700;text-transform:uppercase;">📎 Documents associés</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-top:3px;">Supabase Storage · envoi automatique dès la sélection</div></div><button type="button" class="btn btn-ghost" style="padding:6px 10px;font-size:9px;" onclick="safStorageRefreshOccurrence()">↺ Actualiser</button></div>'+
+      '<div id="occ-doc-upload-row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;"><input id="occ-doc-file" type="file" accept=".pdf,.docx,.pptx,.xlsx,.jpg,.jpeg,.png" style="flex:1;min-width:260px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--grey-200);padding:6px;font-family:var(--font-mono);font-size:10px;"/><span style="font-family:var(--font-mono);font-size:9px;color:#3fb950;">Upload automatique</span></div><div id="occ-doc-status" style="min-height:16px;margin-bottom:8px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);"></div><div id="occ-doc-list" data-occ-id="'+String(id).replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'" style="display:flex;flex-direction:column;gap:6px;"></div>';
+    if(typeof window.safStorageRefreshOccurrence==='function')window.safStorageRefreshOccurrence();
+  };
+
+  // Existing edit forms: indicate automatic persistence without removing final validation buttons.
+  function mark(){
+    [['occ-form-wrap','Autosave actif · sauvegarde automatique'],['change-form','Autosave actif · brouillon synchronisé'],['srb-form-wrap','Autosave actif'],['sms-training-form','Autosave actif'],['lessons-form-wrap','Autosave actif']].forEach(function(x){
+      var root=document.getElementById(x[0]);if(!root||root.querySelector('.saf-autosave-note'))return;var d=document.createElement('div');d.className='saf-autosave-note';d.style.cssText='margin:8px 0;font-family:var(--font-mono);font-size:9px;color:#3fb950;';d.textContent='✓ '+x[1];root.insertBefore(d,root.firstChild);
+    });
+  }
+  setInterval(mark,1200); setTimeout(mark,500);
+
+  // Best-effort immediate flush when the tab goes to background.
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'&&typeof window.safCloudSaveNow==='function')window.safCloudSaveNow();});
+  window.addEventListener('pagehide',function(){if(typeof window.safCloudSaveNow==='function')window.safCloudSaveNow();});
+})();
+</script>
+<!-- ═══ END SAF SAFETY AUTOSAVE ═════════════════════════════════════════ -->
 </body>
 </html>
