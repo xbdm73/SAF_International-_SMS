@@ -1922,32 +1922,67 @@ function safExportPDF() {
 }
 </script>
 <!-- ── SAF INTER-TOOL NAV ── -->
-<div id="saf-subnav" style="background:#070e1a;border-bottom:1px solid #1a2840;padding:0 28px;position:sticky;top:var(--header-h,118px);z-index:20;margin-left:248px;">
-<div style="display:flex;align-items:center;gap:4px;overflow-x:auto;">
-<a href="index.html" onmouseout="this.style.color='#6a82a5'" onmouseover="this.style.color='#e8f0fe'" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;">⌂ HOME</a>
-<div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
-<a class="saf-nav-link" href="Archives/SAF_International_Safety.html" onmouseout="this.style.color='#6a82a5'" onmouseover="this.style.color='#e07070'" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;"><span style="color:#e07070">■</span> SMS</a>
-<a class="saf-nav-link" href="SAF_International_Compliance_Monitoring_System.html" onmouseout="this.style.color='#6a82a5'" onmouseover="this.style.color='#70a8e0'" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;"><span style="color:#70a8e0">■</span> CMS</a>
-<a class="saf-nav-link" href="SAF_International_Appendices_OMM.html" onmouseout="this.style.color='#6a82a5'" onmouseover="this.style.color='#70d0a0'" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;"><span style="color:#70d0a0">■</span> OMM</a>
+<style id="saf-subnav-style">
+#saf-subnav .saf-nav-sep{width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;}
+#saf-subnav a.saf-nav-link,
+#saf-subnav a.saf-nav-link:link,
+#saf-subnav a.saf-nav-link:visited{display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:600;text-decoration:none;color:#6a82a5;background:none;border-bottom:2px solid transparent;white-space:nowrap;transition:color .12s ease,border-color .12s ease;}
+#saf-subnav a.saf-nav-link:hover,
+#saf-subnav a.saf-nav-link:focus{color:var(--saf-nav-accent,#e8f0fe);text-decoration:none;}
+#saf-subnav a.saf-nav-link.is-active,
+#saf-subnav a.saf-nav-link.is-active:link,
+#saf-subnav a.saf-nav-link.is-active:visited{color:var(--saf-nav-accent,#e8f0fe);border-bottom-color:var(--saf-nav-accent,#e8f0fe);background:rgba(255,255,255,0.03);}
+</style>
+<div id="saf-subnav" data-saf-self="cms" style="background:#070e1a;border-bottom:1px solid #1a2840;padding:0 28px;position:sticky;top:var(--header-h,118px);z-index:20;margin-left:248px;">
+<div class="saf-nav-row" style="display:flex;align-items:center;gap:4px;overflow-x:auto;">
+<a class="saf-nav-link" data-saf-tool="home" href="index.html" style="--saf-nav-accent:#e8f0fe;">⌂ HOME</a>
+<div class="saf-nav-sep"></div>
+<a class="saf-nav-link" data-saf-tool="sms" href="SAF_International_Safety.html" style="--saf-nav-accent:#e07070;"><span style="color:#e07070">■</span> SMS</a>
+<a class="saf-nav-link" data-saf-tool="cms" href="SAF_International_Compliance_Monitoring_System.html" style="--saf-nav-accent:#70a8e0;"><span style="color:#70a8e0">■</span> CMS</a>
+<a class="saf-nav-link" data-saf-tool="omm" href="SAF_International_Appendices_OMM.html" style="--saf-nav-accent:#70d0a0;"><span style="color:#70d0a0">■</span> OMM</a>
 </div>
 </div>
 <script>
+/* Onglet actif + propagation du jeton d'accès invité.
+   L'onglet actif est déterminé par data-saf-self (identité déclarée du fichier),
+   pas par le nom de fichier : renommage, copie ou sous-dossier sans effet. */
 (function(){
-  var map = {
-    'SAF_International_Safety.html':                    '#e07070',
-    'SAF_International_Compliance_Monitoring_System.html': '#70a8e0',
-    'SAF_International_Appendices_OMM.html':            '#70d0a0',
-  };
-  var file = location.pathname.split('/').pop() || 'index.html';
-  var color = map[file];
-  if (!color) return;
-  document.querySelectorAll('#saf-subnav a.saf-nav-link').forEach(function(a){
-    if (a.getAttribute('href') === file) {
-      a.style.color = color;
-      a.style.borderBottomColor = color;
-      a.style.background = 'rgba(255,255,255,0.03)';
+  var bar = document.getElementById('saf-subnav');
+  if(!bar) return;
+  var links = bar.querySelectorAll('a.saf-nav-link');
+  if(!links.length) return;
+
+  function basename(u){
+    if(!u) return '';
+    try { u = decodeURIComponent(u); } catch(e){}
+    u = u.split('#')[0].split('?')[0];
+    return (u.split('/').pop() || '').toLowerCase();
+  }
+
+  var active = null;
+  var self = bar.getAttribute('data-saf-self');
+  if(self) active = bar.querySelector('a.saf-nav-link[data-saf-tool="' + self + '"]');
+  if(!active){
+    var here = basename(location.pathname) || 'index.html';
+    for(var i = 0; i < links.length; i++){
+      if(basename(links[i].getAttribute('href')) === here){ active = links[i]; break; }
     }
-  });
+  }
+  for(var j = 0; j < links.length; j++) links[j].classList.remove('is-active');
+  if(active) active.classList.add('is-active');
+
+  /* Un invité en lecture seule conserve son accès en passant d'un outil à l'autre. */
+  var token = null;
+  try { token = new URLSearchParams(window.location.search).get('token'); } catch(e){}
+  if(token){
+    bar.querySelectorAll('a[href]').forEach(function(a){
+      try{
+        var url = new URL(a.getAttribute('href'), window.location.href);
+        url.searchParams.set('token', token);
+        a.setAttribute('href', url.pathname + url.search);
+      }catch(e){}
+    });
+  }
 })();
 </script>
 <!-- ── END SAF INTER-TOOL NAV ── -->
