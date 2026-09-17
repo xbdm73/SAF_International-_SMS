@@ -17524,7 +17524,7 @@ function showLessonForm(editId){
   var buildTag=document.createElement('div');
   buildTag.id='ll-build-tag';
   buildTag.style.cssText='margin:-12px 0 16px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);letter-spacing:.04em;';
-  buildTag.textContent='Editeur v4 · images placables (gauche/centre/droite + habillage) · pages multiples · build 2026-09-17b';
+  buildTag.textContent='Editeur v5 · images placables · pages multiples · zone de texte elargie · build 2026-09-17c';
   card.appendChild(buildTag);
 
   function mkField(labelText,inputEl,gridSpan){
@@ -18724,12 +18724,16 @@ function printLessonById(id){
     +'.page{width:794px;height:1123px;position:relative;background:#fff;overflow:hidden;page-break-after:always;break-after:page;}'
     +'.page:last-child{page-break-after:auto;break-after:auto;}'
     +'.bg{position:absolute;top:0;left:0;width:794px;height:1123px;z-index:0;} .bg img{width:794px;height:1123px;display:block;}'
-    +'.ct{position:absolute;top:226px;left:68px;right:68px;bottom:62px;z-index:1;overflow:hidden;padding:0 4px;}'
+    +'.ct{position:absolute;top:226px;left:46px;right:46px;bottom:56px;z-index:1;overflow:hidden;padding:0 2px;}'
     +'.meta{display:flex;gap:20px;margin-bottom:14px;flex-wrap:wrap;border-bottom:1px solid #e8ecf0;padding-bottom:10px;}'
     +'.meta span{font-family:monospace;font-size:11px;color:#6b7a8d;} .meta b{color:#1a2535;}'
     +'.lang{font-family:monospace;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6b7a8d;margin-bottom:8px;}'
     +'.ttl{font-size:18px;font-weight:800;color:#1a2535;margin-bottom:16px;line-height:1.3;}'
-    +'.box{padding:12px 14px;border-left:3px solid #1b6ca8;background:rgba(27,108,168,.05);border-radius:0 4px 4px 0;font-size:12.5px;color:#1a2535;line-height:1.65;margin-bottom:10px;white-space:normal;}'
+    +'.box{padding:11px 12px;border-left:3px solid #1b6ca8;background:rgba(27,108,168,.05);border-radius:0 4px 4px 0;font-size:12.5px;color:#1a2535;line-height:1.65;margin-bottom:10px;white-space:normal;}'
+    +'.box ul,.box ol{padding-left:2em;margin:6px 0;list-style-position:outside;}'
+    +'.box ul ul,.box ol ol,.box ul ol,.box ol ul{margin:3px 0;}'
+    +'.box li{margin:3px 0;padding-left:2px;}'
+    +'.box p,.box div{max-width:100%;}'
     +'.uimg{max-width:100%;max-height:200px;object-fit:contain;border-radius:4px;display:block;margin-bottom:12px;}'
     +'.box img{max-width:100%;height:auto;border-radius:3px;page-break-inside:avoid;break-inside:avoid;}'
     +'.box img[data-ll-img]{display:block;}'
