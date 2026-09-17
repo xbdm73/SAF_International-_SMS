@@ -17712,7 +17712,13 @@ function showLessonForm(editId){
     var edStyle=document.createElement('style');
     edStyle.textContent='#'+id+' ol,#'+id+' ul{padding-left:2em;margin:4px 0;}#'+id+' li{margin:2px 0;}'
       +'#'+id+' img{max-width:100%;height:auto;}'
-      +'#'+id+' img[data-ll-sel]{outline:2px solid #4a9fe0;outline-offset:2px;}';
+      +'#'+id+' img[data-ll-sel]{outline:2px solid #4a9fe0;outline-offset:2px;}'
+      +'#'+id+' img[data-ll-align="left"]{margin-left:0!important;margin-right:auto!important;}'
+      +'#'+id+' img[data-ll-align="center"]{margin-left:auto!important;margin-right:auto!important;}'
+      +'#'+id+' img[data-ll-align="right"]{margin-left:auto!important;margin-right:0!important;}'
+      +'#'+id+' img[data-ll-float="left"]{float:left!important;margin:4px 16px 10px 0!important;}'
+      +'#'+id+' img[data-ll-float="right"]{float:right!important;margin:4px 0 10px 16px!important;}'
+      +'#'+id+'::after{content:"";display:block;clear:both;}';
     document.head.appendChild(edStyle);
     ed.innerHTML=llTextToHtml(value||'');
     ['keyup','mouseup','touchend','input','focus'].forEach(function(evt){
@@ -17742,9 +17748,12 @@ function showLessonForm(editId){
     ctrl.appendChild(cbtn('\u2212','Reduire de 10 %',function(){_llResizeBy(-10);}));
     ctrl.appendChild(cbtn('+','Agrandir de 10 %',function(){_llResizeBy(10);}));
     [25,50,75,100].forEach(function(p){ ctrl.appendChild(cbtn(p+'%','Largeur '+p+' % de la page',function(){_llSetWidth(p,true);})); });
-    ctrl.appendChild(cbtn('\u21E4','Aligner a gauche',function(){_llSetAlign('left');}));
-    ctrl.appendChild(cbtn('\u2194','Centrer',function(){_llSetAlign('center');}));
-    ctrl.appendChild(cbtn('\u21E5','Aligner a droite',function(){_llSetAlign('right');}));
+    var alignBtns={};
+    function abtn(key,txt,title,fn){var b=cbtn(txt,title,fn);alignBtns[key]=b;ctrl.appendChild(b);return b;}
+    abtn('left','\u25E7 Gauche','Image collee a la marge gauche',function(){_llSetAlign('left');});
+    abtn('center','\u25A3 Centre','Image centree',function(){_llSetAlign('center');});
+    abtn('right','\u25E8 Droite','Image collee a la marge droite',function(){_llSetAlign('right');});
+    abtn('wrap','\u00B6 Texte autour','Le texte s\'ecoule a cote de l\'image (gauche ou droite)',function(){_llToggleFloat();});
     var delImgB=cbtn('\u2715 Supprimer','Supprimer cette image',function(){
       if(_selImg&&_selImg.parentNode)_selImg.parentNode.removeChild(_selImg);
       _llDeselect();_llTouched();
@@ -17776,14 +17785,48 @@ function showLessonForm(editId){
       if(touch)_llTouched();
     }
     function _llResizeBy(d){ if(_selImg)_llSetWidth(_llWidthPct(_selImg)+d,true); }
+    // Placement : alignement seul (l'image occupe sa ligne) ou habillage
+    // (le texte s'ecoule a cote). Les marges sont posees en style en ligne ET
+    // appuyees par une regle CSS, pour qu'aucune feuille de style ne puisse
+    // recentrer l'image.
+    function _llApplyPlacement(a,fl){
+      if(!_selImg)return;
+      if(a!=='left'&&a!=='right')a='center';
+      if(fl&&a==='center')fl=false;
+      _selImg.style.display='block';
+      _selImg.setAttribute('data-ll-align',a);
+      if(fl){
+        _selImg.setAttribute('data-ll-float',a);
+        _selImg.style.cssFloat=a;
+        _selImg.style.margin=(a==='left')?'4px 16px 10px 0':'4px 0 10px 16px';
+      }else{
+        _selImg.removeAttribute('data-ll-float');
+        _selImg.style.cssFloat='none';
+        _selImg.style.marginTop='10px';_selImg.style.marginBottom='10px';
+        _selImg.style.marginLeft=(a==='left')?'0':'auto';
+        _selImg.style.marginRight=(a==='right')?'0':'auto';
+      }
+      _llSync();_llTouched();
+    }
     function _llSetAlign(a){
       if(!_selImg)return;
-      _selImg.style.display='block';
-      _selImg.style.marginTop='10px';_selImg.style.marginBottom='10px';
-      _selImg.style.marginLeft=(a==='left')?'0':'auto';
-      _selImg.style.marginRight=(a==='right')?'0':'auto';
-      _selImg.setAttribute('data-ll-align',a);
-      _llSync();_llTouched();
+      _llApplyPlacement(a,!!_selImg.getAttribute('data-ll-float'));
+    }
+    function _llToggleFloat(){
+      if(!_selImg)return;
+      var isF=!!_selImg.getAttribute('data-ll-float');
+      var a=_selImg.getAttribute('data-ll-align');
+      if(!isF&&a!=='left'&&a!=='right')a='left';
+      _llApplyPlacement(a,!isF);
+    }
+    // Images posees avant l'ajout des attributs : on deduit leur alignement
+    // de leurs marges pour que les boutons refletent l'etat reel.
+    function _llInferAlign(img){
+      if(img.getAttribute('data-ll-align'))return;
+      var ml=String(img.style.marginLeft||''),mr=String(img.style.marginRight||'');
+      var fl=String(img.style.cssFloat||img.style.float||'');
+      if(fl==='left'||fl==='right'){img.setAttribute('data-ll-align',fl);img.setAttribute('data-ll-float',fl);return;}
+      img.setAttribute('data-ll-align',(ml==='0px'||ml==='0')?'left':((mr==='0px'||mr==='0')?'right':'center'));
     }
     function _llPlaceHandle(){
       if(!_selImg||!_selImg.parentNode||!document.body.contains(_selImg)){handle.style.display='none';return;}
@@ -17795,12 +17838,23 @@ function showLessonForm(editId){
     function _llSync(){
       if(!_selImg){ctrl.style.display='none';handle.style.display='none';return;}
       ctrl.style.display='flex';
-      wLbl.textContent='largeur '+_llWidthPct(_selImg)+' % \u00B7 glisser le carre bleu pour ajuster';
+      var al=_selImg.getAttribute('data-ll-align')||'center';
+      var fl=!!_selImg.getAttribute('data-ll-float');
+      Object.keys(alignBtns).forEach(function(k){
+        var on=(k==='wrap')?fl:(k===al&&!fl?true:(k===al&&fl?true:false));
+        var b=alignBtns[k];
+        b.style.background=on?'rgba(74,159,224,.38)':'rgba(255,255,255,.07)';
+        b.style.borderColor=on?'#4a9fe0':'rgba(255,255,255,.16)';
+        b.style.color=on?'#ffffff':'var(--grey-200)';
+      });
+      var pos={left:'gauche',center:'centre',right:'droite'}[al]||'centre';
+      wLbl.textContent='largeur '+_llWidthPct(_selImg)+' % \u00B7 '+pos+(fl?' avec texte autour':'')+' \u00B7 glisser le carre bleu pour ajuster';
       _llPlaceHandle();
     }
     function _llSelectImg(img){
       if(_selImg&&_selImg!==img)_selImg.removeAttribute('data-ll-sel');
       _selImg=img;img.setAttribute('data-ll-sel','1');
+      _llInferAlign(img);
       _llSync();
     }
     function _llDeselect(){
@@ -17835,6 +17889,7 @@ function showLessonForm(editId){
       if(!dataUrl)return;
       var img=document.createElement('img');
       img.src=dataUrl;img.alt='';img.setAttribute('data-ll-img','1');
+      img.setAttribute('data-ll-align','center');
       img.style.cssText='display:block;width:60%;height:auto;margin:10px auto;border-radius:4px;';
       var a=_llAnchor();
       if(a&&a.parentNode===ed)ed.insertBefore(img,a.nextSibling);
@@ -18063,7 +18118,7 @@ function showLessonForm(editId){
 
   var pagesHelp=document.createElement('div');
   pagesHelp.style.cssText='font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin:-4px 0 14px;line-height:1.5;';
-  pagesHelp.textContent='Structure bilingue : 1) VERSION FRANÇAISE avec son titre et ses pages, 2) ENGLISH VERSION avec son title et ses pages. Ajoutez autant de pages complémentaires que nécessaire avec « ＋ Ajouter une page » ; chacune a son propre éditeur et se réordonne avec ▲ ▼. Le fond choisi est répété sur toutes les pages imprimées/PDF. Images : placez le curseur sur la ligne voulue, cliquez 🖼 (l’image se pose juste en dessous) ou collez une capture d’écran ; cliquez ensuite l’image pour régler sa largeur, son alignement, ou glissez le carré bleu de son coin.';
+  pagesHelp.textContent='Structure bilingue : 1) VERSION FRANÇAISE avec son titre et ses pages, 2) ENGLISH VERSION avec son title et ses pages. Ajoutez autant de pages complémentaires que nécessaire avec « ＋ Ajouter une page » ; chacune a son propre éditeur et se réordonne avec ▲ ▼. Le fond choisi est répété sur toutes les pages imprimées/PDF. Images : placez le curseur sur la ligne voulue, cliquez 🖼 (l’image se pose juste en dessous) ou collez une capture d’écran ; cliquez ensuite l’image pour régler sa largeur (− + ou carré bleu du coin) et son placement : ◧ Gauche, ▣ Centré, ◨ Droite, et ¶ Texte autour pour faire courir le texte à côté d’elle.';
   card.appendChild(pagesHelp);
 
   // Row 2: Distribution / Risk link
@@ -18600,6 +18655,12 @@ function printLessonById(id){
     +'.box{padding:12px 14px;border-left:3px solid #1b6ca8;background:rgba(27,108,168,.05);border-radius:0 4px 4px 0;font-size:12.5px;color:#1a2535;line-height:1.65;margin-bottom:10px;white-space:normal;}'
     +'.uimg{max-width:100%;max-height:200px;object-fit:contain;border-radius:4px;display:block;margin-bottom:12px;}'
     +'.box img{max-width:100%;height:auto;border-radius:3px;page-break-inside:avoid;break-inside:avoid;}'
+    +'.box img[data-ll-align="left"]{margin-left:0;margin-right:auto;}'
+    +'.box img[data-ll-align="center"]{margin-left:auto;margin-right:auto;}'
+    +'.box img[data-ll-align="right"]{margin-left:auto;margin-right:0;}'
+    +'.box img[data-ll-float="left"]{float:left;margin:4px 16px 10px 0;}'
+    +'.box img[data-ll-float="right"]{float:right;margin:4px 0 10px 16px;}'
+    +'.box::after{content:"";display:block;clear:both;}'
     +'.sig{display:block;width:386px;max-width:100%;height:auto;margin:18px 0 0;}'
     +'.att{margin:10px 0 0;padding:8px 12px;border-left:3px solid #C9A227;background:rgba(201,162,39,.10);border-radius:0 4px 4px 0;font-family:monospace;font-size:11px;color:#5a4a12;}'
     +'.pnum{position:absolute;right:70px;bottom:34px;z-index:2;font-family:monospace;font-size:9px;color:#6b7a8d;}'
