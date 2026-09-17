@@ -18203,7 +18203,9 @@ function showLessonForm(editId){
   var saveBtn=document.createElement('button');
   saveBtn.className='btn btn-primary';
   saveBtn.textContent=isEdit?'✓ Save':'✓ Sauvegarder & publier';
-  saveBtn.addEventListener('click',saveLesson);
+  // L'evenement du clic ne doit PAS arriver dans _silent : sinon la
+  // sauvegarde prend la branche autosave (ni message, ni fermeture).
+  saveBtn.addEventListener('click',function(e){if(e&&e.preventDefault)e.preventDefault();saveLesson(false);});
   var cancelBtn=document.createElement('button');
   cancelBtn.className='btn btn-ghost';cancelBtn.textContent='Cancel';
   cancelBtn.addEventListener('click',function(){
@@ -18431,7 +18433,25 @@ function saveLesson(_silent){
   var enTitle=((document.getElementById('ll-en-title')||{}).value||'').trim();
   var date=((document.getElementById('ll-date')||{}).value||'');
   var fb=document.getElementById('ll-feedback');
-  if(!frTitle||!enTitle||!date){if(!_silent&&fb){fb.textContent='Veuillez remplir la Date, le Titre (FR) et le Title (EN).';fb.style.color='#f85149';}return;}
+  if(!frTitle||!enTitle||!date){
+    if(!_silent){
+      var manque=[];
+      if(!date)manque.push('Date');
+      if(!frTitle)manque.push('Titre (FR)');
+      if(!enTitle)manque.push('Title (EN)');
+      var msg='Champs obligatoires manquants : '+manque.join(', ')+'.';
+      if(fb){fb.textContent=msg;fb.style.color='#f85149';}
+      if(typeof showToast==='function')showToast('⚠ '+msg,'error');
+      var firstId=!date?'ll-date':(!frTitle?'ll-fr-title':'ll-en-title');
+      var el0=document.getElementById(firstId);
+      if(el0){
+        try{el0.scrollIntoView({block:'center',behavior:'smooth'});el0.focus();}catch(e){}
+        el0.style.borderColor='#f85149';
+        setTimeout(function(){el0.style.borderColor='';},2500);
+      }
+    }
+    return;
+  }
   var type=((document.getElementById('ll-type')||{}).value)||'alert';
   var ref=(((document.getElementById('ll-ref')||{}).value)||'').trim()||llNextRef(type);
   var imgPosEl=document.querySelector('input[name="ll-img-pos"]:checked');
