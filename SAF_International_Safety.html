@@ -17519,6 +17519,14 @@ function showLessonForm(editId){
   bilingualNote.textContent='Communication bilingue : remplir la partie française, puis la partie anglaise. Chaque langue a son propre titre et peut recevoir une ou plusieurs pages complémentaires.';
   card.appendChild(bilingualNote);
 
+  // Repere de version : permet de verifier d'un coup d'oeil que le fichier
+  // ouvert est bien la derniere version livree.
+  var buildTag=document.createElement('div');
+  buildTag.id='ll-build-tag';
+  buildTag.style.cssText='margin:-12px 0 16px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);letter-spacing:.04em;';
+  buildTag.textContent='Editeur v4 · images placables (gauche/centre/droite + habillage) · pages multiples · build 2026-09-17b';
+  card.appendChild(buildTag);
+
   function mkField(labelText,inputEl,gridSpan){
     var d=document.createElement('div');
     d.className='form-field';d.style.margin='0';
@@ -17712,6 +17720,7 @@ function showLessonForm(editId){
     var edStyle=document.createElement('style');
     edStyle.textContent='#'+id+' ol,#'+id+' ul{padding-left:2em;margin:4px 0;}#'+id+' li{margin:2px 0;}'
       +'#'+id+' img{max-width:100%;height:auto;}'
+      +'#'+id+' img[data-ll-img]{display:block!important;}'
       +'#'+id+' img[data-ll-sel]{outline:2px solid #4a9fe0;outline-offset:2px;}'
       +'#'+id+' img[data-ll-align="left"]{margin-left:0!important;margin-right:auto!important;}'
       +'#'+id+' img[data-ll-align="center"]{margin-left:auto!important;margin-right:auto!important;}'
@@ -17730,6 +17739,25 @@ function showLessonForm(editId){
     // ── IMAGES EN LIGNE : selection, largeur, alignement ──────────────
     outer.style.position='relative';
     var _selImg=null,_drag=null;
+
+    // Le formulaire porte plusieurs editeurs (FR, EN, pages complementaires).
+    // Chacun avait sa propre barre IMAGE, et celle d'un editeur precedent
+    // restait affichee : on croyait agir sur l'image qu'on venait de cliquer
+    // alors que les boutons visaient encore l'image de l'autre editeur.
+    // Registre global -> une seule image selectionnee a la fois.
+    if(!window.__safLLPanels)window.__safLLPanels=[];
+    var _panel={el:outer,close:function(){_llDeselect();}};
+    window.__safLLPanels.push(_panel);
+    function _llCloseOthers(){
+      var live=[];
+      (window.__safLLPanels||[]).forEach(function(p){
+        if(!p||!p.el||!document.body.contains(p.el))return;   // formulaire refait
+        live.push(p);
+        if(p===_panel)return;
+        try{p.close();}catch(e){}
+      });
+      window.__safLLPanels=live;
+    }
 
     var ctrl=document.createElement('div');
     ctrl.className='ll-img-ctrl';
@@ -17806,6 +17834,14 @@ function showLessonForm(editId){
         _selImg.style.marginLeft=(a==='left')?'0':'auto';
         _selImg.style.marginRight=(a==='right')?'0':'auto';
       }
+      // Ceinture et bretelles : si l'image se retrouvait en rendu « inline »,
+      // les marges auto seraient sans effet et seul le text-align du bloc
+      // parent la positionnerait. On l'aligne donc aussi — sauf quand le
+      // parent est l'editeur lui-meme, ce qui deplacerait tout le texte.
+      var par=_selImg.parentNode;
+      if(par&&par!==ed&&par.nodeType===1&&ed.contains(par)&&par.style){
+        par.style.textAlign=fl?'':(a==='center'?'center':a);
+      }
       _llSync();_llTouched();
     }
     function _llSetAlign(a){
@@ -17852,6 +17888,7 @@ function showLessonForm(editId){
       _llPlaceHandle();
     }
     function _llSelectImg(img){
+      _llCloseOthers();
       if(_selImg&&_selImg!==img)_selImg.removeAttribute('data-ll-sel');
       _selImg=img;img.setAttribute('data-ll-sel','1');
       _llInferAlign(img);
@@ -17945,6 +17982,15 @@ function showLessonForm(editId){
       document.removeEventListener('touchmove',_llMoveDrag);
       document.removeEventListener('touchend',_llEndDrag);
     }
+    function _llDocDown(e){
+      if(!document.body.contains(ed)){document.removeEventListener('mousedown',_llDocDown,true);return;}
+      if(!_selImg)return;
+      var t=e.target;
+      if(t&&(t===outer||outer.contains(t)))return;
+      _llDeselect();
+    }
+    document.addEventListener('mousedown',_llDocDown,true);
+
     handle.addEventListener('mousedown',_llStartDrag);
     handle.addEventListener('touchstart',_llStartDrag,{passive:false});
 
@@ -18320,6 +18366,37 @@ function llCompressImage(file,cb){
   fr.onerror=function(){ if(typeof showToast==='function')showToast('Lecture du fichier impossible','error'); };
   fr.readAsDataURL(file);
 }
+// Diagnostic : window.safLLDiag() liste chaque image des editeurs de
+// communication avec son placement demande et son placement reellement
+// calcule par le navigateur.
+window.safLLDiag=function(){
+  var out=[];
+  var eds=document.querySelectorAll('#lessons-form-wrap [contenteditable="true"]');
+  Array.prototype.forEach.call(eds,function(ed){
+    Array.prototype.forEach.call(ed.querySelectorAll('img'),function(im,i){
+      var cs=window.getComputedStyle?getComputedStyle(im):{};
+      var par=im.parentNode&&im.parentNode.nodeType===1?im.parentNode:null;
+      var pcs=(par&&window.getComputedStyle)?getComputedStyle(par):{};
+      out.push({
+        editeur:ed.id,
+        n:i+1,
+        align_demande:im.getAttribute('data-ll-align')||'(aucun)',
+        habillage:im.getAttribute('data-ll-float')||'(non)',
+        style_en_ligne:im.getAttribute('style')||'',
+        calcule_display:cs.display,
+        calcule_float:cs.cssFloat||cs.float,
+        calcule_margin_left:cs.marginLeft,
+        calcule_margin_right:cs.marginRight,
+        calcule_largeur:cs.width,
+        parent:par?par.tagName:'-',
+        parent_text_align:pcs.textAlign||''
+      });
+    });
+  });
+  if(console&&console.table)console.table(out); else console.log(out);
+  console.log('Build editeur :',(document.getElementById('ll-build-tag')||{}).textContent||'(repere absent - fichier anterieur au 17.09.2026)');
+  return out;
+};
 function llPreviewImage(input){
   if(!input.files||!input.files[0])return;
   var reader=new FileReader();
@@ -18655,6 +18732,7 @@ function printLessonById(id){
     +'.box{padding:12px 14px;border-left:3px solid #1b6ca8;background:rgba(27,108,168,.05);border-radius:0 4px 4px 0;font-size:12.5px;color:#1a2535;line-height:1.65;margin-bottom:10px;white-space:normal;}'
     +'.uimg{max-width:100%;max-height:200px;object-fit:contain;border-radius:4px;display:block;margin-bottom:12px;}'
     +'.box img{max-width:100%;height:auto;border-radius:3px;page-break-inside:avoid;break-inside:avoid;}'
+    +'.box img[data-ll-img]{display:block;}'
     +'.box img[data-ll-align="left"]{margin-left:0;margin-right:auto;}'
     +'.box img[data-ll-align="center"]{margin-left:auto;margin-right:auto;}'
     +'.box img[data-ll-align="right"]{margin-left:auto;margin-right:0;}'
