@@ -17524,7 +17524,7 @@ function showLessonForm(editId){
   var buildTag=document.createElement('div');
   buildTag.id='ll-build-tag';
   buildTag.style.cssText='margin:-12px 0 16px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);letter-spacing:.04em;';
-  buildTag.textContent='Editeur v5 · images placables · pages multiples · zone de texte elargie · build 2026-09-17c';
+  buildTag.textContent='Editeur v6 · images placables · pages multiples · zone elargie · typo auto a l\u2019impression · build 2026-09-17d';
   card.appendChild(buildTag);
 
   function mkField(labelText,inputEl,gridSpan){
@@ -18833,6 +18833,36 @@ function printLessonById(id){
         }
       }
     });
+    // ── Ajustement typographique avant tout report ───────────────────
+    // Une version linguistique plus longue que l'autre (l'anglais, le plus
+    // souvent) remplit la page a elle seule et chasse la signature sur une
+    // page de continuation. On resserre donc d'abord la typographie du corps
+    // par paliers, puis le titre si besoin : mieux vaut un corps a 11 px
+    // qu'une page supplementaire ne portant qu'une signature.
+    document.querySelectorAll('.ct').forEach(function(ct){
+      var box=ct.querySelector('.box');
+      if(!box)return;
+      var fits=function(){return ct.scrollHeight<=ct.clientHeight;};
+      if(fits())return;
+      var steps=[[12,1.6],[11.5,1.55],[11,1.5],[10.5,1.45],[10,1.4]];
+      for(var i=0;i<steps.length&&!fits();i++){
+        box.style.fontSize=steps[i][0]+'px';
+        box.style.lineHeight=String(steps[i][1]);
+      }
+      if(fits())return;
+      // Toujours trop long : on resserre l'entete de la page.
+      var ttl=ct.querySelector('.ttl');
+      if(ttl){ ttl.style.fontSize='16px'; ttl.style.marginBottom='10px'; }
+      var meta=ct.querySelector('.meta');
+      if(meta){ meta.style.marginBottom='9px'; meta.style.paddingBottom='7px'; }
+      if(fits())return;
+      box.style.padding='9px 10px';
+      if(fits())return;
+      if(ttl){ ttl.style.fontSize='15px'; ttl.style.marginBottom='8px'; }
+      box.style.fontSize='9.5px';
+      box.style.lineHeight='1.35';
+    });
+
     // ── La signature ne doit jamais être rognée ──────────────────────
     // 1) on la réduit progressivement ; 2) si la place manque toujours, elle
     // part sur une page de continuation. Le texte n'est jamais tronqué
