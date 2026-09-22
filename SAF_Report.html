@@ -186,6 +186,10 @@ body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
 
 @media(max-width:400px){.cg2{grid-template-columns:1fr;}.frow{grid-template-columns:1fr;}.cpg{grid-template-columns:repeat(3,1fr);}}
 </style>
+
+<style id="saf-guide-fab-style">
+.saf-guide-fab{position:fixed;right:22px;bottom:22px;z-index:99990;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;background:#C9A227;color:#0D1B2A;border:2px solid #F0C040;box-shadow:0 8px 24px rgba(0,0,0,.38);font-family:'IBM Plex Mono',monospace;font-size:21px;font-weight:800;transition:transform .15s,filter .15s}.saf-guide-fab:hover{transform:translateY(-2px);filter:brightness(1.08)}.saf-guide-fab:focus{outline:2px solid #fff;outline-offset:3px}@media print{.saf-guide-fab{display:none!important}}
+</style>
 </head>
 <body class="L-fr">
 
@@ -216,6 +220,7 @@ body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
     <p class="en">Reporting is the foundation of aviation safety. Every event you report &mdash; even one that seems minor or that ended without consequence &mdash; lets us see a risk before it turns into an accident.</p>
     <p class="en">What you write here is treated in confidence and used to improve our operation, never to assign blame. The few minutes you spend on this report may one day save the life of a colleague.</p>
   </div>
+  <div id="saf-guide-context-link" style="text-align:right;margin:8px 2px 14px;"><a href="SAF_User_Guide.html#report" onclick="if(location.pathname.indexOf('/Archives/')!==-1)this.href='../SAF_User_Guide.html#report'" style="color:var(--gold-light);font-family:var(--font-m);font-size:10px;text-decoration:none;border:1px solid rgba(201,162,39,.25);padding:6px 10px;border-radius:6px;display:inline-block;">? MODE D'EMPLOI DU SIGNALEMENT</a></div>
 
   <!-- REPORT TYPE -->
   <div id="rtype">
@@ -845,5 +850,7 @@ function resetForm(){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 </script>
+
+<a class="saf-guide-fab" href="SAF_User_Guide.html#report" onclick="if(location.pathname.indexOf('/Archives/')!==-1)this.href='../SAF_User_Guide.html#report'" title="Mode d'emploi SAF" aria-label="Mode d'emploi SAF">?</a>
 </body>
 </html>
