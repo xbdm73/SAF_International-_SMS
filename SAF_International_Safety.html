@@ -21289,6 +21289,248 @@ function deleteALoS(id){
 }
 </script>
 <!-- ===== INTÉGRATION SUPABASE (auto-save / auto-load) — SMS ===== -->
+<!-- ===== SAF MFA GATE v1 (23.09.2026) — second facteur TOTP Supabase =====
+     La RLS (politiques restrictives saf_data_mfa_required / saf_reports_mfa_required)
+     refuse tout jeton aal1. Cette porte fait passer la session en aal2 AVANT que
+     l'application ne charge quoi que ce soit : enrôlement au premier passage,
+     saisie du code ensuite. Session partagée entre les fichiers de la suite
+     (même clé de stockage Supabase), donc un seul code par connexion. -->
+<style id="saf-mfa-style">
+#saf-mfa-overlay{position:fixed;inset:0;z-index:2147483000;background:rgba(4,8,15,.97);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#F4F6F8}
+#saf-mfa-box{max-height:94vh;overflow:auto;box-sizing:border-box;background:#1A2E42;border:1px solid rgba(201,162,39,.35);border-radius:14px;padding:28px 30px;width:400px;max-width:94vw;box-shadow:0 24px 64px rgba(0,0,0,.7)}
+#saf-mfa-box h2{font:600 15px/1.3 'IBM Plex Sans',system-ui,sans-serif;color:#F0C040;margin:0 0 6px}
+#saf-mfa-box p{font-size:12.5px;line-height:1.5;color:#C8D0D8;margin:0 0 12px}
+#saf-mfa-box .en{display:block;color:#8896A0;font-size:11.5px;margin-top:2px}
+#saf-mfa-box .qr{background:#fff;border-radius:8px;padding:10px;width:200px;height:200px;margin:4px auto 10px;display:flex;align-items:center;justify-content:center}
+#saf-mfa-box .qr img{width:180px;height:180px}
+#saf-mfa-box .secret{font:12px/1.4 'IBM Plex Mono',monospace;background:#0D1B2A;border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:7px 9px;word-break:break-all;user-select:all;margin-bottom:12px;color:#F4F6F8}
+#saf-mfa-box label{display:block;font-size:11px;color:#C8D0D8;margin:0 0 5px}
+#saf-mfa-box input,#saf-mfa-box select{width:100%;box-sizing:border-box;padding:10px 12px;background:#0D1B2A;border:1px solid rgba(255,255,255,.14);border-radius:6px;color:#F4F6F8;font-size:14px;margin-bottom:12px;outline:none}
+#saf-mfa-box input.code{font:600 22px/1 'IBM Plex Mono',monospace;letter-spacing:.35em;text-align:center}
+#saf-mfa-box input:focus,#saf-mfa-box select:focus{border-color:rgba(201,162,39,.7)}
+#saf-mfa-box .row{display:flex;gap:8px}
+#saf-mfa-box button{flex:1;border:0;border-radius:6px;padding:11px 10px;font:600 13px/1.2 'IBM Plex Sans',system-ui,sans-serif;cursor:pointer}
+#saf-mfa-box button.pri{background:#C9A227;color:#0D1B2A}
+#saf-mfa-box button.sec{background:transparent;color:#C8D0D8;border:1px solid rgba(255,255,255,.18)}
+#saf-mfa-box button:focus-visible{outline:2px solid #F0C040;outline-offset:2px}
+#saf-mfa-box button[disabled]{opacity:.55;cursor:wait}
+#saf-mfa-box .msg{min-height:16px;font-size:12px;margin:0 0 10px}
+#saf-mfa-box .msg.err{color:#ff8a80}
+#saf-mfa-box .msg.ok{color:#7ee2a8}
+</style>
+<script id="saf-mfa-gate">
+(function(){
+  'use strict';
+  if (window.safMfaGate) return;
+
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  function box(html){
+    var ov = document.getElementById('saf-mfa-overlay');
+    if (!ov){
+      ov = document.createElement('div');
+      ov.id = 'saf-mfa-overlay';
+      ov.setAttribute('role','dialog');
+      ov.setAttribute('aria-modal','true');
+      document.body.appendChild(ov);
+    }
+    ov.innerHTML = '<div id="saf-mfa-box">' + html + '</div>';
+    ov.style.display = 'flex';
+    return ov.firstChild;
+  }
+  function close(){
+    var ov = document.getElementById('saf-mfa-overlay');
+    if (ov) ov.parentNode.removeChild(ov);
+  }
+  function setMsg(b, txt, cls){
+    var m = b.querySelector('.msg');
+    if (m){ m.className = 'msg ' + (cls || ''); m.textContent = txt || ''; }
+  }
+  function qrSrc(q){
+    if (!q) return '';
+    q = String(q);
+    if (q.indexOf('data:') === 0) return q;
+    if (q.indexOf('<svg') !== -1) return 'data:image/svg+xml;utf8,' + encodeURIComponent(q);
+    return q;
+  }
+  function errText(e){
+    var m = (e && (e.message || e.msg)) || String(e || '');
+    if (/invalid|expired|code/i.test(m)) return 'Code refusé ou expiré. Saisissez le code affiché maintenant. / Code rejected or expired.';
+    return 'Erreur / Error : ' + m;
+  }
+  async function signOutAndReload(db){
+    try { await db.auth.signOut(); } catch(e){}
+    try { localStorage.removeItem('saf_role'); } catch(e){}
+    location.reload();
+  }
+  async function currentSession(db, fallback){
+    try { var r = await db.auth.getSession(); if (r && r.data && r.data.session) return r.data.session; } catch(e){}
+    return fallback;
+  }
+
+  // Écran de saisie du code (facteur déjà vérifié).
+  function challengeScreen(db, factors, email){
+    return new Promise(function(resolve){
+      var opts = factors.length > 1
+        ? '<label for="saf-mfa-factor">Appareil / Device</label><select id="saf-mfa-factor">' +
+          factors.map(function(f){ return '<option value="' + esc(f.id) + '">' + esc(f.friendly_name || f.id.slice(0,8)) + '</option>'; }).join('') +
+          '</select>'
+        : '';
+      var b = box(
+        '<h2>Second facteur</h2>' +
+        '<p>Saisissez le code à 6 chiffres de votre application d\u2019authentification' + (email ? ' pour ' + esc(email) : '') + '.' +
+        '<span class="en">Enter the 6-digit code from your authenticator app.</span></p>' +
+        opts +
+        '<label for="saf-mfa-code">Code</label>' +
+        '<input id="saf-mfa-code" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*">' +
+        '<div class="msg" aria-live="polite"></div>' +
+        '<div class="row"><button class="sec" id="saf-mfa-out">Se déconnecter / Sign out</button>' +
+        '<button class="pri" id="saf-mfa-ok">Valider / Verify</button></div>'
+      );
+      var input = b.querySelector('#saf-mfa-code');
+      var okBtn = b.querySelector('#saf-mfa-ok');
+      var busy = false;
+      async function go(){
+        if (busy) return;
+        var code = (input.value || '').replace(/\D/g,'');
+        if (code.length !== 6){ setMsg(b, 'Le code comporte 6 chiffres. / The code has 6 digits.', 'err'); input.focus(); return; }
+        var sel = b.querySelector('#saf-mfa-factor');
+        var factorId = sel ? sel.value : factors[0].id;
+        busy = true; okBtn.disabled = true; setMsg(b, 'Vérification… / Verifying…');
+        try {
+          var r = await db.auth.mfa.challengeAndVerify({ factorId: factorId, code: code });
+          if (r.error) throw r.error;
+          close();
+          resolve(await currentSession(db, r.data && r.data.session));
+        } catch(e){
+          setMsg(b, errText(e), 'err'); input.value = ''; input.focus();
+        } finally { busy = false; okBtn.disabled = false; }
+      }
+      okBtn.addEventListener('click', go);
+      input.addEventListener('input', function(){ input.value = input.value.replace(/\D/g,'').slice(0,6); if (input.value.length === 6) go(); });
+      input.addEventListener('keydown', function(e){ if (e.key === 'Enter') go(); });
+      b.querySelector('#saf-mfa-out').addEventListener('click', function(){ signOutAndReload(db); });
+      setTimeout(function(){ input.focus(); }, 30);
+    });
+  }
+
+  // Enrôlement d'un appareil TOTP. backup = second appareil (session déjà aal2).
+  function enrollScreen(db, email, backup){
+    return new Promise(function(resolve){
+      (async function start(){
+        var b = box('<h2>Préparation… / Preparing…</h2><div class="msg" aria-live="polite"></div>');
+        var enr;
+        try {
+          // Un enrôlement abandonné laisse un facteur « unverified » : on le retire
+          // pour que le nouveau QR code soit le seul en attente.
+          var lf = await db.auth.mfa.listFactors();
+          var all = (lf && lf.data && lf.data.all) || [];
+          for (var i = 0; i < all.length; i++){
+            if (all[i].factor_type === 'totp' && all[i].status !== 'verified'){
+              try { await db.auth.mfa.unenroll({ factorId: all[i].id }); } catch(e){}
+            }
+          }
+          var stamp = new Date().toISOString().slice(0,10);
+          var name = (backup ? 'Secours / Backup ' : 'Principal / Primary ') + stamp + ' ' + Math.random().toString(36).slice(2,6);
+          var r = await db.auth.mfa.enroll({ factorType: 'totp', friendlyName: name, issuer: 'SAF International SMS' });
+          if (r.error) throw r.error;
+          enr = r.data;
+        } catch(e){
+          b = box('<h2>Second facteur indisponible</h2>' +
+            '<p>' + esc(errText(e)) + '<span class="en">Check that TOTP MFA is enabled in the Supabase Auth settings.</span></p>' +
+            '<div class="row"><button class="sec" id="saf-mfa-out">Se déconnecter / Sign out</button>' +
+            '<button class="pri" id="saf-mfa-retry">Réessayer / Retry</button></div>');
+          b.querySelector('#saf-mfa-out').addEventListener('click', function(){ backup ? (close(), resolve(null)) : signOutAndReload(db); });
+          b.querySelector('#saf-mfa-retry').addEventListener('click', start);
+          return;
+        }
+        var t = enr.totp || {};
+        b = box(
+          '<h2>' + (backup ? 'Appareil de secours' : 'Activer le second facteur') + '</h2>' +
+          '<p>Scannez ce QR code avec une application d\u2019authentification (Microsoft Authenticator, Google Authenticator, 1Password…)' + (email ? ' pour ' + esc(email) : '') + ', puis saisissez le code affiché.' +
+          '<span class="en">Scan this QR code with an authenticator app, then enter the code it shows.</span></p>' +
+          '<div class="qr"><img alt="QR code TOTP" src="' + esc(qrSrc(t.qr_code)) + '"></div>' +
+          '<label>Clé manuelle / Manual key</label><div class="secret">' + esc(t.secret || '') + '</div>' +
+          '<label for="saf-mfa-code">Code</label>' +
+          '<input id="saf-mfa-code" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*">' +
+          '<div class="msg" aria-live="polite"></div>' +
+          '<div class="row"><button class="sec" id="saf-mfa-out">' + (backup ? 'Plus tard / Later' : 'Se déconnecter / Sign out') + '</button>' +
+          '<button class="pri" id="saf-mfa-ok">Activer / Enable</button></div>'
+        );
+        var input = b.querySelector('#saf-mfa-code');
+        var okBtn = b.querySelector('#saf-mfa-ok');
+        var busy = false;
+        async function go(){
+          if (busy) return;
+          var code = (input.value || '').replace(/\D/g,'');
+          if (code.length !== 6){ setMsg(b, 'Le code comporte 6 chiffres. / The code has 6 digits.', 'err'); input.focus(); return; }
+          busy = true; okBtn.disabled = true; setMsg(b, 'Vérification… / Verifying…');
+          try {
+            var v = await db.auth.mfa.challengeAndVerify({ factorId: enr.id, code: code });
+            if (v.error) throw v.error;
+            var s = await currentSession(db, v.data && v.data.session);
+            if (backup){ close(); resolve(s); return; }
+            // Premier appareil activé : proposer un appareil de secours (Supabase
+            // ne fournit pas de codes de récupération).
+            var d = box('<h2>Second facteur activé</h2>' +
+              '<div class="msg ok">Connexion sécurisée. / Sign-in secured.</div>' +
+              '<p>Enregistrez maintenant un second appareil : sans lui, la perte du téléphone impose une réinitialisation par l\u2019administrateur.' +
+              '<span class="en">Register a backup device now: without it, a lost phone requires an administrator reset.</span></p>' +
+              '<div class="row"><button class="sec" id="saf-mfa-skip">Continuer / Continue</button>' +
+              '<button class="pri" id="saf-mfa-bk">Ajouter un appareil / Add device</button></div>');
+            d.querySelector('#saf-mfa-skip').addEventListener('click', function(){ close(); resolve(s); });
+            d.querySelector('#saf-mfa-bk').addEventListener('click', async function(){
+              var s2 = await enrollScreen(db, email, true);
+              close(); resolve(s2 || s);
+            });
+          } catch(e){
+            setMsg(b, errText(e), 'err'); input.value = ''; input.focus();
+          } finally { busy = false; okBtn.disabled = false; }
+        }
+        okBtn.addEventListener('click', go);
+        input.addEventListener('input', function(){ input.value = input.value.replace(/\D/g,'').slice(0,6); if (input.value.length === 6) go(); });
+        input.addEventListener('keydown', function(e){ if (e.key === 'Enter') go(); });
+        b.querySelector('#saf-mfa-out').addEventListener('click', function(){ if (backup){ close(); resolve(null); } else signOutAndReload(db); });
+        setTimeout(function(){ input.focus(); }, 30);
+      })();
+    });
+  }
+
+  // Point d'entrée : résout avec une session aal2, ou ne résout jamais (déconnexion).
+  window.safMfaGate = async function(db, session){
+    var email = session && session.user ? session.user.email : '';
+    if (!db || !db.auth || !db.auth.mfa){
+      box('<h2>Second facteur indisponible</h2><p>Le client Supabase chargé ne gère pas la MFA.<span class="en">The loaded Supabase client does not support MFA.</span></p>');
+      return new Promise(function(){});
+    }
+    try {
+      var a = await db.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (a.error) throw a.error;
+      if (a.data && a.data.currentLevel === 'aal2') return await currentSession(db, session);
+      var lf = await db.auth.mfa.listFactors();
+      if (lf.error) throw lf.error;
+      var verified = ((lf.data && lf.data.totp) || []).filter(function(f){ return f.status === 'verified'; });
+      if (verified.length) return await challengeScreen(db, verified, email);
+      return await enrollScreen(db, email, false);
+    } catch(e){
+      return await new Promise(function(resolve){
+        var b = box('<h2>Second facteur</h2><p>' + esc(errText(e)) + '</p>' +
+          '<div class="row"><button class="sec" id="saf-mfa-out">Se déconnecter / Sign out</button>' +
+          '<button class="pri" id="saf-mfa-retry">Réessayer / Retry</button></div>');
+        b.querySelector('#saf-mfa-out').addEventListener('click', function(){ signOutAndReload(db); });
+        b.querySelector('#saf-mfa-retry').addEventListener('click', async function(){ close(); resolve(await window.safMfaGate(db, session)); });
+      });
+    }
+  };
+
+  // Ajout d'un appareil de secours plus tard, depuis la console ou un bouton :
+  // window.safMfaAddBackup(client) — exige une session aal2.
+  window.safMfaAddBackup = function(db){ return enrollScreen(db, '', true); };
+})();
+</script>
+<!-- ===== FIN SAF MFA GATE ===== -->
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window.__supabaseFailed=true"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js" onerror="window.__supabaseFailed=true"></script>
 <style>
@@ -21848,6 +22090,7 @@ setTimeout(function(){
   function lockWriteElementsIn(root){
     if(!root || !root.querySelectorAll) return;
     (root.matches && root.matches('button') ? [root] : []).concat(Array.prototype.slice.call(root.querySelectorAll('button'))).forEach(function(el){
+      if(el.closest && el.closest('#saf-mfa-overlay')) return;
       if(el.id === 'saf-logout-btn' || el.id === 'saf-login-trigger-btn' || el.id === 'saf-login-cancel-btn') return;
       if(el.__safLocked) return;
       var label = (el.textContent || el.id || '').trim();
@@ -21862,7 +22105,7 @@ setTimeout(function(){
     });
     var inputSel = 'input:not([type="search"]), textarea, select';
     (root.matches && root.matches(inputSel) ? [root] : []).concat(Array.prototype.slice.call(root.querySelectorAll(inputSel))).forEach(function(el){
-      if(el.closest('#saf-cloud-bar') || el.closest('#saf-subnav') || el.id === 'bt-cat-filter') return;
+      if(el.closest('#saf-cloud-bar') || el.closest('#saf-subnav') || el.closest('#saf-login-overlay') || el.closest('#saf-mfa-overlay') || el.id === 'bt-cat-filter') return;
       if(el.__safLocked) return;
       el.disabled = true; el.style.opacity = (el.type==='checkbox'||el.type==='radio') ? '0.6' : '0.5'; el.title = 'Lecture seule';
       el.__safLocked = true;
@@ -22481,7 +22724,9 @@ setTimeout(function(){
     loginMsg.className=''; loginMsg.textContent='Connexion…';
     var res = await db.auth.signInWithPassword({ email: email, password: pwd });
     if(res.error){ loginMsg.className='err'; loginMsg.textContent='Échec : '+res.error.message; return; }
-    onAuthenticated(res.data.session);
+    // Second facteur exigé par la RLS (aal2) avant tout chargement.
+    overlay.style.display = 'none';
+    var __s = await window.safMfaGate(db, res.data.session); if(__s) onAuthenticated(__s);
   }
   document.getElementById('saf-login-btn').addEventListener('click', doLogin);
   document.getElementById('saf-pwd').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
@@ -22515,7 +22760,8 @@ setTimeout(function(){
     }
 
     if(session){
-      onAuthenticated(session);
+      session = await window.safMfaGate(db, session);
+      if(session) onAuthenticated(session);
     } else {
       // Pas de session active — connexion obligatoire. Aucune donnée n'est
       // chargée : la lecture de saf_data est réservée aux comptes déclarés
@@ -22756,7 +23002,7 @@ function occRestoreHFACS(hfacs,severity){
     /* 10.09.2026 — la ligne de titres de colonnes du Risk Register est exclue
        de la couche bilingue : elle reste en anglais. Le titre de la vue, lui,
        garde ses deux langues (voir la regle sur .dash-title plus bas). */
-    return !!el.closest('script,style,noscript,textarea,input,canvas,svg,code,pre,[contenteditable="true"],.rte,.cs-sig-wrap,.cms-title-fr,.cms-title-en,#view-database thead,#saf-cloud-bar');
+    return !!el.closest('script,style,noscript,textarea,input,canvas,svg,code,pre,[contenteditable="true"],.rte,.cs-sig-wrap,.cms-title-fr,.cms-title-en,#view-database thead,#saf-cloud-bar,#saf-mfa-overlay');
   }
   function preserveOptionValue(el){
     if(el && el.tagName==='OPTION' && !el.hasAttribute('value')) el.setAttribute('value', el.textContent || '');
