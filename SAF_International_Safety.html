@@ -5,6 +5,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>SAFETY MANAGEMENT SYSTEM</title>
+<!-- SAF SAFETY REPORT EMAIL NOTIFICATION PATCH | 2026-09-23 -->
 <!-- SAF ECCAIRS OCCLOG PATCH V2 TESTED 2026-06-18 | BOWTIE SMS DROPDOWN FIX -->
 <!-- SAF THREE-LEVEL EVENT TAXONOMY | 17 STABLE RISK FAMILIES | 102 ATOMIC RISK SCENARIOS | 164 EXCEL EVENTS | 2026-07-29 -->
 <!-- LEVEL 1: OCCURRENCE CATEGORY | LEVEL 2: SAF RISK FAMILY R01-R17 | LEVEL 3: RISK SCENARIO -->
@@ -3066,10 +3067,29 @@ function updateOaciDefinitionDropdown(sel) {
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end;margin-bottom:12px;">
     <div class="form-field" style="margin:0;"><label class="field-label">Public Key</label><input id="ejs-public-key" type="text" placeholder="user_xxxxxxxxx" style="font-family:var(--font-mono);font-size:11px;"/></div>
     <div class="form-field" style="margin:0;"><label class="field-label">Service ID</label><input id="ejs-service-id" type="text" placeholder="service_xxxxxxx" style="font-family:var(--font-mono);font-size:11px;"/></div>
-    <div class="form-field" style="margin:0;"><label class="field-label">Template ID</label><input id="ejs-template-id" type="text" placeholder="template_xxxxxxx" style="font-family:var(--font-mono);font-size:11px;"/></div>
+    <div class="form-field" style="margin:0;"><label class="field-label">Action Template ID</label><input id="ejs-template-id" type="text" placeholder="template_xxxxxxx" style="font-family:var(--font-mono);font-size:11px;"/></div>
     <button class="btn btn-primary" onclick="ejsSaveConfig()" style="white-space:nowrap;height:38px;">&#10003; Save</button>
   </div>
   <div id="ejs-config-status" style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);min-height:16px;margin-bottom:14px;"></div>
+
+  <div style="padding:14px;margin-bottom:14px;background:rgba(74,159,224,.05);border:1px solid rgba(74,159,224,.22);border-radius:8px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <input id="ejs-sr-enabled" type="checkbox" style="width:16px;height:16px;accent-color:var(--steel-bright);"/>
+      <label for="ejs-sr-enabled" style="font-family:var(--font-mono);font-size:11px;color:var(--white);font-weight:600;cursor:pointer;">Safety Report notification email / E-mail de notification Safety Report</label>
+    </div>
+    <div style="font-size:10px;color:var(--grey-400);font-family:var(--font-mono);margin-bottom:10px;line-height:1.55;">
+      Sends an email when this SAF SMS detects a new report in <code>saf_reports</code> with status <code>pending_review</code>. The notification does not contain reporter identity.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;">
+      <div class="form-field" style="margin:0;"><label class="field-label">Notification recipient</label><input id="ejs-sr-recipient" type="email" placeholder="safety.manager@example.com" style="font-family:var(--font-mono);font-size:11px;"/></div>
+      <div class="form-field" style="margin:0;"><label class="field-label">Safety Report Template ID</label><input id="ejs-sr-template-id" type="text" placeholder="template_safety_report" style="font-family:var(--font-mono);font-size:11px;"/></div>
+      <button class="btn btn-ghost" onclick="ejsTestSafetyReportEmail()" style="white-space:nowrap;height:38px;">&#9993; Test</button>
+    </div>
+    <div style="font-family:var(--font-mono);font-size:9.5px;color:var(--grey-400);margin-top:10px;line-height:1.55;">
+      Safety Report template variables: <span style="color:var(--steel-bright);">{{to_email}}</span>, <span style="color:var(--steel-bright);">{{to_name}}</span>, <span style="color:var(--steel-bright);">{{subject}}</span>, <span style="color:var(--steel-bright);">{{report_id}}</span>, <span style="color:var(--steel-bright);">{{report_title}}</span>, <span style="color:var(--steel-bright);">{{report_date}}</span>, <span style="color:var(--steel-bright);">{{report_location}}</span>, <span style="color:var(--steel-bright);">{{aircraft_registration}}</span>, <span style="color:var(--steel-bright);">{{event_category}}</span>, <span style="color:var(--steel-bright);">{{report_summary}}</span>.
+    </div>
+  </div>
+
   <div style="padding:12px;background:rgba(255,255,255,.03);border-radius:6px;border:1px solid rgba(255,255,255,.07);">
     <div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-bottom:8px;letter-spacing:.05em;">TEMPLATE VARIABLES — use in your EmailJS template:</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;font-family:var(--font-mono);font-size:10px;">
@@ -14117,16 +14137,31 @@ function ejsSaveConfig() {
   const pk  = (document.getElementById('ejs-public-key')?.value || '').trim();
   const sid = (document.getElementById('ejs-service-id')?.value || '').trim();
   const tid = (document.getElementById('ejs-template-id')?.value || '').trim();
+  const srRecipient = (document.getElementById('ejs-sr-recipient')?.value || '').trim();
+  const srTid = (document.getElementById('ejs-sr-template-id')?.value || '').trim();
+  const srEnabled = !!document.getElementById('ejs-sr-enabled')?.checked;
   const st  = document.getElementById('ejs-config-status');
-  if (!pk || !sid || !tid) {
-    if (st) { st.textContent = '✗ Please fill all three fields.'; st.style.color = '#f85149'; }
+  if (!pk || !sid) {
+    if (st) { st.textContent = '✗ Please fill Public Key and Service ID.'; st.style.color = '#f85149'; }
+    return;
+  }
+  if (srEnabled && (!srRecipient || !srTid)) {
+    if (st) { st.textContent = '✗ Safety Report notification is enabled: recipient and Safety Report Template ID are required.'; st.style.color = '#f85149'; }
     return;
   }
   localStorage.setItem('ejsPublicKey',  pk);
   localStorage.setItem('ejsServiceId',  sid);
   localStorage.setItem('ejsTemplateId', tid);
+  localStorage.setItem('ejsSafetyReportRecipient', srRecipient);
+  localStorage.setItem('ejsSafetyReportTemplateId', srTid);
+  localStorage.setItem('ejsSafetyReportEnabled', srEnabled ? '1' : '0');
   if (typeof emailjs !== 'undefined') emailjs.init(pk);
-  if (st) { st.textContent = '✓ Configuration saved — EmailJS ready.'; st.style.color = '#3fb950'; }
+  if (st) {
+    const actionState = tid ? ' · Action emails ready.' : ' · Action Template ID not configured.';
+    const srState = srEnabled ? ' · Safety Report alerts enabled.' : '';
+    st.textContent = '✓ Configuration saved — EmailJS ready' + actionState + srState;
+    st.style.color = '#3fb950';
+  }
   showToast('✓ EmailJS configuration saved', 'success');
 }
 
@@ -14134,16 +14169,121 @@ function ejsLoadConfig() {
   const pk  = localStorage.getItem('ejsPublicKey')  || '';
   const sid = localStorage.getItem('ejsServiceId')  || '';
   const tid = localStorage.getItem('ejsTemplateId') || '';
+  const srRecipient = localStorage.getItem('ejsSafetyReportRecipient') || '';
+  const srTid = localStorage.getItem('ejsSafetyReportTemplateId') || '';
+  const srEnabled = localStorage.getItem('ejsSafetyReportEnabled') === '1';
   const sf  = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
   sf('ejs-public-key', pk); sf('ejs-service-id', sid); sf('ejs-template-id', tid);
+  sf('ejs-sr-recipient', srRecipient); sf('ejs-sr-template-id', srTid);
+  const srCheck = document.getElementById('ejs-sr-enabled');
+  if (srCheck) srCheck.checked = srEnabled;
   const st = document.getElementById('ejs-config-status');
-  if (pk && sid && tid) {
+  if (pk && sid) {
     if (typeof emailjs !== 'undefined') emailjs.init(pk);
-    if (st) { st.textContent = '✓ Configuration loaded — EmailJS ready.'; st.style.color = '#3fb950'; }
+    if (st) {
+      const actionState = tid ? ' · Action emails ready.' : ' · Action Template ID not configured.';
+      const srState = srEnabled ? ((srRecipient && srTid) ? ' · Safety Report alerts enabled.' : ' · Safety Report alerts incomplete.') : '';
+      st.textContent = '✓ Configuration loaded — EmailJS ready.' + actionState + srState;
+      st.style.color = (srEnabled && (!srRecipient || !srTid)) ? '#e3b341' : '#3fb950';
+    }
   } else {
     if (st) st.textContent = 'No configuration yet — go to Export & Import tab → Email settings.';
   }
-  return { pk, sid, tid };
+  return { pk, sid, tid, srRecipient, srTid, srEnabled };
+}
+
+function _ejsSrNotifiedMap() {
+  try {
+    const v = JSON.parse(localStorage.getItem('ejsSafetyReportNotified') || '{}');
+    return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+  } catch(e) { return {}; }
+}
+
+function _ejsSrRemember(key) {
+  if (!key) return;
+  const map = _ejsSrNotifiedMap();
+  map[key] = new Date().toISOString();
+  const keys = Object.keys(map).sort(function(a,b){ return String(map[b]).localeCompare(String(map[a])); });
+  const trimmed = {};
+  keys.slice(0, 250).forEach(function(k){ trimmed[k] = map[k]; });
+  localStorage.setItem('ejsSafetyReportNotified', JSON.stringify(trimmed));
+}
+
+function _ejsSrValue(obj, names, fallback) {
+  obj = obj || {};
+  for (let i=0; i<names.length; i++) {
+    const v = obj[names[i]];
+    if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
+  }
+  return fallback || '—';
+}
+
+async function ejsSendSafetyReportNotification(row, force) {
+  const cfg = ejsLoadConfig();
+  if (!force && !cfg.srEnabled) return { sent:false, skipped:true, reason:'disabled' };
+  if (!cfg.pk || !cfg.sid || !cfg.srTid || !cfg.srRecipient || typeof emailjs === 'undefined') {
+    return { sent:false, skipped:true, reason:'not-configured' };
+  }
+
+  const occ = (row && row.report_data) || {};
+  const key = String((row && row.report_id) || occ.id || (row && row.submitted_at) || '');
+  if (!force && key && _ejsSrNotifiedMap()[key]) return { sent:false, skipped:true, reason:'already-notified' };
+
+  const reportId = _ejsSrValue(row || {}, ['report_id'], _ejsSrValue(occ, ['id','report_id','reference'], '—'));
+  const title = _ejsSrValue(occ, ['headline','title','event_title','occurrence_title','subject'], 'Safety Report');
+  const location = _ejsSrValue(occ, ['location','event_location','place'], '—');
+  const registration = _ejsSrValue(occ, ['aircraft_registration','registration','aircraftReg','aircraft_register'], '—');
+  const category = _ejsSrValue(occ, ['occurrence_category','event_category','category'], '—');
+  const summaryRaw = _ejsSrValue(occ, ['description','event_description','narrative','summary','event_narrative'], '(description not provided)');
+  const summary = summaryRaw.length > 1400 ? summaryRaw.slice(0, 1397) + '…' : summaryRaw;
+  const submittedRaw = (row && row.submitted_at) || occ.reporter_notification_datetime || occ.awareness_datetime || new Date().toISOString();
+  let reportDate = submittedRaw;
+  try { reportDate = new Date(submittedRaw).toLocaleString(); } catch(e) {}
+
+  const params = {
+    to_email: cfg.srRecipient,
+    to_name: 'Safety Manager',
+    subject: '[SAF SMS] New Safety Report received — ' + reportId,
+    report_id: reportId,
+    report_title: title,
+    report_date: reportDate,
+    report_location: location,
+    aircraft_registration: registration,
+    event_category: category,
+    report_summary: summary,
+    from_name: 'SAF International — SMS',
+    // Compatibility with the existing generic/action EmailJS template variables.
+    action_num: reportId,
+    action_text: summary,
+    change_ref: 'SAFETY REPORT',
+    change_title: title,
+    due_date: reportDate
+  };
+
+  try {
+    await emailjs.send(cfg.sid, cfg.srTid, params);
+    if (key) _ejsSrRemember(key);
+    return { sent:true, skipped:false };
+  } catch(err) {
+    console.warn('Safety Report email notification failed:', err);
+    return { sent:false, skipped:false, error:err };
+  }
+}
+
+async function ejsTestSafetyReportEmail() {
+  const cfg = ejsLoadConfig();
+  if (!cfg.pk || !cfg.sid || !cfg.srTid || !cfg.srRecipient) {
+    showToast('Configure recipient and Safety Report Template ID first', 'error');
+    return;
+  }
+  const testRow = {
+    report_id: 'TEST-' + new Date().toISOString().slice(0,19).replace(/[-:T]/g,''),
+    submitted_at: new Date().toISOString(),
+    report_data: { headline:'Email notification test', description:'This is a test generated from SAF International SMS. No Safety Report was created.', location:'TEST', aircraft_registration:'—', occurrence_category:'TEST' }
+  };
+  const r = await ejsSendSafetyReportNotification(testRow, true);
+  if (r.sent) showToast('✓ Test Safety Report email sent to ' + cfg.srRecipient, 'success');
+  else showToast('Safety Report test email failed', 'error');
 }
 
 // ── Send assignment email via EmailJS ─────────────────────────────
@@ -22637,6 +22777,7 @@ setTimeout(function(){
       var existingIds = new Set(existing.map(function(o){ return o.id; }));
 
       var newOnes = [];
+      var newRows = [];
       var reportIdMap = {};
       res.data.forEach(function(row){
         var occ = row.report_data;
@@ -22645,10 +22786,24 @@ setTimeout(function(){
         if(!occ.awareness_datetime && row.submitted_at) occ.awareness_datetime = row.submitted_at;
         occ.reporter_identity_restricted = true;
         newOnes.push(occ);
+        newRows.push(row);
         reportIdMap[occ.id] = row.report_id;
       });
 
       if(!newOnes.length) return;
+
+      // Notification e-mail : déclenchée dès que le SMS détecte un nouveau Safety Report.
+      // L'échec d'EmailJS ne bloque jamais l'import ni la synchronisation du rapport.
+      var srEmailSent = 0, srEmailFailed = 0;
+      if(typeof ejsSendSafetyReportNotification === 'function') {
+        for(var nri=0; nri<newRows.length; nri++) {
+          try {
+            var nr = await ejsSendSafetyReportNotification(newRows[nri], false);
+            if(nr && nr.sent) srEmailSent++;
+            else if(nr && !nr.skipped) srEmailFailed++;
+          } catch(ne) { srEmailFailed++; console.warn('Safety Report email notification:', ne); }
+        }
+      }
 
       // Fusion : nouveaux rapports en tête
       existing = newOnes.concat(existing);
@@ -22688,8 +22843,12 @@ setTimeout(function(){
       }
 
       // Toast de notification
-      if(typeof showToast==='function')
-        showToast(newOnes.length+' rapport'+(newOnes.length>1?'s':'')+' mobile'+(newOnes.length>1?'s':'')+' importé'+(newOnes.length>1?'s':''), 'success');
+      if(typeof showToast==='function') {
+        var srMsg = newOnes.length+' rapport'+(newOnes.length>1?'s':'')+' mobile'+(newOnes.length>1?'s':'')+' importé'+(newOnes.length>1?'s':'');
+        if(srEmailSent) srMsg += ' · '+srEmailSent+' e-mail'+(srEmailSent>1?'s':'')+' envoyé'+(srEmailSent>1?'s':'');
+        if(srEmailFailed) srMsg += ' · '+srEmailFailed+' e-mail'+(srEmailFailed>1?'s':'')+' en échec';
+        showToast(srMsg, srEmailFailed ? 'error' : 'success');
+      }
 
     }catch(e){ console.warn('importMobileReports:', e); }
   }
