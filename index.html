@@ -373,6 +373,25 @@ footer { padding: 1.25rem 2rem; border-top: 1px solid rgba(201,162,39,.12); text
 button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
 #saf-login-box label .bi-en { font-size:.9em; }
 #saf-login-box h2 .bi-en { font-size:.9em; color:var(--grey-400); margin-top:4px; }
+#saf-forgot-link { display:block; text-align:center; margin-top:10px; font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; color:var(--grey-400); text-decoration:underline; cursor:pointer; background:none; border:0; width:100%; padding:0; }
+#saf-forgot-link:hover { color:var(--gold); }
+
+/* ─── PASSWORD RECOVERY ─────────────────────────── */
+#saf-pw-overlay { position:fixed; inset:0; background:rgba(4,8,15,.97); z-index:100000; display:none; align-items:center; justify-content:center; font-family:var(--font-body); }
+#saf-pw-box { background:var(--navy-mid); border:1px solid rgba(201,162,39,.3); border-radius:14px; padding:32px; width:360px; max-width:92vw; box-shadow:0 24px 64px rgba(0,0,0,.7); }
+#saf-pw-box h2 { font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); margin-bottom:8px; }
+#saf-pw-box h2 .bi-en { font-size:.9em; color:var(--grey-400); margin-top:4px; }
+#saf-pw-box .pw-account { font-family:var(--font-mono); font-size:11px; color:var(--grey-200); margin-bottom:20px; word-break:break-all; }
+#saf-pw-box label { display:block; font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--grey-200); margin-bottom:5px; }
+#saf-pw-box label .bi-en { font-size:.9em; }
+#saf-pw-box input { width:100%; padding:10px 12px; background:var(--navy); border:1px solid rgba(255,255,255,.12); border-radius:6px; font-size:13px; font-family:var(--font-body); color:var(--white); margin-bottom:14px; outline:none; }
+#saf-pw-box input:focus { border-color:rgba(201,162,39,.5); }
+#saf-pw-box button { width:100%; background:var(--gold); color:var(--navy); border:0; padding:12px; border-radius:6px; font-family:var(--font-display); font-size:18px; letter-spacing:.06em; cursor:pointer; transition:background .2s; }
+#saf-pw-box button:hover { background:var(--gold-light); }
+#saf-pw-box button:disabled { opacity:.5; cursor:default; }
+#saf-pw-msg { font-family:var(--font-mono); font-size:11px; margin-top:12px; min-height:16px; text-align:center; }
+#saf-pw-msg.err { color:#e07070; }
+#saf-pw-msg.ok  { color:#70d0a0; }
 .section-label .bi-en { font-family:var(--font-mono); font-size:1em; color:var(--grey-400); margin-top:5px; }
 .report-link .bi-en { font-size:.88em; color:var(--grey-400); }
 </style>
@@ -396,7 +415,22 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
     <input type="password" id="saf-pwd" autocomplete="current-password">
     <button id="saf-login-btn">Se connecter<span class="bi-en">Sign in</span></button>
     <button id="saf-login-cancel-btn" type="button" style="width:100%;background:none;color:var(--grey-400);border:1px solid rgba(255,255,255,.12);margin-top:8px;padding:10px;border-radius:6px;font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;cursor:pointer;">Annuler<span class="bi-en">Cancel</span></button>
+    <button id="saf-forgot-link" type="button">Mot de passe oublié ? / Forgot password?</button>
     <div id="saf-login-msg"></div>
+  </div>
+</div>
+
+<!-- ── PASSWORD RECOVERY ── -->
+<div id="saf-pw-overlay">
+  <div id="saf-pw-box">
+    <h2>Nouveau mot de passe<span class="bi-en">Set a new password</span></h2>
+    <div class="pw-account" id="saf-pw-account"></div>
+    <label for="saf-pw1">Nouveau mot de passe<span class="bi-en">New password</span></label>
+    <input type="password" id="saf-pw1" autocomplete="new-password" minlength="8">
+    <label for="saf-pw2">Confirmer<span class="bi-en">Confirm new password</span></label>
+    <input type="password" id="saf-pw2" autocomplete="new-password" minlength="8">
+    <button id="saf-pw-btn" type="button">Enregistrer<span class="bi-en">Save password</span></button>
+    <div id="saf-pw-msg"></div>
   </div>
 </div>
 
@@ -494,6 +528,16 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
 (function(){
   var SB_URL = "https://qaqehmxoehcvzcojcqkm.supabase.co";
   var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q";
+  // ── PASSWORD RECOVERY : lecture de l'URL avant que supabase-js ne l'efface ──
+  var SAF_URL_PARAMS = (location.hash || '').replace(/^#/, '') + '&' + (location.search || '').replace(/^\?/, '');
+  var SAF_IS_RECOVERY = /(^|&)type=recovery(&|$)/.test(SAF_URL_PARAMS);
+  var SAF_RECOVERY_ERR = (function(){
+    var m = SAF_URL_PARAMS.match(/(?:^|&)error_description=([^&]*)/);
+    if(!m) return '';
+    try { return decodeURIComponent(m[1].replace(/\+/g, ' ')); } catch(e){ return m[1]; }
+  })();
+  var SAF_RECOVERY_REDIRECT = new URL('./', location.href).href;
+
   var db = window.supabase.createClient(SB_URL, SB_KEY);
 
   var overlay  = document.getElementById('saf-login-overlay');
@@ -502,6 +546,99 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   var logoutBtn = document.getElementById('saf-logout-btn');
   var loginTriggerBtn = document.getElementById('saf-login-trigger-btn');
   var loginCancelBtn = document.getElementById('saf-login-cancel-btn');
+
+  // ── PASSWORD RECOVERY ───────────────────────────────────────────────────
+  // La session ouverte par le lien est en aal1. Si le compte a déjà un second
+  // facteur, Supabase exige aal2 pour changer le mot de passe : on passe donc
+  // par safMfaGate (saisie du code) AVANT d'afficher le formulaire. Un compte
+  // sans facteur change son mot de passe directement ; l'enrôlement TOTP se
+  // fera à la connexion suivante, comme d'habitude.
+  var pwOverlay = document.getElementById('saf-pw-overlay');
+  var pwMsg     = document.getElementById('saf-pw-msg');
+  var pwBtn     = document.getElementById('saf-pw-btn');
+  var pwStarted = false;
+
+  async function safHasVerifiedFactor(){
+    try {
+      var lf = await db.auth.mfa.listFactors();
+      return (((lf && lf.data && lf.data.totp) || []).filter(function(f){ return f.status === 'verified'; })).length > 0;
+    } catch(e){ return false; }
+  }
+
+  function safShowPwForm(email){
+    overlay.style.display = 'none';
+    document.getElementById('saf-pw-account').textContent = email ? ('Compte / Account : ' + email) : '';
+    pwMsg.className = ''; pwMsg.textContent = '';
+    pwOverlay.style.display = 'flex';
+    setTimeout(function(){ document.getElementById('saf-pw1').focus(); }, 50);
+  }
+
+  async function safStartPwReset(session){
+    if(pwStarted) return;
+    pwStarted = true;
+    overlay.style.display = 'none';
+    var email = session && session.user ? session.user.email : '';
+    if(await safHasVerifiedFactor()){
+      var s2 = await window.safMfaGate(db, session);   // ne résout pas si l'utilisateur se déconnecte
+      if(!s2) return;
+    }
+    safShowPwForm(email);
+  }
+
+  async function safDoPwReset(){
+    var p1 = document.getElementById('saf-pw1').value;
+    var p2 = document.getElementById('saf-pw2').value;
+    if(p1.length < 8){ pwMsg.className = 'err'; pwMsg.textContent = '8 caractères minimum / At least 8 characters.'; return; }
+    if(p1 !== p2){ pwMsg.className = 'err'; pwMsg.textContent = 'Les mots de passe diffèrent / Passwords do not match.'; return; }
+    pwBtn.disabled = true;
+    pwMsg.className = ''; pwMsg.textContent = 'Enregistrement… / Saving…';
+    var res = await db.auth.updateUser({ password: p1 });
+    if(res.error && /aal|assurance/i.test((res.error.code || '') + ' ' + (res.error.message || ''))){
+      // Filet : second facteur exigé alors qu'il n'avait pas été détecté
+      pwOverlay.style.display = 'none';
+      var cur = await db.auth.getSession();
+      var s2 = await window.safMfaGate(db, cur && cur.data && cur.data.session);
+      if(!s2) return;
+      pwOverlay.style.display = 'flex';
+      res = await db.auth.updateUser({ password: p1 });
+    }
+    if(res.error){
+      pwBtn.disabled = false;
+      pwMsg.className = 'err';
+      pwMsg.textContent = 'Échec / Failed: ' + res.error.message;
+      return;
+    }
+    pwMsg.className = 'ok'; pwMsg.textContent = 'Mot de passe modifié / Password updated.';
+    try { history.replaceState(null, '', location.pathname); } catch(e){}
+    await db.auth.signOut();
+    setTimeout(function(){
+      pwOverlay.style.display = 'none';
+      pwStarted = false;
+      pwBtn.disabled = false;
+      document.getElementById('saf-pw1').value = '';
+      document.getElementById('saf-pw2').value = '';
+      applyGuestRole();
+      loginMsg.className = 'ok';
+      loginMsg.textContent = 'Mot de passe modifié, reconnectez-vous / Password updated, please sign in.';
+    }, 1500);
+  }
+  pwBtn.addEventListener('click', safDoPwReset);
+  document.getElementById('saf-pw2').addEventListener('keydown', function(e){ if(e.key === 'Enter') safDoPwReset(); });
+
+  db.auth.onAuthStateChange(function(ev, session){
+    if(ev === 'PASSWORD_RECOVERY') safStartPwReset(session);
+  });
+
+  // "Mot de passe oublié ?" : envoie le lien de récupération vers ce portail
+  document.getElementById('saf-forgot-link').addEventListener('click', async function(){
+    var email = document.getElementById('saf-email').value.trim();
+    if(!email){ loginMsg.className = 'err'; loginMsg.textContent = 'Saisissez d\u2019abord votre email / Enter your email first.'; return; }
+    loginMsg.className = ''; loginMsg.textContent = 'Envoi… / Sending…';
+    var res = await db.auth.resetPasswordForEmail(email, { redirectTo: SAF_RECOVERY_REDIRECT });
+    if(res.error){ loginMsg.className = 'err'; loginMsg.textContent = 'Échec / Failed: ' + res.error.message; return; }
+    loginMsg.className = 'ok'; loginMsg.textContent = 'Si ce compte existe, un lien a été envoyé / If this account exists, a link has been sent.';
+  });
+  // ────────────────────────────────────────────────────────────────────────
 
   var SAF_ROLE = 'reader';
 
@@ -858,6 +995,22 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   // Session admin active → accès complet. Sinon → accès invité automatique.
   (async function(){
     var res = await db.auth.getSession();
+    if(SAF_RECOVERY_ERR){
+      applyGuestRole();
+      try { history.replaceState(null, '', location.pathname); } catch(e){}
+      loginMsg.className = 'err';
+      loginMsg.textContent = 'Lien invalide ou expiré / Reset link invalid or expired (' + SAF_RECOVERY_ERR + ').';
+      return;
+    }
+    if(SAF_IS_RECOVERY){
+      if(res.data && res.data.session) safStartPwReset(res.data.session);
+      else {
+        applyGuestRole();
+        loginMsg.className = 'err';
+        loginMsg.textContent = 'Lien non validé, redemandez-en un / Reset link could not be validated, request a new one.';
+      }
+      return;
+    }
     if(res.data && res.data.session){
       var __s = await window.safMfaGate(db, res.data.session);
       if(__s) onAuthenticated(__s);
