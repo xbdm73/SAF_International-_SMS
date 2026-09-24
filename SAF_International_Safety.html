@@ -8933,6 +8933,16 @@ function _b64ToUtf8(b64){
    (bouton « ↻ Version d'origine »).
    ══════════════════════════════════════════════════════════════════════════ */
 window.__SAF_SEED_MOCS = window.__SAF_SEED_MOCS || {};
+/* 24.09.2026 — Une MoC embarquée supprimée par l'utilisateur revenait à la
+   réouverture (installation « si absente »). Les références supprimées sont
+   désormais consignées ici et ne sont plus jamais réinstallées automatiquement ;
+   safRestoreSeedMoc(ref) reste le seul moyen de les faire revenir. */
+function __safSeedTombs(){ try{ var v=JSON.parse(localStorage.getItem('safDeletedSeedMocs')||'[]'); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
+function __safSeedTomb(ref,add){
+  var t=__safSeedTombs().filter(function(r){ return r!==ref; });
+  if(add) t.push(ref);
+  try{ localStorage.setItem('safDeletedSeedMocs', JSON.stringify(t)); }catch(e){}
+}
 function __safInstallSeedMoc(seed){
   try {
     if (!seed || !seed.ref) return false;
@@ -8940,6 +8950,7 @@ function __safInstallSeedMoc(seed){
     window.__SAF_SEED_MOCS[seed.ref] = JSON.parse(JSON.stringify(seed));
     var i = CHANGE_STUDIES.findIndex(function(cs){ return cs && cs.ref === seed.ref; });
     if (i >= 0) return false;               // étude déjà présente : on n'y touche pas
+    if (__safSeedTombs().indexOf(seed.ref) >= 0) return false;   // supprimée volontairement
     CHANGE_STUDIES.push(seed);
     try { localStorage.setItem('safChangeStudies', JSON.stringify(CHANGE_STUDIES)); } catch(e) {}
     return true;
@@ -8955,6 +8966,7 @@ function safRestoreSeedMoc(ref){
   copy.restored_at = new Date().toISOString();
   try { copy.restored_by = (typeof safCurrentUser==='function') ? safCurrentUser() : ''; } catch(e) {}
   if (i >= 0) CHANGE_STUDIES[i] = copy; else CHANGE_STUDIES.push(copy);
+  __safSeedTomb(ref, false);
   try { saveChangeStudies(); } catch(e) { try { localStorage.setItem('safChangeStudies', JSON.stringify(CHANGE_STUDIES)); } catch(e2) {} }
   try { renderSavedCSList(); } catch(e) {}
   if(typeof showToast==='function') showToast('✓ Version d\'origine restaurée — ' + ref, 'success');
@@ -9028,7 +9040,7 @@ window.__safReinjectSeedMocs = function(){
       // éventuellement modifiée et enregistrée par l'utilisateur — n'est
       // jamais remplacée par la version embarquée.
       var i = CHANGE_STUDIES.findIndex(function(cs){ return cs && cs.ref === seed.ref; });
-      if (i < 0) { CHANGE_STUDIES.push(seed); changed = true; }
+      if (i < 0 && __safSeedTombs().indexOf(seed.ref) < 0) { CHANGE_STUDIES.push(seed); changed = true; }
     });
     if (changed) {
       try { localStorage.setItem('safChangeStudies', JSON.stringify(CHANGE_STUDIES)); } catch(e) {}
@@ -19547,10 +19559,19 @@ function renderSavedCSList(){
   el.querySelectorAll('.csl-seed').forEach(function(b){b.addEventListener('click',function(){safRestoreSeedMoc(b.getAttribute('data-csref'));});});
   el.querySelectorAll('.csl-del').forEach(function(b){b.addEventListener('click',function(){
     var ref=b.getAttribute('data-csref');
-    if(confirm('Delete "'+ref+'"?')){
+    if(confirm('Delete "'+ref+'"? This cannot be undone.')){
       var i=CHANGE_STUDIES.findIndex(function(cs){return cs.ref===ref;});
-      if(i>=0){CHANGE_STUDIES.splice(i,1);saveChangeStudies();}
-      renderSavedCSList(); showToast('Deleted','success');
+      if(i<0){ showToast('Change study not found','error'); return; }
+      CHANGE_STUDIES.splice(i,1);
+      if(window.__SAF_SEED_MOCS && window.__SAF_SEED_MOCS[ref]) __safSeedTomb(ref,true);
+      try{ localStorage.setItem('safChangeStudies', JSON.stringify(CHANGE_STUDIES)); }catch(e){}
+      updateCounts(); updateLastModified(); renderSavedCSList();
+      if(typeof window.safCloudSaveNow==='function'){
+        window.safCloudSaveNow().then(function(res){
+          if(res && res.ok) showToast('Deleted and synchronised','success');
+          else showToast('Deleted locally but NOT synchronised ('+((res&&res.error)||(res&&res.conflict?'version conflict':'unknown error'))+')','error');
+        });
+      } else { showToast('Deleted','success'); }
     }
   });});
 }
@@ -21747,38 +21768,11 @@ setTimeout(function(){
         if(Array.isArray(savedCS) && typeof CHANGE_STUDIES!=='undefined'){ CHANGE_STUDIES.length=0; savedCS.forEach(function(s){ CHANGE_STUDIES.push(s); }); }
       }catch(e){}
 
-      // Réinjecte les études de changement embarquées (seeds) si le cloud ne les contient pas encore.
-      // Sans cela, un chargement cloud écrase silencieusement les MOC embarqués tant qu'ils n'ont
-      // pas été synchronisés une première fois vers Supabase.
-      try{
-        if(typeof CHANGE_STUDIES!=='undefined'){
-          var _seedsToCheck = [];
-          if(typeof _seedMocCargohook!=='undefined' && _seedMocCargohook) _seedsToCheck.push(_seedMocCargohook);
-          if(typeof _seedMocFuelTanks!=='undefined' && _seedMocFuelTanks) _seedsToCheck.push(_seedMocFuelTanks);
-          if(typeof _seedMocReorg!=='undefined' && _seedMocReorg) _seedsToCheck.push(_seedMocReorg);
-          if(typeof _seedMocNight!=='undefined' && _seedMocNight) _seedsToCheck.push(_seedMocNight);
-          if(typeof _seedMocHofo!=='undefined' && _seedMocHofo) _seedsToCheck.push(_seedMocHofo);
-          var _seedsAdded = false;
-          _seedsToCheck.forEach(function(seed){
-            var _idx = CHANGE_STUDIES.findIndex(function(cs){ return cs && cs.ref === seed.ref; });
-            if(_idx >= 0){
-              // Remplace toute version déjà présente (locale ou cloud) pour corriger un éventuel
-              // enregistrement antérieur corrompu par un décodage base64 non UTF-8-safe.
-              if(JSON.stringify(CHANGE_STUDIES[_idx]) !== JSON.stringify(seed)){
-                CHANGE_STUDIES[_idx] = seed;
-                _seedsAdded = true;
-              }
-            } else {
-              CHANGE_STUDIES.push(seed);
-              _seedsAdded = true;
-            }
-          });
-          if(_seedsAdded){
-            try{ localStorage.setItem('safChangeStudies', JSON.stringify(CHANGE_STUDIES)); }catch(e){}
-            try{ if(typeof window.safCloudScheduleSave==='function') window.safCloudScheduleSave(); }catch(e){}
-          }
-        }
-      }catch(e){ console.warn('Seed MOC reinjection after cloud load failed:', e); }
+      // 24.09.2026 — Ce bloc remplaçait toute MoC embarquée dont la version cloud différait
+      // du seed (CHANGE_STUDIES[_idx] = seed), puis poussait le résultat vers Supabase :
+      // le correctif non destructif du 14.09 était donc annulé à chaque chargement cloud.
+      // Le cloud fait foi ; seule une MoC embarquée absente ET jamais supprimée est ajoutée.
+      try{ if(typeof window.__safReinjectSeedMocs==='function') window.__safReinjectSeedMocs(); }catch(e){}
 
       // Importe les rapports mobiles pending_review avant le rendu
       try{ await importMobileReports(); }catch(e){}
