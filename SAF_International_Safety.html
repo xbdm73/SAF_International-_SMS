@@ -21394,6 +21394,16 @@ function deleteALoS(id){
     try { localStorage.removeItem('saf_role'); } catch(e){}
     location.reload();
   }
+  var MFA_EXEMPT_ROLES = ['reader', 'authority'];
+  async function mfaExempt(db, email){
+    if (!email) return false;
+    try {
+      var r = await db.from('user_roles').select('role').ilike('user_email', email).limit(1);
+      var role = (r && !r.error && r.data && r.data[0] && r.data[0].role || '').toString().trim().toLowerCase();
+      return MFA_EXEMPT_ROLES.indexOf(role) !== -1;
+    } catch(e){ return false; }
+  }
+
   async function currentSession(db, fallback){
     try { var r = await db.auth.getSession(); if (r && r.data && r.data.session) return r.data.session; } catch(e){}
     return fallback;
@@ -21538,6 +21548,9 @@ function deleteALoS(id){
       var a = await db.auth.mfa.getAuthenticatorAssuranceLevel();
       if (a.error) throw a.error;
       if (a.data && a.data.currentLevel === 'aal2') return await currentSession(db, session);
+      // Rôles dispensés de second facteur (arbitrage du 25.09.2026) : reader et authority.
+      // Tout autre cas (admin, editor, rôle introuvable, erreur de lecture) reste soumis à la MFA.
+      if (await mfaExempt(db, email)) return await currentSession(db, session);
       var lf = await db.auth.mfa.listFactors();
       if (lf.error) throw lf.error;
       var verified = ((lf.data && lf.data.totp) || []).filter(function(f){ return f.status === 'verified'; });
