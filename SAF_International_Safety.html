@@ -25729,5 +25729,30 @@ window.cmxBridgeDiag    = function(){
 
 
 <a class="saf-guide-fab" href="SAF_User_Guide.html#sms" onclick="if(location.pathname.indexOf('/Archives/')!==-1)this.href='../SAF_User_Guide.html#sms'" title="Mode d'emploi SAF" aria-label="Mode d'emploi SAF">?</a>
+<script>
+/* Bouton « Fermer » : le panneau Sauvegarder/Exporter est réservé à admin et editor.
+   Reader, authority ou rôle inconnu : retour direct à l'accueil, sans export. */
+(function(){
+  function canExport(){
+    var r = String(window.SAF_SESSION_ROLE || '').toLowerCase();
+    return r === 'admin' || r === 'editor';
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target && e.target.closest && e.target.closest('.saf-close-btn');
+    if (!b || canExport()) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    var ov = document.getElementById('saf-export-overlay');
+    if (ov) ov.classList.remove('open');
+    location.href = (location.pathname.indexOf('/Archives/') !== -1 ? '../' : '') + 'index.html';
+  }, true);
+  /* Filet : le panneau ne s'ouvre pas pour un rôle non autorisé, quel que soit le chemin. */
+  var ov = document.getElementById('saf-export-overlay');
+  if (ov && window.MutationObserver){
+    new MutationObserver(function(){
+      if (ov.classList.contains('open') && !canExport()) ov.classList.remove('open');
+    }).observe(ov, { attributes: true, attributeFilter: ['class'] });
+  }
+})();
+</script>
 </body>
 </html>

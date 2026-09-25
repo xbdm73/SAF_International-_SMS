@@ -1941,9 +1941,9 @@ function safExportPDF() {
 <div class="saf-nav-row" style="display:flex;align-items:center;gap:4px;overflow-x:auto;">
 <a class="saf-nav-link" data-saf-tool="home" href="index.html" style="--saf-nav-accent:#e8f0fe;">⌂ HOME</a>
 <div class="saf-nav-sep"></div>
-<a class="saf-nav-link" data-saf-tool="sms" href="Archives/SAF_International_Safety.html" style="--saf-nav-accent:#e07070;"><span style="color:#e07070">■</span> SMS</a>
+<a class="saf-nav-link" data-saf-tool="sms" href="SAF_International_Safety.html" style="--saf-nav-accent:#e07070;"><span style="color:#e07070">■</span> SMS</a>
 <a class="saf-nav-link" data-saf-tool="cms" href="SAF_International_Compliance_Monitoring_System.html" style="--saf-nav-accent:#70a8e0;"><span style="color:#70a8e0">■</span> CMS</a>
-<a class="saf-nav-link" data-saf-tool="omm" href="Archives/SAF_International_Appendices_OMM.html" style="--saf-nav-accent:#70d0a0;"><span style="color:#70d0a0">■</span> OMM</a>
+<a class="saf-nav-link" data-saf-tool="omm" href="SAF_International_Appendices_OMM.html" style="--saf-nav-accent:#70d0a0;"><span style="color:#70d0a0">■</span> OMM</a>
 <a class="saf-nav-link" data-saf-tool="guide" href="SAF_User_Guide.html#cms" style="--saf-nav-accent:#F0C040;"><span style="color:#F0C040">?</span> MODE D'EMPLOI</a>
 </div>
 </div>
@@ -21117,6 +21117,7 @@ window.safSmsConfirmImport=safSmsConfirmImport;
       else { SAF_ROLE = 'reader'; }
     } catch(e) { SAF_ROLE = 'reader'; }
     SAF_ROLE = safNormRole(SAF_ROLE);
+    try { window.SAF_SESSION_ROLE = SAF_ROLE; } catch(e){}
     if(!declared) setTimeout(function(){ safShowNoRoleWarning(email); }, 1200);
     var badge = document.getElementById('saf-role-badge');
     if(badge){
@@ -22765,5 +22766,30 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
   function finalFlush(){try{safAutoContractorCommit(false);}catch(e){}try{safAutoFindingCommit(false);}catch(e){}try{if(typeof gridRows!=='undefined'&&gridRows&&gridRows.length)g_autosave();}catch(e){}cloudNow();}
   document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')finalFlush();});window.addEventListener('pagehide',finalFlush);
+})();
+</script>
+<script>
+/* Bouton « Fermer » : le panneau Sauvegarder/Exporter est réservé à admin et editor.
+   Reader, authority ou rôle inconnu : retour direct à l'accueil, sans export. */
+(function(){
+  function canExport(){
+    var r = String(window.SAF_SESSION_ROLE || '').toLowerCase();
+    return r === 'admin' || r === 'editor';
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target && e.target.closest && e.target.closest('.saf-close-btn');
+    if (!b || canExport()) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    var ov = document.getElementById('saf-export-overlay');
+    if (ov) ov.classList.remove('open');
+    location.href = (location.pathname.indexOf('/Archives/') !== -1 ? '../' : '') + 'index.html';
+  }, true);
+  /* Filet : le panneau ne s'ouvre pas pour un rôle non autorisé, quel que soit le chemin. */
+  var ov = document.getElementById('saf-export-overlay');
+  if (ov && window.MutationObserver){
+    new MutationObserver(function(){
+      if (ov.classList.contains('open') && !canExport()) ov.classList.remove('open');
+    }).observe(ov, { attributes: true, attributeFilter: ['class'] });
+  }
 })();
 </script>

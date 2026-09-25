@@ -425,7 +425,7 @@ button .bi, a .bi{vertical-align:middle;}
   <div style="max-width:1800px;margin:auto;display:flex;align-items:center;gap:4px;overflow-x:auto;">
     <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
-    <a href="Archives/SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
+    <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
     <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
     <a href="SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
   </div>
@@ -3366,6 +3366,7 @@ h1 {
       SAF_ROLE = (res.data && res.data.role) ? res.data.role : 'reader';
     } catch(e) { SAF_ROLE = 'reader'; }
     SAF_ROLE = (SAF_ROLE === 'admin' || SAF_ROLE === 'editor') ? SAF_ROLE : 'reader';
+    try { window.SAF_SESSION_ROLE = SAF_ROLE; } catch(e){}
     var badge = document.getElementById('saf-role-badge');
     if(badge){
       badge.textContent = SAF_ROLE === 'admin' ? 'ADMIN' : (SAF_ROLE === 'editor' ? 'EDITOR' : 'READ ONLY');
@@ -3653,4 +3654,29 @@ h1 {
 })();
 </script>
 
+<script>
+/* Bouton « Fermer » : le panneau Sauvegarder/Exporter est réservé à admin et editor.
+   Reader, authority ou rôle inconnu : retour direct à l'accueil, sans export. */
+(function(){
+  function canExport(){
+    var r = String(window.SAF_SESSION_ROLE || '').toLowerCase();
+    return r === 'admin' || r === 'editor';
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target && e.target.closest && e.target.closest('.saf-close-btn');
+    if (!b || canExport()) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    var ov = document.getElementById('saf-export-overlay');
+    if (ov) ov.classList.remove('open');
+    location.href = (location.pathname.indexOf('/Archives/') !== -1 ? '../' : '') + 'index.html';
+  }, true);
+  /* Filet : le panneau ne s'ouvre pas pour un rôle non autorisé, quel que soit le chemin. */
+  var ov = document.getElementById('saf-export-overlay');
+  if (ov && window.MutationObserver){
+    new MutationObserver(function(){
+      if (ov.classList.contains('open') && !canExport()) ov.classList.remove('open');
+    }).observe(ov, { attributes: true, attributeFilter: ['class'] });
+  }
+})();
+</script>
 </body></html>
