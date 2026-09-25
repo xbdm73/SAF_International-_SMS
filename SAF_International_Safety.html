@@ -8,7 +8,7 @@
 <!-- SAF ECCAIRS OCCLOG PATCH V2 TESTED 2026-06-18 | BOWTIE SMS DROPDOWN FIX -->
 <!-- SAF THREE-LEVEL EVENT TAXONOMY | 17 STABLE RISK FAMILIES | 102 ATOMIC RISK SCENARIOS | 164 EXCEL EVENTS | 2026-07-29 -->
 <!-- LEVEL 1: OCCURRENCE CATEGORY | LEVEL 2: SAF RISK FAMILY R01-R17 | LEVEL 3: RISK SCENARIO -->
-<!-- SAF E5X TAXONOMY 8.0.0.0 CHECKED 2026-07-22 | FIXED ATTRIBUTES 167/228 NORMALIZED CODING + PREFLIGHT -->
+<!-- SAF E5X TAXONOMY 9.0.0.0 (EASA 17-Sep-2026) CHECKED 2026-09-25 | CODES AUDITED vs TAXONOMY XML | XSD + RIT VALIDATION BEFORE EXPORT -->
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&amp;family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&amp;family=Bebas+Neue&amp;display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -16056,18 +16056,23 @@ const RIT_VALUE_CODES = {
   // 'DGAC' (Direction Générale de l'Aviation Civile) — DSAC is a sub-directorate of
   // DGAC and has no separate VL entry. 'Operator' has no single generic code (the real
   // list has one entry per specific operator, 6001-6198) and is left unmapped.
-  responsible_entity: {'Switzerland – FOCA':'2171','France – DSAC':'2060',EASA:'3004',Other:'99998'},
+  responsible_entity: {'Switzerland – FOCA':'2171','France – DSAC':'2060',EASA:'3004',Other:'99998'}, // 9.0.0.0: Switzerland > FOCA / France > DGAC / International Organisations > EASA
   // Mass_Group (VL319) — only 'Over 5 700 kg' mapped, using the rotorcraft-specific
   // child code (107, "5 701 - 27 000 kg" under the Rotorcraft parent 102) rather than
   // the generic top-level code (3), since AS332/H125/H135/H145 are all rotorcraft. The
   // other 3 UI bands (1 501–5 700 / 751–1 500 / Up to 750 kg) don't line up cleanly with
   // the real bands (which start at 2 251 kg) and are left unmapped by request.
-  mass_group: {'Over 5 700 kg':'107'},
+  // 2026-09-25 (taxonomy 9.0.0.0): 107 was 'Fixed wing > 5 701 - 27 000 kg' (wrong branch).
+  // Rotorcraft branch (102): 111 '0 - 2 250 kg', 112 '2 251 - 3 175 kg', 113 '> 3 175 kg', 114 'Unknown'.
+  mass_group: {'Rotorcraft > 3 175 kg':'113','Rotorcraft 2 251 – 3 175 kg':'112','Rotorcraft 0 – 2 250 kg':'111','Rotorcraft – Unknown':'114','Over 5 700 kg':'113'},
   // Manufacturer_Model (VL1182) — only the AS 332 C1 Super Puma mapped, by request.
   // Code 201829 confirmed correct (not the older/ambiguous 2536) by cross-checking its
   // neighbouring rows in the value list, which are unmistakably modern Airbus
   // Helicopters/Eurocopter model codes (EC130, EC135, EC175, AS355, AS350, EC155…).
-  manufacturer_model: {'Airbus Helicopters / AS 332 C1 Super Puma':'201829'},
+  // 2026-09-25 (taxonomy 9.0.0.0): 201829 is the series node 'AIRBUS HELICOPTERS > AS332';
+  // the model node is 201885 'AIRBUS HELICOPTERS > AS332 > C1'. No C1e / H215 node exists
+  // in 9.0.0.0 -> C1 code + AdditionalText (see RIT_ADDITIONAL_TEXT).
+  manufacturer_model: {'Airbus Helicopters / AS 332 C1 Super Puma':'201885','Airbus Helicopters / AS 332 C1e (H215) Super Puma':'201885'},
   // Risk_Grade / ERCS_Risk_Grade (VL1103) — real 3-level scale (not the 4-level one the
   // UI previously offered).
   risk_grade: {'Low (green)':'1','Elevated (Yellow)':'2','High (Red)':'3'},
@@ -16112,7 +16117,9 @@ const RIT_VALUE_CODES = {
   // text), confirmed from the PDF: all Western-European countries fall under code
   // 901 "Europe and North Atlantic"; the specific country name is still recorded
   // via AdditionalText (see _ritAttrXml, dtype 3 handling).
-  state_area: {Switzerland:'901', France:'901', Italy:'901', Austria:'901', Germany:'901', Other:'998'},
+  // 2026-09-25 (taxonomy 9.0.0.0): the list carries country nodes under the region
+  // (Europe and North Atlantic > Switzerland = 229 ...). EASA expects the State of occurrence.
+  state_area: {Switzerland:'229', France:'82', Italy:'122', Austria:'16', Germany:'95', Other:'998'},
   // Operation_Type (VL1178) top-level codes — CONFIRMED from the PDF. The previous
   // long list of sub-branch guesses (Passenger, Cargo, Airline…) was NOT verifiable
   // and has been removed; only the 6 top-level options actually offered in the form
@@ -16124,8 +16131,13 @@ const RIT_VALUE_CODES = {
   // International and FOCA both map to Switzerland (SAF's home state/FOCA), since no
   // generic "Other/Unknown" entry was found in the truncated list — verify against
   // the Taxonomy Browser if precision is required.
-  reporting_entity: {'SAF International':'171', FOCA:'171'},
+  // 2026-09-25 (taxonomy 9.0.0.0): 171 was the bare country node. Real nodes:
+  // 6171 'Switzerland > Other > Aircraft operator', 2171 'Switzerland > CAA', 3004 'International Organisations > EASA'.
+  reporting_entity: {'SAF International':'6171', FOCA:'2171', EASA:'3004'},
   // Operator (VL1016, attribute 215) confirmed country code for Switzerland.
+  // 2290000 = 'Switzerland' (state node). SAF International is not yet in VL215 (addition
+  // requested to FOCA, Sept. 2026) -> EASA rule: state code + operator name as AdditionalText.
+  // Replace this code by the dedicated node as soon as it is published.
   operator: {'SAF International':'2290000'},
   // Parties_Informed (VL1006, attribute 1064) — CONFIRMED full 12-value list from the PDF.
   parties_informed: {'State of Registry':'1','State of Operator':'2','State of Occurrence':'3','Design Approval Holder':'4','Operator':'5','Owner':'6','CAMO':'7','Competent Authority':'8','Other':'9','Aerodrome':'10','ANSP':'11','Safety Investigation Authority':'12'},
@@ -16139,10 +16151,19 @@ const RIT_VALUE_CODES = {
   // Risk_Classification (attribute 1065) — 5-level scale, confirmed by the user to match
   // ECCAIRS2's own 5-level scale. The leading digit already embedded in each label is
   // used directly as the VL code.
-  risk_classification: {'5 – Intolerable':'5','4 – Tolerable but undesirable':'4','3 – Tolerable':'3','2 – Acceptable':'2','1 – Negligible':'1'},
+  // risk_classification (1065) is Alphanumeric (max 200) in taxonomy 9.0.0.0 -> no code map, label sent as text.
   reporter_language: {Afrikaans:'1',Albanian:'2',Arabic:'3',Armenian:'4',Azerbaijani:'5',Basque:'6',Belarusian:'7',Bulgarian:'8',Catalan:'9',Chinese:'10',Croatian:'11',Czech:'12',Danish:'13',Divehi:'14',Dutch:'15',English:'16',Estonian:'17',Faroese:'18',Finnish:'19',French:'20',Galician:'21',Georgian:'22',German:'23',Greek:'24',Gujarati:'25',Hebrew:'26',Hindi:'27',Hungarian:'28',Icelandic:'29',Indonesian:'30',Italian:'31',Japanese:'32',Kannada:'33',Kazakh:'34',Kirghiz:'35',Korean:'36',Latvian:'37',Lithuanian:'38',Macedonian:'39',Malay:'40',Marathi:'41',Mongolian:'42',Norwegian:'43',Persian:'44',Polish:'45',Portuguese:'46',Punjabi:'47',Romanian:'48',Russian:'49',Sanskrit:'50',Serbian:'51',Slovak:'52',Slovenian:'53',Spanish:'54',Swedish:'55',Tamil:'56',Tatar:'57',Telugu:'58',Thai:'59',Turkish:'60',Ukrainian:'61',Unknown:'62',Urdu:'63',Uzbek:'64',Vietnamese:'65',Other:'66'}
 };
 
+// AdditionalText sent with 'Code and Additional Text' attributes, by field key and UI label.
+// Default (no entry) = the UI label itself. Free text must never carry personal data.
+const RIT_ADDITIONAL_TEXT = {
+  reporting_entity: {'SAF International':'CH.AOC.3052 // SAF International'},
+  operator: {'SAF International':'SAF International (CH.AOC.3052)'},
+  manufacturer_model: {'Airbus Helicopters / AS 332 C1 Super Puma':'AS 332 C1','Airbus Helicopters / AS 332 C1e (H215) Super Puma':'AS 332 C1e (H215)'},
+  state_area: {Switzerland:'',France:'',Italy:'',Austria:'',Germany:''},
+  risk_method_939: {}
+};
 const ECCAIRS_OCC_FIELDS = [
   // ── OCCURRENCE (entity: Occurrence, ID 24) ────────────────────────
   {key:'headline', code:'601', label:'Headline', type:'text', req:true, entity:'Occurrence', dtype:1, fallback:function(o){return o.description||'';}},
@@ -16179,7 +16200,7 @@ const ECCAIRS_OCC_FIELDS = [
   // which risked rejection if ECCAIRS2 expects a Code here. User confirmed the same
   // 5-level scale is used in ECCAIRS2 as in this file -> switched to dtype:2 with the
   // digit already embedded in each label used as the VL code (see RIT_VALUE_CODES).
-  {key:'risk_classification', code:'1065', label:'Risk Classification', type:'select', req:true, entity:'Reporting_History', dtype:2, options:['5 – Intolerable','4 – Tolerable but undesirable','3 – Tolerable','2 – Acceptable','1 – Negligible']},
+  {key:'risk_classification', code:'1065', label:'Risk Classification', type:'select', req:true, entity:'Reporting_History', dtype:1, options:['5 – Intolerable','4 – Tolerable but undesirable','3 – Tolerable','2 – Acceptable','1 – Negligible']},
   {key:'risk_methodology', code:'1066', label:'Risk Methodology', type:'text', entity:'Reporting_History', dtype:1, fallback:function(o){return 'ERCS (European Common Risk Classification Scheme) supplemented by ICAO Doc 9859 Safety Risk Management methodology';}},
   // ── AIRCRAFT & FLIGHT DETAILS (entity: Aircraft, ID 4) ────────────
   {key:'aircraft_registration', code:'244', label:'Aircraft Registration', type:'select', req:true, entity:'Aircraft', dtype:1, options:['HB-ZKN','HB-ZIP','F-HRTS'], fallback:function(o){return o.aircraft_reg||'';}},
@@ -16214,14 +16235,17 @@ const ECCAIRS_OCC_FIELDS = [
   // Aircraft entity under different codes 114/187/262). Since the PDF is the exact
   // document describing SAF's live taxonomy version, it is trusted here over the
   // older RIT export for this specific field family.
-  {key:'total_fatalities', code:'458', label:'Total Fatalities', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
-  {key:'fatalities_aircraft', code:'459', label:'Total Fatalities – Aircraft', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
+  // 2026-09-25 (taxonomy 9.0.0.0): 458/459/467/468/470/471 are NOT in the RIT domain. RIT carries
+  // on-board totals under Aircraft (114/262/187) and ground totals under Occurrence (460/472/469).
+  // Grand totals stay on screen only (consistency check), without entity -> not exported.
+  {key:'total_fatalities', code:'458', label:'Total Fatalities', type:'number', req:true, dtype:13, fallback:function(o){return '0';}},
+  {key:'fatalities_aircraft', code:'114', label:'Total Fatalities – Aircraft', type:'number', req:true, entity:'Aircraft', dtype:13, fallback:function(o){return '0';}},
   {key:'fatalities_ground', code:'460', label:'Total Fatalities – Ground', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
-  {key:'serious_injuries', code:'470', label:'Total Serious Injuries', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
-  {key:'serious_injuries_aircraft', code:'471', label:'Total Serious Injuries – Aircraft', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
+  {key:'serious_injuries', code:'470', label:'Total Serious Injuries', type:'number', req:true, dtype:13, fallback:function(o){return '0';}},
+  {key:'serious_injuries_aircraft', code:'262', label:'Total Serious Injuries – Aircraft', type:'number', req:true, entity:'Aircraft', dtype:13, fallback:function(o){return '0';}},
   {key:'serious_injuries_ground', code:'472', label:'Total Serious Injuries – Ground', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
-  {key:'minor_injuries', code:'467', label:'Total Minor Injuries', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
-  {key:'minor_injuries_aircraft', code:'468', label:'Total Minor Injuries – Aircraft', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
+  {key:'minor_injuries', code:'467', label:'Total Minor Injuries', type:'number', req:true, dtype:13, fallback:function(o){return '0';}},
+  {key:'minor_injuries_aircraft', code:'187', label:'Total Minor Injuries – Aircraft', type:'number', req:true, entity:'Aircraft', dtype:13, fallback:function(o){return '0';}},
   {key:'minor_injuries_ground', code:'469', label:'Total Minor Injuries – Ground', type:'number', req:true, entity:'Occurrence', dtype:13, fallback:function(o){return '0';}},
 
   // ══════════════════════════════════════════════════════════════════
@@ -16252,13 +16276,13 @@ const ECCAIRS_OCC_FIELDS = [
   // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 281 "State_Of_Registry"
   // (note capital O, exact XML element casing) exists under Aircraft(4), extending
   // VL1024. No label text available -> uncoded.
-  {key:'state_registry', code:'281', label:'State of Registry', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Switzerland','France','Italy','Austria','Other']},
+  {key:'state_registry', code:'281', label:'State of Registry', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Switzerland','France','Italy','Austria','Other'], fallback:function(o){var r=occGetEccairsValue(o,'aircraft_registration');return OCC_REG_TO_STATE[r]||'';}},
   // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 32 "Aircraft_Category"
   // exists under Aircraft(4), extending VL1179. No label text available -> uncoded.
   {key:'aircraft_category', code:'32', label:'Aircraft Category', type:'select', req:true, fixed:true, entity:'Aircraft', dtype:2, options:['Helicopter'], fallback:function(o){return 'Helicopter';}},
   // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 21 "Manufacturer_Model"
   // exists under Aircraft(4), extending VL1182. No label text available -> uncoded.
-  {key:'manufacturer_model', code:'21', label:'Manufacturer / Model', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Airbus Helicopters / AS 332 C1 Super Puma'], fallback:function(o){return 'Airbus Helicopters / AS 332 C1 Super Puma';}},
+  {key:'manufacturer_model', code:'21', label:'Manufacturer / Model', type:'select', req:true, entity:'Aircraft', dtype:3, options:['Airbus Helicopters / AS 332 C1 Super Puma','Airbus Helicopters / AS 332 C1e (H215) Super Puma'], fallback:function(o){var r=occGetEccairsValue(o,'aircraft_registration');return OCC_REG_TO_MODEL[r]||'';}},
   // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 254 "Serial_Number" exists
   // under Aircraft(4), extending db:Base_Serial_Number (plain alphanumeric, not a coded
   // VL). Emits directly in the XML, no VL code needed.
@@ -16268,7 +16292,7 @@ const ECCAIRS_OCC_FIELDS = [
   {key:'propulsion_type', code:'232', label:'Propulsion Type', type:'select', req:true, fixed:true, entity:'Aircraft', dtype:2, options:['Turbine – shaft'], fallback:function(o){return 'Turbine – shaft';}},
   // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 319 "Mass_Group" exists
   // under Aircraft(4), extending VL319. No label text available -> uncoded.
-  {key:'mass_group', code:'319', label:'Mass Group', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Over 5 700 kg','1 501 – 5 700 kg','751 – 1 500 kg','Up to 750 kg']},
+  {key:'mass_group', code:'319', label:'Mass Group', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Rotorcraft > 3 175 kg','Rotorcraft 2 251 – 3 175 kg','Rotorcraft 0 – 2 250 kg','Rotorcraft – Unknown'], fallback:function(o){return 'Rotorcraft > 3 175 kg';}},
   // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 1068 "Risk_Assessment"
   // exists under Reporting_History(53), extending dt:Text (plain long text). The earlier
   // "skipped in the PDF's 1067->1069 sequence" concern was a form-display choice, not a
@@ -16298,7 +16322,7 @@ const ECCAIRS_OCC_FIELDS = [
   // (Risk_Grading_Method, VL1136) is a coded 10-value select. Converted to type:'select'
   // with real labels; entity added (Risk_Assessment, id 59, confirmed in Schema.xsd).
   // Default kept close to the old free-text intent (ERCS is SAF's actual methodology).
-  {key:'risk_method_939', code:'939', label:'Risk Method', type:'select', entity:'Risk_Assessment', dtype:2, options:['ECCAIRS (old)','Undefined','RAT (Eurocontrol Risk Analysis Tool)','Other','ERC (Event Risk Classification of ARMS)','ERCS (European Common Risk Classification Scheme)','ICAO (Safety Risk Management)','ED-125 (EUROCAE Risk Classification Scheme)','FAA SRM (Safety Risk Management Worksheet)','Not applicable'], fallback:function(o){return 'ERCS (European Common Risk Classification Scheme)';}},
+  {key:'risk_method_939', code:'939', label:'Risk Method', type:'select', entity:'Risk_Assessment', dtype:3, options:['ECCAIRS (old)','Undefined','RAT (Eurocontrol Risk Analysis Tool)','Other','ERC (Event Risk Classification of ARMS)','ERCS (European Common Risk Classification Scheme)','ICAO (Safety Risk Management)','ED-125 (EUROCAE Risk Classification Scheme)','FAA SRM (Safety Risk Management Worksheet)','Not applicable'], fallback:function(o){return 'ERCS (European Common Risk Classification Scheme)';}},
   // UPDATED 2026-07-20: real scale only has 3 levels (VL1103), not 4 — 'Intolerable'/
   // 'Medium' don't exist in the real list. entity added (Risk_Assessment, id 59).
   {key:'risk_grade', code:'1109', label:'Risk Grade', type:'select', entity:'Risk_Assessment', dtype:2, options:['Low (green)','Elevated (Yellow)','High (Red)']},
@@ -16321,10 +16345,15 @@ const ECCAIRS_OCC_FIELDS = [
 function occHtmlEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 // Aircraft Registration → Serial Number mapping (SAF International fleet)
 const OCC_REG_TO_SERIAL = { 'HB-ZKN':'9010', 'HB-ZIP':'2864', 'F-HRTS':'3017' };
+// Fleet (Sept. 2026): 1 x AS 332 C1, 2 x AS 332 C1e / H215. F-HRTS is French-registered.
+const OCC_REG_TO_MODEL = { 'HB-ZKN':'Airbus Helicopters / AS 332 C1 Super Puma', 'HB-ZIP':'Airbus Helicopters / AS 332 C1e (H215) Super Puma', 'F-HRTS':'Airbus Helicopters / AS 332 C1e (H215) Super Puma' };
+const OCC_REG_TO_STATE = { 'HB-ZKN':'Switzerland', 'HB-ZIP':'Switzerland', 'F-HRTS':'France' };
 function occUpdateSerialFromRegistration(reg){
   var serialField=document.getElementById('occ-eccairs-serial_number');
   if(!serialField) return;
   serialField.value = OCC_REG_TO_SERIAL[reg] || '';
+  var mm=document.getElementById('occ-eccairs-manufacturer_model'); if(mm && OCC_REG_TO_MODEL[reg]) mm.value=OCC_REG_TO_MODEL[reg];
+  var sr=document.getElementById('occ-eccairs-state_registry'); if(sr && OCC_REG_TO_STATE[reg]) sr.value=OCC_REG_TO_STATE[reg];
 }
 function occGetEccairsValue(occ,key){
   occ=occ||{}; var e=occ.eccairs||{}; if(e[key]!==undefined && e[key]!==null) return e[key];
@@ -19980,7 +20009,8 @@ function _ritAttrXml(f, occ, uncoded){
       else uncoded.push(f.label+': '+v+' (code VL inconnu — à vérifier via Taxonomy Browser)');
     } else if(f.dtype===3){ // Code + optional additional text
       var c3=_ritCodeForValue(f.key,v,codeMap);
-      if(c3) out+='      <'+f.label_synonym+' attributeId="'+f.code+'" AdditionalText="'+_xmlEsc(v)+'" AdditionalTextEncoding="xs:string">'+c3+'</'+f.label_synonym+'>\n';
+      var atMap=RIT_ADDITIONAL_TEXT[f.key]||{}; var at=Object.prototype.hasOwnProperty.call(atMap,v)?atMap[v]:v;
+      if(c3) out+='      <'+f.label_synonym+' attributeId="'+f.code+'" AdditionalText="'+_xmlEsc(at)+'" AdditionalTextEncoding="xs:string">'+c3+'</'+f.label_synonym+'>\n';
       else uncoded.push(f.label+': '+v+' (liste de valeurs officielle non mappée — saisir manuellement dans ECCAIRS)');
     } else if(f.dtype===5){ // Date
       var d=_ritDate(v); if(d) out+='      <'+f.label_synonym+' attributeId="'+f.code+'">'+d+'</'+f.label_synonym+'>\n';
@@ -20016,117 +20046,20 @@ Object.assign(RIT_SYNONYM, {
   ercs_1100:'Regulations_Procedures_And_Compliance', ercs_1101:'Situational_Awareness_And_Actions',
   ercs_1102:'Warning_System_Operation_And_Compliance', ercs_1103:'Recovery_Action',
   ercs_1104:'Protections', ercs_1105:'Unspecified',
-  risk_method_939:'Risk_Method', risk_grade:'ERCS_Risk_Grade'
+  risk_method_939:'Risk_Method', risk_grade:'ERCS_Risk_Grade',
+  // 2026-09-25 (9.0.0.0 RIT): on-board injury totals live under Aircraft.
+  fatalities_aircraft:'Total_Number_Fatalities', serious_injuries_aircraft:'Total_Number_Serious_Injuries',
+  minor_injuries_aircraft:'Total_Number_Minor_Injuries'
 });
 // All 9 injury codes (458/459/460/467/468/469/470/471/472) confirmed directly under
 // Occurrence (24) via the embedded field data in the official production PDF (Taxonomy 7.2.0.1).
 
-// Exact attribute order from the official ECCAIRS Aviation 8.0.0.0 Schema.xsd
-// generated 03-Jul-2026. The XSD uses ordered sequences inside ATTRIBUTES;
-// numeric AttributeId sorting is NOT sufficient (e.g. File_Number 452 must precede
-// Responsible_Entity 453 and Reporting History has its own non-numeric sequence).
-const ECCAIRS8_ATTRIBUTE_ORDER = {
-  Occurrence: [
-    'Validation_Taxonomy_Name','Validation_Taxonomy_Vers','Dew_Point','Wx_Conditions',
-    'Dang_Goods_Involved','Height_Of_Cloud_Base','Light_Conditions','Maximum_Gust',
-    'Cloud_Amount','Speed_Measured_At','Air_Temperature','Visibility','Wind_Direction',
-    'Wind_Gusts','Wind_Speed','ATM_Contribution','Occurrence_Category','Occurrence_Class',
-    'Highest_Damage','Local_Date','Date_Report_Created','Report_Last_Modified',
-    'Effect_On_ATM_Service','Latitude_Of_Occ','Location_Name','Lock_Status',
-    'Locked_Released_By','Locked_Released_Since','Longitude_Of_Occ','Occurrence_Moderator',
-    'Damage_Not_To_A_C','Injury_Level','File_Number','Responsible_Entity','State_Area_Of_Occ',
-    'Occurrence_Status','Third_Party_Damage','Local_Time','Total_Fatalities',
-    'Total_Fatalities_Aircraft','Total_Fatalities_Ground','Total_Involved','Total_On_Board_A_C',
-    'Total_Injuries-Ground','Total_Injuries-Unknown','Total_Injuries-Unknown_Aircraft',
-    'Total_Injuries-Unknown_Ground','Total_Minor_Injuries','Total_Minor_Injuries-Aircraft',
-    'Total_Minor_Injuries-Ground','Total_Serious_Injuries','Total_Serious_Injuries-Aircraft',
-    'Total_Serious_Injuries-Ground','Total_No_Injuries','Total_No_Injuries-Aircraft',
-    'Total_No_Injuries-Ground','UTC_Date','UTC_Time','Headline','Weather_Relevant'
-  ],
-  Aircraft: [
-    'Manufacturer_Model','Aircraft_Altitude','Actual_Altimeter_Setting','A_C_Flight_Level',
-    'Aircraft_Height','Height_Altimeter','ICAO_Information','Current_Traffic_Type',
-    'Break-Up_On_Impact','Break-Up_At_Ditching','Aircraft_Category','Total_Cycles_A_C',
-    'Airworthiness_Cert','Impact_Angle','Immersion_Suits_Avail','Immersion_Suits_Worn',
-    'Approval_Icing_Cond','Approval_Prec_Appr','Approach_Errors','Approach_RVR_Status',
-    'Approach_Stabilized','Person_At_Controls','ATS_Route_Name','ATS_Route_Type',
-    'Recording_Quality','Auto_Bank_Call','Auto_Altitude_Call','Automatic_Landing',
-    'Availability_ARFS','Bearing_Rwy_Heading','Call_Sign','Chute_Slide_Ops','Chute_Slide_Inst',
-    'Clearance_Validity','Cleared_Altitude','Cleared_Alt_Altimeter','Cleared_Flight_Level',
-    'Cleared_Height','Cleared_Height_Altim','Controlling_Agency','Co-Ord_Entry_Altitude',
-    'Co-Ord_Entry_Flt_Level','Co-Ord_Entry_Height','Co-Ord_Exit_Altitude',
-    'Co-Ord_Exit_Flt_Level','Co-Ord_Exit_Height','Co-Pilot_Altim_Type',
-    'Co-Pilot_Restraint_System','Charts_Available_CoPilot','Altitude_Contours_CoPilot',
-    'Charts_Provider','Terrain_Contours_CoPilot','Crew_Call-Out_Done','Crosswind_Component',
-    'Current_Flight_Rules','CVR_Recovery','Data_Recovery','Data_Usefulness','Descent_Rate',
-    'Descent_Speed','Distance_Threshold','Recording_Duration','Duration_Of_Flight',
-    'ARFS_Effective','EFIS','ELB-A_ELT_Status','Electr_Landing_Aids','Elevation_Terrain',
-    'Resulting_State','Floatation_Inflation','Floatation_Installed','Functioning','Escape_Time',
-    'Ext_Agent_Type','Fatal_Cabin_Crew','Fatal_Burns','Fatal_Drowning','Fatal_Fumes_Or_Gasses',
-    'Fatal_Impact','Fatal_Other_Reasons','Fatal_Shock_Exposure','Fatal_Unknown_Reasons',
-    'Fatal_Co-Pilot','Fatal_Crew_Total','Fatal_Other_Flight_Crew','Fatal_Passengers',
-    'Fatal_Pilot','Other_Fatalities_On_A_C','Total_Number_Fatalities','Fatal_Unknown',
-    'FDR_Recovery','Filed_Flight_Rules','Filed_Traffic_Type','Flight_Number','Flight_Phase',
-    'Floatation_Time','Wx_Info_Phase','Fuel_Source','Recommended_Type','Type_Used',
-    'GNSS_Installed','GPWS_Installed','GPWS_Operated','GPWS_Required','GPWS_Type_Mark',
-    'GPWS_Warning_Given','Evacuation_Hampered','HUD_Installed','HUD_Used','Headwind_Loss',
-    'Hot_Microphone','Icing_Intensity','Ignition_Source','Initial_Location',
-    'Number_Of_Cabin_Crew','Number_Of_Co-Pilots','Number_Of_Crew','Number_Of_Other_Flight_Crew',
-    'Number_Of_Passengers','Number_Of_PIC','Number_Of_Other_Persons','Total_Number_Of_Persons',
-    'Number_Of_Persons_Unknown_Category','Injuries_Unknown_Cabin_Crew',
-    'Injuries_Unknown_Co-Pilot','Injuries_Unknown_Crew_Total',
-    'Injuries_Unknown_Other_Flight_Crew','Injuries_Unknown_Passengers',
-    'Injuries_Unknown_Pilot','Unknown_Other_Injuries_On_A_C','Total_Number_Unknown_Injuries',
-    'Injuries_Unknown','Installation','Instr_Land_Proc','Instrument_Appr_Type',
-    'Landing_Gear_Type','Last_Departure_Point','FDR_Location','Wreckage_Location',
-    'CVR_Location','Landing_Location','Locating_Method','Maintenance_Docs','Maximum_T_O_Mass',
-    'Microburst','Minima_Call-Out_Made','Minor_Injuries-Cabin_Crew','Minor_Injuries-Co-Pilot',
-    'Minor_Injuries-Crew_Total','Minor_Injuries-Other_Crew','Minor_Injuries-Passengers',
-    'Minor_Injuries-Pilot','Minor_Other_Injuries_On_A_C','Total_Number_Minor_Injuries',
-    'Minor_Injuries-Unknown','Mountain_Wave_Intens','No_Injuries-Cabin_Crew',
-    'No_Injuries-Co-Pilot','No_Injuries-Crew_Total','No_Injuries-Other_Flight_Crew',
-    'No_Injuries-Passengers','No_Injuries-Pilot','No_Injuries_Other',
-    'Total_Number_No_Injuries','No_Injuries_Unknown','Non-Fatal_Injuries-Burns',
-    'Non-Fatal_Injuries-Gasses','Non-Fatal_Injuries-Impact','Non-Fatal_Injuries-Shock',
-    'Non-Fatal_Injuries-Other','Non-Fatal_Injuries-Unknown','Nr_Of_Restraint_Failures',
-    'Nr_Seat_Failures','Number_Of_Channels','Number_Of_Engines','Number_Of_Parameters',
-    'Persons_Evacuated','Occ_On_Ground','Operation_Type','Operator','Operator_Type',
-    'Pax_Restraint_System','Persons_Autopsied','Charts_Available_Pilot',
-    'Altitude_Contours_Pilot','Provider','Terrain_Contours','Charts_Different',
-    'Pilot_Altimeter_Type','Pilot_Restraint_System','Pitch_Angle_Specific','Pitch_Attitude',
-    'Planned_Destination','Wreckage_Position','Precision_Appr_Cat','Propulsion_Type',
-    'Ext_Agent_Quantity','Fuel_Volume_On_Board','Radio_Altimeter_Inst','Reason_For_Data_Loss_FDR',
-    'Aircraft_Registration','Serial_Number','Speed_First_Event','State_Of_Registry','Mass_Group',
-    'Parts_Damaged','Parts_Struck','Species_Description','Birds_Wildlife_Seen',
-    'Birds_Wildlife_Struck','Bird_Size','Pilot_Advised_Of_Birds'
-  ],
-  Reporting_History: [
-    'Report_Identification','Reporting_Entity','Report_Source','Reporting_Form_Type',
-    'Report_Status','Reporting_Date','Report','Parties_Informed','Risk_Classification',
-    'Risk_Methodology','Description_Investigation','Risk_Assessment','Corrective_Actions',
-    'Conclusions','Tracking_Sheet_Number','Report_Version','Other_Report_Inform',
-    'Export_Control','Reporter_S_Language','Reporter_S_Description'
-  ],
-  Aerodrome_General: ['Aerodrome_Latitude','Aerodrome_Longitude','Area_Configuration',
-    'Elevation_Above_MSL','Location_Indicator','Aerodrome_Status','Surface_Type',
-    'Landing_Area_Type','Aerodrome_Type','Category_Provided','Category_Published',
-    'Braking_Determined_By','Braking_Action','Type_Of_Deposits','Location_On_Near_Aerodrome',
-    'Extent_Contamination','Depth_Of_Deposit','Loc_Of_Contamination','Wildlife_Species',
-    'Wildlife_Size','Number_Of_Wildlife'],
-  Events: ['Event_Type','Phase','Event_Justification'],
-  Dangerous_Goods: ['Dangerous_Good','Label','Origin_Of_Goods',
-    'Air_Waybill_Consignment_Tracking_Number','Shipper_Name',
-    'Total_Number_Of_Packages_In_Consignment','Subsidiary_Risk','Type_Of_Outer_Packaging',
-    'Packing_Group_Class_7_Category','Number_Of_Inner_Packages','Type_Of_Inner_Packaging',
-    'Quantity_Per_Inner_Packaging'],
-  Risk_Assessment: ['Risk_Grade','Risk_Method','Risk_Level','Risk_Container','Risk_Confidence',
-    'ERCS_Row_Score','ERCS_Column_Score','ERCS_Score','ERCS_Numerical_Equivalent_Score',
-    'Key_Risk_Area','Aircraft_Equipment_And_Infrastructure','Tactical_Planning',
-    'Regulations_Procedures_And_Compliance','Situational_Awareness_And_Actions',
-    'Warning_System_Operation_And_Compliance','Recovery_Action','Protections','Unspecified',
-    'ERCS_Calculated_B_S','ERCS_Final_B_S','ERCS_Container','ERCS_Risk_Grade',
-    'ERCS_Comments','ERCS_Barrier']
-};
+// Exact attribute order (xs:sequence) of the official ECCAIRS Aviation 9.0.0.0 Schema.xsd
+// (EASA, 17-Sep-2026), generated from the XSD itself on 2026-09-25. The historical name
+// ECCAIRS8_ATTRIBUTE_ORDER is kept so existing callers keep working.
+const SAF_ECCAIRS_TAXONOMY_VERSION = '9.0.0.0';
+const ECCAIRS9_ATTRIBUTE_ORDER = {"Occurrence":["Validation_Taxonomy_Name","Validation_Taxonomy_Vers","Dew_Point","Wx_Conditions","Dang_Goods_Involved","Height_Of_Cloud_Base","Light_Conditions","Maximum_Gust","Cloud_Amount","Speed_Measured_At","Air_Temperature","Visibility","Wind_Direction","Wind_Gusts","Wind_Speed","ATM_Contribution","Occurrence_Category","Occurrence_Class","Highest_Damage","Local_Date","Date_Report_Created","Report_Last_Modified","Effect_On_ATM_Service","Latitude_Of_Occ","Location_Name","Lock_Status","Locked_Released_By","Locked_Released_Since","Longitude_Of_Occ","Occurrence_Moderator","Damage_Not_To_A_C","Injury_Level","File_Number","Responsible_Entity","State_Area_Of_Occ","Occurrence_Status","Third_Party_Damage","Local_Time","Total_Fatalities","Total_Fatalities_Aircraft","Total_Fatalities_Ground","Total_Involved","Total_On_Board_A_C","Total_Injuries-Ground","Total_Injuries-Unknown","Total_Injuries-Unknown_Aircraft","Total_Injuries-Unknown_Ground","Total_Minor_Injuries","Total_Minor_Injuries-Aircraft","Total_Minor_Injuries-Ground","Total_Serious_Injuries","Total_Serious_Injuries-Aircraft","Total_Serious_Injuries-Ground","Total_No_Injuries","Total_No_Injuries-Aircraft","Total_No_Injuries-Ground","UTC_Date","UTC_Time","Headline","Weather_Relevant","Wind_Description","Object_Damaged","Maint_Report_Type","Manufacturer_Inf","Operator_Informed","Notification_Text","Date_Published","Original_Language","Other_Language_S","Investigation_Scope","Investigating_Entity","Invest_Delegated","Positive_Factor","Attachments","Validation_Status","Date_Entered","Investig_Report_ID","Validation_Date","Applicability_SES_Performance_Scheme","Detection_Phase","Ground_Severity_Applied","Ground_Severity","Ground_Repeatability","Overall_Severity_Applied","Overall_Severity","Overall_Repeatability","Spec_Tech_Severity_Applied","Spec_Tech_Severity","Spec_Tech_Repeatability","Authority_Occ_Closure","Aviation_Sector","Area_Overflown","Authority_closing_statement","Access_difficulties","Investigator_in_charge_telephone_number","Investigator_in_charge_email_address","State_that_instituted_the_investigation","Consultation_period_initial_date","Consultation_period_final_date","State_that_provided_relevant_information_or_significant_facilities_or_experts","State_having_suffered_fatalities_or_serious_injuries_to_its_citizens"],"Aerodrome_General":["Aerodrome_Latitude","Aerodrome_Longitude","Area_Configuration","Elevation_Above_MSL","Location_Indicator","Aerodrome_Status","Surface_Type","Landing_Area_Type","Aerodrome_Type","Category_Provided","Category_Published","Braking_Determined_By","Braking_Action","Type_Of_Deposits","Location_On_Near_Aerodrome","Extent_Contamination","Depth_Of_Deposit","Loc_Of_Contamination","Wildlife_Species","Wildlife_Size","Number_Of_Wildlife"],"Aircraft":["Manufacturer_Model","Aircraft_Altitude","Actual_Altimeter_Setting","A_C_Flight_Level","Aircraft_Height","Height_Altimeter","ICAO_Information","Current_Traffic_Type","Break-Up_On_Impact","Break-Up_At_Ditching","Aircraft_Category","Total_Cycles_A_C","Airworthiness_Cert","Impact_Angle","Immersion_Suits_Avail","Immersion_Suits_Worn","Approval_Icing_Cond","Approval_Prec_Appr","Approach_Errors","Approach_RVR_Status","Approach_Stabilized","Person_At_Controls","ATS_Route_Name","ATS_Route_Type","Recording_Quality","Auto_Bank_Call","Auto_Altitude_Call","Automatic_Landing","Availability_ARFS","Bearing_Rwy_Heading","Call_Sign","Chute_Slide_Ops","Chute_Slide_Inst","Clearance_Validity","Cleared_Altitude","Cleared_Alt_Altimeter","Cleared_Flight_Level","Cleared_Height","Cleared_Height_Altim","Controlling_Agency","Co-Ord_Entry_Altitude","Co-Ord_Entry_Flt_Level","Co-Ord_Entry_Height","Co-Ord_Exit_Altitude","Co-Ord_Exit_Flt_Level","Co-Ord_Exit_Height","Co-Pilot_Altim_Type","Co-Pilot_Restraint_System","Charts_Available_CoPilot","Altitude_Contours_CoPilot","Charts_Provider","Terrain_Contours_CoPilot","Crew_Call-Out_Done","Crosswind_Component","Current_Flight_Rules","CVR_Recovery","Data_Recovery","Data_Usefulness","Descent_Rate","Descent_Speed","Distance_Threshold","Recording_Duration","Duration_Of_Flight","ARFS_Effective","EFIS","ELB-A_ELT_Status","Electr_Landing_Aids","Elevation_Terrain","Resulting_State","Floatation_Inflation","Floatation_Installed","Functioning","Escape_Time","Ext_Agent_Type","Fatal_Cabin_Crew","Fatal_Burns","Fatal_Drowning","Fatal_Fumes_Or_Gasses","Fatal_Impact","Fatal_Other_Reasons","Fatal_Shock_Exposure","Fatal_Unknown_Reasons","Fatal_Co-Pilot","Fatal_Crew_Total","Fatal_Other_Flight_Crew","Fatal_Passengers","Fatal_Pilot","Other_Fatalities_On_A_C","Total_Number_Fatalities","Fatal_Unknown","FDR_Recovery","Filed_Flight_Rules","Filed_Traffic_Type","Flight_Number","Flight_Phase","Floatation_Time","Wx_Info_Phase","Fuel_Source","Recommended_Type","Type_Used","GNSS_Installed","GPWS_Installed","GPWS_Operated","GPWS_Required","GPWS_Type_Mark","GPWS_Warning_Given","Evacuation_Hampered","HUD_Installed","HUD_Used","Headwind_Loss","Hot_Microphone","Icing_Intensity","Ignition_Source","Initial_Location","Number_Of_Cabin_Crew","Number_Of_Co-Pilots","Number_Of_Crew","Number_Of_Other_Flight_Crew","Number_Of_Passengers","Number_Of_PIC","Number_Of_Other_Persons","Total_Number_Of_Persons","Number_Of_Persons_Unknown_Category","Injuries_Unknown_Cabin_Crew","Injuries_Unknown_Co-Pilot","Injuries_Unknown_Crew_Total","Injuries_Unknown_Other_Flight_Crew","Injuries_Unknown_Passengers","Injuries_Unknown_Pilot","Unknown_Other_Injuries_On_A_C","Total_Number_Unknown_Injuries","Injuries_Unknown","Installation","Instr_Land_Proc","Instrument_Appr_Type","Landing_Gear_Type","Last_Departure_Point","FDR_Location","Wreckage_Location","CVR_Location","Landing_Location","Locating_Method","Maintenance_Docs","Maximum_T_O_Mass","Microburst","Minima_Call-Out_Made","Minor_Injuries-Cabin_Crew","Minor_Injuries-Co-Pilot","Minor_Injuries-Crew_Total","Minor_Injuries-Other_Crew","Minor_Injuries-Passengers","Minor_Injuries-Pilot","Minor_Other_Injuries_On_A_C","Total_Number_Minor_Injuries","Minor_Injuries-Unknown","Mountain_Wave_Intens","No_Injuries-Cabin_Crew","No_Injuries-Co-Pilot","No_Injuries-Crew_Total","No_Injuries-Other_Flight_Crew","No_Injuries-Passengers","No_Injuries-Pilot","No_Injuries_Other","Total_Number_No_Injuries","No_Injuries_Unknown","Non-Fatal_Injuries-Burns","Non-Fatal_Injuries-Gasses","Non-Fatal_Injuries-Impact","Non-Fatal_Injuries-Shock","Non-Fatal_Injuries-Other","Non-Fatal_Injuries-Unknown","Nr_Of_Restraint_Failures","Nr_Seat_Failures","Number_Of_Channels","Number_Of_Engines","Number_Of_Parameters","Persons_Evacuated","Occ_On_Ground","Operation_Type","Operator","Operator_Type","Pax_Restraint_System","Persons_Autopsied","Charts_Available_Pilot","Altitude_Contours_Pilot","Provider","Terrain_Contours","Charts_Different","Pilot_Altimeter_Type","Pilot_Restraint_System","Pitch_Angle_Specific","Pitch_Attitude","Planned_Destination","Wreckage_Position","Precision_Appr_Cat","Propulsion_Type","Ext_Agent_Quantity","Fuel_Volume_On_Board","Radio_Altimeter_Inst","Reason_For_Data_Loss_FDR","Reason_RFS_Ineffect","Reasons_Not_Effective","Reason_For_Data_Loss_CVR","Recording_Medium_CVR","Recording_Medium_FDR","Recovery_Status","Aircraft_Registration","Rel_Wind_Direction","Relevant_Segment","Requested_Altitude","Requested_Flight_Level","Requested_Height","Roll_Angle_Specific","Roll_Attitude","Rwy_Exit_At","Serial_Number","Serious_Injuries-Cabin_Crew","Serious_Injuries-Co-Pilot","Serious_Injuries_Crew_Total","Serious_Injuries-Other_Crew","Serious_Injuries-Passengers","Serious_Injuries-Pilot","Serious_Other_Injuries_On_A_C","Total_Number_Serious_Injuries","Serious_Injuries-Unknown","SID_Route","Pilot_Advised_Of_SIGMET","Goggles_Usage","Smoke_Hoods_Usage","Smoke_Masks_Usage","Special_ATC_Proc","Impact_Angle_Specific","Speed_At_Impact","Speed_First_Event","Speed_Level","Type_Of_Airspeed","SSR_Code","SSR_Mode","STAR","Start_Phase","State_Of_Registry","Length_Wreckage_Trail","Surface_Type","Survivability","Availability","Operation","Dist_To_Exit","Time_To_Alert","Time_To_Intervention","Aircraft_Total_Time","Airspeed","Turbulence_Intensity","Turbulence_Type","Recorder_Type","Terrain_Type","Flight_Plan_Type","Type_Of_Landing","Underwater_Locator_FDR","Underwater_Locator_CVR","Unspecific_Injuries-Burns","Unspecific_Injuries-Drowning","Unspecific_Injuries-Gasses","Unspecific_Injuries-Impact","Unspecific_Injuries-Other","Unspecific_Injuries-Shock","Unspecific_Injuries-Unknown","VASI_Used","Visib_Restrictions","Visual_Approach_Type","Wake_Turb_Category","Water_Depth","Weather_Forecast","Mass_Group","Windshear","W_Shear_Alert_Install","Location_Across","Location_Along","Year_Built","RVR_Start","RVR_Middle","RVR_End","Flight_Status_STS","Aircraft_Damage","Schedule_Type","Ops_Range","Parts_Damaged","Parts_Struck","Species_Description","Birds_Wildlife_Seen","Birds_Wildlife_Struck","Bird_Size","Pilot_Advised_Of_Birds","A_C_Out_Of_Service","Cost_Of_Repair","Loss_Of_Revenue","Acquisition_Unit","Use_Of_The_Data","Part_Number_FDR","Combined_Recorder","Time_Information","Part_Number_CVR","Holding_Status","Holding_Entering_Time","Holding_Leaving_Time","Fuel_Mass_On_Board","Autopilot","Auto_Throttle","Gear_Position","Spoilers_Position","Flaps_Position","Weather_Radar","Time_Deviating_FL","Cleared_FL_After","Ash_Cloud_Visible","Color_Of_Ash_Cloud","Density_Of_Ash_Cloud","Encounter_Duration","Severity_Of_Encount","Vertical_Speed","Vertical_Profile","Annex_2_A_C_Type","RPAS_UAS_Characteristic_Dimension","RPAS_UAS_Operations_Category","RPAS_UAS_type_of_operation","Operator_Registration_Number","Operational__Authorisation_Number","Drone_class_identification_label","Remote_Identification_Type","Basis_of_RPAS_UAS_operational_authorisation","Specific_Assurance_Integrity_Level__SAIL_","Control_mode_of_RPAS_UAS","State_of_Aircraft_Design","State_of_Aircraft_Manufacturer","Aircraft_Owner","Aircraft_Hirer","Nationality_of_the_crew","Nationality_of_the_passengers","Time_since_inspection","Cycles_since_insp","Date_of_inspection"],"Events":["Event_Type","Phase","Event_Justification"],"Dangerous_Goods":["Dangerous_Good","Label","Origin_Of_Goods","Air_Waybill_Consignment_Tracking_Number","Shipper_Name","Total_Number_Of_Packages_In_Consignment","Subsidiary_Risk","Type_Of_Outer_Packaging","Packing_Group_Class_7_Category","Number_Of_Inner_Packages","Type_Of_Inner_Packaging","Quantity_Per_Inner_Packaging"],"Reporting_History":["Report_Identification","Reporting_Entity","Report_Source","Reporting_Form_Type","Report_Status","Reporting_Date","Report","Parties_Informed","Risk_Classification","Risk_Methodology","Description_Investigation","Risk_Assessment","Corrective_Actions","Conclusions","Tracking_Sheet_Number","Report_Version","Other_Report_Inform","Export_Control","Reporter_S_Language","Reporter_S_Description"],"Risk_Assessment":["Risk_Grade","Risk_Method","Risk_Level","Risk_Container","Risk_Confidence","ERCS_Row_Score","ERCS_Column_Score","ERCS_Score","ERCS_Numerical_Equivalent_Score","Key_Risk_Area","Aircraft_Equipment_And_Infrastructure","Tactical_Planning","Regulations_Procedures_And_Compliance","Situational_Awareness_And_Actions","Warning_System_Operation_And_Compliance","Recovery_Action","Protections","Unspecified","ERCS_Calculated_B_S","ERCS_Final_B_S","ERCS_Container","ERCS_Risk_Grade","ERCS_Comments","ERCS_Barrier"]};
+const ECCAIRS8_ATTRIBUTE_ORDER = ECCAIRS9_ATTRIBUTE_ORDER;
 
 function _eccairsOrderIndex(entity, synonym){
   var arr=ECCAIRS8_ATTRIBUTE_ORDER[entity]||[];
@@ -20170,7 +20103,7 @@ function _buildRitOccurrenceXml(occ, uncoded){
     +'<SET xmlns="https://e2.aviationreporting.eu/data.xsd"\n'
     +'     xmlns:dt="https://e2.aviationreporting.eu/dataTypes.xsd"\n'
     +'     TaxonomyName="ECCAIRS Aviation"\n'
-    +'     TaxonomyVersion="8.0.0.0" Domain="" Version="1.0.0.0">\n'
+    +'     TaxonomyVersion="'+SAF_ECCAIRS_TAXONOMY_VERSION+'" Domain="" Version="1.0.0.0">\n'
     +'  <Occurrence entityId="24" ID="O1">\n'
     +'    <ATTRIBUTES>\n'+rootAttrsXml+'    </ATTRIBUTES>\n'
     +(entitiesXml?'    <ENTITIES>\n'+entitiesXml+'    </ENTITIES>\n':'')
@@ -20227,6 +20160,97 @@ function _buildSafNotes(occ, uncoded){
   return L.join('\n');
 }
 
+
+// ════════════════════════════════════════════════════════════════
+// ECCAIRS E5X VALIDATION — taxonomy 9.0.0.0 (added 2026-09-25)
+// 1) XSD: official Schema.xsd validated with libxml2 compiled to WebAssembly
+//    (xmllint-wasm 4.0.2, MIT). Worker + schema must be served from the SAME
+//    origin as this page: repo folder eccairs/ (xmllint/ + 9.0.0.0/).
+// 2) RIT: the 9.0.0.0 XSD covers the whole taxonomy (Domain=""), so it accepts
+//    attributes and values outside the RIT domain. rit-index.json (built from the
+//    official taxonomy XML export) rejects them.
+// ════════════════════════════════════════════════════════════════
+var SAF_E5X_ASSET_BASE = 'eccairs/';
+var _safE5X = {mod:null, bundle:null, rit:null};
+async function _safE5XLoad(){
+  if(location.protocol==='file:') throw new Error('validation indisponible en ouverture locale (file://) : ouvrez la suite depuis GitHub Pages');
+  var base=new URL(SAF_E5X_ASSET_BASE, location.href).href;
+  if(!_safE5X.mod) _safE5X.mod = await import(base+'xmllint/index-browser.mjs');
+  if(!_safE5X.bundle){
+    var r=await fetch(base+SAF_ECCAIRS_TAXONOMY_VERSION+'/schema-bundle.json',{cache:'force-cache'});
+    if(!r.ok) throw new Error('schéma ECCAIRS '+SAF_ECCAIRS_TAXONOMY_VERSION+' introuvable (HTTP '+r.status+')');
+    var b=await r.json();
+    if(b.version!==SAF_ECCAIRS_TAXONOMY_VERSION) throw new Error('schéma chargé en '+b.version+' au lieu de '+SAF_ECCAIRS_TAXONOMY_VERSION);
+    _safE5X.bundle=b;
+  }
+  if(!_safE5X.rit){
+    var r2=await fetch(base+SAF_ECCAIRS_TAXONOMY_VERSION+'/rit-index.json',{cache:'force-cache'});
+    if(!r2.ok) throw new Error('index RIT '+SAF_ECCAIRS_TAXONOMY_VERSION+' introuvable (HTTP '+r2.status+')');
+    var ri=await r2.json(); var A=ri.attributes||{};
+    Object.keys(A).forEach(function(k){ if(A[k].nonRit) A[k].nonRitSet=new Set(A[k].nonRit); });
+    _safE5X.rit=A;
+  }
+}
+function _safE5XRitCheck(xml){
+  var A=_safE5X.rit||{}, out=[];
+  var doc=new DOMParser().parseFromString(xml,'application/xml');
+  if(doc.getElementsByTagName('parsererror').length) return ['XML mal formé'];
+  Array.prototype.forEach.call(doc.querySelectorAll('[attributeId]'),function(el){
+    var ent=el.parentNode&&el.parentNode.parentNode; var key=(ent?ent.localName:'?')+'/'+el.localName; var a=A[key];
+    if(!a){ out.push(key+' : attribut absent de la taxonomie '+SAF_ECCAIRS_TAXONOMY_VERSION); return; }
+    if(!a.rit){ out.push(a.label+' ('+a.id+') : attribut hors domaine RIT'); return; }
+    if(a.nonRitSet){ var c=parseInt((el.textContent||'').trim(),10); if(!isNaN(c)&&a.nonRitSet.has(c)) out.push(a.label+' ('+a.id+') : valeur '+c+' hors domaine RIT'); }
+  });
+  return out;
+}
+async function safE5XValidate(xml){
+  await _safE5XLoad();
+  var F=_safE5X.bundle.files;
+  var preload=Object.keys(F).filter(function(n){return n!=='Schema.xsd';}).map(function(n){return {fileName:n,contents:F[n]};});
+  var res=await _safE5X.mod.validateXML({
+    xml:[{fileName:'occurrence.xml',contents:xml}],
+    schema:[{fileName:'Schema.xsd',contents:F['Schema.xsd']}],
+    preload:preload, initialMemoryPages:256, maxMemoryPages:8192
+  });
+  var xsdErrors=(res.errors||[]).map(function(e){
+    return String(e.message||e.rawMessage||'').replace(/\{https:\/\/e2\.aviationreporting\.eu\/data\.xsd\}/g,'').replace(/^.*Schemas validity error : /,'');
+  }).filter(Boolean);
+  var ritErrors=_safE5XRitCheck(xml);
+  return {ok:!!res.valid && !ritErrors.length, xsdValid:!!res.valid, xsdErrors:xsdErrors, ritErrors:ritErrors};
+}
+function _safE5XShowReport(occ, v, preflight){
+  var old=document.getElementById('saf-e5x-report'); if(old) old.remove();
+  var esc=occHtmlEsc;
+  var li=function(arr){return arr.map(function(x){return '<li style="margin:3px 0;">'+esc(x)+'</li>';}).join('');};
+  var ok=v&&v.ok;
+  var html='<div id="saf-e5x-report" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)this.remove()">'
+    +'<div style="background:#0f1c2b;color:#e8edf2;max-width:760px;width:100%;max-height:85vh;overflow:auto;border-radius:10px;padding:20px 22px;border:1px solid '+(ok?'#2e7d4f':'#a33')+';">'
+    +'<h3 style="margin:0 0 6px;font-size:16px;">'+(ok?'E5X conforme':'Export E5X bloqué')+' — '+esc(occ.id)+'</h3>'
+    +'<p style="margin:0 0 12px;font-size:12px;opacity:.8;">Taxonomie ECCAIRS Aviation '+esc(SAF_ECCAIRS_TAXONOMY_VERSION)+' — schéma XSD officiel et domaine RIT.</p>';
+  if(v&&v.xsdErrors&&v.xsdErrors.length) html+='<h4 style="margin:10px 0 4px;font-size:13px;">Erreurs XSD ('+v.xsdErrors.length+')</h4><ul style="margin:0;padding-left:18px;font-size:12px;">'+li(v.xsdErrors.slice(0,40))+'</ul>';
+  if(v&&v.ritErrors&&v.ritErrors.length) html+='<h4 style="margin:10px 0 4px;font-size:13px;">Hors domaine RIT ('+v.ritErrors.length+')</h4><ul style="margin:0;padding-left:18px;font-size:12px;">'+li(v.ritErrors)+'</ul>';
+  if(preflight&&preflight.warnings&&preflight.warnings.length) html+='<h4 style="margin:10px 0 4px;font-size:13px;">Points à vérifier avant envoi ('+preflight.warnings.length+')</h4><ul style="margin:0;padding-left:18px;font-size:12px;">'+li(preflight.warnings)+'</ul>';
+  html+='<div style="text-align:right;margin-top:16px;"><button class="btn" onclick="document.getElementById(\'saf-e5x-report\').remove()">Fermer</button></div></div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+// Personal data and de-identification checks (EASA E5X guidance: free text must not
+// carry names, e-mail addresses or phone numbers; the Headline must be de-identified).
+function _safE5XPrivacyWarnings(xml, occ){
+  var w=[]; var doc=new DOMParser().parseFromString(xml,'application/xml');
+  var textOf=function(tag){var el=doc.getElementsByTagName(tag)[0];return el?el.textContent:'';};
+  var free=['Headline','Location_Name','Reporter_S_Description','Description_Investigation','Risk_Assessment','Corrective_Actions','Conclusions'];
+  free.forEach(function(t){
+    var txt=textOf(t); if(!txt) return;
+    if(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(txt)) w.push(t+' contient une adresse e-mail : à retirer (données personnelles).');
+    if(/(\+\d{2}[\s.]?|\b0)\d([\s.]?\d{2}){4}\b/.test(txt)) w.push(t+' contient un numéro de téléphone : à retirer (données personnelles).');
+  });
+  var hl=textOf('Headline'); var reg=textOf('Aircraft_Registration');
+  if(hl && reg && hl.replace(/[-\s]/g,'').toUpperCase().indexOf(reg.replace(/[-\s]/g,'').toUpperCase())>=0) w.push('Headline contient l\'immatriculation '+reg+' : le titre doit être dé-identifié.');
+  var r=occGetEccairsValue(occ,'aircraft_registration'), m=occGetEccairsValue(occ,'manufacturer_model');
+  if(r && OCC_REG_TO_MODEL[r] && m && m!==OCC_REG_TO_MODEL[r]) w.push('Modèle « '+m+' » incohérent avec '+r+' (attendu : '+OCC_REG_TO_MODEL[r]+').');
+  return w;
+}
+
 function _buildE5XFromOcc(occ){
   var uncoded=[];
   var xml=_buildRitOccurrenceXml(occ, uncoded);
@@ -20241,8 +20265,8 @@ function _preflightE5XPackage(built){
   if(!xml.trim()) errors.push('XML occurrence absent.');
   if(/attributeId=["']1134["']/.test(xml)) errors.push('Attribute 1134 must not be exported: rejected by the ECCAIRS2 import schema for Reporting_History (entity 53).');
   if(!/<SET\b/.test(xml) || !/<Occurrence\b[^>]*entityId=["']24["']/.test(xml)) errors.push('Invalid E5X root structure (SET/Occurrence entity 24).');
-  if(!/TaxonomyVersion=["']8\.0\.0\.0["']/.test(xml)) errors.push('TaxonomyVersion must be 8.0.0.0 for the official ECCAIRS Aviation package dated 03-Jul-2026.');
-  if(!/Domain=["']["']/.test(xml)) errors.push('Domain must be empty according to the official ECCAIRS Aviation 8.0.0.0 Schema.xsd.');
+  if(xml.indexOf('TaxonomyVersion="'+SAF_ECCAIRS_TAXONOMY_VERSION+'"')<0) errors.push('TaxonomyVersion must be '+SAF_ECCAIRS_TAXONOMY_VERSION+' (ECCAIRS Aviation package released by EASA on 17-Sep-2026).');
+  if(!/Domain=["']["']/.test(xml)) errors.push('Domain must be empty according to the official ECCAIRS Aviation '+SAF_ECCAIRS_TAXONOMY_VERSION+' Schema.xsd.');
   if(!/<File_Number\b[^>]*attributeId=["']452["']/.test(xml)) errors.push('Mandatory File Number (452) is missing.');
   if(!/<Occurrence\b[^>]*ID=["'][^"']+["']/.test(xml)) errors.push('Occurrence instance ID is missing.');
   var entityTags=xml.match(/<(Aircraft|Reporting_History|Aerodrome_General|Events|Dangerous_Goods|Risk_Assessment)\b[^>]*>/g)||[];
@@ -20259,7 +20283,7 @@ function _preflightE5XPackage(built){
     if(ld && !/<Last_Departure_Point\b[^>]*attributeId=["']167["']/.test(xml)) errors.push('Last Departure Point (167) is not coded in the E5X. Value received: '+ld);
     if(pd && !/<Planned_Destination\b[^>]*attributeId=["']228["']/.test(xml)) errors.push('Planned Destination (228) is not coded in the E5X. Value received: '+pd);
     if(et && !/<Event_Type\b[^>]*attributeId=["']390["']/.test(xml)) errors.push('Event Type (390) is not coded in the E5X.');
-    if(!/<Risk_Method\b[^>]*attributeId=["']939["']>6<\/Risk_Method>/.test(xml)) warnings.push('Risk Method (939) is not coded as ERCS (code 6).');
+    if(!/<Risk_Method\b[^>]*attributeId=["']939["'][^>]*>6<\/Risk_Method>/.test(xml)) warnings.push('Risk Method (939) is not coded as ERCS (code 6).');
   }
   function n(key){var v=occGetEccairsValue((built&&built.occ)||{},key);return Math.max(0,parseInt(v,10)||0);}
   if(built&&built.occ){
@@ -20271,6 +20295,7 @@ function _preflightE5XPackage(built){
     if(mt!==ma+mg) errors.push('Minor injuries inconsistency: total must equal aircraft + ground.');
     if(ft>0 && (st>0||mt>0)) warnings.push('Fatalities and injuries are both declared. Confirm that they concern different persons.');
   }
+  if(built&&built.occ){ try{ warnings=warnings.concat(_safE5XPrivacyWarnings(xml, built.occ)); }catch(e){} }
   return {ok:errors.length===0,errors:errors,warnings:warnings};
 }
 
@@ -20282,6 +20307,20 @@ async function exportOccurrenceE5X(id){
   var preflight=_preflightE5XPackage(built);
   if(!preflight.ok){showToast('E5X export blocked: '+preflight.errors.join(' | '),'error');console.error('E5X preflight',preflight);return;}
   if(preflight.warnings.length) console.warn('E5X preflight warnings',preflight.warnings);
+  // XSD + RIT validation against taxonomy 9.0.0.0 before anything is downloaded.
+  showToast('Validation ECCAIRS '+SAF_ECCAIRS_TAXONOMY_VERSION+' en cours…','');
+  var v=null, vErr=null;
+  try{ v=await safE5XValidate(built.xml); }catch(err){ vErr=(err&&err.message)||String(err); console.error('E5X validation',err); }
+  if(vErr){
+    if(!confirm('Validation XSD/RIT impossible : '+vErr+'.\n\nExporter quand même un E5X NON validé ? Il devra être contrôlé sur le portail E2 avant toute soumission.')) return;
+  } else if(!v.ok){
+    console.error('E5X validation',v);
+    _safE5XShowReport(occ,v,preflight);
+    showToast('Export E5X bloqué : '+(v.xsdErrors.length+v.ritErrors.length)+' non-conformité(s) ECCAIRS '+SAF_ECCAIRS_TAXONOMY_VERSION,'error');
+    return;
+  } else if(preflight.warnings.length){
+    _safE5XShowReport(occ,v,preflight);
+  }
   var base='Occurrence_'+occ.id;
   // IMPORTANT: confirmed by an actual ECCAIRS2 submission (2026-07-20) — a file placed at
   // the root of the .e5x that is not referenced by a Resource Locator attribute in the XML
