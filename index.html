@@ -468,7 +468,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   <p class="section-label">Accès aux outils<span class="bi-en">Tool access</span></p>
   <div class="tools-grid">
 
-    <a class="tool-card" id="card-sms" data-module="sms" href="Archives/SAF_International_Safety.html">
+    <a class="tool-card" id="card-sms" data-module="sms" href="SAF_International_Safety.html">
       <div class="tool-header">
         <div class="tool-icon icon-sms">🛡️</div>
         <span class="tool-name">Gestion de la sécurité<span class="bi-en">Safety Management</span></span>
@@ -478,7 +478,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
       <span class="tool-tag tag-sms">SMS</span>
     </a>
 
-    <a class="tool-card" id="card-cms" data-module="cms" href="Archives/SAF_International_Compliance_Monitoring_System.html">
+    <a class="tool-card" id="card-cms" data-module="cms" href="SAF_International_Compliance_Monitoring_System.html">
       <div class="tool-header">
         <div class="tool-icon icon-cms">📋</div>
         <span class="tool-name">Surveillance de la conformité<span class="bi-en">Compliance Monitoring</span></span>
@@ -488,7 +488,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
       <span class="tool-tag tag-cms">CMS</span>
     </a>
 
-    <a class="tool-card" id="card-omm" data-module="omm" href="Archives/SAF_International_Appendices_OMM.html">
+    <a class="tool-card" id="card-omm" data-module="omm" href="SAF_International_Appendices_OMM.html">
       <div class="tool-header">
         <div class="tool-icon icon-omm">📁</div>
         <span class="tool-name">Annexes OMM<span class="bi-en">OMM Appendices</span></span>
@@ -571,6 +571,16 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   var pwBtn     = document.getElementById('saf-pw-btn');
   var pwStarted = false;
 
+  var PW_LOCKED_ROLES = ['reader'];
+  async function safIsPwLockedRole(email){
+    if(!email) return false;
+    try {
+      var r = await db.from('user_roles').select('role').ilike('user_email', String(email).trim()).limit(1);
+      var role = (r && !r.error && r.data && r.data[0] && r.data[0].role || '').toString().trim().toLowerCase();
+      return PW_LOCKED_ROLES.indexOf(role) !== -1;
+    } catch(e){ return false; }
+  }
+
   async function safHasVerifiedFactor(){
     try {
       var lf = await db.auth.mfa.listFactors();
@@ -591,6 +601,17 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
     pwStarted = true;
     overlay.style.display = 'none';
     var email = session && session.user ? session.user.email : '';
+    // Les comptes « reader » (accès mutualisé) ne changent pas leur mot de passe :
+    // il est géré par l'administrateur du SMS. Barrière réelle : trigger sur auth.users.
+    if(await safIsPwLockedRole(email)){
+      try { history.replaceState(null, '', location.pathname); } catch(e){}
+      try { await db.auth.signOut(); } catch(e){}
+      pwStarted = false;
+      applyGuestRole();
+      loginMsg.className = 'err';
+      loginMsg.textContent = 'Le mot de passe de ce compte est géré par l\u2019administrateur du SMS. / This account\u2019s password is managed by the SMS administrator.';
+      return;
+    }
     if(await safHasVerifiedFactor()){
       var s2 = await window.safMfaGate(db, session);   // ne résout pas si l'utilisateur se déconnecte
       if(!s2) return;
@@ -1034,5 +1055,15 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
 })();
 </script>
 
+<script>
+/* Garde-fou : les outils sont à la racine du dépôt. Un préfixe « Archives/ »
+   réintroduit dans les liens des tuiles est retiré à l'exécution. */
+(function(){
+  if (location.pathname.indexOf('/Archives/') !== -1) return;
+  document.querySelectorAll('a[href^="Archives/"]').forEach(function(a){
+    a.setAttribute('href', a.getAttribute('href').replace(/^Archives\//, ''));
+  });
+})();
+</script>
 </body>
 </html>
