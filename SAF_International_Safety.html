@@ -16205,22 +16205,22 @@ const ECCAIRS_OCC_FIELDS = [
   // ── AIRCRAFT & FLIGHT DETAILS (entity: Aircraft, ID 4) ────────────
   {key:'aircraft_registration', code:'244', label:'Aircraft Registration', type:'select', req:true, entity:'Aircraft', dtype:1, options:['HB-ZKN','HB-ZIP','F-HRTS'], fallback:function(o){return o.aircraft_reg||'';}},
   {key:'operator', code:'215', label:'Operator', type:'select', req:true, fixed:true, entity:'Aircraft', dtype:3, options:['SAF International'], fallback:function(o){return 'SAF International';}},
-  {key:'operation_type', code:'214', label:'Operation Type', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Specialised Operations (Aerial Work)','Commercial Air Transport','Non-Commercial Operations','Nationally Regulated Operations','Illegal','Not Applicable','Unknown']},
+  {key:'operation_type', code:'214', label:'Operation Type', type:'rit', list:'optype', req:true, entity:'Aircraft', dtype:2},
   {key:'call_sign', code:'54', label:'Call Sign', type:'text', req:true, entity:'Aircraft', dtype:1},
   {key:'flight_phase', code:'121', label:'Flight Phase', type:'select', req:true, entity:'Aircraft', dtype:2, options:['Standing','Taxi','Take-off','En route','Manoeuvring','Approach','Landing','Post-impact','Tow','Not Applicable','Unknown'], fallback:function(o){return o.phase||'';}},
-  {key:'last_departure', code:'167', label:'Last Departure Point', type:'text', req:true, entity:'Aircraft', dtype:3},
-  {key:'planned_destination', code:'228', label:'Planned Destination', type:'text', req:true, entity:'Aircraft', dtype:3},
+  {key:'last_departure', code:'167', label:'Last Departure Point', type:'rit', list:'places', req:true, entity:'Aircraft', dtype:3},
+  {key:'planned_destination', code:'228', label:'Planned Destination', type:'rit', list:'places', req:true, entity:'Aircraft', dtype:3},
   // ── BIRD/WILDLIFE INFORMATION ──────────────────────────────────────
   {key:'birds_seen', code:'646', label:'Birds/Wildlife Seen', type:'select', req:true, entity:'Aircraft', dtype:2, options:['1','2-10','11-100','More','Unknown']},
   {key:'birds_struck', code:'647', label:'Birds/Wildlife Struck', type:'select', entity:'Aircraft', dtype:2, options:['1','2-10','11-100','More','Unknown']},
   {key:'bird_size', code:'648', label:'Bird Size', type:'select', entity:'Aircraft', dtype:2, options:['Small','Medium','Large','Unknown']},
-  {key:'species_description', code:'645', label:'Species Description', type:'text', entity:'Aircraft', dtype:3},
+  {key:'species_description', code:'645', label:'Species Description', type:'rit', list:'species', entity:'Aircraft', dtype:3},
   {key:'speed_first_event', code:'273', label:'Speed (First Event)', type:'number', entity:'Aircraft', dtype:7, unit:'kt'},
   {key:'parts_struck', code:'644', label:'Parts Struck', type:'multiselect', entity:'Aircraft', dtype:3, options:['Radome','Windshield','Nose excluding radome / windshield','Engine 1','Engine 2','Engine 3','Engine 4','Wing','Propeller','Rotor','Fuselage','Landing gear','Tail','Lights','Other','None']},
   {key:'pilot_advised_birds', code:'649', label:'Pilot Advised of Birds', type:'select', entity:'Aircraft', dtype:2, options:['Yes','No','Unknown']},
   {key:'parts_damaged', code:'643', label:'Parts Damaged', type:'multiselect', entity:'Aircraft', dtype:3, options:['Radome','Windshield','Nose excluding radome / windshield','Engine 1','Engine 2','Engine 3','Engine 4','Wing','Propeller','Rotor','Fuselage','Landing gear','Tail','Lights','Other','None']},
   // ── AERODROME IDENTIFICATION (entity: Aerodrome_General, ID 1) ────
-  {key:'location_indicator', code:'5', label:'Location Indicator (Aerodrome)', type:'text', entity:'Aerodrome_General', dtype:3},
+  {key:'location_indicator', code:'5', label:'Location Indicator (Aerodrome)', type:'rit', list:'places', entity:'Aerodrome_General', dtype:3},
   // ── DANGEROUS GOODS (entity: Dangerous_Goods, ID 43) ──────────────
   {key:'dangerous_good_detail', code:'688', label:'Dangerous Good', type:'select', entity:'Dangerous_Goods', dtype:3, options:['Not defined','1 - Explosives','2 - Gases','3 - Flammable Liquids','4 - Flammable Solids','5 - Oxidizing Agents and Organic Peroxides','6 - Toxic and Infectious Substances','7 - Radioactive Substances','8 - Corrosive Substances','9 - Miscellaneous']},
   {key:'origin_of_goods', code:'1051', label:'Origin of Goods', type:'text', entity:'Dangerous_Goods', dtype:1},
@@ -16272,7 +16272,7 @@ const ECCAIRS_OCC_FIELDS = [
   // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 390 "Event_Type" exists,
   // but under a dedicated ENTITY called "Events" (entityId=14), NOT under Occurrence as
   // originally guessed. Extends VL1009. No label text available -> uncoded.
-  {key:'event_type', code:'390', label:'Event Type', type:'select', req:true, entity:'Events', dtype:2, options:['System/component failure or malfunction (non-powerplant)','System/component failure or malfunction (powerplant)','Abnormal runway contact','Bird strike','Cabin safety events','Controlled flight into terrain','Fire/smoke (non-impact)','Fuel related','Ground events','HESLO – External load','Icing','Loss of control – in-flight','Loss of control – ground','Mid-air collision','Near collision with obstacle','Runway excursion','Runway incursion','Undershoot/overshoot','Unintended flight in IMC','Windshear/turbulence encounter','Other'], fallback:function(o){return (o.event_type || (o.event_types_avi&&o.event_types_avi[0]) || (o.event_types_cyber&&o.event_types_cyber[0]) || 'Other');}},
+  {key:'event_type', code:'390', label:'Event Type', type:'rit', list:'events', req:true, full:true, entity:'Events', dtype:2, fallback:function(o){return (o.event_type || (o.event_types_avi&&o.event_types_avi[0]) || '');}},
   // RE-FIXED 2026-07-20: confirmed in Schema.xsd — attribute 281 "State_Of_Registry"
   // (note capital O, exact XML element casing) exists under Aircraft(4), extending
   // VL1024. No label text available -> uncoded.
@@ -16409,7 +16409,8 @@ function _occFieldHtml(f, occ){
     var selAttrs=(f.key==='aircraft_registration')?' onchange="occUpdateSerialFromRegistration(this.value)"':'';
     if(isErcsBarrier) selAttrs+=' title="'+occHtmlEsc(ERCS_BARRIER_TOOLTIP)+'"';
     html+='<select id="'+id+'"'+selAttrs+'>'+(f.fixed?'':'<option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option>')+(f.options||[]).map(function(o){var sel=(f.fixed||vals.indexOf(o)>=0)?' selected':'';return '<option'+sel+'>'+occHtmlEsc(o)+'</option>';}).join('')+'</select>';
-  } else if(f.type==='number') html+='<input id="'+id+'" type="number" min="0" value="'+occHtmlEsc(v||'0')+'"/>';
+  } else if(f.type==='rit') html+=safRitPickerHtml(f, occ, id, v);
+  else if(f.type==='number') html+='<input id="'+id+'" type="number" min="0" value="'+occHtmlEsc(v||'0')+'"/>';
   else if(f.key==='serial_number') html+='<input id="'+id+'" type="text" value="'+occHtmlEsc(v)+'" readonly style="background:rgba(255,255,255,.04);cursor:not-allowed;"/>';
   else html+='<input id="'+id+'" type="'+(f.type||'text')+'" value="'+occHtmlEsc(v)+'"/>';
   html+='</div>';
@@ -16485,7 +16486,7 @@ function occNativeMselUpdate(select){
 }
 function occGetEccairsFields(){
   var out={};
-  ECCAIRS_OCC_FIELDS.forEach(function(f){var el=document.getElementById('occ-eccairs-'+f.key); if(!el) return; if(f.type==='multiselect') out[f.key]=Array.from(el.selectedOptions||[]).map(function(o){return o.value;}); else out[f.key]=el.value||'';});
+  ECCAIRS_OCC_FIELDS.forEach(function(f){var el=document.getElementById('occ-eccairs-'+f.key); if(!el) return; if(f.type==='multiselect') out[f.key]=Array.from(el.selectedOptions||[]).map(function(o){return o.value;}); else out[f.key]=el.value||''; if(f.type==='rit' && f.dtype===3){ var te=document.getElementById('occ-eccairs-'+f.key+'_text'); if(te) out[f.key+'_text']=te.value||''; }});
   return out;
 }
 function occEccairsCompleteness(occ){
@@ -20010,6 +20011,7 @@ function _ritAttrXml(f, occ, uncoded){
     } else if(f.dtype===3){ // Code + optional additional text
       var c3=_ritCodeForValue(f.key,v,codeMap);
       var atMap=RIT_ADDITIONAL_TEXT[f.key]||{}; var at=Object.prototype.hasOwnProperty.call(atMap,v)?atMap[v]:v;
+      if(f.type==='rit' && /^\d+$/.test(String(v).trim())) at=String(occGetEccairsValue(occ,f.key+'_text')||'');
       if(c3) out+='      <'+f.label_synonym+' attributeId="'+f.code+'" AdditionalText="'+_xmlEsc(at)+'" AdditionalTextEncoding="xs:string">'+c3+'</'+f.label_synonym+'>\n';
       else uncoded.push(f.label+': '+v+' (liste de valeurs officielle non mappée — saisir manuellement dans ECCAIRS)');
     } else if(f.dtype===5){ // Date
@@ -20251,6 +20253,139 @@ function _safE5XPrivacyWarnings(xml, occ){
   return w;
 }
 
+
+// ════════════════════════════════════════════════════════════════
+// OFFICIAL-LIST PICKERS — ECCAIRS 9.0.0.0 RIT value lists (added 2026-09-25)
+// Event type (390), operation type (214), last departure / planned destination /
+// location indicator (167/228/5) and species (645) are chosen directly in the
+// official RIT lists (eccairs/9.0.0.0/value-lists.json). The field stores the
+// official numeric code; 'Code and Additional Text' fields keep an optional
+// precision in <key>_text (sent as AdditionalText, never personal data).
+// Values saved with the former simplified lists are still exported through
+// RIT_VALUE_CODES and are shown as "ancienne saisie" until recoded.
+// ════════════════════════════════════════════════════════════════
+var _safRit={data:null, loading:null, norm:{}, byCode:{}};
+function _safRitNorm(t){ t=String(t||''); try{t=t.normalize('NFD').replace(/[\u0300-\u036f]/g,'');}catch(e){} return t.toLowerCase(); }
+function safRitLoad(){
+  if(_safRit.data) return Promise.resolve(_safRit.data);
+  if(_safRit.loading) return _safRit.loading;
+  if(location.protocol==='file:') return Promise.reject(new Error('listes officielles indisponibles en ouverture locale (file://)'));
+  var url=new URL(SAF_E5X_ASSET_BASE+SAF_ECCAIRS_TAXONOMY_VERSION+'/value-lists.json', location.href).href;
+  _safRit.loading=fetch(url,{cache:'force-cache'}).then(function(r){
+    if(!r.ok) throw new Error('listes ECCAIRS '+SAF_ECCAIRS_TAXONOMY_VERSION+' introuvables (HTTP '+r.status+')');
+    return r.json();
+  }).then(function(d){
+    if(d.version!==SAF_ECCAIRS_TAXONOMY_VERSION) throw new Error('listes en '+d.version+' au lieu de '+SAF_ECCAIRS_TAXONOMY_VERSION);
+    Object.keys(d.lists).forEach(function(k){
+      var L=d.lists[k], N=new Array(L.length), B={};
+      for(var i=0;i<L.length;i++){ N[i]=_safRitNorm(L[i][0]+' '+L[i][1]); B[L[i][0]]=L[i]; }
+      _safRit.norm[k]=N; _safRit.byCode[k]=B;
+    });
+    _safRit.data=d; return d;
+  }).catch(function(e){ _safRit.loading=null; throw e; });
+  return _safRit.loading;
+}
+function safRitLabel(list, code){ var B=_safRit.byCode[list]; var r=B&&B[parseInt(code,10)]; return r?r[1]:''; }
+function safRitSearch(list, q, max){
+  var L=_safRit.data&&_safRit.data.lists[list]; if(!L) return [];
+  var qn=_safRitNorm(q).trim(); if(!qn) return [];
+  var toks=qn.split(/\s+/).filter(Boolean), N=_safRit.norm[list], hits=[];
+  var w0=toks[0].replace(/[^a-z0-9]/g,''), wordRe=w0?new RegExp('(^|[^a-z0-9])'+w0+'($|[^a-z0-9])'):null;
+  for(var i=0;i<L.length;i++){
+    var n=N[i], ok=true;
+    for(var t=0;t<toks.length;t++){ if(n.indexOf(toks[t])<0){ok=false;break;} }
+    if(!ok) continue;
+    var leaf=_safRitNorm(L[i][1].split(' > ').pop()), score=0;
+    if(String(L[i][0])===qn) score-=1000;
+    if(leaf.indexOf(toks[0])===0) score-=50;
+    if(leaf.indexOf(qn)>=0) score-=30;
+    if(wordRe && wordRe.test(leaf)) score-=40;
+    if(list==='places' && /^(Switzerland|France|Italy) > /.test(L[i][1])) score-=35; // SAF operating states first
+    score+=L[i][1].length/100;
+    hits.push([score,i]);
+  }
+  hits.sort(function(a,b){return a[0]-b[0];});
+  return hits.slice(0,max||60).map(function(h){return L[h[1]];});
+}
+function safRitPickerHtml(f, occ, id, v){
+  var esc=occHtmlEsc, txt=f.dtype===3?String(occGetEccairsValue(occ,f.key+'_text')||''):'';
+  var ph={events:'Rechercher : sling, bird, hydraulic, 2900…',places:'Rechercher : LSGS, Sion, LFKA, Corte…',optype:'Rechercher : sling, fire, CAT…',species:'Rechercher : buse, milan, corvid…'}[f.list]||'Rechercher…';
+  var h='<div class="saf-rit-picker" data-key="'+esc(f.key)+'" data-list="'+esc(f.list)+'" style="position:relative;">'
+    +'<input type="hidden" id="'+id+'" value="'+esc(v||'')+'"/>'
+    +'<input type="search" id="'+id+'-q" autocomplete="off" placeholder="'+esc(ph)+'" oninput="safRitPickerInput(\''+f.key+'\')" onkeydown="safRitPickerKey(event,\''+f.key+'\')" onfocus="safRitPickerInput(\''+f.key+'\')" style="width:100%;box-sizing:border-box;"/>'
+    +'<div id="'+id+'-res" role="listbox" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;min-width:min(560px,90vw);max-height:280px;overflow:auto;background:#0d1b2a;border:1px solid rgba(74,159,224,.45);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.45);"></div>'
+    +'<div id="'+id+'-sel" style="margin-top:5px;font-size:11px;line-height:1.4;color:var(--grey-200,#c9d3dd);"></div>';
+  if(f.dtype===3) h+='<input type="text" id="'+id+'_text" value="'+esc(txt)+'" maxlength="255" placeholder="Précision libre (facultatif, sans nom de personne)" style="width:100%;box-sizing:border-box;margin-top:5px;font-size:12px;"/>';
+  h+='</div>';
+  setTimeout(function(){ safRitPickerHydrate(f.key); },0);
+  return h;
+}
+function _safRitField(key){ return ECCAIRS_OCC_FIELDS.find(function(x){return x.key===key;}); }
+function safRitPickerHydrate(key){
+  var f=_safRitField(key), id='occ-eccairs-'+key, hid=document.getElementById(id), sel=document.getElementById(id+'-sel');
+  if(!f||!hid||!sel) return;
+  var v=String(hid.value||'').trim();
+  if(!v){ sel.innerHTML='<span style="opacity:.7;">Aucune valeur — recherchez dans la liste officielle ECCAIRS '+SAF_ECCAIRS_TAXONOMY_VERSION+'.</span>'; return; }
+  sel.innerHTML='<span style="opacity:.7;">Chargement de la liste officielle…</span>';
+  safRitLoad().then(function(){
+    var esc=occHtmlEsc;
+    if(/^\d+$/.test(v)){
+      var lab=safRitLabel(f.list,v);
+      sel.innerHTML=lab?'<strong style="color:var(--white,#fff);">'+esc(v)+'</strong> — '+esc(lab)+' <a href="#" onclick="safRitPickerClear(\''+key+'\');return false;" style="margin-left:6px;">effacer</a>'
+        :'<span style="color:#e57373;">Code '+esc(v)+' absent de la liste RIT '+SAF_ECCAIRS_TAXONOMY_VERSION+' : choisissez une autre valeur.</span>';
+      return;
+    }
+    // Former simplified-list value: resolve through the legacy code map.
+    var c=_ritCodeForValue(key, v, RIT_VALUE_CODES[key]);
+    var lab2=c?safRitLabel(f.list,c):'';
+    if(c && lab2){
+      hid.value=c;
+      var te=document.getElementById(id+'_text'); if(te && !te.value && f.dtype===3) te.value=v;
+      sel.innerHTML='<strong style="color:var(--white,#fff);">'+esc(c)+'</strong> — '+esc(lab2)+'<br><span style="opacity:.75;">Recodé depuis l\'ancienne saisie « '+esc(v)+' » : vérifiez puis enregistrez.</span>';
+    } else {
+      sel.innerHTML='<span style="color:#f0b429;">Ancienne saisie « '+esc(v)+' » non codée : choisissez la valeur officielle correspondante.</span>';
+    }
+  }).catch(function(e){
+    sel.innerHTML='<span style="color:#f0b429;">'+occHtmlEsc(e.message)+' — valeur actuelle conservée : '+occHtmlEsc(v)+'</span>';
+  });
+}
+function safRitPickerInput(key){
+  var f=_safRitField(key), id='occ-eccairs-'+key, q=document.getElementById(id+'-q'), res=document.getElementById(id+'-res');
+  if(!f||!q||!res) return;
+  var val=q.value;
+  if(!val.trim()){ res.style.display='none'; res.innerHTML=''; return; }
+  safRitLoad().then(function(){
+    if(q.value!==val) return;
+    var hits=safRitSearch(f.list,val,60), esc=occHtmlEsc;
+    res.innerHTML=hits.length?hits.map(function(r,i){
+      var parts=r[1].split(' > '), leaf=parts.pop();
+      return '<div role="option" data-code="'+r[0]+'" tabindex="-1" onmousedown="event.preventDefault();safRitPickerChoose(\''+key+'\','+r[0]+')" title="'+esc(r[2]||r[1])+'" style="padding:6px 9px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px;'+(i===0?'background:rgba(74,159,224,.14);':'')+'" onmouseover="this.style.background=\'rgba(74,159,224,.22)\'" onmouseout="this.style.background=\'\'">'
+        +'<div style="color:#f4f6f8;"><strong>'+esc(leaf)+'</strong> <span style="opacity:.6;">('+r[0]+')</span></div>'
+        +(parts.length?'<div style="opacity:.65;font-size:10.5px;">'+esc(parts.join(' › '))+'</div>':'')+'</div>';
+    }).join(''):'<div style="padding:8px 10px;font-size:12px;opacity:.75;">Aucune valeur RIT ne correspond.</div>';
+    res.style.display='block';
+  }).catch(function(e){ res.innerHTML='<div style="padding:8px 10px;font-size:12px;color:#f0b429;">'+occHtmlEsc(e.message)+'</div>'; res.style.display='block'; });
+}
+function safRitPickerKey(ev,key){
+  var res=document.getElementById('occ-eccairs-'+key+'-res');
+  if(ev.key==='Escape'){ if(res) res.style.display='none'; return; }
+  if(ev.key==='Enter'){ ev.preventDefault(); var first=res&&res.querySelector('[data-code]'); if(first) safRitPickerChoose(key, parseInt(first.getAttribute('data-code'),10)); }
+}
+function safRitPickerChoose(key, code){
+  var id='occ-eccairs-'+key, hid=document.getElementById(id), q=document.getElementById(id+'-q'), res=document.getElementById(id+'-res');
+  if(hid){ hid.value=String(code); try{ hid.dispatchEvent(new Event('change',{bubbles:true})); hid.dispatchEvent(new Event('input',{bubbles:true})); }catch(e){} }
+  if(q) q.value=''; if(res){ res.style.display='none'; res.innerHTML=''; }
+  safRitPickerHydrate(key);
+}
+function safRitPickerClear(key){
+  var hid=document.getElementById('occ-eccairs-'+key); if(hid){ hid.value=''; try{ hid.dispatchEvent(new Event('change',{bubbles:true})); }catch(e){} }
+  safRitPickerHydrate(key);
+}
+document.addEventListener('click',function(e){
+  if(e.target.closest && e.target.closest('.saf-rit-picker')) return;
+  Array.prototype.forEach.call(document.querySelectorAll('.saf-rit-picker [role=listbox]'),function(r){ r.style.display='none'; });
+});
+
 function _buildE5XFromOcc(occ){
   var uncoded=[];
   var xml=_buildRitOccurrenceXml(occ, uncoded);
@@ -20276,6 +20411,7 @@ function _preflightE5XPackage(built){
   if(!/<Headline\b[^>]*attributeId=["']601["']/.test(xml)) errors.push('Headline (601) is missing.');
   if(!/<UTC_Date\b[^>]*attributeId=["']477["']/.test(xml)) errors.push('UTC Date (477) is missing.');
   if(!/<UTC_Time\b[^>]*attributeId=["']478["']/.test(xml)) errors.push('UTC Time (478) is missing.');
+  if(!/<Event_Type\b[^>]*attributeId=["']390["']/.test(xml)) errors.push('Type d\'événement (390) manquant : choisissez-le dans la liste officielle ECCAIRS (au moins un événement est requis).');
   if(built&&built.occ){
     var ld=occGetEccairsValue(built.occ,'last_departure');
     var pd=occGetEccairsValue(built.occ,'planned_destination');
