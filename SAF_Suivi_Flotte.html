@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SAF – Suivi flotte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --ink:#1D2733; --ink-2:#4A5765; --paper:#EEF1F4; --panel:#FFFFFF; --line:#D5DBE1;
+  --live:#1F8A55; --ground:#3D6FA8; --stale:#8A94A0; --lost:#C8382E; --signal:#F2B705;
+  --font:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --cond:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{--ink:#E6EBF0;--ink-2:#A5B0BC;--paper:#141B23;--panel:#1B242E;--line:#2C3845;--stale:#6C7784;}
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:var(--font);color:var(--ink);background:var(--paper);font-size:15px;line-height:1.4}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+
+#app{display:grid;grid-template-columns:340px 1fr;height:100%}
+#side{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;
+  padding-top:env(safe-area-inset-top,0px)}
+#map{height:100%;width:100%;background:var(--paper)}
+
+header{padding:18px 20px 12px;border-bottom:1px solid var(--line)}
+header h1{font-family:var(--cond);font-weight:700;font-size:26px;letter-spacing:.01em;margin:0;line-height:1}
+header p{margin:4px 0 0;color:var(--ink-2);font-size:13px}
+
+#controls{display:flex;gap:8px;padding:10px 20px;border-bottom:1px solid var(--line);align-items:center;flex-wrap:wrap}
+#controls label{font-size:13px;color:var(--ink-2)}
+#controls select{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:4px 6px}
+#controls button{background:none;border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer}
+
+#list{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1}
+.ac{display:grid;grid-template-columns:6px 1fr;cursor:pointer;border-bottom:1px solid var(--line)}
+.ac:hover,.ac.sel{background:color-mix(in srgb,var(--paper) 70%,transparent)}
+.ac .bar{background:var(--stale)}
+.ac[data-st=live] .bar{background:var(--live)} .ac[data-st=ground] .bar{background:var(--ground)}
+.ac[data-st=lost] .bar{background:var(--lost)}
+.ac .body{padding:12px 16px 12px 14px}
+.ac .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ac .reg{font-family:var(--cond);font-weight:700;font-size:30px;line-height:1}
+.ac .type{color:var(--ink-2);font-size:13px}
+.ac .st{font-weight:600;font-size:14px;margin-top:4px}
+.ac[data-st=live] .st{color:var(--live)} .ac[data-st=ground] .st{color:var(--ground)}
+.ac[data-st=lost] .st{color:var(--lost)} .ac[data-st=none] .st,.ac[data-st=stale] .st{color:var(--stale)}
+.ac dl{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px;margin:10px 0 0}
+.ac dt{font-size:12px;color:var(--ink-2)} .ac dd{margin:0;font-family:var(--cond);font-weight:600;font-size:19px}
+.ac dd small{font-family:var(--font);font-weight:400;font-size:12px;color:var(--ink-2)}
+.ac .when{font-size:12px;color:var(--ink-2);margin-top:8px}
+
+footer{padding:10px 20px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);font-size:12px;color:var(--ink-2)}
+footer .err{color:var(--lost)}
+
+/* Login */
+#login{position:fixed;inset:0;display:none;place-items:center;background:var(--paper);z-index:2000;padding:20px}
+#login form{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:28px;width:min(360px,100%)}
+#login h2{font-family:var(--cond);font-size:28px;margin:0 0 4px}
+#login p{margin:0 0 18px;color:var(--ink-2);font-size:14px}
+#login label{display:block;font-size:13px;color:var(--ink-2);margin:12px 0 4px}
+#login input{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:4px;background:var(--paper)}
+#login button{margin-top:20px;width:100%;padding:10px;border:0;border-radius:4px;background:var(--ink);color:var(--panel);font-weight:600;cursor:pointer}
+#login .err{color:var(--lost);font-size:13px;min-height:1.2em;margin-top:10px}
+
+/* Marqueurs */
+.acm{position:relative}
+.acm svg{position:absolute;left:-16px;top:-16px;width:32px;height:32px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+.acm .lbl{position:absolute;left:18px;top:-11px;white-space:nowrap;font-family:var(--cond);font-weight:700;font-size:15px;
+  background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:3px;padding:0 5px;line-height:20px}
+.acm.lost .lbl{background:var(--lost);color:#fff;border-color:var(--lost)}
+.base{font-family:var(--cond);font-weight:600;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.leaflet-container{font-family:var(--font)}
+
+@media (max-width:760px){
+  #app{grid-template-columns:1fr;grid-template-rows:55% 45%}
+  #map{grid-row:1} #side{grid-row:2;border-right:0;border-top:1px solid var(--line);padding-top:0}
+  header{padding:10px 16px 8px} header h1{font-size:22px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <header>
+      <h1>Suivi flotte SAF</h1>
+      <p id="sub">Chargement…</p>
+    </header>
+    <div id="controls">
+      <label for="win">Trace</label>
+      <select id="win">
+        <option value="1">1 h</option>
+        <option value="3" selected>3 h</option>
+        <option value="12">12 h</option>
+        <option value="24">24 h</option>
+      </select>
+      <button id="fit" type="button">Toute la flotte</button>
+      <button id="logout" type="button">Déconnexion</button>
+    </div>
+    <ul id="list"></ul>
+    <footer id="foot">—</footer>
+  </aside>
+  <div id="map"></div>
+</div>
+
+<div id="login">
+  <form id="lf">
+    <h2>Suivi flotte</h2>
+    <p>Connecte-toi avec ton compte de l'outil SMS.</p>
+    <label for="em">E-mail</label><input id="em" type="email" autocomplete="username" required>
+    <label for="pw">Mot de passe</label><input id="pw" type="password" autocomplete="current-password" required>
+    <button type="submit">Se connecter</button>
+    <div class="err" id="lerr"></div>
+  </form>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const CONFIG = {
+  url: "https://qaqehmxoehcvzcojcqkm.supabase.co",
+  key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q",
+  refreshMs: 30000,     // lecture Supabase (jamais NSE)
+  liveMaxMin: 5,        // point plus récent que 5 min = en direct
+  lostAfterMin: 15,     // en mouvement puis plus de point depuis 15 min = signal perdu
+  movingSpeed: 5,
+};
+const BASES = [
+  {name:"LFKA Albertville", lat:45.6276, lon:6.3297},
+  {name:"LSGS Sion", lat:46.2196, lon:7.3268},
+];
+const COLORS = {live:"#1F8A55", ground:"#3D6FA8", stale:"#8A94A0", lost:"#C8382E", none:"#8A94A0"};
+
+const sb = supabase.createClient(CONFIG.url, CONFIG.key, {auth:{persistSession:true, storageKey:"saf-fleet-auth"}});
+
+/* ---------- Carte ---------- */
+const map = L.map("map", {zoomControl:true}).setView([45.9, 6.8], 8);
+const layers = {
+  "Topo (OpenTopoMap)": L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"© OpenTopoMap, © OSM"}),
+  "Plan (OSM)": L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}),
+  "swisstopo": L.tileLayer("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg",{maxZoom:18,attribution:"© swisstopo"}),
+  "Satellite (Esri)": L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"© Esri"}),
+};
+layers["Topo (OpenTopoMap)"].addTo(map);
+L.control.layers(layers, null, {position:"topright"}).addTo(map);
+L.control.scale({imperial:false}).addTo(map);
+BASES.forEach(b => L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null})}).addTo(map));
+
+const markers = {}, trails = {};
+let fleet = [], state = {}, selected = null, firstFit = true;
+
+/* ---------- Utilitaires ---------- */
+const normHeading = h => h == null ? null : (h > 360 ? h/10 : h);
+const minsAgo = t => (Date.now() - new Date(t).getTime())/60000;
+function ago(t){
+  const m = minsAgo(t);
+  if (m < 1) return "à l'instant";
+  if (m < 60) return `il y a ${Math.round(m)} min`;
+  if (m < 48*60) return `il y a ${Math.floor(m/60)} h ${String(Math.round(m%60)).padStart(2,"0")}`;
+  return `il y a ${Math.round(m/1440)} j`;
+}
+const hhmm = t => new Date(t).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"UTC"})+" UTC";
+function haversineKm(a,b){
+  const R=6371, r=x=>x*Math.PI/180, dLat=r(b.lat-a.lat), dLon=r(b.lon-a.lon);
+  const s=Math.sin(dLat/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+// Vitesse sol calculée entre les deux derniers points (si espacés de 20 s à 5 min)
+function computedGs(p1,p0){
+  if(!p1||!p0) return null;
+  const dt=(new Date(p0.fix_time)-new Date(p1.fix_time))/3600000;
+  if(dt<20/3600||dt>5/60) return null;
+  return haversineKm(p1,p0)/dt;
+}
+function status(last){
+  if(!last) return {k:"none",t:"Aucune position reçue"};
+  const m=minsAgo(last.fix_time), moving=(last.speed??0)>CONFIG.movingSpeed;
+  if(moving && m>CONFIG.lostAfterMin) return {k:"lost",t:`Signal perdu en vol – ${ago(last.fix_time)}`};
+  if(moving) return {k:"live",t:m<=CONFIG.liveMaxMin?"En vol":"En vol – dernier point "+ago(last.fix_time)};
+  if(m<=CONFIG.liveMaxMin) return {k:"ground",t:"Au sol, traceur actif"};
+  return {k:"stale",t:"Au sol / traceur éteint"};
+}
+function arrowSvg(color,heading){
+  const rot = heading==null?0:heading;
+  return `<svg viewBox="0 0 32 32" style="transform:rotate(${rot}deg)"><circle cx="16" cy="16" r="13" fill="${color}" stroke="#fff" stroke-width="2"/>
+  <path d="M16 6 L22 22 L16 18.5 L10 22 Z" fill="#fff"/></svg>`;
+}
+const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- Données ---------- */
+async function load(){
+  const hours=+document.getElementById("win").value;
+  const since=new Date(Date.now()-hours*3600000).toISOString();
+  try{
+    const [ac,pos,ps]=await Promise.all([
+      sb.from("fleet_aircraft").select("reg,type,imei,provider,active").order("reg"),
+      sb.from("fleet_positions").select("reg,fix_time,lat,lon,alt_m,heading,speed").gte("fix_time",since).order("fix_time",{ascending:true}).limit(5000),
+      sb.from("fleet_poll_state").select("last_poll,last_result").eq("id",1).maybeSingle(),
+    ]);
+    if(ac.error) throw ac.error; if(pos.error) throw pos.error;
+    fleet=ac.data;
+    // Derniers points par appareil, même hors fenêtre de trace
+    const lasts=await Promise.all(fleet.map(a=>sb.from("fleet_positions").select("reg,fix_time,lat,lon,alt_m,heading,speed").eq("reg",a.reg).order("fix_time",{ascending:false}).limit(2)));
+    state={};
+    fleet.forEach((a,i)=>{
+      const two=lasts[i].data||[];
+      state[a.reg]={ac:a,last:two[0]||null,prev:two[1]||null,trail:pos.data.filter(p=>p.reg===a.reg)};
+    });
+    render(ps.data);
+  }catch(e){
+    document.getElementById("foot").innerHTML=`<span class="err">Lecture impossible : ${esc(e.message||e)}. Nouvel essai dans ${CONFIG.refreshMs/1000} s.</span>`;
+  }
+}
+
+function render(ps){
+  const list=document.getElementById("list"); list.innerHTML="";
+  let nLive=0, nLost=0;
+  for(const a of fleet){
+    const s=state[a.reg], last=s.last, st=a.active?status(last):{k:"none",t:"Suivi non activé ("+a.provider+")"};
+    if(st.k==="live") nLive++; if(st.k==="lost") nLost++;
+    const hd=last?normHeading(last.heading):null;
+    const gs=computedGs(s.prev,last);
+    const li=document.createElement("li");
+    li.className="ac"+(selected===a.reg?" sel":""); li.dataset.st=st.k; li.tabIndex=0;
+    li.innerHTML=`<div class="bar"></div><div class="body">
+      <div class="top"><span class="reg">${esc(a.reg)}</span><span class="type">${esc(a.type||"")}</span></div>
+      <div class="st">${esc(st.t)}</div>
+      ${last?`<dl>
+        <div><dt>Altitude</dt><dd>${Math.round(last.alt_m*3.28084).toLocaleString("fr-FR")} <small>ft</small></dd></div>
+        <div><dt>Cap</dt><dd>${hd==null?"–":String(Math.round(hd)%360).padStart(3,"0")+"°"}</dd></div>
+        <div><dt>${gs!=null?"Vit. sol calc.":"Vitesse (brute)"}</dt><dd>${gs!=null?Math.round(gs/1.852)+' <small>kt</small>':esc(last.speed)}</dd></div>
+      </dl>
+      <div class="when">Dernier point ${hhmm(last.fix_time)} – ${ago(last.fix_time)} · ${last.lat.toFixed(4)}, ${last.lon.toFixed(4)}</div>`:""}
+    </div>`;
+    const go=()=>{selected=a.reg; if(last) map.setView([last.lat,last.lon],Math.max(map.getZoom(),11)); render(ps);};
+    li.onclick=go; li.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};
+    list.appendChild(li);
+
+    // Marqueur
+    if(last){
+      const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl">${esc(a.reg)}</span></div>`;
+      const icon=L.divIcon({className:"",html,iconSize:[0,0]});
+      if(markers[a.reg]) markers[a.reg].setLatLng([last.lat,last.lon]).setIcon(icon);
+      else markers[a.reg]=L.marker([last.lat,last.lon],{icon,keyboard:false}).addTo(map).on("click",go);
+    }
+    // Trace
+    const pts=s.trail.map(p=>[p.lat,p.lon]);
+    if(trails[a.reg]) trails[a.reg].setLatLngs(pts);
+    else trails[a.reg]=L.polyline(pts,{weight:3,opacity:.85}).addTo(map);
+    trails[a.reg].setStyle({color:COLORS[st.k]==="#8A94A0"?"#6C7784":COLORS[st.k],weight:selected===a.reg?5:3,opacity:selected&&selected!==a.reg?.35:.85});
+  }
+  document.getElementById("sub").textContent=
+    `${fleet.length} appareils · ${nLive} en vol`+(nLost?` · ${nLost} signal perdu`:"");
+  const f=document.getElementById("foot");
+  f.textContent=`Affichage mis à jour ${new Date().toLocaleTimeString("fr-FR")}`+
+    (ps?.last_poll?` · relais NSE ${ago(ps.last_poll)}`:"");
+  if(ps?.last_poll && minsAgo(ps.last_poll)>5) f.innerHTML+=` <span class="err">Le relais ne tourne plus.</span>`;
+  if(firstFit){ fitAll(); firstFit=false; }
+}
+function fitAll(){
+  const ll=Object.values(state).filter(s=>s.last).map(s=>[s.last.lat,s.last.lon]);
+  if(ll.length) map.fitBounds(L.latLngBounds(ll).pad(.3),{maxZoom:11});
+}
+
+/* ---------- Session ---------- */
+let timer=null;
+function start(){ document.getElementById("login").style.display="none"; load(); clearInterval(timer); timer=setInterval(load,CONFIG.refreshMs); }
+function showLogin(){ clearInterval(timer); document.getElementById("login").style.display="grid"; }
+document.getElementById("lf").onsubmit=async e=>{
+  e.preventDefault();
+  const err=document.getElementById("lerr"); err.textContent="";
+  const {error}=await sb.auth.signInWithPassword({email:em.value.trim(),password:pw.value});
+  if(error) err.textContent="Connexion refusée : vérifie l'e-mail et le mot de passe."; else start();
+};
+document.getElementById("logout").onclick=async()=>{await sb.auth.signOut(); showLogin();};
+document.getElementById("win").onchange=load;
+document.getElementById("fit").onclick=()=>{selected=null; fitAll(); load();};
+sb.auth.getSession().then(({data})=>data.session?start():showLogin());
+</script>
+</body>
+</html>
