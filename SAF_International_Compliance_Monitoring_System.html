@@ -16231,6 +16231,7 @@ When a signature by hand is impracticable or it is desirable to arrange the equi
 };
 
 let queue=[], gridRows=[];
+let g_editingAuditId=null; // existing audit currently being structurally edited
 /* ── ROW DATA STORE (keyed by rid: 'ir-{idx}' or 'amc-{idx}-{amcIdx}') ── */
 let rowData={};
 
@@ -16394,7 +16395,19 @@ function g_addToQueue(){
       .map(ps=>ps.split('|')[1]);
 
     // Si aucune sous-partie cochée pour cette part → prendre TOUTES ses sous-parties
-    const subsToUse = subsForThisPart.length > 0 ? subsForThisPart : ['ALL'];
+    let subsToUse = subsForThisPart.length > 0 ? subsForThisPart : ['ALL'];
+    // Niveau « points réglementaires » : une sous-partie dont des points sont cochés
+    // n'apporte que ces points (élément de file de type 'arts').
+    const __arts = (typeof window.g_artsSelectionBySub==='function') ? window.g_artsSelectionBySub() : {};
+    subsToUse = subsToUse.filter(sub=>{
+      const sel = __arts[part+'|'+sub];
+      if(sub==='ALL' || !sel || !sel.length) return true;
+      queue = queue.filter(q=>!(q.type==='arts' && q.reg===reg && q.part===part && q.sub===sub));
+      queue = queue.filter(q=>!(q.type==='part' && q.reg===reg && q.part===part && q.sub===sub));
+      queue.push({key:'arts|'+reg+'|'+part+'|'+sub+'|'+sel.join(','), label:rL+' — '+part+'.'+sub+' — '+sel.length+' point'+(sel.length>1?'s':''), type:'arts', reg, part, sub, refs:sel.slice()});
+      added++;
+      return false;
+    });
 
     subsToUse.forEach(sub=>{
       // Vérifier si cette sous-partie a des variantes dans la DB
@@ -16457,6 +16470,8 @@ function g_generateGrid(){
   queue.forEach(q=>{
     if(q.type==='ref'){
       if(DB[q.ref]) matched[q.ref]=DB[q.ref];
+    } else if(q.type==='arts'){
+      (q.refs||[]).forEach(r=>{ if(DB[r]) matched[r]=DB[r]; });
     } else {
       Object.entries(DB).forEach(([ref,d])=>{
         if(q.reg&&q.reg!=='ALL'&&d.reg!==q.reg) return;
@@ -16468,6 +16483,29 @@ function g_generateGrid(){
     }
   });
   if(!Object.keys(matched).length){alert('Aucun article trouvé / No article found.');return;}
+
+  // When editing an existing audit, keep the original article indexes so that
+  // status/observations/actions remain attached to the same IR/AMC rows.
+  if(g_editingAuditId){
+    var audits=g_loadAudits();
+    var existing=audits.find(function(x){return x.id===g_editingAuditId;});
+    var oldRows=(existing&&existing.gridRows)||gridRows||[];
+    var oldByRef={}; var maxIdx=-1;
+    oldRows.forEach(function(r){ oldByRef[r.ref]=r; maxIdx=Math.max(maxIdx,Number(r.idx)||0); });
+    gridRows=Object.entries(matched).sort((a,b)=>a[0].localeCompare(b[0])).map(function(entry){
+      var ref=entry[0], d=entry[1], old=oldByRef[ref];
+      var idx=old?old.idx:(++maxIdx);
+      return {idx:idx, ref:ref, reg:d.reg, part:d.part, sub:d.sub, variant:d.variant||'', title:d.title, ir:d.ir, amcBlocks:d.amc||[], status:'', obs:'', refdoc:'', action:'', resp:''};
+    });
+    g_currentAuditId=g_editingAuditId;
+    // g_buildHTML keeps rowData entries whose stable rid still exists and drops removed rows.
+    g_buildHTML();
+    g_autosave();
+    g_editingAuditId=null;
+    g_renderSavedList();
+    return;
+  }
+
   g_currentAuditId=null; // new grid → new audit record
   rowData={};            // fresh grid → no carried-over statuses
   gridRows=Object.entries(matched).sort((a,b)=>a[0].localeCompare(b[0])).map(([ref,d],i)=>({
@@ -16549,7 +16587,7 @@ function g_buildHTML(){
     byReg[row.reg][row.part].push(row);
   });
 
-  const regLabels={'965':'Règlement (UE) 965/2012 — Air Operations','1321':'Règlement (UE) 1321/2014 — Continuing Airworthiness'};
+  const regLabels={'965':'Règlement (UE) 965/2012 — Air Operations','1321':'Règlement (UE) 1321/2014 — Continuing Airworthiness','PLAN':'Plan d’audit APP13-OMM — points sélectionnés / Audit plan — selected points','MAN':'Manuel interne — points de contrôle / Internal manual — checkpoints'};
   let html='';
 
   const selectOpts=`
@@ -16573,8 +16611,9 @@ function g_buildHTML(){
       </tr></thead>
       <tbody>`;
 
-    Object.entries(parts).sort().forEach(([part,rows])=>{
-      html+=`<tr class="part-row"><td colspan="8">Part-${part}</td></tr>`;
+    const __free=(reg==='PLAN'||reg==='MAN');
+    (__free?Object.entries(parts):Object.entries(parts).sort()).forEach(([part,rows])=>{
+      html+=`<tr class="part-row"><td colspan="8">${__free?g_esc(part):'Part-'+part}</td></tr>`;
 
       rows.forEach(row=>{
         const rid=`ir-${row.idx}`;
@@ -16602,7 +16641,9 @@ function g_buildHTML(){
         </tr>`;
 
         // ── AMC rows — each with full columns ──
-        if(row.amcBlocks.length===0){
+        if(row.noSubRow){
+          /* grille Plan / Manuel : pas de sous-ligne « No AMC » */
+        } else if(row.amcBlocks.length===0){
           const amid=`amc-${row.idx}-none`;
           html+=`<tr class="amc-row" data-rid="${amid}" data-irIdx="${row.idx}" data-status="">
             <td class="amc-ref-cell">—</td>
@@ -16792,6 +16833,33 @@ async function safCMSOpenFile(meta){
   if(r.error){if(w)w.close();alert('Impossible d’ouvrir le fichier : '+r.error.message);return;}
   if(w)w.location.href=r.data.signedUrl; else window.location.href=r.data.signedUrl;
 }
+async function safCMSDeleteStorageFolder(folder){
+  var c=safCMSStorageClient();
+  if(!c) throw new Error('Client Supabase indisponible');
+  var bucket=c.storage.from(CMS_STORAGE_BUCKET), paths=[];
+  async function walk(prefix){
+    var offset=0, limit=100;
+    while(true){
+      var r=await bucket.list(prefix,{limit:limit,offset:offset,sortBy:{column:'name',order:'asc'}});
+      if(r.error) throw new Error(r.error.message||String(r.error));
+      var items=r.data||[];
+      for(var i=0;i<items.length;i++){
+        var it=items[i], full=prefix+'/'+it.name;
+        // Supabase folders normally have no id; files have an id/metadata.
+        if(it.id || it.metadata){ paths.push(full); }
+        else { await walk(full); }
+      }
+      if(items.length<limit) break;
+      offset+=limit;
+    }
+  }
+  await walk(folder);
+  for(var i=0;i<paths.length;i+=100){
+    var rr=await bucket.remove(paths.slice(i,i+100));
+    if(rr.error) throw new Error(rr.error.message||String(rr.error));
+  }
+  return paths.length;
+}
 function safCMSAuditBaseFolder(a){
   var num=(a&&a.num)||((document.getElementById('g-audit-num')||{}).value)||'';
   var year=safCMSYear(num,'');
@@ -16877,12 +16945,32 @@ function g_renderSavedList(){
         '<div style="font-size:11px;color:var(--text-dim);margin-top:3px;">'+a.done+'/'+a.total+' points assessed ('+pct+'%) · 📎 '+fileCount+' · last saved '+when+'</div>'+
         '<div style="height:5px;background:rgba(255,255,255,.08);border-radius:3px;margin-top:6px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:var(--accent,#e8a020);"></div></div>'+
       '</div>'+
-      '<button class="bexp" onclick="g_resumeAudit(\''+a.id+'\')">▶ Resume</button>'+
-      '<button class="bback" onclick="g_deleteAudit(\''+a.id+'\')" title="Delete this saved audit">🗑</button>'+
+      '<button class="bexp" onclick="g_resumeAudit(\''+a.id+'\')">▶ Ouvrir / Open</button>'+
+      '<button class="bexp" onclick="g_editAudit(\''+a.id+'\')" style="border-color:#f5a623;color:#f5a623;">✎ Modifier / Edit</button>'+
+      '<button class="bback" onclick="g_deleteAudit(\''+a.id+'\')" title="Supprimer cette grille et ses pièces jointes / Delete this grid and its attachments" style="border-color:#ff5555;color:#ff7777;">🗑 Supprimer / Delete</button>'+
     '</div>';
   }).join('');
 }
+function g_editAudit(id){
+  var a=g_loadAudits().find(function(x){return x.id===id;});
+  if(!a){ alert('Audit introuvable / Audit not found.'); return; }
+  g_currentAuditId=a.id;
+  g_editingAuditId=a.id;
+  queue=Array.isArray(a.queue)?JSON.parse(JSON.stringify(a.queue)):[];
+  gridRows=Array.isArray(a.gridRows)?JSON.parse(JSON.stringify(a.gridRows)):[];
+  rowData=a.rowData?JSON.parse(JSON.stringify(a.rowData)):{};
+  document.getElementById('grille-app').style.display='flex';
+  document.getElementById('g-toolbar').style.display='none';
+  document.getElementById('g-grid-section').style.display='none';
+  document.getElementById('g-grid-section').innerHTML='';
+  g_renderQueue();
+  var warn=document.getElementById('g-warn');
+  if(warn){warn.style.display='block';warn.style.color='#f5c05a';warn.textContent='Mode modification : ajoutez ou retirez les articles souhaités, puis cliquez sur Générer la grille. Les évaluations des articles conservés seront préservées. / Edit mode: add or remove the required articles, then click Generate grid. Existing assessments for retained articles will be preserved.';}
+}
+window.g_editAudit=g_editAudit;
+
 function g_resumeAudit(id){
+  g_editingAuditId=null;
   var a=g_loadAudits().find(function(x){return x.id===id;});
   if(!a){ alert('Audit introuvable / Audit not found.'); return; }
   g_currentAuditId=a.id;
@@ -16910,14 +16998,42 @@ function g_resumeAudit(id){
     if(typeof g_renderAuditAttachments==='function') g_renderAuditAttachments();
   },180);
 }
-function g_deleteAudit(id){
-  if(!confirm('Supprimer cet audit enregistré ? Cette action est irréversible.\n\nLes pièces jointes déjà envoyées dans Supabase ne seront pas supprimées automatiquement. / Delete this saved audit? Files already uploaded to Supabase will not be deleted automatically.')) return;
-  var audits=g_loadAudits().filter(function(x){return x.id!==id;});
+async function g_deleteAudit(id){
+  if(!safCMSCanWrite()){alert('Lecture seule : suppression non autorisée. / Read-only: deletion is not allowed.');return;}
+  var audits=g_loadAudits();
+  var a=audits.find(function(x){return x.id===id;});
+  if(!a){alert('Audit introuvable / Audit not found.');return;}
+  var fileCount=(a.files||[]).length;
+  if(!confirm('Supprimer définitivement cette grille d’audit ?\n\nLa grille, ses données et toutes les pièces jointes stockées dans son dossier Supabase seront supprimées. Cette action est irréversible.\n\nDelete this audit grid permanently? The grid, its data and all attachments stored in its Supabase folder will be deleted. This action cannot be undone.')) return;
+  try{
+    if(a.storageFolder){
+      g_setAuditAttachStatus('Suppression des pièces jointes… / Deleting attachments…');
+      await safCMSDeleteStorageFolder(a.storageFolder);
+    } else if(fileCount){
+      // Legacy records without storageFolder: remove every known file path.
+      var c=safCMSStorageClient(); if(!c)throw new Error('Client Supabase indisponible');
+      var byBucket={};
+      (a.files||[]).forEach(function(f){if(f&&f.path){var b=f.bucket||CMS_STORAGE_BUCKET;(byBucket[b]=byBucket[b]||[]).push(f.path);}});
+      for(var b in byBucket){var rr=await c.storage.from(b).remove(byBucket[b]);if(rr.error)throw new Error(rr.error.message||String(rr.error));}
+    }
+  }catch(e){
+    g_setAuditAttachStatus('Suppression interrompue : '+e.message,true);
+    alert('La grille n’a pas été supprimée car la suppression de ses pièces jointes a échoué.\n\nThe grid was not deleted because attachment deletion failed.\n\n'+e.message);
+    return;
+  }
+  audits=audits.filter(function(x){return x.id!==id;});
   g_saveAudits(audits);
-  if(g_currentAuditId===id) g_currentAuditId=null;
+  // Also remove CAP findings automatically created from this audit number.
+  try{
+    var fs=JSON.parse(localStorage.getItem('cmsx_findings_v1')||'[]');
+    var kept=fs.filter(function(f){return f.auditNum!==a.num;});
+    if(kept.length!==fs.length)localStorage.setItem('cmsx_findings_v1',JSON.stringify(kept));
+  }catch(e){}
+  if(g_currentAuditId===id){g_currentAuditId=null;g_editingAuditId=null;}
   g_renderSavedList();
+  g_setAuditAttachStatus('');
 }
-window.g_resumeAudit=g_resumeAudit; window.g_deleteAudit=g_deleteAudit;
+window.g_resumeAudit=g_resumeAudit; window.g_editAudit=g_editAudit; window.g_deleteAudit=g_deleteAudit;
 window.g_renderSavedList=g_renderSavedList; window.g_autosave=g_autosave;
 // Responsible dropdown handlers
 function g_setResp(sel,rid){
@@ -17547,6 +17663,7 @@ function ap2Show(id,btn){
   .cmsx-badge.lvl3{background:#ffd400;color:#3a3000;}
   .cmsx-badge.notstarted{background:rgba(150,160,180,.22);color:#aab4c8;}
   .cmsx-badge.completed{background:rgba(0,196,140,.18);color:#00d49a;}
+  .cmsx-badge.observation{background:#ffea00;color:#2b2500;border:1px solid #ffd600;font-weight:800;}
   select.lvl1{background:#ff1a1a !important;color:#fff !important;border-color:#ff1a1a !important;font-weight:700;}
   select.lvl2{background:#ff8c00 !important;color:#1a0d00 !important;border-color:#ff8c00 !important;font-weight:700;}
   select.lvl3{background:#ffd400 !important;color:#3a3000 !important;border-color:#ffd400 !important;font-weight:700;}
@@ -17560,9 +17677,11 @@ function ap2Show(id,btn){
   .cmsx-badge.ontime{background:rgba(0,196,140,.15);color:#00c48c;}
   .cmsx-badge.origin-internal{background:rgba(0,212,255,.15);color:#4ad0ff;}
   .cmsx-badge.origin-foca{background:rgba(168,85,247,.20);color:#c084fc;}
+  .cmsx-badge.origin-external{background:rgba(245,166,35,.20);color:#ffd166;}
   .cmsx-badge.warn30{background:rgba(245,166,35,.18);color:#f5b54a;}
   select.origin-internal{background:rgba(0,212,255,.12) !important;border-color:#00d4ff !important;color:#c8d8f0 !important;}
   select.origin-foca{background:rgba(168,85,247,.15) !important;border-color:#a855f7 !important;color:#c8d8f0 !important;}
+  select.origin-external{background:rgba(245,166,35,.14) !important;border-color:#f5a623 !important;color:#ffe39a !important;}
   .cmsx-deadline-alert{border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:12px;line-height:1.7;}
   .cmsx-deadline-alert.due14{background:rgba(255,26,26,.10);border:1px solid rgba(255,68,68,.35);}
   .cmsx-deadline-alert.due30{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.30);}
@@ -17607,13 +17726,15 @@ function ap2Show(id,btn){
 <option value="all">Tous les statuts / All statuses</option>
 <option value="notstarted">Non commencé / Not started</option>
 <option value="progress">En cours / In progress</option>
+<option value="observation">Observation / Observation</option>
 <option value="completed">Terminé / Completed</option>
 <option value="overdue">En retard / Overdue</option>
 </select>
 <select id="cmsx-reg-origin-filter" onchange="cmsxRenderFindings()" style="background:#0e1a2c;border:1px solid #1e3a5f;border-radius:8px;color:#c8d8f0;padding:8px 12px;font-size:13px;">
-<option value="all">Interne + FOCA / Internal + FOCA</option>
+<option value="all">Toutes les origines / All origins</option>
 <option value="internal">🔵 Interne uniquement / Internal only</option>
-<option value="foca">🟣 FOCA uniquement / FOCA only</option>
+<option value="foca">🟣 Authority uniquement / Authority only</option>
+<option value="external">🟠 Auditeur externe uniquement / External auditor only</option>
 </select>
 </div>
 <div class="cmsx-note">⚠ Délais de référence EASA (GM1 ORO.GEN.150) : niveau 1 → action corrective sous / EASA reference deadlines (GM1 ORO.GEN.150): Level 1 → corrective action within <strong>30 jours / 30 days</strong> ; niveau 2 → plan d’actions accepté, puis clôture dans le délai convenu (généralement au maximum / Level 2 → accepted action plan, then closure within the agreed deadline (usually max. <strong>90 jours / 90 days</strong>). Une action corrective terminée doit faire l’objet d’une / A completed corrective action should be subject to <strong>vérification de l’efficacité / effectiveness verification</strong> avant que la constatation soit considérée comme clôturée. / before the finding is considered closed.</div>
@@ -17709,10 +17830,11 @@ function ap2Show(id,btn){
 <div class="cmsx-field"><label>Origine de la constatation / Finding origin</label>
 <select id="cmsx-f-origin" onchange="cmsxOriginStyle(this);cmsxToggleFocaRef()">
 <option value="internal">🔵 Interne — Audit SAF / auto-inspection / Internal — SAF audit / self-inspection</option>
-<option value="foca">🟣 FOCA — Audit de l’autorité / constatation de surveillance / Authority audit / oversight finding</option>
+<option value="foca">🟣 Authority — Audit de l’autorité / constatation de surveillance / Authority audit / oversight finding</option>
+<option value="external">🟠 Auditeur externe / External auditor</option>
 </select>
 </div>
-<div class="cmsx-field" id="cmsx-f-focaref-wrap" style="display:none;"><label>Référence FOCA (courrier / n° de constatation) / FOCA reference (letter / finding N°)</label><input id="cmsx-f-focaref" placeholder="ex. : FOCA-2026-0112 / e.g. FOCA-2026-0112"/></div>
+<div class="cmsx-field" id="cmsx-f-focaref-wrap" style="display:none;"><label>Référence Authority / auditeur externe / Authority / external auditor reference</label><input id="cmsx-f-focaref" placeholder="ex. : AUTH-2026-0112 / EXT-AUD-2026-04"/></div>
 </div>
 <div class="cmsx-grid3">
 <div class="cmsx-field"><label>Niveau de la constatation / Finding level</label>
@@ -17785,6 +17907,7 @@ function ap2Show(id,btn){
 <select id="cmsx-f-status">
 <option value="notstarted">Non commencé / Not started</option>
 <option value="progress">En cours / In progress</option>
+<option value="observation">Observation / Observation</option>
 <option value="completed">Terminé / Completed</option>
 </select>
 </div>
@@ -18031,23 +18154,23 @@ window.cmsxPushGridFinding = cmsxPushGridFinding;
 
 var CMSX_LEVEL_LABEL = {N1:'Level 1', N2:'Level 2', N3:'Level 3'};
 var CMSX_LEVEL_CLS   = {N1:'lvl1', N2:'lvl2', N3:'lvl3'};
-var CMSX_STATUS_LABEL= {notstarted:'Not started', progress:'In progress', completed:'Completed'};
+var CMSX_STATUS_LABEL= {notstarted:'Not started', progress:'In progress', observation:'Observation', completed:'Completed'};
 
 // Colour the level <select> in the modal to match the chosen level
 function cmsxLevelStyle(sel){
   sel.classList.remove('lvl1','lvl2','lvl3');
   sel.classList.add(CMSX_LEVEL_CLS[sel.value]||'lvl2');
 }
-// Colour the origin <select> in the modal (internal = blue, FOCA = purple)
+// Colour the origin <select> in the modal (internal = blue, Authority = purple, external auditor = amber)
 function cmsxOriginStyle(sel){
-  sel.classList.remove('origin-internal','origin-foca');
-  sel.classList.add(sel.value==='foca'?'origin-foca':'origin-internal');
+  sel.classList.remove('origin-internal','origin-foca','origin-external');
+  sel.classList.add(sel.value==='foca'?'origin-foca':(sel.value==='external'?'origin-external':'origin-internal'));
 }
-// Show the "FOCA reference" field only when the origin is FOCA
+// Show the external reference field for Authority or external-auditor findings
 function cmsxToggleFocaRef(){
   var sel=document.getElementById('cmsx-f-origin');
   var wrap=document.getElementById('cmsx-f-focaref-wrap');
-  if(wrap) wrap.style.display=(sel && sel.value==='foca')?'flex':'none';
+  if(wrap) wrap.style.display=(sel && (sel.value==='foca'||sel.value==='external'))?'flex':'none';
 }
 // Collapse/expand the 5 Whys root-cause analysis block
 function cmsxToggle5Whys(){
@@ -18132,15 +18255,15 @@ function cmsxRenderFindings(){
     body.innerHTML='<tr><td colspan="15" class="cmsx-empty">No corrective actions'+(filter!=='all'||originFilter!=='all'?' for this filter':'')+'. Click "Add corrective action" to create one.</td></tr>';
   } else {
     body.innerHTML=list.map(function(f){
-      var stCls=f.status==='completed'?'completed':(f.status==='progress'?'progress':'notstarted');
+      var stCls=f.status==='completed'?'completed':(f.status==='progress'?'progress':(f.status==='observation'?'observation':'notstarted'));
       if(isOverdue(f)) stCls='overdue';
       var stLabel=isOverdue(f)?'Overdue':(CMSX_STATUS_LABEL[f.status]||f.status);
       var dly=findingDelayInfo(f);
       var verif=f.verified?('<span class="cmsx-badge verified">✓ '+esc(f.verified)+'</span>')
                 :(f.status==='completed'?'<span class="cmsx-badge late">to verify</span>':'—');
       var notif=f.notified?('<span class="cmsx-badge ontime" title="'+esc(f.notified)+'">✉ sent</span>'):'—';
-      var org=f.origin==='foca'?'foca':'internal';
-      var orgLabel=org==='foca'?('🟣 FOCA'+(f.focaRef?(' <span class="cmsx-ref" title="FOCA reference">'+esc(f.focaRef)+'</span>'):'')):'🔵 Internal';
+      var org=f.origin==='foca'?'foca':(f.origin==='external'?'external':'internal');
+      var orgLabel=org==='foca'?('🟣 Authority'+(f.focaRef?(' <span class="cmsx-ref" title="Authority reference">'+esc(f.focaRef)+'</span>'):'')):(org==='external'?('🟠 External auditor'+(f.focaRef?(' <span class="cmsx-ref" title="External audit reference">'+esc(f.focaRef)+'</span>'):'')):'🔵 Internal');
       var whyCount=['ans1','ans2','ans3','ans4','ans5'].filter(function(k){return f[k]&&f[k].trim();}).length;
       var rc;
       if(f.rootCause && f.rootCause.trim()){
@@ -18182,6 +18305,7 @@ function cmsxRenderRegKpis(findings){
   var overdue=findings.filter(isOverdue).length;
   var internalCount=findings.filter(function(f){return (f.origin||'internal')==='internal';}).length;
   var focaCount=findings.filter(function(f){return f.origin==='foca';}).length;
+  var externalCount=findings.filter(function(f){return f.origin==='external';}).length;
   var rcaDone=findings.filter(function(f){return f.rootCause && f.rootCause.trim();}).length;
   var rcaRate=total?Math.round(rcaDone/total*100):null;
   var n1open=findings.filter(function(f){return f.level==='N1'&&f.status!=='completed';}).length;
@@ -18204,7 +18328,8 @@ function cmsxRenderRegKpis(findings){
   box.innerHTML=
     k('#00d4ff', total, 'Corrective actions', 'Cumulative total') +
     k('#4ad0ff', internalCount, '🔵 Internal findings', 'SAF audits / self-inspection') +
-    k('#c084fc', focaCount, '🟣 FOCA findings', 'Authority audits / oversight') +
+    k('#c084fc', focaCount, '🟣 Authority findings', 'Authority audits / oversight') +
+    k('#f5a623', externalCount, '🟠 External auditor findings', 'Independent / third-party audits') +
     k(openCount>0?'#f5a623':'#00c48c', openCount, 'Open actions', 'Not yet completed') +
     k(COL[eOverdue.cls]||'#00c48c', overdue, 'Overdue actions', cmsxTargetLabel('overdue')) +
     k(COL[eN1.cls]||'#00c48c', n1open, 'Open Level 1', cmsxTargetLabel('n1')) +
@@ -18296,7 +18421,7 @@ function cmsxOpenFindingModal(id){
   document.getElementById('cmsx-f-status').value=f?(f.status||'notstarted'):'notstarted';
   document.getElementById('cmsx-f-verified').value=f?(f.verified||''):'';
   document.getElementById('cmsx-f-verifnote').value=f?(f.verifnote||''):'';
-  // Origin (internal / FOCA)
+  // Origin (internal / Authority / external auditor)
   var origin=f?(f.origin||'internal'):'internal';
   var originSel=document.getElementById('cmsx-f-origin'); originSel.value=origin; cmsxOriginStyle(originSel);
   document.getElementById('cmsx-f-focaref').value=f?(f.focaRef||''):'';
@@ -18702,7 +18827,7 @@ function cmsxToggleSelectAll(checked){
 
 // ── Corrective action : shared HTML block (used by single & combined PDF export) ──
 function cmsxFindingPrintBlock(f){
-  var org = f.origin==='foca' ? ('FOCA (Authority)'+(f.focaRef?' — ref. '+esc(f.focaRef):'')) : 'Internal (SAF audit / self-inspection)';
+  var org = f.origin==='foca' ? ('Authority'+(f.focaRef?' — ref. '+esc(f.focaRef):'')) : (f.origin==='external' ? ('External auditor'+(f.focaRef?' — ref. '+esc(f.focaRef):'')) : 'Internal (SAF audit / self-inspection)');
   var stMap={notstarted:'Not started',progress:'In progress',completed:'Completed'};
   var whys='';
   [1,2,3,4,5].forEach(function(i){
@@ -18913,8 +19038,8 @@ function dlCSV(name, rows){
 }
 function cmsxExportFindingsCSV(){
   var f=load(CMSX_KEYS.findings);
-  var rows=[['Audit N°','Audit title','Origin','FOCA reference','Level','Reg. reference','Finding description','Why 1','Answer 1','Why 2','Answer 2','Why 3','Answer 3','Why 4','Answer 4','Why 5','Answer 5','Root cause','Nominated Person','Email notified','Finding date','Corrective action','Deadline','Status','Completion date','Effectiveness date','Verification note']];
-  f.forEach(function(x){rows.push([x.auditNum||'',x.auditTitle||'',x.origin==='foca'?'FOCA':'Internal',x.focaRef||'',CMSX_LEVEL_LABEL[x.level]||x.level||'',x.ref||'',x.desc||'',x.why1||'',x.ans1||'',x.why2||'',x.ans2||'',x.why3||'',x.ans3||'',x.why4||'',x.ans4||'',x.why5||'',x.ans5||'',x.rootCause||'',x.np||'',x.email||'',x.detected||'',x.action||'',x.deadline||'',CMSX_STATUS_LABEL[x.status]||x.status||'',x.closed||'',x.verified||'',x.verifnote||'']);});
+  var rows=[['Audit N°','Audit title','Origin','External reference','Level','Reg. reference','Finding description','Why 1','Answer 1','Why 2','Answer 2','Why 3','Answer 3','Why 4','Answer 4','Why 5','Answer 5','Root cause','Nominated Person','Email notified','Finding date','Corrective action','Deadline','Status','Completion date','Effectiveness date','Verification note']];
+  f.forEach(function(x){rows.push([x.auditNum||'',x.auditTitle||'',x.origin==='foca'?'Authority':(x.origin==='external'?'External auditor':'Internal'),x.focaRef||'',CMSX_LEVEL_LABEL[x.level]||x.level||'',x.ref||'',x.desc||'',x.why1||'',x.ans1||'',x.why2||'',x.ans2||'',x.why3||'',x.ans3||'',x.why4||'',x.ans4||'',x.why5||'',x.ans5||'',x.rootCause||'',x.np||'',x.email||'',x.detected||'',x.action||'',x.deadline||'',CMSX_STATUS_LABEL[x.status]||x.status||'',x.closed||'',x.verified||'',x.verifnote||'']);});
   dlCSV('corrective_action_plan.csv',rows);
 }
 function cmsxExportMissionsCSV(){
@@ -22793,3 +22918,898 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   }
 })();
 </script>
+<style id="saf-cms-awf-style">
+/* ── Niveau 3 : points réglementaires ── */
+#g-arts-section .g-arts-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+#g-arts-section .g-arts-head .sel-input{max-width:320px;cursor:text}
+#g-arts-count{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent-light)}
+#g-arts-tree{max-height:540px;overflow:auto;padding-right:4px}
+.g-arts-hint{font-size:11px;color:var(--text-dim);margin:0 0 8px;line-height:1.5}
+.g-arts-sub{border:1px solid var(--border);border-radius:8px;margin-bottom:8px;background:rgba(10,22,40,.45)}
+.g-arts-subhd{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:12px;color:var(--text)}
+.g-arts-subhd b{color:var(--accent-light)}
+.g-arts-subhd .g-arts-mini{margin-left:auto;display:flex;gap:6px}
+.g-arts-mini button{background:transparent;border:1px solid var(--border);color:var(--text-dim);border-radius:4px;font-size:10px;padding:2px 7px;cursor:pointer}
+.g-arts-mini button:hover{border-color:var(--accent);color:var(--text)}
+.g-arts-grp{padding:6px 10px 8px}
+.g-arts-grphd{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--silver);margin:2px 0 5px;cursor:pointer;user-select:none}
+.g-arts-grphd input{accent-color:#e8a020}
+.g-arts-grphd .n{color:var(--text-dim);font-family:'DM Mono',monospace;font-size:10px}
+.g-arts-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:4px 8px}
+.g-art{display:flex;align-items:flex-start;gap:7px;padding:4px 6px;border-radius:5px;cursor:pointer;font-size:11px;color:var(--text-dim);line-height:1.35}
+.g-art:hover{background:rgba(232,160,32,.07);color:var(--text)}
+.g-art input{margin-top:2px;accent-color:#e8a020;flex-shrink:0}
+.g-art .r{font-family:'DM Mono',monospace;color:var(--text);white-space:nowrap}
+.g-art.on{color:var(--text)}
+.g-art.on .r{color:var(--accent-light)}
+.g-art .a{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim);margin-left:4px}
+.g-art.hid{display:none}
+
+/* ── Workflow ── */
+#g-wf-bar{border:1px solid var(--border);border-radius:8px;background:rgba(8,17,31,.85);padding:8px 10px;margin-bottom:8px;display:flex;flex-direction:column;gap:7px}
+.wf-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.wf-steps{display:flex;align-items:center;gap:0;flex-wrap:wrap}
+.wf-step{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 8px;font-size:11px;color:var(--text-dim);border:1px solid var(--border);background:var(--navy);cursor:pointer;margin-right:-1px;font-family:'Syne',sans-serif}
+.wf-step:first-child{border-radius:6px 0 0 6px}.wf-step:last-child{border-radius:0 6px 6px 0}
+.wf-step .d{width:8px;height:8px;border-radius:50%;border:1px solid currentColor}
+.wf-step.past{color:var(--silver)}.wf-step.past .d{background:currentColor;opacity:.55}
+.wf-step.cur{color:#0a1628;font-weight:700}.wf-step.cur .d{background:#0a1628;border-color:#0a1628}
+.wf-step[disabled]{cursor:default}
+.wf-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim)}
+.wf-meta b{color:var(--text)}
+.wf-f{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-dim)}
+.wf-f input,.wf-f select{background:var(--navy);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:11px;padding:3px 6px;font-family:'DM Mono',monospace}
+.wf-hist{font-size:10px;color:var(--text-dim);border-top:1px dashed var(--border);padding-top:6px;display:none;max-height:150px;overflow:auto}
+.wf-hist.open{display:block}
+.wf-hist div{padding:2px 0}
+.wf-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'Syne',sans-serif;white-space:nowrap}
+.wf-badge .d{width:6px;height:6px;border-radius:50%;background:currentColor}
+.wf-src{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim);border:1px solid var(--border);border-radius:4px;padding:1px 5px;margin-left:6px}
+#g-saved-filter{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+#g-saved-filter button{background:transparent;border:1px solid var(--border);color:var(--text-dim);border-radius:12px;font-size:10px;padding:3px 10px;cursor:pointer}
+#g-saved-filter button.on{border-color:var(--accent);color:var(--accent-light)}
+
+/* ── Plan d'audit → grille ── */
+#apb-toggle{margin-left:12px;background:rgba(232,160,32,.12);border:1px solid rgba(232,160,32,.45);color:#f5c05a;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+#apb-toggle.on{background:#e8a020;color:#0a1628}
+.apb-chk{accent-color:#e8a020;margin:0 7px 0 0;vertical-align:-2px;cursor:pointer;display:none}
+#ap2.apb-on .apb-chk{display:inline-block}
+#ap2.apb-on tr.apb-sel td{background:rgba(232,160,32,.09)}
+.apb-cov{display:inline-flex;margin:4px 6px 0 0}
+#apb-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:9000;width:min(1180px,calc(100vw - 28px));background:#0b1626;border:1px solid rgba(232,160,32,.5);border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.55);padding:10px 14px;display:none;flex-direction:column;gap:8px}
+#apb-bar.open{display:flex}
+#apb-bar .r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#apb-bar label{font-size:10px;color:#7a8aaa;display:flex;flex-direction:column;gap:3px}
+#apb-bar input,#apb-bar select{background:#0a1628;border:1px solid rgba(200,212,232,.18);border-radius:5px;color:#d4dff0;font-size:11px;padding:5px 7px;font-family:'DM Mono',monospace}
+#apb-bar .cnt{font-family:'DM Mono',monospace;font-size:12px;color:#f5c05a;margin-right:auto}
+#apb-bar .b{background:transparent;border:1px solid rgba(200,212,232,.25);color:#c8d4e8;border-radius:6px;padding:6px 12px;font-size:11px;cursor:pointer}
+#apb-bar .b.p{background:#e8a020;border-color:#e8a020;color:#0a1628;font-weight:700}
+#apb-bar .b:disabled{opacity:.4;cursor:default}
+#apb-track table{table-layout:auto!important}
+#apb-track td,#apb-track th{padding:7px 9px;border-bottom:1px solid #1a2840;font-size:11px;color:#c9d6ef;text-align:left;width:auto!important}
+#apb-track th{color:#4a6a8a;font-weight:600;text-transform:uppercase;font-size:9px;letter-spacing:.8px}
+.apb-tl-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+
+/* ── Manuel interne PDF ── */
+#g-pdf-app{display:none}#g-pdf-app.visible{display:block}
+#ap2.apb-on{padding-bottom:200px}
+#gman-card{max-width:980px;margin:20px auto 6px}
+#gman-card .gm-fields{display:grid;grid-template-columns:140px 1fr 140px;gap:10px;margin:12px 0}
+#gman-card .gm-fields .sel-input{cursor:text}
+#gman-drop{border:1px dashed rgba(232,160,32,.45);border-radius:8px;padding:16px;text-align:center;font-size:12px;color:var(--text-dim);cursor:pointer}
+#gman-drop:hover,#gman-drop.over{background:rgba(232,160,32,.06);color:var(--text)}
+#gman-status{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);margin-top:8px;min-height:16px}
+#gman-status.err{color:#ff7777}
+#gman-review{max-width:980px;margin:0 auto 20px}
+.gm-stats{display:flex;gap:16px;flex-wrap:wrap;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);margin:10px 0}
+.gm-stats b{color:var(--accent-light);font-size:14px;margin-right:4px}
+.gm-ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:11px;color:var(--text-dim)}
+.gm-ctl .sel-input{max-width:280px;cursor:text}
+.gm-ctl label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.gm-ctl input[type=checkbox],.gm-ctl input[type=radio]{accent-color:#e8a020}
+.gm-sec{border:1px solid var(--border);border-radius:7px;margin-bottom:5px;background:rgba(10,22,40,.4)}
+.gm-sechd{display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;font-size:12px;color:var(--text)}
+.gm-sechd input{accent-color:#e8a020}
+.gm-sechd .num{font-family:'DM Mono',monospace;color:var(--accent-light);min-width:46px}
+.gm-sechd .pg,.gm-sechd .n{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-dim)}
+.gm-sechd .n{margin-left:auto}
+.gm-sechd.d2{padding-left:24px}.gm-sechd.d3{padding-left:38px}.gm-sechd.d4,.gm-sechd.d5,.gm-sechd.d6{padding-left:52px}
+.gm-body{display:none;padding:2px 10px 8px 34px}
+.gm-sec.open .gm-body{display:block}
+.gm-c{display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-top:1px dashed rgba(200,212,232,.07);font-size:11.5px;line-height:1.45;color:var(--text-dim)}
+.gm-c input{margin-top:3px;accent-color:#e8a020;flex-shrink:0}
+.gm-c.on{color:var(--text)}
+.gm-c .t{flex:1;outline:none;border-radius:3px;padding:1px 3px}
+.gm-c .t:focus{background:rgba(232,160,32,.08)}
+.gm-c .lead{display:block;font-size:10px;color:var(--text-dim);font-style:italic;margin-bottom:2px}
+.gm-c .lv{font-family:'DM Mono',monospace;font-size:9px;padding:1px 5px;border-radius:3px;white-space:nowrap;margin-top:2px}
+.gm-c .lv.s{background:rgba(232,160,32,.18);color:#f5c05a}
+.gm-c .lv.m{background:rgba(122,138,170,.18);color:#aab4c8}
+.gm-c .rf{font-family:'DM Mono',monospace;font-size:9px;color:#00d4ff;margin-left:6px}
+.gm-c .pg{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim);white-space:nowrap;margin-top:2px}
+.gm-c.hid,.gm-sec.hid{display:none}
+.gm-gen{position:sticky;bottom:10px;display:flex;justify-content:flex-end;gap:10px;align-items:center;margin-top:12px;padding:10px;background:rgba(8,17,31,.94);border:1px solid var(--border);border-radius:8px}
+.gm-gen .gm-sum{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);margin-right:auto}
+</style>
+<script id="saf-cms-audit-workflow-module">
+/* ══════════════════════════════════════════════════════════════════════════
+   SAF CMS — Module « Grilles & workflow d'audit » (oct. 2026)
+   1. Niveau supplémentaire dans la grille EASA : choix des points (articles)
+      sous chaque sous-partie, regroupés par section.
+   2. Workflow d'audit : Planifié → Préparé → En cours → Terminé → Rapport émis
+      → Clôturé (+ Suspendu), historisé et stocké dans saf_audits_v1 (champ wf).
+   3. Construction d'une grille depuis le Plan d'audit (APP13-OMM).
+   4. Construction d'une grille depuis un manuel interne PDF (lecture locale
+      dans le navigateur via pdf.js, aucun envoi externe du contenu).
+══════════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function canWrite(){try{return (typeof safCMSCanWrite==='function')?safCMSCanWrite():true;}catch(e){return true;}}
+function $(id){return document.getElementById(id);}
+function nowISO(){return new Date().toISOString();}
+function fmtDate(iso){if(!iso)return '';try{var d=new Date(iso);return d.toLocaleDateString('fr-CH');}catch(e){return iso;}}
+function fmtDT(iso){if(!iso)return '';try{var d=new Date(iso);return d.toLocaleDateString('fr-CH')+' '+d.toLocaleTimeString('fr-CH',{hour:'2-digit',minute:'2-digit'});}catch(e){return iso;}}
+var USER='';
+function refreshUser(){try{var c=window.safSupabaseClient;if(c&&c.auth&&c.auth.getSession){c.auth.getSession().then(function(r){var s=r&&r.data&&r.data.session;if(s&&s.user&&s.user.email)USER=s.user.email;}).catch(function(){});}}catch(e){}}
+refreshUser();
+function natCmp(a,b){return String(a).localeCompare(String(b),'en',{numeric:true});}
+
+/* ════════════════ 1. NIVEAU « POINTS RÉGLEMENTAIRES » ════════════════ */
+var ARTS_SEL=new Set();
+var SERIES_LBL={
+  'ORO.GEN|1':'Généralités / General','ORO.GEN|2':'Système de gestion / Management',
+  'ARO.GEN|1':'Généralités / General','ARO.GEN|2':'Système de gestion / Management','ARO.GEN|3':'Surveillance, certification et mesures coercitives / Oversight, certification & enforcement',
+  'CAMO.A|0':'Généralités / General','CAMO.A|1':'Généralités / General','CAMO.A|2':'Système de gestion / Management system','CAMO.A|3':'Gestion du maintien de la navigabilité / Continuing airworthiness management',
+  'CAMO.B|0':'Généralités / General','CAMO.B|1':'Généralités / General','CAMO.B|2':'Système de gestion (autorité) / Management (authority)','CAMO.B|3':'Surveillance, certification et mesures coercitives / Oversight, certification & enforcement'
+};
+var M_SUBPARTS={'1':'Subpart A — Généralités / General','2':'Subpart B — Responsabilités / Accountability','3':'Subpart C — Maintien de la navigabilité / Continuing airworthiness','4':'Subpart D — Normes d’entretien / Maintenance standards','5':'Subpart E — Éléments / Components','6':'Subpart F — Organisme d’entretien / Maintenance organisation','7':'Subpart G — Gestion du maintien de la navigabilité / CAMO','8':'Subpart H — Approbation pour remise en service / CRS','9':'Subpart I — Certificat d’examen de navigabilité / ARC'};
+function seriesOf(ref,d){
+  var prefix=d.part+'.'+d.sub;
+  var rest=ref.indexOf(prefix+'.')===0?ref.slice(prefix.length+1):ref;
+  var segs=rest.split('.');
+  if(segs.length>1){var mid=segs.slice(0,-1).join('.');return {key:prefix+'.'+mid,label:prefix+'.'+mid};}
+  var m=rest.match(/^(\d)/); var h=m?m[1]:'?';
+  if(h==='0')h='1';
+  var key=prefix+'|'+h, lbl=SERIES_LBL[key];
+  if(!lbl && (d.part==='M'||d.part==='ML')) lbl=M_SUBPARTS[h];
+  return {key:key,label:prefix+'.'+(h==='1'?'0xx–1xx':h+'xx')+(lbl?' — '+lbl:'')};
+}
+function selectedSubs(){try{return g_getChecked('g-subs-checks');}catch(e){return [];}}
+function selectedVars(){try{return g_getChecked('g-variant-checks');}catch(e){return [];}}
+function ensureArtsSection(){
+  if($('g-arts-section'))return $('g-arts-section');
+  var v=$('g-variant-section'); if(!v)return null;
+  var d=document.createElement('div'); d.id='g-arts-section'; d.style.cssText='display:none;margin-bottom:14px;';
+  d.innerHTML='<div class="g-arts-head"><label class="sel-label" style="margin:0">Points réglementaires / Regulatory points <span style="color:var(--text-dim);font-weight:400;">(niveau facultatif / optional level)</span></label>'+
+    '<input class="sel-input" id="g-arts-q" placeholder="Filtrer : n° ou mot-clé / Filter: number or keyword" oninput="g_artsFilter()"/>'+
+    '<span id="g-arts-count"></span></div>'+
+    '<p class="g-arts-hint">Aucun point coché dans une sous-partie : elle est ajoutée en entier. Des points cochés : seuls ces points sont ajoutés pour cette sous-partie. / No point ticked in a subpart: the whole subpart is added. Points ticked: only those points are added for that subpart.</p>'+
+    '<div id="g-arts-tree"></div>';
+  v.parentNode.insertBefore(d,v.nextSibling);
+  return d;
+}
+function artsFor(ps){
+  var r=$('g-sel-reg').value, pp=ps.split('|'), part=pp[0], sub=pp[1], vars=selectedVars();
+  var out=[];
+  Object.keys(DB).forEach(function(ref){var d=DB[ref];
+    if(d.reg!==r||d.part!==part||d.sub!==sub)return;
+    if(vars.length && d.variant && vars.indexOf(d.variant)<0)return;
+    out.push(ref);});
+  return out.sort(natCmp);
+}
+function renderArts(){
+  var sec=ensureArtsSection(); if(!sec)return;
+  var subs=selectedSubs(), tree=$('g-arts-tree');
+  if(!subs.length){sec.style.display='none';tree.innerHTML='';updArtsCount();return;}
+  var html='';
+  subs.forEach(function(ps){
+    var refs=artsFor(ps); if(!refs.length)return;
+    var pp=ps.split('|'), groups=[], gmap={};
+    refs.forEach(function(ref){var s=seriesOf(ref,DB[ref]);if(!gmap[s.key]){gmap[s.key]={label:s.label,refs:[]};groups.push(gmap[s.key]);}gmap[s.key].refs.push(ref);});
+    var single=refs.length<=14;
+    html+='<div class="g-arts-sub" data-ps="'+esc(ps)+'"><div class="g-arts-subhd"><b>'+esc(pp[0]+'.'+pp[1])+'</b><span class="wf-meta">'+refs.length+' points</span><span class="wf-meta" data-cnt="'+esc(ps)+'"></span>'+
+      '<span class="g-arts-mini"><button type="button" onclick="g_artsSub(\''+esc(ps)+'\',true)">Tout / All</button><button type="button" onclick="g_artsSub(\''+esc(ps)+'\',false)">Aucun / None</button></span></div>';
+    (single?[{label:'',refs:refs}]:groups).forEach(function(g,gi){
+      html+='<div class="g-arts-grp">';
+      if(g.label){html+='<label class="g-arts-grphd"><input type="checkbox" data-grp="'+esc(ps)+'#'+gi+'" onchange="g_artsGrp(this)"/> '+esc(g.label)+' <span class="n">('+g.refs.length+')</span></label>';}
+      html+='<div class="g-arts-list" data-grpl="'+esc(ps)+'#'+gi+'">';
+      g.refs.forEach(function(ref){var d=DB[ref],on=ARTS_SEL.has(ref);
+        html+='<label class="g-art'+(on?' on':'')+'" data-q="'+esc((ref+' '+d.title).toLowerCase())+'"><input type="checkbox" value="'+esc(ref)+'"'+(on?' checked':'')+' onchange="g_artsTick(this)"/><span><span class="r">'+esc(ref)+'</span> '+esc(d.title)+(d.amc&&d.amc.length?'<span class="a">+'+d.amc.length+' AMC</span>':'')+'</span></label>';});
+      html+='</div></div>';
+    });
+    html+='</div>';
+  });
+  tree.innerHTML=html; sec.style.display=html?'block':'none';
+  syncGrpBoxes(); g_artsFilter(); updArtsCount();
+}
+function syncGrpBoxes(){
+  document.querySelectorAll('#g-arts-tree input[data-grp]').forEach(function(cb){
+    var l=document.querySelector('#g-arts-tree [data-grpl="'+cb.getAttribute('data-grp')+'"]'); if(!l)return;
+    var all=l.querySelectorAll('input[type=checkbox]'), n=0; all.forEach(function(x){if(x.checked)n++;});
+    cb.checked=n>0&&n===all.length; cb.indeterminate=n>0&&n<all.length;});
+}
+function updArtsCount(){
+  var by=artsSelectionBySub(), tot=0;
+  document.querySelectorAll('#g-arts-tree [data-cnt]').forEach(function(s){var k=s.getAttribute('data-cnt'),n=(by[k]||[]).length;s.textContent=n?('· '+n+' coché'+(n>1?'s':'')+' / ticked'):'· sous-partie entière / whole subpart';s.style.color=n?'var(--accent-light)':'';});
+  Object.keys(by).forEach(function(k){tot+=by[k].length;});
+  var c=$('g-arts-count'); if(c)c.textContent=tot?(tot+' point'+(tot>1?'s':'')+' sélectionné'+(tot>1?'s':'')+' / selected'):'';
+}
+function artsSelectionBySub(){
+  var out={}; selectedSubs().forEach(function(ps){var refs=artsFor(ps).filter(function(r){return ARTS_SEL.has(r);});if(refs.length)out[ps]=refs;}); return out;
+}
+window.g_artsSelectionBySub=artsSelectionBySub;
+window.g_artsTick=function(cb){if(cb.checked)ARTS_SEL.add(cb.value);else ARTS_SEL.delete(cb.value);cb.closest('.g-art').classList.toggle('on',cb.checked);syncGrpBoxes();updArtsCount();};
+window.g_artsGrp=function(cb){var l=document.querySelector('#g-arts-tree [data-grpl="'+cb.getAttribute('data-grp')+'"]');if(!l)return;
+  l.querySelectorAll('.g-art:not(.hid) input[type=checkbox]').forEach(function(x){x.checked=cb.checked;if(cb.checked)ARTS_SEL.add(x.value);else ARTS_SEL.delete(x.value);x.closest('.g-art').classList.toggle('on',cb.checked);});syncGrpBoxes();updArtsCount();};
+window.g_artsSub=function(ps,on){var b=document.querySelector('#g-arts-tree .g-arts-sub[data-ps="'+ps+'"]');if(!b)return;
+  b.querySelectorAll('.g-art:not(.hid) input[type=checkbox]').forEach(function(x){x.checked=on;if(on)ARTS_SEL.add(x.value);else ARTS_SEL.delete(x.value);x.closest('.g-art').classList.toggle('on',on);});syncGrpBoxes();updArtsCount();};
+window.g_artsFilter=function(){var q=(($('g-arts-q')||{}).value||'').trim().toLowerCase();
+  document.querySelectorAll('#g-arts-tree .g-art').forEach(function(l){l.classList.toggle('hid',!!q&&l.getAttribute('data-q').indexOf(q)<0);});};
+(function hookSelection(){
+  var oSubs=window.g_onSubsChange, oParts=window.g_onPartsChange, oVar=window.g_onVariantChange, oReg=window.g_onRegChange, oClear=window.g_clearAll;
+  if(typeof oSubs==='function')window.g_onSubsChange=function(){var r=oSubs.apply(this,arguments);renderArts();return r;};
+  if(typeof oParts==='function')window.g_onPartsChange=function(){var r=oParts.apply(this,arguments);renderArts();return r;};
+  if(typeof oVar==='function')window.g_onVariantChange=function(){var r=oVar.apply(this,arguments);renderArts();return r;};
+  if(typeof oReg==='function')window.g_onRegChange=function(){ARTS_SEL.clear();var r=oReg.apply(this,arguments);renderArts();return r;};
+  if(typeof oClear==='function')window.g_clearAll=function(){var r=oClear.apply(this,arguments);return r;};
+})();
+
+/* ════════════════ 2. WORKFLOW D'AUDIT ════════════════ */
+var WF=[
+  {k:'planifie',fr:'Planifié',en:'Planned',c:'#8fa3c4'},
+  {k:'prepare',fr:'Préparé',en:'Prepared',c:'#5b8def'},
+  {k:'en_cours',fr:'En cours',en:'In progress',c:'#e8a020'},
+  {k:'termine',fr:'Terminé',en:'Completed',c:'#2bb3a3'},
+  {k:'rapport',fr:'Rapport émis',en:'Report issued',c:'#9b7cf4'},
+  {k:'cloture',fr:'Clôturé',en:'Closed',c:'#2fbf71'}
+];
+var WF_SUSP={k:'suspendu',fr:'Suspendu',en:'On hold',c:'#d0674c'};
+function wfDef(k){if(k==='suspendu')return WF_SUSP;for(var i=0;i<WF.length;i++)if(WF[i].k===k)return WF[i];return WF[1];}
+function wfIdx(k){for(var i=0;i<WF.length;i++)if(WF[i].k===k)return i;return -1;}
+function wfBadge(k,extra){var d=wfDef(k);return '<span class="wf-badge" style="background:'+d.c+'22;color:'+d.c+';border:1px solid '+d.c+'55"><span class="d"></span>'+(extra?esc(extra)+' · '+d.fr:d.fr+' / '+d.en)+'</span>';}
+window.safWfBadge=wfBadge;
+var PENDING=null; /* méta à poser sur le prochain enregistrement créé */
+function wfEnsure(rec){
+  if(rec.wf&&rec.wf.status)return false;
+  var st=(rec.done>0)?'en_cours':'prepare';
+  rec.wf=Object.assign({status:st,history:[{s:st,at:rec.updated||nowISO(),by:'',auto:true,note:'Statut initial déduit de l’avancement / Initial status derived from progress'}]},rec.wf||{});
+  if(!rec.source)rec.source=(rec.queue&&rec.queue.length)?'reg':(rec.source||'reg');
+  return true;
+}
+function wfPush(rec,st,auto,note){
+  refreshUser();
+  rec.wf=rec.wf||{history:[]}; rec.wf.history=rec.wf.history||[];
+  var prev=rec.wf.status; rec.wf.status=st;
+  rec.wf.history.push({s:st,from:prev||'',at:nowISO(),by:USER||'',auto:!!auto,note:note||''});
+  var stampK={en_cours:'started_at',termine:'completed_at',rapport:'report_at',cloture:'closed_at'}[st];
+  if(stampK&&!rec.wf[stampK])rec.wf[stampK]=nowISO();
+}
+function curRec(arr){arr=arr||g_loadAudits();return arr.find(function(x){return x.id===g_currentAuditId;})||null;}
+function gridCounts(rec){
+  var rd=(rec&&rec.rowData)||rowData||{}, l1=0,l2=0,open=0;
+  Object.keys(rd).forEach(function(k){var s=rd[k]&&rd[k].status;if(s==='s-level1')l1++;if(s==='s-level2')l2++;});
+  return {l1:l1,l2:l2};
+}
+function openFindingsFor(rec){
+  try{var fs=JSON.parse(localStorage.getItem('cmsx_findings_v1')||'[]');
+    return fs.filter(function(f){var k=String(f.gridKey||'');var mine=k.indexOf(rec.id+'::')===0||(!!rec.num&&f.auditNum===rec.num);return mine&&f.status!=='completed';}).length;}catch(e){return 0;}
+}
+
+/* clé unique par audit pour la synchro grille → CAP (corrige la collision des clés ir-N entre audits) */
+(function patchCapKey(){
+  var o=window.cmsxPushGridFinding;
+  if(typeof o!=='function'||o.__wfk)return;
+  var w=function(info){
+    try{
+      if(info&&info.gridKey&&info.gridKey.indexOf('::')<0){
+        if(!g_currentAuditId)g_currentAuditId='aud_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+        var legacy=info.gridKey, nk=g_currentAuditId+'::'+legacy;
+        var fs=JSON.parse(localStorage.getItem('cmsx_findings_v1')||'[]');
+        if(!fs.some(function(f){return f.gridKey===nk;})){
+          var lg=fs.find(function(f){return f.gridKey===legacy&&String(f.auditNum||'')===String(info.auditNum||'');});
+          if(lg){lg.gridKey=nk;localStorage.setItem('cmsx_findings_v1',JSON.stringify(fs));}
+        }
+        info=Object.assign({},info,{gridKey:nk});
+      }
+    }catch(e){}
+    return o.call(this,info);
+  };
+  w.__wfk=true; window.cmsxPushGridFinding=w;
+  var oe=window.g_openGridFindingEvidence;
+  if(typeof oe==='function')window.g_openGridFindingEvidence=function(rid){
+    try{var rd=rowData&&rowData[rid];
+      if(rd&&(rd.status==='s-level1'||rd.status==='s-level2')){g_syncFindingToCAP(rid);
+        var fs=JSON.parse(localStorage.getItem('cmsx_findings_v1')||'[]');var nk=(g_currentAuditId||'')+'::'+rid;
+        var f=fs.find(function(x){return x.gridKey===nk;})||fs.find(function(x){return x.gridKey===rid;});
+        if(f&&typeof cmsxOpenFindingModal==='function'){cmsxOpenFindingModal(f.id);return;}}
+    }catch(e){}
+    return oe.apply(this,arguments);
+  };
+})();
+
+/* autosave : pose le workflow, les méta en attente, et passe en « En cours » au 1er point évalué */
+(function hookAutosave(){
+  var o=window.g_autosave; if(typeof o!=='function')return;
+  window.g_autosave=function(){
+    var r=o.apply(this,arguments);
+    try{
+      var arr=g_loadAudits(), rec=curRec(arr); if(!rec)return r;
+      var ch=wfEnsure(rec);
+      if(PENDING){
+        if(PENDING.rec)Object.keys(PENDING.rec).forEach(function(k){rec[k]=PENDING.rec[k];});
+        if(PENDING.wf){var h=rec.wf.history||[];rec.wf=Object.assign(rec.wf,PENDING.wf);
+          if(PENDING.wf.status){h=[{s:PENDING.wf.status,at:nowISO(),by:USER||'',auto:true,note:PENDING.note||''}];}
+          rec.wf.history=h;}
+        PENDING=null; ch=true;
+      }
+      if((rec.wf.status==='prepare'||rec.wf.status==='planifie')&&rec.done>0){wfPush(rec,'en_cours',true,'Premier point évalué / First point assessed');ch=true;}
+      if(ch)g_saveAudits(arr);
+      renderWfBar(rec);
+    }catch(e){console.warn('[wf] autosave',e);}
+    return r;
+  };
+})();
+
+function ensureWfBar(){
+  var tb=$('g-toolbar'); if(!tb)return null;
+  var b=$('g-wf-bar'); if(!b){b=document.createElement('div');b.id='g-wf-bar';tb.insertBefore(b,tb.firstChild);}
+  return b;
+}
+function renderWfBar(rec){
+  var b=ensureWfBar(); if(!b)return;
+  rec=rec||curRec();
+  if(!gridRows||!gridRows.length){b.style.display='none';return;}
+  b.style.display='flex';
+  var w=canWrite();
+  if(!rec){b.innerHTML='<div class="wf-row"><span class="wf-meta">Audit non encore enregistré'+(w?'':' (lecture seule)')+' / Audit not saved yet</span></div>';return;}
+  var st=rec.wf&&rec.wf.status||'prepare', ci=wfIdx(st), susp=st==='suspendu';
+  if(susp){var hh=(rec.wf.history||[]).slice().reverse().find(function(x){return x.s!=='suspendu';});ci=wfIdx(hh?hh.s:'en_cours');}
+  var steps=WF.map(function(d,i){var cls=i<ci?'past':(i===ci&&!susp?'cur':'');
+    var sty=(i===ci&&!susp)?'background:'+d.c+';border-color:'+d.c:(i<ci?'color:'+d.c:'');
+    return '<span role="button" tabindex="0" class="wf-step '+cls+'" style="'+sty+(w?'':';cursor:default')+'" '+(w?'onclick="safWfSet(\''+d.k+'\')"':'')+' title="'+d.fr+' / '+d.en+'"><span class="d"></span>'+d.fr+'</span>';}).join('');
+  var c=gridCounts(rec), pct=rec.total?Math.round(rec.done/rec.total*100):0, of=openFindingsFor(rec);
+  var nxt={planifie:['prepare','✓ Grille prête / Grid ready'],prepare:['en_cours','▶ Démarrer l’audit / Start'],en_cours:['termine','✓ Terminer l’évaluation / Finish'],termine:['rapport','📄 Rapport émis / Report issued'],rapport:['cloture','🔒 Clôturer / Close']}[st];
+  var wf=rec.wf||{};
+  var src={plan:'Plan d’audit APP13',manual:'Manuel interne',reg:'Grille EASA'}[rec.source||'reg']||'Grille EASA';
+  b.innerHTML=
+    '<div class="wf-row"><div class="wf-steps">'+steps+'</div>'+(susp?wfBadge('suspendu'):'')+
+      '<span class="wf-meta" style="margin-left:6px"><b>'+rec.done+'/'+rec.total+'</b> points ('+pct+'%) · L1 <b>'+c.l1+'</b> · L2 <b>'+c.l2+'</b>'+(of?' · CAP ouvertes <b style="color:#ff9a7a">'+of+'</b>':'')+'</span>'+
+      '<span class="wf-src">'+esc(src)+(rec.manual&&rec.manual.code?' · '+esc(rec.manual.code):'')+(wf.phase?' · Phase '+esc(wf.phase):'')+'</span>'+
+      '<span style="margin-left:auto;display:flex;gap:6px;">'+
+        (w&&nxt&&!susp?'<button class="bexp" onclick="safWfSet(\''+nxt[0]+'\')">'+nxt[1]+'</button>':'')+
+        (w&&st!=='cloture'?(susp?'<button class="bexp" onclick="safWfResume()">▶ Reprendre / Resume</button>':'<button class="bexp" style="border-color:#d0674c;color:#d0674c" onclick="safWfSet(\'suspendu\')">⏸ Suspendre / Hold</button>'):'')+
+        '<button class="bexp" style="border-color:var(--silver);color:var(--silver)" onclick="document.getElementById(\'wf-hist\').classList.toggle(\'open\')">🕘 Historique / History</button>'+
+      '</span></div>'+
+    '<div class="wf-row">'+
+      wfField('Auditeur / Auditor','auditor','text',wf.auditor,w,160)+
+      wfField('Audité / Auditee','auditee','text',wf.auditee,w,150)+
+      wfField('Début prévu / Planned start','planned_start','date',wf.planned_start,w)+
+      wfField('Fin prévue / Planned end','planned_end','date',wf.planned_end,w)+
+      wfField('Réf. rapport / Report ref.','report_ref','text',wf.report_ref,w,130)+
+      (wf.started_at?'<span class="wf-meta">démarré '+fmtDate(wf.started_at)+'</span>':'')+
+      (wf.completed_at?'<span class="wf-meta">· terminé '+fmtDate(wf.completed_at)+'</span>':'')+
+      (wf.closed_at?'<span class="wf-meta">· clôturé '+fmtDate(wf.closed_at)+'</span>':'')+
+    '</div>'+
+    '<div class="wf-hist" id="wf-hist">'+(wf.history||[]).slice().reverse().map(function(h){return '<div>'+fmtDT(h.at)+' — '+wfBadge(h.s)+(h.from?' <span style="opacity:.6">(depuis '+esc(wfDef(h.from).fr)+')</span>':'')+(h.by?' · '+esc(h.by):'')+(h.auto?' · auto':'')+(h.note?' · '+esc(h.note):'')+'</div>';}).join('')+'</div>';
+}
+function wfField(lbl,k,type,val,w,width){
+  return '<label class="wf-f">'+lbl+'<input type="'+type+'" value="'+esc(val||'')+'" '+(width?'style="width:'+width+'px"':'')+(w?' onchange="safWfMeta(\''+k+'\',this.value)"':' disabled')+'/></label>';
+}
+window.safWfMeta=function(k,v){if(!canWrite())return;var arr=g_loadAudits(),rec=curRec(arr);if(!rec)return;rec.wf=rec.wf||{};rec.wf[k]=v;g_saveAudits(arr);};
+window.safWfSet=function(st){
+  if(!canWrite()){alert('Lecture seule : changement de statut non autorisé. / Read-only.');return;}
+  if(typeof g_autosave==='function')g_autosave();
+  var arr=g_loadAudits(),rec=curRec(arr); if(!rec){alert('Audit non enregistré. / Audit not saved.');return;}
+  var cur=rec.wf&&rec.wf.status||'prepare'; if(cur===st)return;
+  var ci=wfIdx(cur), ni=wfIdx(st), note='';
+  if(st==='suspendu'){note=prompt('Motif de la suspension / Reason for hold :','')||'';if(note===null)return;}
+  else if(ci>=0&&ni>=0&&ni<ci){if(!confirm('Revenir de « '+wfDef(cur).fr+' » à « '+wfDef(st).fr+' » ? Le retour arrière est tracé dans l’historique. / Step back? It will be logged.'))return;note='Retour arrière / Step back';}
+  if(st==='termine'){var miss=(rec.total||0)-(rec.done||0);
+    if(miss>0&&!confirm(miss+' point(s) non évalué(s). Terminer l’évaluation quand même ? / '+miss+' point(s) not assessed. Finish anyway?'))return;
+    if(miss>0)note=miss+' point(s) non évalué(s) à la clôture du terrain';}
+  if(st==='rapport'){var ref=prompt('Référence du rapport d’audit (facultatif) / Audit report reference (optional) :',rec.wf&&rec.wf.report_ref||'');if(ref===null)return;rec.wf.report_ref=ref;note=ref?('Rapport '+ref):'';}
+  if(st==='cloture'){var of=openFindingsFor(rec);
+    if(of>0&&!confirm(of+' constatation(s) encore ouverte(s) au Plan d’actions correctives pour cet audit. Clôturer quand même ? / '+of+' finding(s) still open in the CAP. Close anyway?'))return;
+    if(of>0)note=of+' CAP ouverte(s) à la clôture';}
+  wfPush(rec,st,false,note); g_saveAudits(arr); renderWfBar(rec);
+  try{if(typeof window.safCloudScheduleSave==='function')window.safCloudScheduleSave();}catch(e){}
+  try{renderPlanTracking();}catch(e){}
+};
+window.safWfResume=function(){var arr=g_loadAudits(),rec=curRec(arr);if(!rec)return;var h=(rec.wf.history||[]).slice().reverse().find(function(x){return x.s!=='suspendu';});safWfSet(h?h.s:'en_cours');};
+
+/* g_buildHTML : nouvelle grille → champs vidés, enregistrement immédiat, barre de workflow */
+(function hookBuild(){
+  var o=window.g_buildHTML; if(typeof o!=='function')return;
+  window.g_buildHTML=function(){
+    var fresh=!g_currentAuditId;
+    var r=o.apply(this,arguments);
+    try{
+      if(fresh){
+        var ni=$('g-audit-num'),ti=$('g-audit-title');
+        if(ni)ni.value=(PENDING&&PENDING.num)||''; if(ti)ti.value=(PENDING&&PENDING.title)||'';
+        if(gridRows&&gridRows.length&&canWrite())g_autosave();
+      }
+      renderWfBar();
+    }catch(e){console.warn('[wf] build',e);}
+    return r;
+  };
+  var orv=window.g_resumeAudit;
+  if(typeof orv==='function')window.g_resumeAudit=function(id){var r=orv.apply(this,arguments);setTimeout(function(){renderWfBar();},260);return r;};
+})();
+
+/* liste des audits enregistrés, avec statut et filtre */
+var SAVED_FILTER='';
+window.g_renderSavedList=function(){
+  var card=$('g-saved-card'),list=$('g-saved-list'); if(!card||!list)return;
+  var audits=g_loadAudits(), touched=false;
+  audits.forEach(function(a){if(wfEnsure(a))touched=true;});
+  if(touched&&canWrite())g_saveAudits(audits);
+  audits=audits.slice().sort(function(a,b){return (b.updated||'').localeCompare(a.updated||'');});
+  if(!audits.length){card.style.display='none';list.innerHTML='';return;}
+  card.style.display='block';
+  var t=card.querySelector('.step-title'); if(t)t.textContent='Audits enregistrés — suivi du workflow / Saved audits — workflow tracking';
+  var cnt={}; audits.forEach(function(a){var s=a.wf.status;cnt[s]=(cnt[s]||0)+1;});
+  var fbar=$('g-saved-filter'); if(!fbar){fbar=document.createElement('div');fbar.id='g-saved-filter';list.parentNode.insertBefore(fbar,list);}
+  fbar.innerHTML='<button class="'+(SAVED_FILTER===''?'on':'')+'" onclick="safWfFilter(\'\')">Tous / All ('+audits.length+')</button>'+
+    WF.concat([WF_SUSP]).filter(function(d){return cnt[d.k];}).map(function(d){return '<button class="'+(SAVED_FILTER===d.k?'on':'')+'" style="'+(SAVED_FILTER===d.k?'border-color:'+d.c+';color:'+d.c:'')+'" onclick="safWfFilter(\''+d.k+'\')">'+d.fr+' ('+cnt[d.k]+')</button>';}).join('');
+  var srcL={plan:'Plan APP13',manual:'Manuel',reg:'EASA'};
+  list.innerHTML=audits.filter(function(a){return !SAVED_FILTER||a.wf.status===SAVED_FILTER;}).map(function(a){
+    var pct=a.total?Math.round((a.done/a.total)*100):0, label=(a.num||'(sans n° / no number)')+(a.title?(' — '+a.title):''), c=gridCounts(a), wf=a.wf||{}, d=wfDef(wf.status);
+    var dates=(wf.planned_start?('prévu '+fmtDate(wf.planned_start)+(wf.planned_end?' → '+fmtDate(wf.planned_end):'')+' · '):'');
+    return '<div class="g-saved-item" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--border);border-left:3px solid '+d.c+';border-radius:8px;margin-bottom:8px;background:rgba(10,22,40,.4);">'+
+      '<div style="flex:1;min-width:0;">'+
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><span style="font-family:\'DM Mono\',monospace;font-size:13px;color:#fff;">'+esc(label)+'</span>'+wfBadge(wf.status)+'<span class="wf-src">'+esc(srcL[a.source]||'EASA')+(wf.phase?' · Phase '+esc(wf.phase):'')+'</span></div>'+
+        '<div style="font-size:11px;color:var(--text-dim);margin-top:3px;">'+dates+a.done+'/'+a.total+' points évalués ('+pct+'%) · L1 '+c.l1+' · L2 '+c.l2+(wf.auditor?' · '+esc(wf.auditor):'')+' · 📎 '+((a.files||[]).length)+' · màj '+fmtDT(a.updated)+'</div>'+
+        '<div style="height:5px;background:rgba(255,255,255,.08);border-radius:3px;margin-top:6px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+d.c+';"></div></div>'+
+      '</div>'+
+      '<button class="bexp" onclick="g_resumeAudit(\''+a.id+'\')">▶ Ouvrir / Open</button>'+
+      (canWrite()?'<button class="bexp" onclick="g_editSavedAudit(\''+a.id+'\')" title="Modifier cette grille / Edit this grid" style="border-color:#f5a623;color:#fde68a;">✎ Modifier / Edit</button>':'')+
+      (canWrite()?'<button class="bback" onclick="g_deleteAudit(\''+a.id+'\')" title="Supprimer définitivement cette grille / Permanently delete this grid" style="border-color:#7f1d1d;color:#fca5a5;">🗑 Supprimer / Delete</button>':'')+
+    '</div>';}).join('')||'<div class="wf-meta" style="padding:8px">Aucun audit dans ce statut. / No audit with this status.</div>';
+};
+
+window.g_editSavedAudit=function(id){
+  if(!safCMSCanWrite || !safCMSCanWrite()){
+    alert('Lecture seule : modification non autorisée. / Read-only: editing is not allowed.');
+    return;
+  }
+  var a=g_loadAudits().find(function(x){return x.id===id;});
+  if(!a){alert('Audit introuvable / Audit not found.');return;}
+  // Reuse the existing audit record: all subsequent edits are autosaved under the same id.
+  g_resumeAudit(id);
+  setTimeout(function(){
+    var n=document.getElementById('g-audit-num');
+    var t=document.getElementById('g-audit-title');
+    if(t){t.focus(); try{t.select();}catch(e){}}
+    if(typeof showToast==='function') showToast('Mode modification activé / Edit mode enabled','success');
+  },260);
+};
+
+window.safWfFilter=function(k){SAVED_FILTER=k;window.g_renderSavedList();};
+
+/* ════════════════ 3. PLAN D'AUDIT → GRILLE ════════════════ */
+var AP_PANEL_LBL={sms:'SMS',ops:'ORO / CAT / NCC',spa:'SPA',spo:'SPO',partm:'Part-M',camo:'Part-CAMO',iface:'Interfaces'};
+var AP_PHASES=[
+  {n:'1',panels:['sms']},{n:'2',panels:['ops']},{n:'3',panels:['spa']},{n:'4',panels:['spo']},
+  {n:'5',panels:['partm','camo']},{n:'6',rx:/^(ORO\.(FC|CC|TC|FTL)|SPO\.FC)/}
+];
+function baseRef(t){
+  var s=String(t||'').trim().replace(/^(AMC|GM)\d*\s+/i,'');
+  var m=s.match(/^([A-Z]+(?:\.[A-Z]+)*\.\d+[A-Z]?)/); if(!m)return '';
+  if(DB[m[1]])return m[1];
+  var m2=m[1].replace(/[A-Z]$/,''); return DB[m2]?m2:m[1];
+}
+function apTagsOf(tr){return Array.from(tr.querySelectorAll('.ap-ir')).map(function(x){return x.textContent.trim();}).filter(function(t){return t&&!/x{3}/i.test(t);});}
+function apRows(){return Array.from(document.querySelectorAll('#ap2 .ap-panel:not(#ap2-planning) .ap-section tbody tr'));}
+function apInit(){
+  var ap=$('ap2'); if(!ap||ap.__apb)return; ap.__apb=true;
+  apRows().forEach(function(tr){
+    var p=tr.closest('.ap-panel').id.replace('ap2-',''), sec=tr.closest('.ap-section'), all=Array.from(sec.closest('.ap-panel').querySelectorAll('.ap-section tbody tr'));
+    tr.setAttribute('data-apb-id',p+'-'+(all.indexOf(tr)+1));
+    var pt=tr.querySelector('.ap-point'); if(pt){var cb=document.createElement('input');cb.type='checkbox';cb.className='apb-chk';cb.onchange=function(){tr.classList.toggle('apb-sel',cb.checked);apSyncSecs();apCount();};pt.insertBefore(cb,pt.firstChild);}
+  });
+  document.querySelectorAll('#ap2 .ap-panel:not(#ap2-planning) .ap-section').forEach(function(sec){
+    if(!sec.querySelector('tbody tr'))return;
+    var t=sec.querySelector('.ap-sec-title'); if(!t)return;
+    var cb=document.createElement('input');cb.type='checkbox';cb.className='apb-chk apb-sec';
+    cb.onchange=function(){sec.querySelectorAll('tbody tr').forEach(function(tr){var c=tr.querySelector('.apb-chk');if(c){c.checked=cb.checked;tr.classList.toggle('apb-sel',cb.checked);}});apCount();};
+    t.insertBefore(cb,t.firstChild);
+  });
+  var hdr=ap.querySelector('.ap-hdr'), cbtn=$('ap-collapse-btn');
+  var b=document.createElement('button'); b.id='apb-toggle'; b.type='button'; b.textContent='🧩 Construire une grille d’audit / Build an audit grid';
+  b.onclick=function(){apToggle();};
+  if(cbtn)cbtn.parentNode.insertBefore(b,cbtn); else if(hdr)hdr.appendChild(b);
+  var bar=document.createElement('div'); bar.id='apb-bar';
+  var y=new Date().getFullYear();
+  bar.innerHTML=
+   '<div class="r"><span class="cnt" id="apb-cnt">0 point</span>'+
+     '<label>Présélection par phase / Phase preset<select id="apb-phase" onchange="apbPhase(this.value)"><option value="">—</option>'+
+       AP_PHASES.map(function(p){return '<option value="'+p.n+'">Phase '+p.n+'</option>';}).join('')+'<option value="iface">Interfaces</option></select></label>'+
+     '<button class="b" type="button" onclick="apbVisible()">＋ Tout l’onglet affiché / Whole visible tab</button>'+
+     '<button class="b" type="button" onclick="apbClear()">✕ Effacer / Clear</button></div>'+
+   '<div class="r">'+
+     '<label>N° d’audit / Audit N°<span style="display:flex;gap:4px"><input id="apb-num" style="width:130px" placeholder="Audit-XX-'+y+'"/><button class="b" type="button" onclick="apbGenNum()" title="Générer / Generate">🔢</button></span></label>'+
+     '<label style="flex:1;min-width:220px">Titre / Title<input id="apb-title" placeholder="ex. Phase 2 — Audit opérationnel CAT + NCC"/></label>'+
+     '<label>Auditeur / Auditor<input id="apb-auditor" style="width:150px"/></label>'+
+     '<label>Début prévu / Start<input id="apb-start" type="date"/></label>'+
+     '<label>Fin prévue / End<input id="apb-end" type="date"/></label>'+
+     '<label>Statut initial / Initial status<select id="apb-st"><option value="prepare">Préparé / Prepared</option><option value="planifie">Planifié / Planned</option></select></label>'+
+   '</div>'+
+   '<div class="r"><label style="flex-direction:row;align-items:center;gap:6px;color:#c8d4e8;font-size:11px"><input type="checkbox" id="apb-perref" checked style="accent-color:#e8a020"/> Une ligne d’évaluation par article cité, avec son texte IR / One assessment line per cited article, with its IR text</label>'+
+     '<span style="margin-left:auto;display:flex;gap:8px"><button class="b" type="button" onclick="apToggle(false)">Annuler / Cancel</button><button class="b p" id="apb-go" type="button" onclick="apbCreate()" disabled>▶ Créer la grille / Create grid</button></span></div>';
+  document.body.appendChild(bar);
+  apInjectTracking();
+  renderPlanTracking();
+}
+function apToggle(force){
+  var ap=$('ap2'); if(!ap)return; apInit();
+  var on=(typeof force==='boolean')?force:!ap.classList.contains('apb-on');
+  if(on&&!canWrite()){alert('Lecture seule : construction de grille non autorisée. / Read-only.');return;}
+  ap.classList.toggle('apb-on',on); $('apb-toggle').classList.toggle('on',on); $('apb-bar').classList.toggle('open',on);
+  if(!on)apbClear(); else apCount();
+}
+window.apToggle=apToggle;
+function apSel(){return apRows().filter(function(tr){var c=tr.querySelector('.apb-chk');return c&&c.checked;});}
+function apSyncSecs(){document.querySelectorAll('#ap2 .apb-sec').forEach(function(cb){var sec=cb.closest('.ap-section'),all=sec.querySelectorAll('tbody tr .apb-chk'),n=0;all.forEach(function(c){if(c.checked)n++;});cb.checked=n&&n===all.length;cb.indeterminate=n>0&&n<all.length;});}
+function apCount(){var s=apSel(),refs=new Set();s.forEach(function(tr){apTagsOf(tr).forEach(function(t){refs.add(t);});});
+  var c=$('apb-cnt');if(c)c.textContent=s.length+' point'+(s.length>1?'s':'')+' du plan · '+refs.size+' référence'+(refs.size>1?'s':'')+' citée'+(refs.size>1?'s':'')+' / plan points · cited refs';
+  var g=$('apb-go');if(g)g.disabled=!s.length;}
+function apSetRow(tr,on){var c=tr.querySelector('.apb-chk');if(c){c.checked=on;tr.classList.toggle('apb-sel',on);}}
+window.apbClear=function(){apRows().forEach(function(tr){apSetRow(tr,false);});apSyncSecs();apCount();var p=$('apb-phase');if(p)p.value='';};
+window.apbVisible=function(){var p=document.querySelector('#ap2 .ap-panel.ap-active');if(!p||p.id==='ap2-planning'){alert('Ouvrez un onglet de domaine (SMS, ORO/CAT/NCC…) / Open a domain tab first.');return;}p.querySelectorAll('.ap-section tbody tr').forEach(function(tr){apSetRow(tr,true);});apSyncSecs();apCount();};
+function phaseTitle(n){var it=Array.from(document.querySelectorAll('#ap2-planning .ap-tl-title')).find(function(x){return new RegExp('^\\s*Phase '+n+'\\b').test(x.textContent);});return it?it.textContent.split(' / ')[0].trim():'Phase '+n;}
+window.apbPhase=function(n){
+  if(!n)return; var ps=$('apb-phase'); if(ps)ps.value=n; apRows().forEach(function(tr){apSetRow(tr,false);});
+  var ph=AP_PHASES.find(function(p){return p.n===n;});
+  apRows().forEach(function(tr){var pid=tr.getAttribute('data-apb-id').split('-')[0];
+    if(n==='iface'){if(pid==='iface')apSetRow(tr,true);return;}
+    if(ph.panels&&ph.panels.indexOf(pid)>=0)apSetRow(tr,true);
+    if(ph.rx&&apTagsOf(tr).some(function(t){return ph.rx.test(t);}))apSetRow(tr,true);});
+  apSyncSecs();apCount();
+  var t=$('apb-title'); if(t)t.value=(n==='iface')?'Audit des interfaces transverses / Cross-regulatory interfaces':phaseTitle(n);
+  var first=apSel()[0]; if(first){var pid=first.getAttribute('data-apb-id').split('-')[0];var btn=Array.from(document.querySelectorAll('#ap2 .ap-tab')).find(function(b){return (b.getAttribute('onclick')||'').indexOf("'"+pid+"'")>=0;});if(btn)ap2Show(pid,btn);}
+};
+window.apbGenNum=function(){var y=new Date().getFullYear(),k='saf_audit_seq_'+y,n=0;try{n=parseInt(localStorage.getItem(k)||'0',10)||0;}catch(e){}n++;try{localStorage.setItem(k,String(n));}catch(e){}$('apb-num').value='Audit-'+(n<10?'0'+n:n)+'-'+y;};
+window.apbCreate=function(){
+  if(!canWrite()){alert('Lecture seule. / Read-only.');return;}
+  var sel=apSel(); if(!sel.length)return;
+  var perRef=$('apb-perref').checked, ids=[], panels=new Set(), rows=[];
+  sel.forEach(function(tr,i){
+    var pid=tr.getAttribute('data-apb-id'); ids.push(pid); panels.add(pid.split('-')[0]);
+    var ptEl=tr.querySelector('.ap-point'), pt=ptEl?ptEl.textContent.trim():'', ds=(tr.querySelector('.ap-desc')||{}).textContent||'';
+    var prio=((tr.querySelector('.ap-prio')||{}).textContent||'').trim();
+    var stEl=tr.closest('.ap-section').querySelector('.ap-sec-title'), sec='';
+    if(stEl){var cl=stEl.cloneNode(true);cl.querySelectorAll('span,input,button').forEach(function(x){x.remove();});sec=cl.textContent.replace(/\s+/g,' ').trim();}
+    var tags=apTagsOf(tr);
+    var amc=perRef?tags.map(function(t){var b=baseRef(t),d=DB[b];return {ref:t,subtitle:d?d.title:'Hors base CMS / Not in CMS database',text:d?d.ir:''};}):[];
+    rows.push({idx:i,ref:tags.join(' · ')||'—',reg:'PLAN',part:(AP_PANEL_LBL[pid.split('-')[0]]||'')+' — '+sec,sub:'',variant:prio,
+      title:pt,ir:ds.trim()+(tags.length&&!perRef?'\nRéférences : '+tags.join(', '):''),amcBlocks:amc,noSubRow:!amc.length,planId:pid,
+      status:'',obs:'',refdoc:'',action:'',resp:''});
+  });
+  var phase=$('apb-phase').value, st=$('apb-st').value||'prepare';
+  var title=$('apb-title').value.trim()||('Audit plan APP13 — '+Array.from(panels).map(function(p){return AP_PANEL_LBL[p]||p;}).join(', '));
+  PENDING={num:$('apb-num').value.trim(),title:title,
+    rec:{source:'plan',plan:{ids:ids,panels:Array.from(panels),phase:phase||''}},
+    wf:{status:st,auditor:$('apb-auditor').value.trim(),planned_start:$('apb-start').value,planned_end:$('apb-end').value,phase:(phase&&phase!=='iface')?phase:''},
+    note:'Créé depuis le plan d’audit APP13-OMM ('+sel.length+' points'+(phase?', phase '+phase:'')+') / Built from audit plan'};
+  launchGrid(rows);
+  apToggle(false);
+};
+function launchGrid(rows,pre){
+  try{var b=Array.from(document.querySelectorAll('button.tab')).find(function(x){return (x.getAttribute('onclick')||'').indexOf("'grille_easa'")>=0;});if(typeof showMainTab==='function')showMainTab('grille_easa',b||null);}catch(e){}
+  try{if(typeof gSwitchMode==='function')gSwitchMode('reg');}catch(e){}
+  queue=[]; g_renderQueue(); g_currentAuditId=null; rowData=pre||{}; gridRows=rows;
+  g_buildHTML();
+  PENDING=null;
+  try{renderPlanTracking();}catch(e){}
+  try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){}
+}
+window.safLaunchGrid=launchGrid;
+
+/* suivi dans le plan : couverture des points + tableau des audits + puces par phase */
+function apInjectTracking(){
+  var pl=$('ap2-planning'); if(!pl||$('apb-track'))return;
+  var s=document.createElement('div'); s.className='ap-section'; s.id='apb-track';
+  s.innerHTML='<div class="ap-sec-title">Suivi des audits du programme / Programme audit tracking</div><div id="apb-track-body"></div>';
+  var first=pl.querySelector('.ap-section'); if(first&&first.nextSibling)pl.insertBefore(s,first.nextSibling); else pl.appendChild(s);
+}
+function renderPlanTracking(){
+  if(!$('ap2'))return; apInjectTracking();
+  var audits=[];try{audits=g_loadAudits();}catch(e){}
+  audits.forEach(function(a){wfEnsure(a);});
+  var body=$('apb-track-body');
+  if(body){
+    var list=audits.slice().sort(function(a,b){return String((a.wf&&a.wf.planned_start)||a.updated||'').localeCompare(String((b.wf&&b.wf.planned_start)||b.updated||''));});
+    body.innerHTML=list.length?'<table><thead><tr><th>N°</th><th>Titre / Title</th><th>Source</th><th>Phase</th><th>Prévu / Planned</th><th>Statut / Status</th><th>Avancement / Progress</th><th>L1 / L2</th><th></th></tr></thead><tbody>'+
+      list.map(function(a){var c=gridCounts(a),pct=a.total?Math.round(a.done/a.total*100):0,wf=a.wf||{};
+        return '<tr><td style="font-family:\'DM Mono\',monospace">'+esc(a.num||'—')+'</td><td>'+esc(a.title||'')+'</td><td>'+esc({plan:'Plan',manual:'Manuel'+(a.manual&&a.manual.code?' '+a.manual.code:''),reg:'EASA'}[a.source]||'EASA')+'</td><td>'+esc(wf.phase||'')+'</td><td>'+esc(fmtDate(wf.planned_start))+(wf.planned_end?' → '+esc(fmtDate(wf.planned_end)):'')+'</td><td>'+wfBadge(wf.status)+'</td><td>'+a.done+'/'+a.total+' ('+pct+'%)</td><td>'+c.l1+' / '+c.l2+'</td><td><button class="bexp" style="padding:3px 9px" onclick="safOpenAudit(\''+a.id+'\')">Ouvrir / Open</button></td></tr>';}).join('')+'</tbody></table>'
+      :'<div class="ap-desc" style="padding:10px">Aucun audit enregistré. Utilisez « 🧩 Construire une grille d’audit » pour en créer un depuis ce plan. / No audit yet.</div>';
+  }
+  document.querySelectorAll('#ap2-planning .ap-tl-item').forEach(function(li){
+    var t=(li.querySelector('.ap-tl-title')||{}).textContent||'', m=t.match(/Phase\s+(\d)/); if(!m)return;
+    var box=li.querySelector('.apb-tl-chips'); if(!box){box=document.createElement('div');box.className='apb-tl-chips';(li.querySelector('.ap-tl-body')||li).appendChild(box);}
+    box.innerHTML=audits.filter(function(a){return a.wf&&String(a.wf.phase)===m[1];}).map(function(a){return '<span title="'+esc(a.title||'')+'" style="cursor:pointer" onclick="safOpenAudit(\''+a.id+'\')">'+wfBadge(a.wf.status,a.num||'audit')+'</span>';}).join('');
+  });
+  var latest={};
+  audits.forEach(function(a){(a.plan&&a.plan.ids||[]).forEach(function(id){if(!latest[id]||String(a.updated||'')>String(latest[id].updated||''))latest[id]=a;});});
+  apRows().forEach(function(tr){
+    var id=tr.getAttribute('data-apb-id'), td=tr.querySelector('td'); if(!td)return;
+    var ex=td.querySelector('.apb-cov'); if(ex)ex.remove();
+    var a=latest[id]; if(!a)return;
+    var s=document.createElement('span'); s.className='apb-cov'; s.style.cursor='pointer'; s.title=(a.title||'')+' — '+fmtDT(a.updated);
+    s.innerHTML=wfBadge(a.wf.status,a.num||'audit'); s.onclick=function(){safOpenAudit(a.id);};
+    td.appendChild(s);
+  });
+}
+window.safRenderPlanTracking=renderPlanTracking;
+window.safOpenAudit=function(id){
+  try{var b=Array.from(document.querySelectorAll('button.tab')).find(function(x){return (x.getAttribute('onclick')||'').indexOf("'grille_easa'")>=0;});if(typeof showMainTab==='function')showMainTab('grille_easa',b||null);}catch(e){}
+  try{if(typeof gSwitchMode==='function')gSwitchMode('reg');}catch(e){}
+  g_resumeAudit(id);
+};
+(function hookNav(){
+  var oa=window.ap2Show; if(typeof oa==='function')window.ap2Show=function(id,btn){var r=oa.apply(this,arguments);try{apInit();if(id==='planning')renderPlanTracking();}catch(e){}return r;};
+  var os=window.showMainTab; if(typeof os==='function'&&!os.__awf){var w=function(id){var r=os.apply(this,arguments);try{if(id==='audit_plan'){apInit();renderPlanTracking();}else{var ap=$('ap2');if(ap&&ap.classList.contains('apb-on'))apToggle(false);}}catch(e){}return r;};w.__awf=true;window.showMainTab=w;}
+})();
+
+/* ════════════════ 4. MANUEL INTERNE PDF → GRILLE ════════════════ */
+var PDFJS_V='3.11.174', PDFJS_BASE='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+PDFJS_V+'/';
+function loadPdfJs(){
+  if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);
+  return new Promise(function(res,rej){var s=document.createElement('script');s.src=PDFJS_BASE+'pdf.min.js';
+    s.onload=function(){try{window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS_BASE+'pdf.worker.min.js';res(window.pdfjsLib);}catch(e){rej(e);}};
+    s.onerror=function(){rej(new Error('Impossible de charger pdf.js depuis cdnjs.cloudflare.com / cannot load pdf.js'));};document.head.appendChild(s);});
+}
+var L='\\p{L}';
+var RX_STRONG=new RegExp('(?:^|[^'+L+'])(doi(?:t|vent|s)|devr(?:a|ont|ez)|(?:est|sont)\\s+tenue?s?|(?:est|sont)\\s+(?:strictement\\s+|formellement\\s+)?interdite?s?|il\\s+est\\s+(?:strictement\\s+)?interdit|interdiction|obligatoire(?:ment|s)?|imp[ée]rati(?:f|fs|ve|ves|vement)|(?:est|sont)\\s+responsables?|incomb(?:e|ent)|s[\'’]assur(?:e|ent)|veill(?:e|ent)\\s+à|(?:est|sont)\\s+exig[ée]e?s?|(?:est|sont)\\s+requise?s?|ne\\s+(?:peut|peuvent)\\s+(?:pas|en\\s+aucun\\s+cas|être|que)|n[\'’](?:est|sont)\\s+(?:pas\\s+)?autoris[ée]e?s?|au\\s+plus\\s+tard|au\\s+minimum|au\\s+moins|exclusivement|shall|must|(?:is|are)\\s+required|(?:is|are)\\s+responsible|(?:is|are)\\s+to\\s+be|ensures?|prohibited|not\\s+permitted|not\\s+allowed|mandatory|may\\s+only|no\\s+later\\s+than|at\\s+least)(?![' +L+'])','iu');
+var RX_MED=new RegExp('(?:^|[^'+L+'])(devrai(?:t|ent)|il\\s+convient|recommand[ée]e?s?|il\\s+est\\s+(?:souhaitable|conseillé)|est\\s+encourag[ée]e?s?|should|recommended|is\\s+advisable|are\\s+encouraged|it\\s+is\\s+good\\s+practice)(?!['+L+'])','iu');
+var RX_EASA=/\b(?:ORO|CAT|SPO|SPA|NCC|NCO|ARO|CAMO|CAO|ML|M|T|IAM|UAM)\.(?:[A-Z]{1,6}\.){0,3}\d{3}[A-Z]?\b/g;
+var RX_BULLET=/^\s*(?:[•●▪■◦○·\-–—*]|(?:\(?[a-z]{1,2}\)|\(?\d{1,2}\)|\(?[ivx]{1,4}\))\s)/i;
+var MAN=null;
+
+function ensureManCard(){
+  var app=$('g-pdf-app'); if(!app||$('gman-card'))return;
+  var c=document.createElement('div'); c.className='card card-accent'; c.id='gman-card';
+  c.innerHTML='<span class="step-badge">MANUEL INTERNE / INTERNAL MANUAL</span>'+
+   '<div class="step-title">Créer une grille d’audit depuis un manuel interne (PDF) / Build an audit grid from an internal manual (PDF)</div>'+
+   '<p class="sub-text">Le PDF est lu dans votre navigateur ; son contenu n’est envoyé nulle part. Le texte est découpé selon les titres numérotés du manuel, et chaque phrase porteuse d’une obligation (doit, est tenu, interdit, s’assure, shall, must…) devient un point de contrôle proposé. Vous relisez, cochez, corrigez le texte si besoin, puis générez la grille. / The PDF is read locally; requirement sentences are proposed as checkpoints for review.</p>'+
+   '<div class="gm-fields"><div><label class="sel-label">Code / Code</label><input class="sel-input" id="gman-code" placeholder="OMM, OM-A, CAME…"/></div>'+
+   '<div><label class="sel-label">Titre du manuel / Manual title</label><input class="sel-input" id="gman-title" placeholder="Operations Management Manual"/></div>'+
+   '<div><label class="sel-label">Édition / Rév. / Revision</label><input class="sel-input" id="gman-rev" placeholder="Ed. 3 Rev. 2"/></div></div>'+
+   '<div class="gm-fields" style="grid-template-columns:140px 140px 1fr;margin-top:0"><div><label class="sel-label">Page de début / From page</label><input class="sel-input" id="gman-p1" type="number" min="1" placeholder="1"/></div>'+
+   '<div><label class="sel-label">Page de fin / To page</label><input class="sel-input" id="gman-p2" type="number" min="1" placeholder="fin / end"/></div>'+
+   '<div style="display:flex;align-items:flex-end;font-size:11px;color:var(--text-dim)">Limitez la plage pour n’auditer qu’un chapitre. / Narrow the range to audit one chapter.</div></div>'+
+   '<input type="file" id="gman-file" accept="application/pdf,.pdf" style="display:none"/>'+
+   '<div id="gman-drop">📄 Cliquer ou déposer le PDF du manuel / Click or drop the manual PDF</div>'+
+   '<div id="gman-status"></div>';
+  app.insertBefore(c,app.firstChild);
+  var rv=document.createElement('div'); rv.id='gman-review'; c.parentNode.insertBefore(rv,c.nextSibling);
+  var f=$('gman-file'), d=$('gman-drop');
+  d.onclick=function(){f.click();};
+  f.onchange=function(){if(f.files&&f.files[0])manAnalyse(f.files[0]);f.value='';};
+  d.ondragover=function(e){e.preventDefault();d.classList.add('over');};
+  d.ondragleave=function(){d.classList.remove('over');};
+  d.ondrop=function(e){e.preventDefault();d.classList.remove('over');var x=e.dataTransfer.files&&e.dataTransfer.files[0];if(x)manAnalyse(x);};
+}
+function manStatus(m,err){var s=$('gman-status');if(s){s.textContent=m||'';s.className=err?'err':'';}}
+
+async function manAnalyse(file){
+  if(!/\.pdf$/i.test(file.name)&&file.type!=='application/pdf'){manStatus('Fichier non PDF / Not a PDF file.',true);return;}
+  try{
+    manStatus('Chargement du lecteur PDF… / Loading PDF reader…');
+    var lib=await loadPdfJs();
+    var buf=await file.arrayBuffer();
+    var doc=await lib.getDocument({data:new Uint8Array(buf)}).promise;
+    var n=doc.numPages, p1=Math.max(1,parseInt(($('gman-p1')||{}).value,10)||1), p2=Math.min(n,parseInt(($('gman-p2')||{}).value,10)||n);
+    if(p2<p1){manStatus('Plage de pages incohérente / Invalid page range.',true);return;}
+    var pages=[];
+    for(var p=p1;p<=p2;p++){
+      if(p%5===0||p===p1)manStatus('Lecture page '+p+' / '+p2+'… / Reading page…');
+      var pg=await doc.getPage(p), vp=pg.getViewport({scale:1}), tc=await pg.getTextContent();
+      pages.push({n:p,H:vp.height,lines:toLines(tc.items,vp.height)});
+    }
+    var r=manParse(pages,file.name);
+    if(r.chars<200){manStatus('Ce PDF ne contient pas de couche texte exploitable (document scanné ?). Passez-le d’abord par un OCR. / No text layer — run OCR first.',true);return;}
+    MAN=r;
+    var code=$('gman-code'); if(code&&!code.value)code.value=guessCode(file.name);
+    var t=$('gman-title'); if(t&&!t.value)t.value=file.name.replace(/\.pdf$/i,'').replace(/[_]+/g,' ');
+    manStatus(file.name+' — '+(p2-p1+1)+' page(s) analysée(s) / analysed.');
+    manRender();
+  }catch(e){console.error(e);manStatus('Échec de l’analyse / Analysis failed : '+(e&&e.message||e),true);}
+}
+function guessCode(name){var m=name.toUpperCase().match(/(?:^|[^A-Z0-9])(OMM|OM[-_ ]?[A-D]|CAME|MOE|SMM|ERP|OM)(?=[^A-Z0-9]|$)/);return m?m[1].replace(/[_ ]/,'-'):'';}
+function toLines(items,H){
+  var it=items.filter(function(i){return i.str&&i.str.trim();}).map(function(i){return {x:i.transform[4],y:i.transform[5],h:Math.abs(i.transform[3])||i.height||10,w:i.width||0,s:i.str};});
+  it.sort(function(a,b){return (b.y-a.y)||(a.x-b.x);});
+  var lines=[],cur=null;
+  it.forEach(function(i){
+    if(cur&&Math.abs(i.y-cur.y)<=Math.max(2,Math.min(i.h,cur.h)*0.45)){cur.items.push(i);cur.h=Math.max(cur.h,i.h);}
+    else{cur={y:i.y,h:i.h,items:[i]};lines.push(cur);}
+  });
+  return lines.map(function(l){
+    l.items.sort(function(a,b){return a.x-b.x;});
+    var t='',px=null;
+    l.items.forEach(function(i){if(px!==null){var gap=i.x-px;if(gap>i.h*0.18&&!/\s$/.test(t)&&!/^\s/.test(i.s))t+=' ';}t+=i.s;px=i.x+i.w;});
+    t=t.replace(/\s+/g,' ').trim();
+    return {t:t,h:l.h,x:l.items[0].x,top:(H-l.y)/H};
+  }).filter(function(l){return l.t;});
+}
+function manParse(pages,name){
+  var np=pages.length, rep={};
+  pages.forEach(function(p){var seen={};p.lines.forEach(function(l){if(l.top<0.1||l.top>0.9){var k=l.t.replace(/\d+/g,'#').toLowerCase();if(!seen[k]){seen[k]=1;rep[k]=(rep[k]||0)+1;}}});});
+  var thr=Math.max(3,Math.ceil(np*0.3));
+  var hs=[]; pages.forEach(function(p){p.lines.forEach(function(l){hs.push(l.h);});}); hs.sort(function(a,b){return a-b;});
+  var med=hs.length?hs[Math.floor(hs.length/2)]:10;
+  var secs=[], cur={id:'s0',num:'',title:'(Avant le premier titre / Before first heading)',depth:1,page:pages[0]?pages[0].n:1,blocks:[]}; secs.push(cur);
+  var chars=0, lastLine=null;
+  pages.forEach(function(p){
+    p.lines.forEach(function(l){
+      var t=l.t;
+      if((l.top<0.1||l.top>0.9)&&rep[t.replace(/\d+/g,'#').toLowerCase()]>=thr)return;
+      if(/^(page\s*)?\d{1,4}(\s*(\/|sur|of|de)\s*\d{1,4})?$/i.test(t))return;
+      if(/(\.\s?){4,}\s*\d{1,4}$/.test(t)||/…{2,}\s*\d{1,4}$/.test(t))return; /* table des matières */
+      chars+=t.length;
+      var h=headingOf(t,l.h,med);
+      if(h){cur={id:'s'+secs.length,num:h.num,title:h.title,depth:h.depth,page:p.n,blocks:[]};secs.push(cur);lastLine=null;return;}
+      var bullet=RX_BULLET.test(t);
+      var lb=cur.blocks[cur.blocks.length-1];
+      if(!lb||bullet||(lb.bullet&&l.x<lb.x-2)||(lastLine&&/[.:;!?]$/.test(lastLine.t)&&l.x<lastLine.x-4)||(lastLine&&lastLine.page!==p.n&&/[.:;]$/.test(lastLine.t))){
+        cur.blocks.push({page:p.n,text:t,bullet:bullet,x:l.x});
+      }else{
+        if(/[A-Za-zÀ-ÿ]-$/.test(lb.text)&&/^[a-zà-ÿ]/.test(t))lb.text=lb.text.slice(0,-1)+t; else lb.text+=' '+t;
+      }
+      lastLine={t:t,x:l.x,page:p.n};
+    });
+  });
+  var cid=0, seen={};
+  secs.forEach(function(s){
+    s.cands=[]; var lead=null;
+    s.text=s.blocks.map(function(b){return b.text;}).join(' ');
+    s.blocks.forEach(function(b){
+      if(!b.bullet)lead=null;
+      var parts=b.bullet?[b.text]:b.text.split(/(?<=[.!?;])\s+(?=[A-ZÀ-ÖØ-Þ(«"“])/u);
+      parts.forEach(function(x){
+        x=x.trim(); if(x.length<20)return;
+        var st=RX_STRONG.test(x)?'s':(RX_MED.test(x)?'m':'');
+        if(!st&&b.bullet&&lead)st=lead.st;
+        if(!b.bullet&&/:\s*$/.test(x)&&st){lead={t:x,st:st};}
+        if(!st)return;
+        var key=x.toLowerCase(); if(seen[key])return; seen[key]=1;
+        var refs=[];(x.match(RX_EASA)||[]).forEach(function(r){if(refs.indexOf(r)<0)refs.push(r);});
+        if(lead&&lead.t!==x&&b.bullet)(lead.t.match(RX_EASA)||[]).forEach(function(r){if(refs.indexOf(r)<0)refs.push(r);});
+        s.cands.push({id:'c'+(cid++),text:x.length>900?x.slice(0,900)+'…':x,lead:(b.bullet&&lead&&lead.t!==x)?lead.t:'',st:st,page:b.page,refs:refs,sel:st==='s'});
+      });
+    });
+    var leads={}; s.cands.forEach(function(c){if(c.lead)leads[c.lead.toLowerCase()]=1;});
+    s.cands=s.cands.filter(function(c){return !leads[c.text.toLowerCase()];});
+    s.sel=s.text.length>40;
+  });
+  secs=secs.filter(function(s,i){return i>0||s.blocks.length;});
+  var chap=null; secs.forEach(function(s){if(s.depth<=1||!chap)chap=s;s.chap=chap.id;});
+  return {name:name,pages:pages.length,first:pages[0]?pages[0].n:1,last:pages.length?pages[pages.length-1].n:1,chars:chars,secs:secs,mode:'req',showMed:false,refRows:false,q:''};
+}
+function headingOf(t,h,med){
+  if(t.length>140)return null;
+  var m=t.match(/^(?:(?:chapitre|chapter|partie|part|section|annexe|appendix)\s+([0-9A-Z]{1,3}(?:\.\d{1,3})*)\s*[-–—:.]?\s*)(.*)$/i);
+  if(m&&m[2].length<=110&&!/[.;,]$/.test(m[2]))return {num:m[1],title:(m[2]||t).trim()||t,depth:1};
+  m=t.match(/^((?:\d{1,2}\.){0,5}\d{1,3})\.?\s+(\S.*)$/);
+  if(m){
+    var num=m[1], title=m[2].trim(), segs=num.split('.').length, words=title.split(/\s+/).length;
+    var big=h>=med*1.08, caps=title===title.toUpperCase()&&/[A-ZÀ-Þ]{3}/.test(title);
+    if(!/^[A-ZÀ-ÖØ-Þ0-9«"“(]/.test(title))return null;
+    if(/[;,]$/.test(title)||(/\.$/.test(title)&&title.length>50))return null;
+    if(words>16||RX_STRONG.test(title)&&!big)return null;
+    if(segs===1&&(parseInt(num,10)>40)&&!big)return null;
+    if(segs>=2||big||caps)return {num:num,title:title,depth:segs};
+    return null;
+  }
+  if(h>=med*1.3&&t.length<=90&&t.split(/\s+/).length<=12&&!/[.;,:]$/.test(t)&&/^[A-ZÀ-ÖØ-Þ]/.test(t))return {num:'',title:t,depth:1};
+  return null;
+}
+function manVisibleCands(s){return s.cands.filter(function(c){return c.st==='s'||MAN.showMed;});}
+function manSecMatches(s,q){if(!q)return true;if((s.num+' '+s.title).toLowerCase().indexOf(q)>=0)return true;return s.cands.some(function(c){return c.text.toLowerCase().indexOf(q)>=0;});}
+function manRender(){
+  var rv=$('gman-review'); if(!rv||!MAN)return;
+  var nS=0,nM=0,nR=0; MAN.secs.forEach(function(s){s.cands.forEach(function(c){if(c.st==='s')nS++;else nM++;nR+=c.refs.length;});});
+  var nSec=MAN.secs.filter(function(s){return s.num;}).length;
+  rv.innerHTML='<div class="card">'+
+    '<div class="step-title">Relecture des points proposés / Review proposed checkpoints</div>'+
+    '<div class="gm-stats"><span><b>'+MAN.pages+'</b>pages (p. '+MAN.first+'–'+MAN.last+')</span><span><b>'+nSec+'</b>titres détectés / headings</span><span><b>'+nS+'</b>exigences (doit, shall…) / requirements</span><span><b>'+nM+'</b>recommandations (devrait, should…)</span><span><b>'+nR+'</b>réf. EASA citées</span></div>'+
+    '<div class="gm-ctl">'+
+      '<label><input type="radio" name="gman-mode" value="req" '+(MAN.mode==='req'?'checked':'')+' onchange="gmanSet(\'mode\',\'req\')"/> Une ligne par exigence / One line per requirement</label>'+
+      '<label><input type="radio" name="gman-mode" value="sec" '+(MAN.mode==='sec'?'checked':'')+' onchange="gmanSet(\'mode\',\'sec\')"/> Une ligne par chapitre / One line per section</label>'+
+      '<label><input type="checkbox" '+(MAN.showMed?'checked':'')+' onchange="gmanSet(\'showMed\',this.checked)"/> Inclure les recommandations / Include recommendations</label>'+
+      '<label><input type="checkbox" '+(MAN.refRows?'checked':'')+' onchange="gmanSet(\'refRows\',this.checked)"/> Ligne IR pour chaque réf. EASA citée / IR line per cited EASA ref.</label>'+
+    '</div>'+
+    '<div class="gm-ctl"><input class="sel-input" id="gman-q" placeholder="Filtrer chapitres et exigences / Filter" value="'+esc(MAN.q)+'" oninput="gmanFilter(this.value)"/>'+
+      '<button class="bexp" onclick="gmanAll(true)">Tout cocher / Tick all</button><button class="bexp" onclick="gmanAll(false)">Tout décocher / Untick all</button>'+
+      '<button class="bexp" style="border-color:var(--silver);color:var(--silver)" onclick="gmanExpand(true)">⊞ Déplier / Expand</button><button class="bexp" style="border-color:var(--silver);color:var(--silver)" onclick="gmanExpand(false)">⊟ Replier / Collapse</button></div>'+
+    '<div id="gman-tree">'+MAN.secs.map(manSecHTML).join('')+'</div>'+
+    '<div class="gm-gen"><span class="gm-sum" id="gman-sum"></span><button class="btn-ghost" onclick="gmanReset()">✕ Abandonner / Discard</button><button class="btn-primary" id="gman-go" onclick="gmanGenerate()">▶ Générer la grille / Generate grid</button></div>'+
+  '</div>';
+  gmanFilter(MAN.q); manSum();
+}
+function manSecHTML(s){
+  var vis=manVisibleCands(s), req=MAN.mode==='req';
+  if(req&&!vis.length)return '';
+  if(!req&&s.text.length<=40)return '';
+  var n=req?vis.filter(function(c){return c.sel;}).length:0, all=req?vis.length:1;
+  var on=req?(n>0):s.sel;
+  return '<div class="gm-sec" data-sid="'+s.id+'"><div class="gm-sechd d'+Math.min(s.depth||1,6)+'" onclick="gmanToggle(event,\''+s.id+'\')">'+
+    '<input type="checkbox" '+(on?'checked':'')+' onclick="event.stopPropagation()" onchange="gmanSec(\''+s.id+'\',this.checked)"/>'+
+    '<span class="num">'+esc(s.num||'§')+'</span><span>'+esc(s.title)+'</span><span class="pg">p.'+s.page+'</span>'+
+    '<span class="n">'+(req?(n+'/'+all):(s.text.length+' car.'))+'</span></div>'+
+    '<div class="gm-body" data-body="'+s.id+'"></div></div>';
+}
+function manBodyHTML(s){
+  if(MAN.mode==='sec')return '<div class="gm-c on"><span class="t">'+esc(s.text.slice(0,1200))+(s.text.length>1200?'…':'')+'</span></div>';
+  return manVisibleCands(s).map(function(c){
+    return '<div class="gm-c'+(c.sel?' on':'')+'" data-cid="'+c.id+'"><input type="checkbox" '+(c.sel?'checked':'')+' onchange="gmanTick(\''+s.id+'\',\''+c.id+'\',this.checked)"/>'+
+      '<span class="t" contenteditable="true" spellcheck="false" onblur="gmanEdit(\''+s.id+'\',\''+c.id+'\',this)">'+(c.lead?'<span class="lead" contenteditable="false">'+esc(c.lead)+'</span>':'')+esc(c.text)+(c.refs.length?'<span class="rf" contenteditable="false">'+esc(c.refs.join(' · '))+'</span>':'')+'</span>'+
+      '<span class="lv '+c.st+'">'+(c.st==='s'?'EXIGENCE':'RECOMM.')+'</span><span class="pg">p.'+c.page+'</span></div>';}).join('');
+}
+function secById(id){return MAN.secs.find(function(s){return s.id===id;});}
+window.gmanToggle=function(e,id){var el=document.querySelector('#gman-tree .gm-sec[data-sid="'+id+'"]');if(!el)return;var open=!el.classList.contains('open');el.classList.toggle('open',open);if(open){var b=el.querySelector('.gm-body');b.innerHTML=manBodyHTML(secById(id));gmanFilterBody(el);}};
+window.gmanExpand=function(on){document.querySelectorAll('#gman-tree .gm-sec:not(.hid)').forEach(function(el){if(on===el.classList.contains('open'))return;el.classList.toggle('open',on);if(on){el.querySelector('.gm-body').innerHTML=manBodyHTML(secById(el.getAttribute('data-sid')));gmanFilterBody(el);}});};
+window.gmanSet=function(k,v){MAN[k]=v;manRender();};
+window.gmanSec=function(id,on){var s=secById(id);if(MAN.mode==='sec')s.sel=on;else manVisibleCands(s).forEach(function(c){c.sel=on;});manRefreshSec(id);manSum();};
+window.gmanTick=function(sid,cid,on){var s=secById(sid),c=s.cands.find(function(x){return x.id===cid;});c.sel=on;var el=document.querySelector('#gman-tree [data-cid="'+cid+'"]');if(el)el.classList.toggle('on',on);manRefreshSec(sid,true);manSum();};
+window.gmanEdit=function(sid,cid,el){var s=secById(sid),c=s.cands.find(function(x){return x.id===cid;});var clone=el.cloneNode(true);clone.querySelectorAll('.lead,.rf').forEach(function(x){x.remove();});var t=clone.textContent.replace(/\s+/g,' ').trim();if(t)c.text=t;};
+function manRefreshSec(id,keepBody){var el=document.querySelector('#gman-tree .gm-sec[data-sid="'+id+'"]');if(!el)return;var s=secById(id),hd=el.querySelector('.gm-sechd');
+  if(MAN.mode==='req'){var v=manVisibleCands(s),n=v.filter(function(c){return c.sel;}).length;hd.querySelector('input').checked=n>0;hd.querySelector('input').indeterminate=n>0&&n<v.length;hd.querySelector('.n').textContent=n+'/'+v.length;
+    if(!keepBody&&el.classList.contains('open')){el.querySelector('.gm-body').innerHTML=manBodyHTML(s);gmanFilterBody(el);}}
+  else hd.querySelector('input').checked=s.sel;}
+window.gmanAll=function(on){MAN.secs.forEach(function(s){if(MAN.mode==='sec')s.sel=on&&s.text.length>40;else manVisibleCands(s).forEach(function(c){c.sel=on;});});manRender();};
+window.gmanFilter=function(q){if(!MAN)return;MAN.q=q||'';var ql=MAN.q.trim().toLowerCase();
+  document.querySelectorAll('#gman-tree .gm-sec').forEach(function(el){var s=secById(el.getAttribute('data-sid'));el.classList.toggle('hid',!manSecMatches(s,ql));gmanFilterBody(el);});};
+function gmanFilterBody(el){var ql=(MAN.q||'').trim().toLowerCase();var s=secById(el.getAttribute('data-sid'));var secHit=ql&&(s.num+' '+s.title).toLowerCase().indexOf(ql)>=0;
+  el.querySelectorAll('.gm-c[data-cid]').forEach(function(c){c.classList.toggle('hid',!!ql&&!secHit&&c.textContent.toLowerCase().indexOf(ql)<0);});}
+function manSum(){var n=0,secs=0;MAN.secs.forEach(function(s){if(MAN.mode==='sec'){if(s.sel&&s.text.length>40){n++;}}else{var k=manVisibleCands(s).filter(function(c){return c.sel;}).length;if(k){n+=k;secs++;}}});
+  var e=$('gman-sum');if(e)e.textContent=n+' point'+(n>1?'s':'')+' de contrôle'+(MAN.mode==='req'?' dans '+secs+' chapitre'+(secs>1?'s':''):'')+' / checkpoints'+(n>600?' — grille volumineuse, pensez à filtrer / large grid':'');
+  var g=$('gman-go');if(g)g.disabled=!n;}
+window.gmanReset=function(){MAN=null;var rv=$('gman-review');if(rv)rv.innerHTML='';manStatus('');};
+window.gmanGenerate=function(){
+  if(!MAN)return; if(!canWrite()){alert('Lecture seule. / Read-only.');return;}
+  var code=(($('gman-code')||{}).value||'').trim()||'MAN', title=(($('gman-title')||{}).value||'').trim(), rev=(($('gman-rev')||{}).value||'').trim();
+  var chapLbl={}; MAN.secs.forEach(function(s){if(s.chap===s.id)chapLbl[s.id]=code+' — '+((s.num?s.num+' ':'')+s.title);});
+  var rows=[], i=0;
+  MAN.secs.forEach(function(s){
+    var part=chapLbl[s.chap]||(code+' — '+s.title), secT=(s.num?s.num+' ':'')+s.title;
+    if(MAN.mode==='sec'){
+      if(!s.sel||s.text.length<=40)return;
+      rows.push({idx:i++,ref:code+(s.num?' §'+s.num:' p.'+s.page),reg:'MAN',part:part,sub:'',variant:'p.'+s.page,title:secT,ir:s.text.slice(0,1500)+(s.text.length>1500?'…':''),amcBlocks:[],noSubRow:true,status:'',obs:'',refdoc:'',action:'',resp:''});
+      return;
+    }
+    var k=0;
+    manVisibleCands(s).forEach(function(c){
+      if(!c.sel)return; k++;
+      var amc=[], refTxt='';
+      var known=c.refs.filter(function(r){return DB[r];});
+      if(MAN.refRows&&known.length)amc=known.map(function(r){return {ref:r,subtitle:DB[r].title,text:DB[r].ir};});
+      else if(c.refs.length)refTxt='\nRéf. EASA citée(s) : '+c.refs.join(', ');
+      rows.push({idx:i++,ref:code+(s.num?' §'+s.num:' p.'+c.page)+'-'+(k<10?'0'+k:k),reg:'MAN',part:part,sub:'',variant:(c.st==='s'?'':'Recomm. · ')+'p.'+c.page,
+        title:secT,ir:(c.lead?c.lead+' … ':'')+c.text+refTxt,amcBlocks:amc,noSubRow:!amc.length,manRef:{sec:s.num,page:c.page,strength:c.st},
+        status:'',obs:'',refdoc:code+(rev?' '+rev:'')+(s.num?' §'+s.num:'')+' p.'+c.page,action:'',resp:''});
+    });
+  });
+  if(!rows.length){alert('Aucun point coché. / No checkpoint ticked.');return;}
+  PENDING={num:'',title:code+(rev?' '+rev:'')+(title?' — '+title:''),
+    rec:{source:'manual',manual:{code:code,title:title,rev:rev,file:MAN.name,pages:MAN.first+'-'+MAN.last,mode:MAN.mode}},
+    wf:{status:'prepare'},note:'Créé depuis le manuel '+code+(rev?' '+rev:'')+' ('+MAN.name+', '+rows.length+' points) / Built from internal manual'};
+  var pre={}; rows.forEach(function(r){if(r.refdoc)pre['ir-'+r.idx]={status:'',obs:'',refdoc:r.refdoc,action:'',resp:''};});
+  launchGrid(rows,pre);
+  try{Object.keys(pre).forEach(function(rid){if(rowData[rid]){rowData[rid].refdoc=pre[rid].refdoc;var tr=document.querySelector('tr[data-rid="'+rid+'"] .crefdoc');if(tr)tr.textContent=pre[rid].refdoc;}});g_autosave();}catch(e){}
+};
+
+/* ════════════════ INIT ════════════════ */
+document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('button.tab,[onclick*="audit_plan"]');if(t&&String(t.getAttribute('onclick')||'').indexOf('audit_plan')>=0)setTimeout(function(){try{apInit();renderPlanTracking();}catch(x){}},80);},true);
+function boot(){
+  try{ensureArtsSection();}catch(e){console.warn(e);}
+  try{ensureManCard();}catch(e){console.warn(e);}
+  try{apInit();}catch(e){console.warn(e);}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(boot,300);});else setTimeout(boot,300);
+})();
+</script>
+
