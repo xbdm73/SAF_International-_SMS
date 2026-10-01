@@ -55,6 +55,18 @@ header p{margin:4px 0 0;color:var(--ink-2);font-size:13px}
 .ac dd small{font-family:var(--font);font-weight:400;font-size:12px;color:var(--ink-2)}
 .ac .when{font-size:12px;color:var(--ink-2);margin-top:8px}
 
+.ac .facts{font-size:13px;margin-top:8px;display:grid;gap:2px}
+.ac .facts b{font-weight:600}
+.ac .more{margin-top:8px;font-size:12px;color:var(--gold)}
+.det{margin-top:12px;border-top:1px solid var(--line);padding-top:4px;font-size:13px;cursor:default}
+.det h3{font-family:var(--cond);font-size:15px;font-weight:600;margin:12px 0 4px;color:var(--signal)}
+.det p{margin:0 0 6px}
+.det .muted{color:var(--ink-2)}
+.det .note{font-size:11.5px;margin-top:6px}
+.det table{width:100%;border-collapse:collapse}
+.det td{padding:3px 0}
+.det tr.sum td{padding-bottom:8px;border-bottom:1px solid var(--line);color:var(--ink-2)}
+.det .metar{font-family:var(--cond);font-size:13.5px;line-height:1.35}
 footer{padding:10px 20px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);font-size:12px;color:var(--ink-2)}
 footer .err{color:var(--lost)}
 
@@ -115,7 +127,7 @@ const CONFIG = {
   key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q",
   refreshMs: 30000,     // lecture Supabase (jamais NSE)
   liveMaxMin: 5,        // point plus récent que 5 min = en direct
-  lostAfterMin: 15,     // en mouvement puis plus de point depuis 15 min = signal perdu
+  lostAfterMin: 45,     // en mouvement puis plus de point depuis 45 min = signal perdu
   movingSpeed: 5,
 };
 const BASES = [
@@ -144,7 +156,7 @@ const markers = {}, trails = {};
 let fleet = [], state = {}, selected = null, firstFit = true;
 
 /* ---------- Utilitaires ---------- */
-const normHeading = h => h == null ? null : (h > 360 ? h/10 : h);
+const normHeading = h => h == null ? null : ((h/100) % 360); // NSE : cap en centièmes de degré
 const minsAgo = t => (Date.now() - new Date(t).getTime())/60000;
 function ago(t){
   const m = minsAgo(t);
@@ -181,39 +193,208 @@ function arrowSvg(color,heading){
 }
 const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
+/* ---------- Référentiel aérodromes (distance à vol d'oiseau, coordonnées approchées) ---------- */
+// metar:true = aérodrome publiant un METAR
+const AERODROMES = [
+  {icao:"LFKA",name:"Albertville",lat:45.6276,lon:6.3297,base:true},
+  {icao:"LSGS",name:"Sion",lat:46.2196,lon:7.3268,base:true,metar:true},
+  {icao:"LFLB",name:"Chambéry Aix-les-Bains",lat:45.6381,lon:5.8802,metar:true},
+  {icao:"LFLE",name:"Chambéry Challes",lat:45.5611,lon:5.9758},
+  {icao:"LFLP",name:"Annecy",lat:45.9308,lon:6.1064,metar:true},
+  {icao:"LSGG",name:"Genève",lat:46.2381,lon:6.1090,metar:true},
+  {icao:"LFLS",name:"Grenoble Isère",lat:45.3629,lon:5.3294,metar:true},
+  {icao:"LFLG",name:"Grenoble Le Versoud",lat:45.2192,lon:5.8497},
+  {icao:"LFHM",name:"Megève",lat:45.8208,lon:6.6522},
+  {icao:"LFLJ",name:"Courchevel",lat:45.3967,lon:6.6347},
+  {icao:"LFKX",name:"Méribel",lat:45.4070,lon:6.5806},
+  {icao:"LFHU",name:"L'Alpe d'Huez",lat:45.0883,lon:6.0847},
+  {icao:"LSGB",name:"Bex",lat:46.2583,lon:6.9864},
+  {icao:"LSGT",name:"Gruyères",lat:46.5942,lon:7.0944},
+  {icao:"LFLY",name:"Lyon Bron",lat:45.7272,lon:4.9444,metar:true},
+  {icao:"LFLL",name:"Lyon Saint-Exupéry",lat:45.7256,lon:5.0811,metar:true},
+  {icao:"LFLU",name:"Valence Chabeuil",lat:44.9216,lon:4.9699,metar:true},
+  {icao:"LIMW",name:"Aoste",lat:45.7385,lon:7.3687},
+  {icao:"LIMF",name:"Turin Caselle",lat:45.2008,lon:7.6497,metar:true},
+];
+const BASE_RADIUS_KM = 2;
+function bearingDeg(a,b){
+  const r=x=>x*Math.PI/180, y=Math.sin(r(b.lon-a.lon))*Math.cos(r(b.lat));
+  const x=Math.cos(r(a.lat))*Math.sin(r(b.lat))-Math.sin(r(a.lat))*Math.cos(r(b.lat))*Math.cos(r(b.lon-a.lon));
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+const CARD=["N","NE","E","SE","S","SO","O","NO"];
+function nearestAds(p,filter=()=>true,n=1){
+  return AERODROMES.filter(filter).map(ad=>({ad,km:haversineKm(p,ad)})).sort((a,b)=>a.km-b.km).slice(0,n);
+}
+function placeLabel(p){
+  const {ad,km}=nearestAds(p)[0];
+  if(km<BASE_RADIUS_KM) return `${ad.icao} ${ad.name}`;
+  return `${km<10?km.toFixed(1):Math.round(km)} km ${CARD[Math.round(bearingDeg(ad,p)/45)%8]} de ${ad.icao} ${ad.name}`;
+}
+const atBase = p => nearestAds(p,ad=>ad.base)[0].km < BASE_RADIUS_KM;
+const isAir = p => (p.speed??0) > CONFIG.movingSpeed;
+const hm = t => new Date(t).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",timeZone:"UTC"});
+function dur(min){ min=Math.max(0,Math.round(min)); return min<60?`${min} min`:`${Math.floor(min/60)} h ${String(min%60).padStart(2,"0")}`; }
+
+/* ---------- Analyse des positions : vols, dernière pose, temps hors base ---------- */
+// Les points NSE sont espacés (jusqu'à ~40 min) : les heures de décollage et d'atterrissage
+// sont donc encadrées entre deux points, jamais connues exactement.
+function analyze(pts){
+  const flights=[]; let cur=null, lastLanding=null;
+  for(let i=0;i<pts.length;i++){
+    const p=pts[i], prev=pts[i-1]||null;
+    if(isAir(p)){
+      if(!cur){
+        const fromGround = prev && !isAir(prev) && (new Date(p.fix_time)-new Date(prev.fix_time)) < 12*3600e3;
+        cur={toFrom:fromGround?prev.fix_time:null, toTo:p.fix_time, toPlace:fromGround?prev:null, pts:fromGround?[prev,p]:[p]};
+      } else cur.pts.push(p);
+    } else if(cur){
+      cur.ldFrom=cur.pts[cur.pts.length-1].fix_time; cur.ldTo=p.fix_time; cur.ldPlace=p; cur.pts.push(p);
+      flights.push(cur); lastLanding={place:p,from:cur.ldFrom,to:p.fix_time}; cur=null;
+    }
+  }
+  if(cur) flights.push(cur); // vol en cours
+  for(const f of flights){
+    f.km=f.pts.slice(1).reduce((s,p,i)=>s+haversineKm(f.pts[i],p),0);
+    const a0=f.toFrom?new Date(f.toFrom):null, a1=new Date(f.toTo);
+    const b0=f.ldFrom?new Date(f.ldFrom):null, b1=f.ldTo?new Date(f.ldTo):null;
+    if(b1){ f.minMin=(b0-a1)/60000; f.maxMin=a0?(b1-a0)/60000:null; }
+  }
+  // Temps hors base
+  let outside=null;
+  const last=pts[pts.length-1];
+  if(last && !atBase(last)){
+    let i=pts.length-1; while(i>=0 && !atBase(pts[i])) i--;
+    outside = i>=0 ? {since:pts[i+1].fix_time, leftFrom:pts[i]} : {since:null};
+  }
+  return {flights, lastLanding, outside};
+}
+
+/* ---------- Météo (à la demande, pour l'appareil sélectionné) ---------- */
+const wxCache={}, metarCache={};
+const WX_TTL=10*60e3;
+async function ensureDetails(reg){
+  const last=state[reg]?.last; if(!last) return;
+  let changed=false;
+  const w=wxCache[reg];
+  if(!w || Date.now()-w.t>WX_TTL || haversineKm(w,last)>5){
+    wxCache[reg]={t:Date.now(),lat:last.lat,lon:last.lon,loading:true};
+    try{
+      const u=`https://api.open-meteo.com/v1/forecast?latitude=${last.lat.toFixed(4)}&longitude=${last.lon.toFixed(4)}`+
+        `&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,visibility&wind_speed_unit=kn&timezone=UTC`;
+      const r=await fetch(u); wxCache[reg].data=(await r.json()).current;
+    }catch(e){ wxCache[reg].err=String(e.message||e); }
+    wxCache[reg].loading=false; changed=true;
+  }
+  const m=metarCache[reg];
+  if(!m || Date.now()-m.t>WX_TTL || haversineKm(m,last)>5){
+    const ids=nearestAds(last,ad=>ad.metar,2).map(x=>x.ad.icao);
+    metarCache[reg]={t:Date.now(),lat:last.lat,lon:last.lon,ids,loading:true};
+    try{
+      const {data,error}=await sb.functions.invoke("fleet-metar",{body:{ids}});
+      if(error) throw error; metarCache[reg].data=data.metars;
+    }catch(e){ metarCache[reg].err=String(e.message||e); }
+    metarCache[reg].loading=false; changed=true;
+  }
+  if(changed && selected===reg) render(lastPs);
+}
+
+function detailsHTML(reg){
+  const s=state[reg], an=s.an, last=s.last;
+  if(!last) return "";
+  const near=nearestAds(last,()=>true,1)[0];
+  const since24=Date.now()-24*3600e3;
+  const fl=an.flights.filter(f=>new Date(f.ldTo||f.toTo)>=since24).reverse();
+  let h=`<div class="det">`;
+  h+=`<h3>Position</h3><p>${esc(placeLabel(last))}<br><span class="muted">Aérodrome le plus proche : ${esc(near.ad.icao)} ${esc(near.ad.name)}, ${near.km.toFixed(1)} km</span></p>`;
+  h+=`<h3>Vols des dernières 24 h</h3>`;
+  if(!fl.length) h+=`<p class="muted">Aucun vol enregistré sur la période.</p>`;
+  else{
+    h+=`<table><tbody>`;
+    for(const f of fl){
+      const to = f.toFrom ? `entre ${hm(f.toFrom)} et ${hm(f.toTo)}` : `avant ${hm(f.toTo)}`;
+      const toPl = f.toPlace ? placeLabel(f.toPlace) : "lieu non enregistré";
+      const ld = f.ldTo ? `entre ${hm(f.ldFrom)} et ${hm(f.ldTo)}` : "vol en cours";
+      const ldPl = f.ldPlace ? placeLabel(f.ldPlace) : "—";
+      const d = !f.ldTo ? "—" : f.maxMin!=null ? `${dur(f.minMin)} à ${dur(f.maxMin)}` : f.minMin>=5 ? `au moins ${dur(f.minMin)}` : "inconnue (décollage non enregistré)";
+      h+=`<tr><td><b>Départ</b> ${esc(toPl)}<br><span class="muted">${to} UTC</span></td></tr>
+          <tr><td><b>Arrivée</b> ${esc(ldPl)}<br><span class="muted">${ld}${f.ldTo?" UTC":""}</span></td></tr>
+          <tr class="sum"><td>Durée ${d} · distance ≥ ${Math.round(f.km)} km</td></tr>`;
+    }
+    h+=`</tbody></table><p class="muted note">Heures encadrées entre deux points NSE ; la distance suit les seuls points reçus.</p>`;
+  }
+  const w=wxCache[reg];
+  h+=`<h3>Météo au point</h3>`;
+  if(!w||w.loading) h+=`<p class="muted">Chargement…</p>`;
+  else if(w.err||!w.data) h+=`<p class="muted">Météo indisponible.</p>`;
+  else{
+    const c=w.data;
+    const vis=c.visibility!=null?(c.visibility>=10000?"≥ 10 km":(c.visibility/1000).toFixed(1)+" km"):"–";
+    h+=`<p>Vent ${String(Math.round(c.wind_direction_10m)).padStart(3,"0")}° / ${Math.round(c.wind_speed_10m)} kt`+
+       `${c.wind_gusts_10m>c.wind_speed_10m+5?`, rafales ${Math.round(c.wind_gusts_10m)} kt`:""} · ${Math.round(c.temperature_2m)} °C · nébulosité ${c.cloud_cover} % · visibilité ${vis}`+
+       `<br><span class="muted">Modèle Open-Meteo à ${hm(c.time+"Z")} UTC, pas une observation.</span></p>`;
+  }
+  const m=metarCache[reg];
+  h+=`<h3>METAR les plus proches</h3>`;
+  if(!m||m.loading) h+=`<p class="muted">Chargement…</p>`;
+  else if(m.err||!m.data) h+=`<p class="muted">METAR indisponibles.</p>`;
+  else for(const id of m.ids){
+    const x=m.data[id], ad=AERODROMES.find(a=>a.icao===id);
+    h+=`<p class="metar"><b>${id}</b> <span class="muted">${esc(ad.name)}, ${Math.round(haversineKm(last,ad))} km</span><br>${x?esc(x.raw):"<span class='muted'>pas de METAR récent</span>"}</p>`;
+  }
+  return h+`</div>`;
+}
+
 /* ---------- Données ---------- */
+let lastPs=null;
 async function load(){
   const hours=+document.getElementById("win").value;
-  const since=new Date(Date.now()-hours*3600000).toISOString();
+  const winStart=Date.now()-hours*3600e3;
+  const since=new Date(Math.min(winStart, Date.now()-36*3600e3)).toISOString(); // 36 h pour le journal
   try{
     const [ac,pos,ps]=await Promise.all([
       sb.from("fleet_aircraft").select("reg,type,imei,provider,active").order("reg"),
-      sb.from("fleet_positions").select("reg,fix_time,lat,lon,alt_m,heading,speed").gte("fix_time",since).order("fix_time",{ascending:true}).limit(5000),
+      sb.from("fleet_positions").select("reg,fix_time,lat,lon,alt_m,heading,speed").gte("fix_time",since).order("fix_time",{ascending:true}).limit(10000),
       sb.from("fleet_poll_state").select("last_poll,last_result").eq("id",1).maybeSingle(),
     ]);
     if(ac.error) throw ac.error; if(pos.error) throw pos.error;
     fleet=ac.data;
-    // Derniers points par appareil, même hors fenêtre de trace
     const lasts=await Promise.all(fleet.map(a=>sb.from("fleet_positions").select("reg,fix_time,lat,lon,alt_m,heading,speed").eq("reg",a.reg).order("fix_time",{ascending:false}).limit(2)));
     state={};
     fleet.forEach((a,i)=>{
       const two=lasts[i].data||[];
-      state[a.reg]={ac:a,last:two[0]||null,prev:two[1]||null,trail:pos.data.filter(p=>p.reg===a.reg)};
+      const all=pos.data.filter(p=>p.reg===a.reg);
+      state[a.reg]={ac:a,last:two[0]||null,prev:two[1]||null,
+        trail:all.filter(p=>new Date(p.fix_time)>=winStart), an:analyze(all)};
     });
-    render(ps.data);
+    lastPs=ps.data;
+    render(lastPs);
+    if(selected) ensureDetails(selected);
   }catch(e){
     document.getElementById("foot").innerHTML=`<span class="err">Lecture impossible : ${esc(e.message||e)}. Nouvel essai dans ${CONFIG.refreshMs/1000} s.</span>`;
   }
 }
 
 function render(ps){
-  const list=document.getElementById("list"); list.innerHTML="";
+  const list=document.getElementById("list"); const scroll=list.scrollTop; list.innerHTML="";
   let nLive=0, nLost=0;
+  const stackCount={}; // appareils posés au même endroit (~100 m) : étiquettes empilées
+
   for(const a of fleet){
     const s=state[a.reg], last=s.last, st=a.active?status(last):{k:"none",t:"Suivi non activé ("+a.provider+")"};
     if(st.k==="live") nLive++; if(st.k==="lost") nLost++;
     const hd=last?normHeading(last.heading):null;
     const gs=computedGs(s.prev,last);
+    const an=s.an;
+    let facts="";
+    if(last){
+      if(an.lastLanding) facts+=`<div>Dernière pose : <b>${esc(placeLabel(an.lastLanding.place))}</b>, vers ${hm(an.lastLanding.to)} UTC</div>`;
+      if(atBase(last)) facts+=`<div>En base : <b>${esc(nearestAds(last,ad=>ad.base)[0].ad.icao)}</b></div>`;
+      else if(an.outside?.since) facts+=`<div>Hors base depuis au moins <b>${dur(minsAgo(an.outside.since))}</b> (départ de ${esc(nearestAds(an.outside.leftFrom,ad=>ad.base)[0].ad.icao)})</div>`;
+      else facts+=`<div>Hors base – départ non enregistré</div>`;
+      const n24=an.flights.filter(f=>new Date(f.ldTo||f.toTo)>=Date.now()-24*3600e3).length;
+      if(n24) facts+=`<div>${n24} vol${n24>1?"s":""} sur 24 h</div>`;
+    }
     const li=document.createElement("li");
     li.className="ac"+(selected===a.reg?" sel":""); li.dataset.st=st.k; li.tabIndex=0;
     li.innerHTML=`<div class="bar"></div><div class="body">
@@ -224,18 +405,29 @@ function render(ps){
         <div><dt>Cap</dt><dd>${hd==null?"–":String(Math.round(hd)%360).padStart(3,"0")+"°"}</dd></div>
         <div><dt>${gs!=null?"Vit. sol calc.":"Vitesse (brute)"}</dt><dd>${gs!=null?Math.round(gs/1.852)+' <small>kt</small>':esc(last.speed)}</dd></div>
       </dl>
-      <div class="when">Dernier point ${hhmm(last.fix_time)} – ${ago(last.fix_time)} · ${last.lat.toFixed(4)}, ${last.lon.toFixed(4)}</div>`:""}
+      <div class="facts">${facts}</div>
+      <div class="when">Dernier point ${hhmm(last.fix_time)} – ${ago(last.fix_time)}</div>
+      ${selected===a.reg?detailsHTML(a.reg):`<div class="more">Afficher vols et météo</div>`}`:""}
     </div>`;
-    const go=()=>{selected=a.reg; if(last) map.setView([last.lat,last.lon],Math.max(map.getZoom(),11)); render(ps);};
-    li.onclick=go; li.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};
+    const go=()=>{
+      if(selected===a.reg){ selected=null; render(lastPs); return; }
+      selected=a.reg; if(last) map.setView([last.lat,last.lon],Math.max(map.getZoom(),11));
+      render(lastPs); ensureDetails(a.reg);
+    };
+    li.onclick=e=>{ if(e.target.closest(".det")) return; go(); };
+    li.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};
     list.appendChild(li);
 
     // Marqueur
     if(last){
-      const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl">${esc(a.reg)}</span></div>`;
+      const spot=last.lat.toFixed(3)+","+last.lon.toFixed(3);
+      const idx=stackCount[spot]=(stackCount[spot]??-1)+1;
+      const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl" style="top:${-11+idx*23}px">${esc(a.reg)}</span></div>`;
       const icon=L.divIcon({className:"",html,iconSize:[0,0]});
       if(markers[a.reg]) markers[a.reg].setLatLng([last.lat,last.lon]).setIcon(icon);
       else markers[a.reg]=L.marker([last.lat,last.lon],{icon,keyboard:false}).addTo(map).on("click",go);
+      markers[a.reg].off("click").on("click",go);
+      markers[a.reg].setZIndexOffset(st.k==="lost"?1000:st.k==="live"?500:0);
     }
     // Trace
     const pts=s.trail.map(p=>[p.lat,p.lon]);
@@ -243,6 +435,7 @@ function render(ps){
     else trails[a.reg]=L.polyline(pts,{weight:3,opacity:.85}).addTo(map);
     trails[a.reg].setStyle({color:COLORS[st.k],weight:selected===a.reg?5:3,opacity:selected&&selected!==a.reg?.35:.85});
   }
+  list.scrollTop=scroll;
   document.getElementById("sub").textContent=
     `${fleet.length} appareils · ${nLive} en vol`+(nLost?` · ${nLost} signal perdu`:"");
   const f=document.getElementById("foot");
