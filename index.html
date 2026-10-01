@@ -365,6 +365,8 @@ main { flex: 1; padding: 3rem 2rem; max-width: 960px; margin: 0 auto; width: 100
 .icon-sms { background: rgba(220,60,60,.15); }
 .icon-cms { background: rgba(60,140,220,.15); }
 .icon-omm { background: rgba(60,200,130,.15); }
+.icon-fleet { background: rgba(240,192,64,.15); }
+.tag-fleet { background: rgba(240,192,64,.12); color: #F0C040; border: 1px solid rgba(240,192,64,.3); }
 .icon-aud { background: rgba(160,80,220,.15); }
 .tool-name { font-family: var(--font-display); font-size: 1.25rem; letter-spacing: .05em; color: #fff; flex: 1; }
 .arrow { color: var(--gold); font-size: 1rem; opacity: 0.45; transition: opacity 0.2s, transform 0.2s; flex-shrink: 0; }
@@ -496,6 +498,16 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
       </div>
       <p class="tool-desc">Annexes opérationnelles, organigramme, registre de formation et certificats, bases et équipements.<span class="bi-en">Operational appendices, organisation chart, training and certificate registers, bases and equipment.</span></p>
       <span class="tool-tag tag-omm">OMM</span>
+    </a>
+
+    <a class="tool-card" id="card-fleet" data-module="fleet" href="SAF_Suivi_Flotte.html">
+      <div class="tool-header">
+        <div class="tool-icon icon-fleet">🚁</div>
+        <span class="tool-name">Suivi flotte<span class="bi-en">Fleet tracking</span></span>
+        <span class="arrow">→</span>
+      </div>
+      <p class="tool-desc">Position des hélicoptères en temps réel, traces des dernières heures et alerte de perte de signal.<span class="bi-en">Live helicopter positions, recent tracks and loss-of-signal alert.</span></p>
+      <span class="tool-tag tag-fleet">OPS</span>
     </a>
 
     <a class="tool-card" id="card-guide" data-module="guide" href="SAF_User_Guide.html">
@@ -681,10 +693,10 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   //   reader    → registre des risques publié, dans le seul module Safety
   //   authority → lecture intégrale (OFAC/FOCA), aucune écriture
   var SAF_MODULE_ACCESS = {
-    admin:     ['sms','cms','omm','guide'],
-    editor:    ['sms','cms','omm','guide'],
+    admin:     ['sms','cms','omm','fleet','guide'],
+    editor:    ['sms','cms','omm','fleet','guide'],
     authority: ['sms','cms','omm','guide'],
-    reader:    ['sms','guide']
+    reader:    ['sms','fleet','guide']
   };
 
   var SAF_ROLE_BADGE = {

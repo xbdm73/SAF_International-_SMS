@@ -5,17 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SAF – Suivi flotte</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 :root{
-  --ink:#1D2733; --ink-2:#4A5765; --paper:#EEF1F4; --panel:#FFFFFF; --line:#D5DBE1;
-  --live:#1F8A55; --ground:#3D6FA8; --stale:#8A94A0; --lost:#C8382E; --signal:#F2B705;
-  --font:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --cond:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
-}
-@media (prefers-color-scheme:dark){
-  :root{--ink:#E6EBF0;--ink-2:#A5B0BC;--paper:#141B23;--panel:#1B242E;--line:#2C3845;--stale:#6C7784;}
+  --ink:#F4F6F8; --ink-2:#9AA7B4; --paper:#0A1420; --panel:#0D1B2A; --line:rgba(255,255,255,.09);
+  --live:#3CC882; --ground:#5B9BE0; --stale:#6C7784; --lost:#E5484D; --signal:#F0C040; --gold:#C9A227;
+  --font:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --cond:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
@@ -29,17 +27,19 @@ button,input,select{font:inherit;color:inherit}
 #map{height:100%;width:100%;background:var(--paper)}
 
 header{padding:18px 20px 12px;border-bottom:1px solid var(--line)}
-header h1{font-family:var(--cond);font-weight:700;font-size:26px;letter-spacing:.01em;margin:0;line-height:1}
+header h1{font-family:var(--cond);font-weight:700;font-size:26px;letter-spacing:.01em;margin:0;line-height:1;color:var(--signal)}
+header .home{display:inline-block;margin-bottom:10px;font-size:13px;color:var(--gold);text-decoration:none}
+header .home:hover{color:var(--signal)}
 header p{margin:4px 0 0;color:var(--ink-2);font-size:13px}
 
 #controls{display:flex;gap:8px;padding:10px 20px;border-bottom:1px solid var(--line);align-items:center;flex-wrap:wrap}
 #controls label{font-size:13px;color:var(--ink-2)}
-#controls select{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:4px 6px}
+#controls select{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:4px 6px}
 #controls button{background:none;border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer}
 
 #list{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1}
 .ac{display:grid;grid-template-columns:6px 1fr;cursor:pointer;border-bottom:1px solid var(--line)}
-.ac:hover,.ac.sel{background:color-mix(in srgb,var(--paper) 70%,transparent)}
+.ac:hover,.ac.sel{background:rgba(255,255,255,.04)}
 .ac .bar{background:var(--stale)}
 .ac[data-st=live] .bar{background:var(--live)} .ac[data-st=ground] .bar{background:var(--ground)}
 .ac[data-st=lost] .bar{background:var(--lost)}
@@ -58,15 +58,10 @@ header p{margin:4px 0 0;color:var(--ink-2);font-size:13px}
 footer{padding:10px 20px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);font-size:12px;color:var(--ink-2)}
 footer .err{color:var(--lost)}
 
-/* Login */
-#login{position:fixed;inset:0;display:none;place-items:center;background:var(--paper);z-index:2000;padding:20px}
-#login form{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:28px;width:min(360px,100%)}
-#login h2{font-family:var(--cond);font-size:28px;margin:0 0 4px}
-#login p{margin:0 0 18px;color:var(--ink-2);font-size:14px}
-#login label{display:block;font-size:13px;color:var(--ink-2);margin:12px 0 4px}
-#login input{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:4px;background:var(--paper)}
-#login button{margin-top:20px;width:100%;padding:10px;border:0;border-radius:4px;background:var(--ink);color:var(--panel);font-weight:600;cursor:pointer}
-#login .err{color:var(--lost);font-size:13px;min-height:1.2em;margin-top:10px}
+/* Session absente ou rôle non autorisé */
+#gate{position:fixed;inset:0;display:none;place-items:center;align-content:center;gap:14px;background:var(--paper);z-index:2000;padding:20px;text-align:center}
+#gate p{margin:0;max-width:420px;color:var(--ink-2)}
+#gate a{color:var(--signal)}
 
 /* Marqueurs */
 .acm{position:relative}
@@ -89,7 +84,8 @@ footer .err{color:var(--lost)}
 <div id="app">
   <aside id="side">
     <header>
-      <h1>Suivi flotte SAF</h1>
+      <a class="home" href="index.html">← Accueil SAF International</a>
+      <h1>Suivi flotte</h1>
       <p id="sub">Chargement…</p>
     </header>
     <div id="controls">
@@ -109,16 +105,7 @@ footer .err{color:var(--lost)}
   <div id="map"></div>
 </div>
 
-<div id="login">
-  <form id="lf">
-    <h2>Suivi flotte</h2>
-    <p>Connecte-toi avec ton compte de l'outil SMS.</p>
-    <label for="em">E-mail</label><input id="em" type="email" autocomplete="username" required>
-    <label for="pw">Mot de passe</label><input id="pw" type="password" autocomplete="current-password" required>
-    <button type="submit">Se connecter</button>
-    <div class="err" id="lerr"></div>
-  </form>
-</div>
+<div id="gate" role="alert"><p id="gate-msg">Vérification de la session…</p><a href="index.html">Aller à l'accueil</a></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -135,9 +122,10 @@ const BASES = [
   {name:"LFKA Albertville", lat:45.6276, lon:6.3297},
   {name:"LSGS Sion", lat:46.2196, lon:7.3268},
 ];
-const COLORS = {live:"#1F8A55", ground:"#3D6FA8", stale:"#8A94A0", lost:"#C8382E", none:"#8A94A0"};
+const COLORS = {live:"#3CC882", ground:"#5B9BE0", stale:"#6C7784", lost:"#E5484D", none:"#6C7784"};
 
-const sb = supabase.createClient(CONFIG.url, CONFIG.key, {auth:{persistSession:true, storageKey:"saf-fleet-auth"}});
+// Même client et même stockage de session que index.html : pas de seconde connexion
+const sb = supabase.createClient(CONFIG.url, CONFIG.key);
 
 /* ---------- Carte ---------- */
 const map = L.map("map", {zoomControl:true}).setView([45.9, 6.8], 8);
@@ -253,7 +241,7 @@ function render(ps){
     const pts=s.trail.map(p=>[p.lat,p.lon]);
     if(trails[a.reg]) trails[a.reg].setLatLngs(pts);
     else trails[a.reg]=L.polyline(pts,{weight:3,opacity:.85}).addTo(map);
-    trails[a.reg].setStyle({color:COLORS[st.k]==="#8A94A0"?"#6C7784":COLORS[st.k],weight:selected===a.reg?5:3,opacity:selected&&selected!==a.reg?.35:.85});
+    trails[a.reg].setStyle({color:COLORS[st.k],weight:selected===a.reg?5:3,opacity:selected&&selected!==a.reg?.35:.85});
   }
   document.getElementById("sub").textContent=
     `${fleet.length} appareils · ${nLive} en vol`+(nLost?` · ${nLost} signal perdu`:"");
@@ -268,20 +256,27 @@ function fitAll(){
   if(ll.length) map.fitBounds(L.latLngBounds(ll).pad(.3),{maxZoom:11});
 }
 
-/* ---------- Session ---------- */
+/* ---------- Session (partagée avec l'accueil) ---------- */
 let timer=null;
-function start(){ document.getElementById("login").style.display="none"; load(); clearInterval(timer); timer=setInterval(load,CONFIG.refreshMs); }
-function showLogin(){ clearInterval(timer); document.getElementById("login").style.display="grid"; }
-document.getElementById("lf").onsubmit=async e=>{
-  e.preventDefault();
-  const err=document.getElementById("lerr"); err.textContent="";
-  const {error}=await sb.auth.signInWithPassword({email:em.value.trim(),password:pw.value});
-  if(error) err.textContent="Connexion refusée : vérifie l'e-mail et le mot de passe."; else start();
-};
-document.getElementById("logout").onclick=async()=>{await sb.auth.signOut(); showLogin();};
+function gate(msg){ clearInterval(timer); document.getElementById("gate-msg").textContent=msg; document.getElementById("gate").style.display="grid"; }
+async function boot(){
+  const {data}=await sb.auth.getSession();
+  const session=data.session;
+  if(!session){ location.replace("index.html"); return; }
+  // Rôle lu comme dans index.html ; l'accès réel est décidé par la RLS (admin, editor, reader)
+  let role="reader";
+  try{
+    const r=await sb.from("user_roles").select("role").ilike("user_email",String(session.user.email||"").trim()).limit(1);
+    if(r.data&&r.data[0]&&r.data[0].role) role=String(r.data[0].role).toLowerCase();
+  }catch(e){}
+  if(!["admin","editor","reader"].includes(role)){ gate("Le suivi flotte n'est pas ouvert à ce compte."); return; }
+  load(); clearInterval(timer); timer=setInterval(load,CONFIG.refreshMs);
+}
+document.getElementById("logout").onclick=async()=>{await sb.auth.signOut(); location.replace("index.html");};
 document.getElementById("win").onchange=load;
 document.getElementById("fit").onclick=()=>{selected=null; fitAll(); load();};
-sb.auth.getSession().then(({data})=>data.session?start():showLogin());
+sb.auth.onAuthStateChange(ev=>{ if(ev==="SIGNED_OUT") location.replace("index.html"); });
+boot();
 </script>
 </body>
 </html>
