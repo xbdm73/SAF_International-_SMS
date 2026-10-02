@@ -45,7 +45,7 @@ header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 22px;padding:12px
 main{display:grid;grid-template-columns:minmax(0,1fr) 380px;align-items:start}
 .syn{min-width:0;padding:8px 12px 28px;border-right:1px solid var(--line)}
 .mapwrap{overflow-x:auto;overflow-y:hidden}
-svg#map{display:block;width:100%;min-width:1060px;height:auto;user-select:none}
+svg#map{display:block;width:100%;min-width:980px;height:auto;user-select:none}
 aside{position:sticky;top:0;max-height:100vh;overflow:auto;padding:18px 20px 30px}
 @media (max-width:980px){
   main{grid-template-columns:1fr}
@@ -53,35 +53,42 @@ aside{position:sticky;top:0;max-height:100vh;overflow:auto;padding:18px 20px 30p
   aside{position:static;max-height:none;border-top:1px solid var(--line)}
 }
 
-/* Synoptique */
-.colh{fill:var(--dim);font:600 14px var(--cond)}
-.rule{stroke:var(--line);stroke-width:1}
+/* Synoptique planétaire */
+.mapwrap{border-radius:8px;background:radial-gradient(ellipse at 50% 50%,#1e3550 0%,#142538 50%,#0f1c2a 100%)}
+.star{fill:#d6e6f5}
+.orbit{fill:none;stroke:rgba(160,185,205,.17);stroke-width:1;stroke-dasharray:2 7}
 .node{cursor:pointer}
-.node .box{fill:var(--panel);stroke:var(--st);stroke-width:1.6}
-.node .bar{fill:var(--st)}
-.node .dot{fill:var(--st)}
-.node .t{fill:var(--ink);font:600 15px var(--cond)}
-.node .s{fill:var(--dim);font:12px var(--body)}
-.node.absent .box{fill:#17232d;stroke-dasharray:6 4}
-.node.absent .t{fill:#c3cfd8}
+.node .halo{fill:none;stroke:var(--st);stroke-width:2;opacity:.45}
+.node.st-fail .halo{stroke-width:3.5;opacity:.95;animation:pulse 1.6s ease-in-out infinite}
+.node .pl{stroke:rgba(255,255,255,.2);stroke-width:1}
+.node.st-ok .pl{fill:url(#g-ok)} .node.st-warn .pl{fill:url(#g-warn)} .node.st-fail .pl{fill:url(#g-fail)} .node.st-na .pl{fill:url(#g-na)}
+.node.absent .pl{fill:rgba(18,30,42,.55);stroke:var(--st);stroke-width:1.8;stroke-dasharray:5 4}
+.node .ic{font-size:19px;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.node.sun .ic{font-size:34px}
+.node.absent .ic{opacity:.55}
+.node .t{fill:var(--ink);font:600 14px var(--cond);text-anchor:middle;paint-order:stroke;stroke:#13233a;stroke-width:4px;stroke-linejoin:round}
+.node.sun .t{font-size:18px}
+.node.absent .t{fill:#b3c1cd}
+.node .corona{fill:url(#g-sun);pointer-events:none}
 .node:focus{outline:none}
-.node:focus-visible .box,.node.sel .box{stroke-width:3.2;filter:url(#glow)}
-.edge .ln{fill:none;stroke:var(--st);stroke-width:2.2;stroke-linejoin:round}
-.edge.st-na .ln{stroke-dasharray:3 5}
-.edge.st-fail .ln{stroke-width:3.2;stroke-dasharray:10 6;animation:flow 1s linear infinite}
+.node:focus-visible .halo,.node.sel .halo{opacity:1;stroke-width:4;filter:url(#glow)}
+.edge .ln{fill:none;stroke:var(--st);stroke-width:2;stroke-linecap:round;opacity:.85}
+.edge.st-na .ln{stroke-dasharray:3 6;opacity:.6}
+.edge.st-fail .ln{stroke-width:3.2;opacity:1;stroke-dasharray:10 7;animation:flow 1s linear infinite}
 .edge .hit{fill:none;stroke:transparent;stroke-width:16;cursor:pointer}
 .edge .bdg{display:none;cursor:pointer}
 .edge.st-fail .bdg,.edge.st-warn .bdg{display:inline}
-.edge .bdg circle{fill:var(--st);stroke:var(--bg);stroke-width:2.5}
-.edge .bdg text{fill:#14212c;font:700 13px var(--body);text-anchor:middle}
-.edge .lbl{display:none;fill:var(--ink);font:500 12.5px var(--body);paint-order:stroke;stroke:var(--bg);stroke-width:4px;text-anchor:middle;pointer-events:none}
+.edge .bdg circle{fill:var(--st);stroke:#13233a;stroke-width:2.5}
+.edge .bdg text{fill:#13233a;font:700 13px var(--body);text-anchor:middle}
+.edge .lbl{display:none;fill:var(--ink);font:500 12.5px var(--body);paint-order:stroke;stroke:#13233a;stroke-width:4px;text-anchor:middle;pointer-events:none}
 .edge:hover .lbl,.edge.sel .lbl,.edge:focus-visible .lbl,svg[data-filter] .edge.st-fail .lbl,svg[data-filter] .edge.st-warn .lbl{display:inline}
-.edge.sel .ln{stroke-width:4}
+.edge.sel .ln{stroke-width:4;opacity:1}
 .edge:focus{outline:none}
-@keyframes flow{to{stroke-dashoffset:-16}}
-@media (prefers-reduced-motion:reduce){.edge.st-fail .ln{animation:none}}
+@keyframes flow{to{stroke-dashoffset:-17}}
+@keyframes pulse{0%,100%{opacity:.95}50%{opacity:.2}}
+@media (prefers-reduced-motion:reduce){.edge.st-fail .ln,.node.st-fail .halo{animation:none}}
 .st-ok{--st:var(--ok)} .st-warn{--st:var(--warn)} .st-fail{--st:var(--fail)} .st-na{--st:var(--na)}
-svg.focus .node:not(.rel):not(.sel),svg.focus .edge:not(.rel):not(.sel){opacity:.28}
+svg.focus .node:not(.rel):not(.sel),svg.focus .edge:not(.rel):not(.sel){opacity:.22}
 svg[data-filter="fail"] .node:not(.st-fail),svg[data-filter="fail"] .edge:not(.st-fail){opacity:.12}
 svg[data-filter="warn"] .node:not(.st-warn),svg[data-filter="warn"] .edge:not(.st-warn){opacity:.12}
 
@@ -132,7 +139,7 @@ dialog .err{color:#ff9a9a;font-size:13.5px;min-height:1.2em;margin:8px 0 0}
 <header>
   <div class="brand">
     <h1>Synoptique du SMS</h1>
-    <p>SAF International, fonctions et liens contrôlés en direct</p>
+    <p>SAF International, constellation des fonctions et de leurs liens, contrôlés en direct</p>
   </div>
   <div class="lamps">
     <button class="lamp fail" id="lampFail" aria-pressed="false" title="Afficher uniquement les éléments défaillants"><b id="nFail">–</b><span>défaillances</span></button>
@@ -150,7 +157,7 @@ dialog .err{color:#ff9a9a;font-size:13.5px;min-height:1.2em;margin:8px 0 0}
 
 <main>
   <section class="syn">
-    <div class="mapwrap"><svg id="map" viewBox="0 0 1390 880" role="img" aria-label="Synoptique des fonctions du SMS et de leurs liens"></svg></div>
+    <div class="mapwrap"><svg id="map" viewBox="0 0 1500 1000" role="img" aria-label="Synoptique des fonctions du SMS et de leurs liens"></svg></div>
     <div class="issues">
       <h2>À traiter</h2>
       <ol id="issues"><li class="empty">Contrôles en cours.</li></ol>
@@ -190,7 +197,7 @@ const CFG = { url: 'https://qaqehmxoehcvzcojcqkm.supabase.co', key: '' };
 const F_SAF = 'SAF_International_Safety.html';
 const F_CMS = 'SAF_International_Compliance_Monitoring_System.html';
 const F_OMM = 'SAF_International_Appendices_OMM.html';
-const FILES = ['index.html', F_SAF, F_CMS, F_OMM, 'SAF_Report.html', 'SAF_Suivi_Flotte.html'];
+const FILES = ['index.html', F_SAF, F_CMS, F_OMM, 'SAF_Report.html', 'SAF_Suivi_Flotte.html', 'SAF_User_Guide.html'];
 const ATT_KEY = 'saf_synoptique_attest_v1';
 
 const X = [30, 310, 590, 870, 1150], Y = [70, 190, 310, 430, 550, 670], YI = 800, NW = 210, NH = 56;
@@ -478,6 +485,7 @@ async function scanNav(){
     let m; re.lastIndex = 0;
     while ((m = re.exec(t))){
       const tg = m[1].replace(/^\.\//, '');
+      if (tg.startsWith('../')) continue;
       if (/^archives\//i.test(tg)){ const k = f + '|' + tg; if (!seenA.has(k)){ seenA.add(k); CTX.nav.archives.push({file:f, target:tg}); } }
       else { if (!targets.has(tg)) targets.set(tg, new Set()); targets.get(tg).add(f); }
     }
@@ -814,52 +822,66 @@ function saveAtt(key, rec){ try { const a = loadAtt(); a[key] = rec; localStorag
 /* =====================================================================
    Dessin
    ===================================================================== */
-function route(e){
+/* Constellation : le registre des risques au centre, trois orbites autour */
+const CX = 750, CY = 505, KX = 1.45, ORB = [0, 190, 320, 440], PR = [58, 34, 30, 25];
+const PLACE = {
+  rr:[0,0],
+  ref:[1,-90], spi:[1,-25], bar:[1,45], eff:[1,110], moc:[1,170], taxo:[1,-150],
+  omm:[2,-108], so:[2,-70], pub:[2,-35], srb:[2,0], actions:[2,35], ll:[2,70], matrix:[2,110], eccairs:[2,145], occ:[2,180], fivew:[2,-145],
+  erp:[3,0], interfaces:[3,24], cap:[3,48], findings:[3,72], audit:[3,96], email:[3,144], reports:[3,168], report:[3,-168],
+  fleet:[3,-144], hosting:[3,-120], auth:[3,-96], cloud:[3,-72], training:[3,-48], partis:[3,-24]
+};
+const ICON = {report:'📝', reports:'📥', email:'✉️', fleet:'🚁', audit:'🔎', hosting:'🧭', fivew:'❓', occ:'📒', taxo:'🗂️',
+  eccairs:'📡', findings:'⚠️', cap:'🛠️', auth:'🔐', ref:'📚', rr:'🛡️', bar:'🧱', eff:'✅', moc:'🔄', matrix:'⚖️', cloud:'☁️',
+  so:'🎯', spi:'📈', srb:'🏛️', ll:'💡', actions:'📌', omm:'📁', pub:'👁️', partis:'💻', training:'🎓', erp:'🚨', interfaces:'🔗'};
+const SHORT = {report:'Signalement', bar:'Barrières', ref:'Référentiel', matrix:'Matrice EASA', spi:'Indicateurs SPI',
+  auth:'Connexion et MFA', partis:'Part-IS', hosting:'Portail', cloud:'Base de données', eccairs:'ECCAIRS', taxo:'Catalogue d’événements'};
+function placeNodes(){
+  for (const n of NODES){
+    const [o, a] = PLACE[n.id], t = a * Math.PI / 180;
+    n.px = CX + ORB[o] * KX * Math.cos(t); n.py = CY + ORB[o] * Math.sin(t); n.pr = PR[o]; n.orb = o;
+  }
+}
+const r1 = v => Math.round(v * 10) / 10;
+function unit(x, y){ const l = Math.hypot(x, y) || 1; return [x / l, y / l]; }
+function curve(e){
   const a = NODE[e.from], b = NODE[e.to];
-  const ay = a.y + NH / 2, by = b.y + NH / 2;
-  if (a.x === b.x){
-    if (!e.side){ const x = a.x + NW / 2, down = b.y > a.y; return [[x, down ? a.y + NH : a.y], [x, down ? b.y : b.y + NH]]; }
-    const right = e.side === 'right', xs = right ? a.x + NW : a.x, gx = right ? xs + 70 * (e.g1 ?? .4) : xs - 70 * (e.g1 ?? .4);
-    return [[xs, ay], [gx, ay], [gx, by], [xs, by]];
-  }
-  const sx = a.x + NW, tx = b.x;
-  if (e.lane == null){
-    if (ay === by) return [[sx, ay], [tx, by]];
-    const gx = sx + 70 * (e.g1 ?? .5);
-    return [[sx, ay], [gx, ay], [gx, by], [tx, by]];
-  }
-  const g1 = sx + 70 * (e.g1 ?? .5), g2 = tx - 70 + 70 * (e.g2 ?? .5);
-  return [[sx, ay], [g1, ay], [g1, e.lane], [g2, e.lane], [g2, by], [tx, by]];
+  const mx = (a.px + b.px) / 2, my = (a.py + b.py) / 2, dx = b.px - a.px, dy = b.py - a.py, L = Math.hypot(dx, dy) || 1;
+  const nx = -dy / L, ny = dx / L, k = Math.min(.2 * L, 85);
+  const c1 = [mx + nx * k, my + ny * k], c2 = [mx - nx * k, my - ny * k];
+  const C = Math.hypot(c1[0] - CX, c1[1] - CY) >= Math.hypot(c2[0] - CX, c2[1] - CY) ? c1 : c2;
+  const ua = unit(C[0] - a.px, C[1] - a.py), ub = unit(C[0] - b.px, C[1] - b.py);
+  const S = [a.px + ua[0] * (a.pr + 9), a.py + ua[1] * (a.pr + 9)], E = [b.px + ub[0] * (b.pr + 12), b.py + ub[1] * (b.pr + 12)];
+  const M = [.25 * S[0] + .5 * C[0] + .25 * E[0], .25 * S[1] + .5 * C[1] + .25 * E[1]];
+  return {d:`M${r1(S[0])},${r1(S[1])} Q${r1(C[0])},${r1(C[1])} ${r1(E[0])},${r1(E[1])}`, M};
 }
-function midOf(pts){
-  let best = 0, bi = 0;
-  for (let i = 0; i < pts.length - 1; i++){ const l = Math.hypot(pts[i+1][0] - pts[i][0], pts[i+1][1] - pts[i][1]); if (l > best){ best = l; bi = i; } }
-  return [(pts[bi][0] + pts[bi+1][0]) / 2, (pts[bi][1] + pts[bi+1][1]) / 2];
-}
-function wrapLabel(t, max = 26){ return t.length <= max ? t : t.slice(0, max - 1) + '…'; }
 function draw(){
+  placeNodes();
   const svg = $('#map');
-  const mk = (id, c) => `<marker id="ar-${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${c}"/></marker>`;
+  const mk = (id, c) => `<marker id="ar-${id}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${c}"/></marker>`;
+  const gr = (id, a, b, c) => `<radialGradient id="g-${id}" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="${a}"/><stop offset=".55" stop-color="${b}"/><stop offset="1" stop-color="${c}"/></radialGradient>`;
   let h = `<defs>${mk('ok','#3ccf91')}${mk('warn','#f0b429')}${mk('fail','#ef4b4b')}${mk('na','#6c8193')}
-    <filter id="glow" x="-20%" y="-40%" width="140%" height="180%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
-  h += `<rect x="0" y="0" width="1390" height="880" fill="transparent" class="bg"/>`;
-  COLS.forEach((c, i) => { h += `<text class="colh" x="${X[i]}" y="40">${esc(c)}</text><line class="rule" x1="${X[i]}" x2="${X[i] + NW}" y1="50" y2="50"/>`; });
-  h += `<text class="colh" x="${X[0]}" y="772">Socle technique</text><line class="rule" x1="${X[0]}" x2="${X[2] + NW}" y1="782" y2="782"/>`;
+    ${gr('ok','#c4f7df','#3ccf91','#124f39')}${gr('warn','#ffe9ad','#f0b429','#5f4206')}${gr('fail','#ffc9c9','#ef4b4b','#5e1215')}${gr('na','#d2dde6','#6c8193','#223039')}
+    <radialGradient id="g-sun" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#5fb7e8" stop-opacity=".38"/><stop offset=".6" stop-color="#5fb7e8" stop-opacity=".1"/><stop offset="1" stop-color="#5fb7e8" stop-opacity="0"/></radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 170; i++) h += `<circle class="star" cx="${r1(rnd() * 1500)}" cy="${r1(rnd() * 1000)}" r="${r1(.4 + rnd() * 1.1)}" opacity="${r1(.15 + rnd() * .55)}"/>`;
+  for (let o = 1; o <= 3; o++) h += `<ellipse class="orbit" cx="${CX}" cy="${CY}" rx="${ORB[o] * KX}" ry="${ORB[o]}"/>`;
   for (const e of EDGES){
-    const pts = route(e), d = 'M' + pts.map(p => p.join(',')).join(' L'), [mx, my] = midOf(pts);
-    const a = NODE[e.from].label, b = NODE[e.to].label;
+    const {d, M} = curve(e), a = NODE[e.from].label, b = NODE[e.to].label;
     h += `<g class="edge st-na" id="E-${e.id}" data-k="e" data-id="${e.id}" tabindex="0" role="button" aria-label="Lien ${esc(e.label)} : ${esc(a)} vers ${esc(b)}">
       <path class="hit" d="${d}"/><path class="ln" d="${d}" marker-end="url(#ar-na)"/>
-      <text class="lbl" x="${mx}" y="${my - 14}">${esc(e.label)}</text>
-      <g class="bdg" transform="translate(${mx},${my})"><circle r="10"/><text y="4.5">!</text></g></g>`;
+      <text class="lbl" x="${r1(M[0])}" y="${r1(M[1] - 15)}">${esc(e.label)}</text>
+      <g class="bdg" transform="translate(${r1(M[0])},${r1(M[1])})"><circle r="10"/><text y="4.5">!</text></g></g>`;
   }
   for (const n of NODES){
-    h += `<g class="node st-na${n.absent ? ' absent' : ''}" id="N-${n.id}" data-k="n" data-id="${n.id}" tabindex="0" role="button" aria-label="Fonction ${esc(n.label)}">
-      <rect class="box" x="${n.x}" y="${n.y}" width="${NW}" height="${NH}" rx="5"/>
-      <rect class="bar" x="${n.x}" y="${n.y}" width="5" height="${NH}" rx="2"/>
-      <circle class="dot" cx="${n.x + NW - 13}" cy="${n.y + 13}" r="5"/>
-      <text class="t" x="${n.x + 16}" y="${n.y + 24}">${esc(wrapLabel(n.label))}</text>
-      <text class="s" x="${n.x + 16}" y="${n.y + 43}">${esc(wrapLabel(n.sub, 32))}</text></g>`;
+    const x = r1(n.px), y = r1(n.py), sun = n.orb === 0;
+    h += `<g class="node st-na${n.absent ? ' absent' : ''}${sun ? ' sun' : ''}" id="N-${n.id}" data-k="n" data-id="${n.id}" tabindex="0" role="button" aria-label="Fonction ${esc(n.label)}">
+      ${sun ? `<circle class="corona" cx="${x}" cy="${y}" r="${n.pr + 46}"/>` : ''}
+      <circle class="halo" cx="${x}" cy="${y}" r="${n.pr + 6}"/>
+      <circle class="pl" cx="${x}" cy="${y}" r="${n.pr}"/>
+      <text class="ic" x="${x}" y="${y}">${ICON[n.id] || ''}</text>
+      <text class="t" x="${x}" y="${r1(n.py + n.pr + 21)}">${esc(SHORT[n.id] || n.label)}</text></g>`;
   }
   svg.innerHTML = h;
   svg.addEventListener('click', ev => {
@@ -880,7 +902,7 @@ function paint(){
   for (const n of NODES){
     const s = RES['n:' + n.id] ? RES['n:' + n.id].status : 'na'; tally(s);
     const g = document.getElementById('N-' + n.id);
-    g.setAttribute('class', `node st-${s}${n.absent ? ' absent' : ''}`);
+    g.setAttribute('class', `node st-${s}${n.absent ? ' absent' : ''}${n.orb === 0 ? ' sun' : ''}`);
     g.setAttribute('aria-label', `Fonction ${n.label}, ${LABEL[s]}`);
   }
   for (const e of EDGES){
@@ -936,14 +958,14 @@ function renderIssues(){
 /* ---------- Panneau ---------- */
 function legendHTML(){
   const ln = (c, dash) => `<svg width="46" height="12" aria-hidden="true"><line x1="2" y1="6" x2="44" y2="6" stroke="${c}" stroke-width="3" ${dash ? `stroke-dasharray="${dash}"` : ''}/></svg>`;
-  return `<p class="kind">Mode d’emploi</p><h3>Lire le synoptique</h3>
-    <p class="desc">Chaque boîte est une fonction du SMS, chaque trait un lien entre deux fonctions. Les contrôles lisent les fichiers en ligne et la base Supabase avec votre session. Touchez une fonction ou un lien pour voir la mesure, la cause et quoi faire.</p>
+  return `<p class="kind">Mode d’emploi</p><h3>Lire la constellation</h3>
+    <p class="desc">Chaque planète est une fonction du SMS, chaque trajectoire un lien entre deux fonctions. Le registre des risques est au centre ; plus une planète est éloignée, plus la fonction est en amont (collecte) ou en aval (diffusion). Les contrôles lisent les fichiers en ligne et la base Supabase avec votre session. Touchez une fonction ou un lien pour voir la mesure, la cause et quoi faire.</p>
     <ul class="legend">
       <li>${ln('#3ccf91')} Opérationnel</li>
       <li>${ln('#f0b429')} Dégradé, à surveiller</li>
-      <li>${ln('#ef4b4b', '10 6')} Défaillant, marqué d’une croix</li>
+      <li>${ln('#ef4b4b', '10 6')} Défaillant : croix sur le lien, halo rouge clignotant sur la planète</li>
       <li>${ln('#6c8193', '3 5')} Non vérifié, faute d’accès ou de donnée</li>
-      <li><svg width="46" height="14" aria-hidden="true"><rect x="2" y="1" width="42" height="12" rx="3" fill="none" stroke="#ef4b4b" stroke-dasharray="5 3"/></svg> Fonction attendue mais absente du SMS</li>
+      <li><svg width="46" height="22" aria-hidden="true"><circle cx="23" cy="11" r="9" fill="none" stroke="#ef4b4b" stroke-dasharray="4 3"/></svg> Planète fantôme : fonction attendue mais absente du SMS</li>
     </ul>
     <p class="note">Les liens qui ne se mesurent pas depuis la page (emails, export E5X, traceurs) s’attestent après un essai. L’attestation est conservée sur ce poste.</p>`;
 }
