@@ -2026,6 +2026,30 @@ function safExportPDF() {
 </div>
 </nav>
 <main>
+<section class="panel active" id="dashboard" data-dashboard-version="V9-home-restored">
+<div class="saf-expert-wrap">
+  <div class="card note" style="margin-bottom:16px;">
+    <h2>SAF International — Compliance Monitoring Overview / Vue d’ensemble</h2>
+    <p class="muted">Page d’accueil du Compliance Monitoring System. Les indicateurs détaillés sont disponibles dans <b>APP14-OMM</b> et dans le <b>CMS Dashboard</b>. Les seuils affichés sont des cibles internes SAF.</p>
+  </div>
+  <div class="sx-title">QUICK ACCESS / ACCÈS RAPIDE</div>
+  <div class="sx-grid">
+    <div class="sx-card"><div class="sx-ref">APP13-OMM</div><div class="sx-name">Audit Plan / Plan d’audit</div><div class="sx-value sx-info">Plan</div><div class="sx-meta">Planifier et suivre le programme d’audit.</div><button class="sx-btn" onclick="showMainTab('audit_plan')">Open / Ouvrir</button></div>
+    <div class="sx-card"><div class="sx-ref">APP14-OMM</div><div class="sx-name">Compliance Assurance Indicators</div><div class="sx-value sx-info">KPI</div><div class="sx-meta">Suivre les KPI CMS et les cibles SAF.</div><button class="sx-btn" onclick="showMainTab('kpispi')">Open / Ouvrir</button></div>
+    <div class="sx-card"><div class="sx-ref">APP15-OMM</div><div class="sx-name">Corrective Action Plan</div><div class="sx-value sx-info">CAP</div><div class="sx-meta">Suivre constatations, actions, délais et efficacité.</div><button class="sx-btn" onclick="showMainTab('cmsx_registre')">Open / Ouvrir</button></div>
+    <div class="sx-card"><div class="sx-ref">CMS</div><div class="sx-name">Management System Performance Dashboard</div><div class="sx-value sx-info">Dashboard</div><div class="sx-meta">Compliance Assurance + Safety Performance + Management System Health.</div><button class="sx-btn" onclick="showMainTab('cms_dashboard')">Open / Ouvrir</button></div>
+  </div>
+  <div class="sx-title">MANAGEMENT SYSTEM — SUMMARY / SYNTHÈSE</div>
+  <div class="sx-grid" id="saf-home-summary">
+    <div class="sx-card"><div class="sx-ref">CMS-03</div><div class="sx-name">Open Level 1 findings</div><div class="sx-value sx-na" id="home-cms03">—</div><div class="sx-meta">SAF target: 0</div></div>
+    <div class="sx-card"><div class="sx-ref">CMS-05</div><div class="sx-name">Overdue corrective actions</div><div class="sx-value sx-na" id="home-cms05">—</div><div class="sx-meta">SAF target: 0</div></div>
+    <div class="sx-card"><div class="sx-ref">CMS-07</div><div class="sx-name">CAP effectiveness verified</div><div class="sx-value sx-na" id="home-cms07">—</div><div class="sx-meta">SAF target: 100%</div></div>
+    <div class="sx-card"><div class="sx-ref">SMS</div><div class="sx-name">Safety Performance</div><div class="sx-value sx-na">—</div><div class="sx-meta">See CMS Dashboard / Voir CMS Dashboard</div></div>
+  </div>
+  <div class="sx-note">Si les données ne sont pas encore disponibles, les indicateurs affichent « — » plutôt qu’une valeur estimée. / If data are unavailable, indicators show “—” rather than an estimated value.</div>
+</div>
+</section>
+
 <!-- ═══════════════════════════════════════
      ONGLET 1 : PLAN D'AUDIT
 ═══════════════════════════════════════ -->
@@ -8243,7 +8267,7 @@ document.addEventListener('DOMContentLoaded', function(){
 <!-- ══════════════════════════════════════
      PANEL : CMS DASHBOARD (EASA)
 ══════════════════════════════════════ -->
-<div class="panel" id="cms_dashboard"><div class="saf-expert-wrap"><div class="card note"><h2>Management System Performance Dashboard / Tableau de bord de performance du système de management</h2><p class="muted">Three separate views: Compliance Assurance (CMS), Safety Performance (SMS) and Management System Health. SAF targets are internal management thresholds. Safety rates are normalised by exposure where reliable exposure data are available.</p></div><div id="saf-expert-management"><div class="sx-note">Loading management-system indicators... / Chargement des indicateurs du système de management...</div></div></div></div>
+<div class="panel" id="cms_dashboard" data-dashboard-version="V8-static-fallback"><div class="saf-expert-wrap"><div class="card note"><h2>Management System Performance Dashboard / Tableau de bord de performance du système de management</h2><p class="muted">Three separate views: Compliance Assurance (CMS), Safety Performance (SMS) and Management System Health. SAF targets are internal management thresholds. Safety rates are normalised by exposure where reliable exposure data are available.</p></div><div id="saf-expert-management"><div class="sx-title">A — COMPLIANCE ASSURANCE</div><div class="sx-grid"><div class="sx-card"><div class="sx-ref">CMS-01</div><div class="sx-name">Audit programme completed on time</div><div class="sx-value sx-na">—</div><div class="sx-meta"><b>SAF target:</b> 100%<br><b>Alert:</b> < 90%<br><b>Status:</b> Awaiting data / En attente de données</div></div><div class="sx-card"><div class="sx-ref">CMS-02</div><div class="sx-name">Applicable requirements covered during audit cycle</div><div class="sx-value sx-na">—</div><div class="sx-meta"><b>SAF target:</b> 100%<br><b>Alert:</b> < 95%<br><b>Status:</b> Awaiting data / En attente de données</div></div><div class="sx-card"><div class="sx-ref">CMS-03</div><div class="sx-name">Open Level 1 findings</div><div class="sx-value sx-na">—</div><div class="sx-meta"><b>SAF target:</b> 0<br><b>Alert:</b> > 0<br><b>Status:</b> Awaiting data / En attente de données</div></div><div class="sx-card"><div class="sx-ref">CMS-04</div><div class="sx-name">Corrective actions completed within approved deadline</div><div class="sx-value sx-na">—</div><div class="sx-meta"><b>SAF target:</b> ≥ 90%<br><b>Alert:</b> < 80%<br><b>Status:</b> Awaiting data / En attente de données</div></div><div class="sx-card"><div class="sx-ref">CMS-05</div><div class="sx-name">Overdue corrective actions</div><div class="sx-value sx-na">—</div><div class="sx-meta"><b>SAF target:</b> 0<br><b>Alert:</b> > 0<br><b>Status:</b> Awaiting data / En attente de données</div></div><div class="sx-card"><div class="sx-ref">CMS-06</div><div class="sx-name">Repeat findings</div><div class="sx-value sx-na">—</div><div class="sx-meta"><b>SAF target:</b> < 10%<br><b>Alert:</b> ≥ 10%<br><b>Status:</b> Awaiting data / En attente de données</div></div><div class="sx-card"><div class="sx-ref">CMS-07</div><div class="sx-name">CAP effectiveness verified</div><div class="sx-value sx-na">—</div><div class="sx-meta"><b>SAF target:</b> 100%<br><b>Alert:</b> < 95%<br><b>Status:</b> Awaiting data / En attente de données</div></div><div class="sx-card"><div class="sx-ref">CMS-08</div><div class="sx-name">Regulatory changes reviewed / implemented by applicability date</div><div class="sx-value sx-na">—</div><div class="sx-meta"><b>SAF target:</b> 100%<br><b>Alert:</b> < 100%<br><b>Status:</b> Awaiting data / En attente de données</div></div></div><div class="sx-title">B — SAFETY PERFORMANCE — SMS</div><div class="sx-sub">Safety Objective → SPI → SAF Safety Performance Target (SPT) → Alert Level → Trend → SRB action</div><div class="sx-note">Values are populated only when reliable SMS and exposure data are available. / Les valeurs ne sont calculées que lorsque les données SMS et d’exposition sont fiables.</div><div class="sx-tablewrap"><table class="sx-table"><thead><tr><th>SPI</th><th>Indicator</th><th>Exposure / unit</th><th>Current</th><th>SAF target</th><th>Status</th></tr></thead><tbody><tr><td><span class="sx-ref">SPI-01</span></td><td>High-risk occurrences</td><td>/100 FH</td><td>—</td><td>To be approved / À approuver</td><td class="sx-na">Data/exposure required</td></tr><tr><td><span class="sx-ref">SPI-02</span></td><td>Significant operational occurrences</td><td>/100 FH</td><td>—</td><td>To be approved / À approuver</td><td class="sx-na">Data/exposure required</td></tr><tr><td><span class="sx-ref">SPI-03</span></td><td>HESLO load / long-line occurrences</td><td>/100 HESLO missions</td><td>—</td><td>To be approved / À approuver</td><td class="sx-na">Data/exposure required</td></tr><tr><td><span class="sx-ref">SPI-04</span></td><td>FOD / downwash occurrences</td><td>count + 12-month trend</td><td>—</td><td>To be approved / À approuver</td><td class="sx-na">Data/exposure required</td></tr><tr><td><span class="sx-ref">SPI-05</span></td><td>Unsafe landing-site events</td><td>/100 missions</td><td>—</td><td>To be approved / À approuver</td><td class="sx-na">Data/exposure required</td></tr><tr><td><span class="sx-ref">SPI-06</span></td><td>Technical events affecting operational safety</td><td>/100 FH</td><td>—</td><td>To be approved / À approuver</td><td class="sx-na">Data/exposure required</td></tr><tr><td><span class="sx-ref">SPI-07</span></td><td>Human-factor occurrences</td><td>count + HFACS trend</td><td>—</td><td>To be approved / À approuver</td><td class="sx-na">Data/exposure required</td></tr><tr><td><span class="sx-ref">SPI-08</span></td><td>Repeat safety occurrences</td><td>% recurrence</td><td>—</td><td>To be approved / À approuver</td><td class="sx-na">Data/exposure required</td></tr><tr><td><span class="sx-ref">SPI-09</span></td><td>High residual risks</td><td>open high-risk count</td><td>—</td><td>To be approved / À approuver</td><td class="sx-na">Data/exposure required</td></tr><tr><td><span class="sx-ref">SPI-10</span></td><td>Safety actions effectiveness verified</td><td>%</td><td>—</td><td>To be approved / À approuver</td><td class="sx-na">Data/exposure required</td></tr><tr><td><span class="sx-ref">SPI-11</span></td><td>Safety reports received</td><td>/100 FH</td><td>—</td><td>To be approved / À approuver</td><td class="sx-na">Data/exposure required</td></tr><tr><td><span class="sx-ref">SPI-12</span></td><td>Safety reports closed with feedback</td><td>%</td><td>—</td><td>To be approved / À approuver</td><td class="sx-na">Data/exposure required</td></tr><tr><td><span class="sx-ref">SPI-13</span></td><td>Safety training current</td><td>% relevant personnel</td><td>—</td><td>To be approved / À approuver</td><td class="sx-na">Data/exposure required</td></tr><tr><td><span class="sx-ref">SPI-14</span></td><td>Management of Change completed before implementation</td><td>%</td><td>—</td><td>To be approved / À approuver</td><td class="sx-na">Data/exposure required</td></tr><tr><td><span class="sx-ref">SPI-15</span></td><td>ERP exercises/actions completed</td><td>%</td><td>—</td><td>To be approved / À approuver</td><td class="sx-na">Data/exposure required</td></tr></tbody></table></div><div class="sx-title">C — MANAGEMENT SYSTEM HEALTH</div><div class="sx-grid"><div class="sx-card"><div class="sx-ref">MSH-01</div><div class="sx-name">Management of Change completed before implementation</div><div class="sx-value sx-na">—</div><div class="sx-meta"><b>Status:</b> Awaiting structured data / En attente de données structurées</div></div><div class="sx-card"><div class="sx-ref">MSH-02</div><div class="sx-name">Safety / compliance actions overdue</div><div class="sx-value sx-na">—</div><div class="sx-meta"><b>Status:</b> Awaiting structured data / En attente de données structurées</div></div><div class="sx-card"><div class="sx-ref">MSH-03</div><div class="sx-name">Safety objectives achieved</div><div class="sx-value sx-na">—</div><div class="sx-meta"><b>Status:</b> Awaiting structured data / En attente de données structurées</div></div><div class="sx-card"><div class="sx-ref">MSH-04</div><div class="sx-name">Critical barriers effectiveness verified</div><div class="sx-value sx-na">—</div><div class="sx-meta"><b>Status:</b> Awaiting structured data / En attente de données structurées</div></div><div class="sx-card"><div class="sx-ref">MSH-05</div><div class="sx-name">Open SRB actions</div><div class="sx-value sx-na">—</div><div class="sx-meta"><b>Status:</b> Awaiting structured data / En attente de données structurées</div></div><div class="sx-card"><div class="sx-ref">MSH-06</div><div class="sx-name">Training currency exceptions</div><div class="sx-value sx-na">—</div><div class="sx-meta"><b>Status:</b> Awaiting structured data / En attente de données structurées</div></div></div></div></div></div>
 <!-- ─── IMPORT WARNING MODAL ─────────────────────────────────── -->
 <style>
   #saf-import-modal-overlay {
@@ -23807,5 +23831,31 @@ setTimeout(hookNav,1800);setTimeout(hookNav,3500);
 })();
 </script>
 
+
+<script id="saf-home-dashboard-sync">
+(function(){
+function sync(){
+  try{
+    var map=[['home-cms03','CMS-03'],['home-cms05','CMS-05'],['home-cms07','CMS-07']];
+    map.forEach(function(m){
+      var dst=document.getElementById(m[0]); if(!dst)return;
+      var cards=document.querySelectorAll('#saf-expert-management .sx-card');
+      for(var i=0;i<cards.length;i++){
+        var ref=cards[i].querySelector('.sx-ref');
+        if(ref&&ref.textContent.trim()===m[1]){
+          var v=cards[i].querySelector('.sx-value');
+          if(v){dst.textContent=v.textContent;dst.className=v.className;}
+          break;
+        }
+      }
+    });
+  }catch(e){}
+}
+var old=window.safExpertRender;
+if(typeof old==='function'){window.safExpertRender=function(){var r=old.apply(this,arguments);setTimeout(sync,0);return r;};}
+document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){try{if(typeof window.safExpertRender==='function')window.safExpertRender();}catch(e){}sync();},500);});
+document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('button.tab'):null;if(!b)return;var oc=b.getAttribute('onclick')||'';if(oc.indexOf("'dashboard'")>=0)setTimeout(sync,80);},true);
+})();
+</script>
 </body>
 </html>
