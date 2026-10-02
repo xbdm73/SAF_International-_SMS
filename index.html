@@ -367,6 +367,8 @@ main { flex: 1; padding: 3rem 2rem; max-width: 960px; margin: 0 auto; width: 100
 .icon-omm { background: rgba(60,200,130,.15); }
 .icon-fleet { background: rgba(240,192,64,.15); }
 .tag-fleet { background: rgba(240,192,64,.12); color: #F0C040; border: 1px solid rgba(240,192,64,.3); }
+.icon-synoptique { background: rgba(95,183,232,.15); }
+.tag-synoptique { background: rgba(95,183,232,.12); color: #8fcbef; border: 1px solid rgba(95,183,232,.3); }
 .icon-aud { background: rgba(160,80,220,.15); }
 .tool-name { font-family: var(--font-display); font-size: 1.25rem; letter-spacing: .05em; color: #fff; flex: 1; }
 .arrow { color: var(--gold); font-size: 1rem; opacity: 0.45; transition: opacity 0.2s, transform 0.2s; flex-shrink: 0; }
@@ -508,6 +510,16 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
       </div>
       <p class="tool-desc">Position des hélicoptères en temps réel, traces des dernières heures et alerte de perte de signal.<span class="bi-en">Live helicopter positions, recent tracks and loss-of-signal alert.</span></p>
       <span class="tool-tag tag-fleet">OPS</span>
+    </a>
+
+    <a class="tool-card" id="card-synoptique" data-module="synoptique" href="SAF_Synoptique_SMS.html">
+      <div class="tool-header">
+        <div class="tool-icon icon-synoptique">🧭</div>
+        <span class="tool-name">Synoptique du SMS<span class="bi-en">SMS synoptic</span></span>
+        <span class="arrow">→</span>
+      </div>
+      <p class="tool-desc">État des fonctions du SMS et des liens qui les unissent, contrôlés en direct : un lien défaillant apparaît immédiatement.<span class="bi-en">Status of SMS functions and the links between them, checked live: a failing link shows up at once.</span></p>
+      <span class="tool-tag tag-synoptique">SMS</span>
     </a>
 
     <a class="tool-card" id="card-guide" data-module="guide" href="SAF_User_Guide.html">
@@ -693,9 +705,9 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   //   reader    → registre des risques publié, dans le seul module Safety
   //   authority → lecture intégrale (OFAC/FOCA), aucune écriture
   var SAF_MODULE_ACCESS = {
-    admin:     ['sms','cms','omm','fleet','guide'],
-    editor:    ['sms','cms','omm','fleet','guide'],
-    authority: ['sms','cms','omm','guide'],
+    admin:     ['sms','cms','omm','fleet','synoptique','guide'],
+    editor:    ['sms','cms','omm','fleet','synoptique','guide'],
+    authority: ['sms','cms','omm','synoptique','guide'],
     reader:    ['sms','fleet','guide']
   };
 
