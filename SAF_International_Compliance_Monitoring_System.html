@@ -2032,7 +2032,7 @@ function safExportPDF() {
 <!-- ═══════════════════════════════════════
      ONGLET 2 : KPI / SPI
 ═══════════════════════════════════════ -->
-<section class="panel" id="kpispi"><div class="card note"><h2>APP14-OMM — Compliance Assurance Indicators / Indicateurs d’assurance de conformité</h2><p class="muted">Internal SAF International performance indicators supporting the monitoring of the compliance monitoring programme. Numerical targets and alert thresholds below are <b>SAF internal targets</b>, not EASA-prescribed numerical limits. Regulatory basis: ORO.GEN.200 and applicable AMC for compliance monitoring.</p></div><div id="saf-expert-app14" class="saf-expert-wrap"></div></section>
+<section class="panel" id="kpispi"><div class="card note"><h2>APP14-OMM — Compliance Assurance Indicators / Indicateurs d’assurance de conformité</h2><p class="muted">Internal SAF International performance indicators supporting the monitoring of the compliance monitoring programme. Numerical targets and alert thresholds below are <b>SAF internal targets</b>, not EASA-prescribed numerical limits. Regulatory basis: ORO.GEN.200 and applicable AMC for compliance monitoring.</p></div><div id="saf-expert-app14" class="saf-expert-wrap"><div class="sx-note">Loading compliance indicators... / Chargement des indicateurs...</div></div></section>
 <!-- ═══════════════════════════════════════
      ONGLET 3 : SAFETY REVIEW BOARD
 ═══════════════════════════════════════ -->
@@ -8243,7 +8243,7 @@ document.addEventListener('DOMContentLoaded', function(){
 <!-- ══════════════════════════════════════
      PANEL : CMS DASHBOARD (EASA)
 ══════════════════════════════════════ -->
-<div class="panel" id="cms_dashboard"><div class="saf-expert-wrap"><div class="card note"><h2>Management System Performance Dashboard / Tableau de bord de performance du système de management</h2><p class="muted">Three separate views: Compliance Assurance (CMS), Safety Performance (SMS) and Management System Health. SAF targets are internal management thresholds. Safety rates are normalised by exposure where reliable exposure data are available.</p></div><div id="saf-expert-management"></div></div></div>
+<div class="panel" id="cms_dashboard"><div class="saf-expert-wrap"><div class="card note"><h2>Management System Performance Dashboard / Tableau de bord de performance du système de management</h2><p class="muted">Three separate views: Compliance Assurance (CMS), Safety Performance (SMS) and Management System Health. SAF targets are internal management thresholds. Safety rates are normalised by exposure where reliable exposure data are available.</p></div><div id="saf-expert-management"><div class="sx-note">Loading management-system indicators... / Chargement des indicateurs du système de management...</div></div></div></div>
 <!-- ─── IMPORT WARNING MODAL ─────────────────────────────────── -->
 <style>
   #saf-import-modal-overlay {
@@ -19591,6 +19591,7 @@ window.safSmsConfirmImport=safSmsConfirmImport;
 
       // Re-rendu : on relance les fonctions de rendu/application de l'outil
       refreshAll();
+      try{ if(typeof window.safExpertRender==='function') setTimeout(window.safExpertRender,60); }catch(e){}
       setBar('ok','Cloud ✓');
     }catch(e){ setBar('ok','Chargement impossible: '+e.message); }
   }
@@ -23796,9 +23797,13 @@ function healthCards(){var c=capStats(),a=auditStats();var meetings=j('safSRBMee
  card('MSH-06','Training currency exceptions',expired,'0 expired','> 0',expired?'alert':'ok','Trainer/training register')].join('')}
 function renderApp14(){var e=document.getElementById('saf-expert-app14');if(!e)return;e.innerHTML='<div class="sx-head"><div><div class="sx-title">COMPLIANCE ASSURANCE — CMS</div><div class="sx-sub">SAF internal targets · Regulatory framework: ORO.GEN.200 / applicable AMC</div></div><button class="sx-btn" onclick="safExpertRender()">Recalculate / Recalculer</button></div><div class="sx-grid">'+complianceCards()+'</div><div class="sx-title">Descriptive information — not a performance target</div>'+card('INFO','Overall compliance assessment result',overallInfo(),'Information only','No performance threshold','info','Audit-grid assessed points','Not used to judge auditor performance')}
 function renderMgmt(){var e=document.getElementById('saf-expert-management');if(!e)return;e.innerHTML='<div class="sx-title">A — COMPLIANCE ASSURANCE</div><div class="sx-grid">'+complianceCards()+'</div><div class="sx-title">B — SAFETY PERFORMANCE — SMS</div><div class="sx-sub">Safety Objective → SPI → SAF Safety Performance Target (SPT) → Alert Level → Trend → SRB action</div>'+safetyTable()+'<div class="sx-title">C — MANAGEMENT SYSTEM HEALTH</div><div class="sx-grid">'+healthCards()+'</div>'}
-function renderAll(){renderApp14();renderMgmt()}
+function renderAll(){try{renderApp14();}catch(e){var a=document.getElementById('saf-expert-app14');if(a)a.innerHTML='<div class="sx-note">APP14 rendering error: '+esc(e.message||e)+'</div>';}try{renderMgmt();}catch(e){var m=document.getElementById('saf-expert-management');if(m)m.innerHTML='<div class="sx-note">CMS Dashboard rendering error: '+esc(e.message||e)+'</div>';}}
 window.safExpertRender=renderAll;
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(renderAll,800)});else setTimeout(renderAll,800);
+window.safExpertEnsureRendered=function(){var a=document.getElementById('saf-expert-app14'),m=document.getElementById('saf-expert-management');if((a&&(!a.querySelector('.sx-card')||a.textContent.indexOf('Loading compliance')>=0))||(m&&(!m.querySelector('.sx-card')||m.textContent.indexOf('Loading management-system')>=0)))renderAll();};
+function hookNav(){var f=window.showMainTab;if(typeof f!=='function'||f.__safExpertV6)return;var w=function(id,btn){var r=f.apply(this,arguments);if(id==='kpispi'||id==='cms_dashboard'||id==='dashboard'){setTimeout(function(){try{renderAll();}catch(e){}},20);}return r;};w.__safExpertV6=true;window.showMainTab=w;}
+document.addEventListener('click',function(ev){var b=ev.target&&ev.target.closest?ev.target.closest('button.tab'):null;if(!b)return;var oc=b.getAttribute('onclick')||'';if(oc.indexOf("'cms_dashboard'")>=0||oc.indexOf("'kpispi'")>=0)setTimeout(function(){try{renderAll();}catch(e){}},40);},true);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(renderAll,200);setTimeout(hookNav,300);setTimeout(renderAll,1200);});else{setTimeout(renderAll,100);setTimeout(hookNav,200);setTimeout(renderAll,1000);}
+setTimeout(hookNav,1800);setTimeout(hookNav,3500);
 })();
 </script>
 
