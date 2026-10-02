@@ -1980,6 +1980,8 @@ nav { top: 118px !important; }
 <div class="nav-item" onclick="showView('surveillance')"><span class="icon">🗂</span> Audits internes SMS</div>
 <div class="nav-item" onclick="showView('alos')"><span class="icon">🎯</span> ALoS / Safety Case</div>
 <div class="nav-item" onclick="showView('camointerface')"><span class="icon">🔗</span> CAMO → SMS Interface <span class="count" id="cnt-camo-signals">0</span></div>
+<div class="nav-item" onclick="showView('interfaces')"><span class="icon">🤝</span> External Interfaces</div>
+<div class="nav-item" onclick="showView('isms')"><span class="icon">💻</span> Part-IS — ISMS</div>
 
 
 </div>
@@ -3388,6 +3390,14 @@ function updateOaciDefinitionDropdown(sel) {
 <div class="view" id="view-training">
 <div class="dash-header"><div><div class="dash-title">🎓 SMS TRAINING &amp; COMPETENCE RECORDS</div><div class="dash-subtitle">AMC1 ORO.GEN.200(a)(4) — Safety training appropriate to responsibilities · Adequate records retained</div></div><button class="btn btn-primary" onclick="smsTrainingShowForm()">＋ New training record</button></div>
 <div id="sms-training-form" style="display:none;padding:0 28px 18px;"></div><div id="sms-training-list" style="padding:0 28px 48px;"></div>
+</div>
+<div class="view" id="view-interfaces">
+<div class="dash-header"><div><div class="dash-title">🤝 EXTERNAL INTERFACES REGISTER</div><div class="dash-subtitle">ORO.GEN.205 — Contracted activities · ORO.GEN.200(a)(3) — Hazards at interfaces with external organisations · IS.I.OR.235</div></div><button class="btn btn-primary" onclick="ifxShowForm()">＋ New interface</button></div>
+<div id="ifx-form" style="display:none;padding:0 28px 18px;"></div><div id="ifx-list" style="padding:0 28px 48px;"></div>
+</div>
+<div class="view" id="view-isms">
+<div class="dash-header"><div><div class="dash-title">💻 PART-IS — INFORMATION SECURITY MANAGEMENT SYSTEM</div><div class="dash-subtitle">Regulation (EU) 2023/203 — Part-IS.I.OR · Assets, IS risk assessment and treatment, incidents and external reporting</div></div></div>
+<div id="isms-form" style="display:none;padding:0 28px 18px;"></div><div id="isms-body" style="padding:0 28px 48px;"></div>
 </div>
 <!-- ═══ SAFETY ASSURANCE REVIEW VIEW ══════════════════════════════════════ -->
 <div class="view" id="view-safetyassurance">
@@ -4812,7 +4822,7 @@ window.__SAF_E5X_RIT_PATCH='V2_2026-07-03';
   // Recharge toutes les clés SAF connues dans _cache AVANT le rendu de l'app.
   var SAF_KEYS = [
     'safRiskDB','safRiskDBVersion','safEventCatalog','safEventCatalogVersion','safChangeStudies','safSPITargets','safFlightHours',
-    'safOccurrences','safLessons','safTrainingRecords','safERPExercises','safSRBMeetings','safAudits',
+    'safOccurrences','safLessons','safTrainingRecords','safERPExercises','safInterfaces','safISMS','safSRBMeetings','safAudits',
     'safSAR','safALoS','safCAMOSignals','lastModified',
     'ejsPublicKey','ejsServiceId','ejsTemplateId',
     'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining',
@@ -9384,6 +9394,8 @@ window.safExportAllData_object = function(){
     safLessons:       _getLS('safLessons'),
     safTrainingRecords:_getLS('safTrainingRecords'),
     safERPExercises:  _getLS('safERPExercises'),
+    safInterfaces:    _getLS('safInterfaces'),
+    safISMS:          _getLS('safISMS'),
     safSRBMeetings:   _getLS('safSRBMeetings'),
     safAudits:        _getLS('safAudits'),
     safSAR:           _getLS('safSAR'),
@@ -9505,7 +9517,7 @@ function safImportAllData(evt){
       }
 
       var keys = ['safRiskDB','safRiskDBVersion','safEventCatalog','safEventCatalogVersion','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
-                  'safLessons','safTrainingRecords','safERPExercises','safSRBMeetings','safAudits','lastModified',
+                  'safLessons','safTrainingRecords','safERPExercises','safInterfaces','safISMS','safSRBMeetings','safAudits','lastModified',
                   'ejsPublicKey','ejsServiceId','ejsTemplateId',
                   'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap','safRemovedRiskIds','safArchivedRisks',
                   ];
@@ -11805,6 +11817,8 @@ function showView(name) {
   if(!localStorage.getItem('safLessons'))localStorage.setItem('safLessons','[]');
   if(!localStorage.getItem('safTrainingRecords'))localStorage.setItem('safTrainingRecords','[]');
   if(!localStorage.getItem('safERPExercises'))localStorage.setItem('safERPExercises','[]');
+  if(!localStorage.getItem('safInterfaces'))localStorage.setItem('safInterfaces','[]');
+  if(!localStorage.getItem('safISMS'))localStorage.setItem('safISMS',JSON.stringify({assets:[],risks:[],incidents:[],compliance:{}}));
   if(!localStorage.getItem('safSAR'))localStorage.setItem('safSAR','[]');
   if(!localStorage.getItem('safALoS'))localStorage.setItem('safALoS','[]');
   if(!localStorage.getItem('safSafetyPolicy'))localStorage.setItem('safSafetyPolicy', JSON.stringify({current:null,history:[]}));
@@ -11819,6 +11833,8 @@ function showView(name) {
   if(name==='eventaccounting') renderEventAccounting();
   if(name==='lessons')     renderLessonsList();
   if(name==='training')    renderSMSTraining();
+  if(name==='interfaces')  renderInterfaces();
+  if(name==='isms')        renderISMS();
   if(name==='erp')           { erpShowSection('contacts'); }
   if(name==='change')      { renderSavedCSList(); csRenderWorkflowBar(document.getElementById('c-workflow-status')?.value||'draft'); }
   if(name==='form')        { /* esig boxes initialise on render */ }
@@ -12236,7 +12252,7 @@ function importJSON(event) {
       // ── Format SAF SMS Backup complet (safExportAllData) ──
       if(data._version || data._app || data.safRiskDB || data.safOccurrences || data.safChangeStudies) {
         const allKeys = ['safRiskDB','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
-                         'safLessons','safTrainingRecords','safERPExercises','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','lastModified',
+                         'safLessons','safTrainingRecords','safERPExercises','safInterfaces','safISMS','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','lastModified',
                          'ejsPublicKey','ejsServiceId','ejsTemplateId',
                          'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap','safRemovedRiskIds','safArchivedRisks',
                          ];
@@ -19698,6 +19714,250 @@ function renderSMSTraining(){
   var today=new Date().toISOString().slice(0,10);el.innerHTML='<div class="chart-card" style="padding:0;overflow:hidden;"><table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr><th style="padding:9px;text-align:left">Person</th><th>Role</th><th>Course</th><th>Type</th><th>Date</th><th>Valid until</th><th>Evidence</th><th></th></tr></thead><tbody>'+a.map(function(x){var st=!x.valid_until?'recorded':(x.valid_until<today?'EXPIRED':'valid');var col=st==='EXPIRED'?'#f85149':(st==='valid'?'#3fb950':'var(--grey-400)');return '<tr style="border-top:1px solid rgba(255,255,255,.06);"><td style="padding:9px">'+occHtmlEsc(x.person)+'</td><td style="padding:9px">'+occHtmlEsc(x.role||'—')+'</td><td style="padding:9px">'+occHtmlEsc(x.course)+'</td><td style="padding:9px">'+occHtmlEsc(x.type)+'</td><td style="padding:9px">'+x.date+'</td><td style="padding:9px;color:'+col+'">'+(x.valid_until||'—')+'</td><td style="padding:9px">'+occHtmlEsc(x.evidence)+'</td><td style="padding:9px"><button class="btn btn-ghost" style="font-size:9px;padding:3px 7px" onclick="smsTrainingShowForm(\''+x.id+'\')">✎</button></td></tr>';}).join('')+'</tbody></table></div>';
 }
 
+
+// ══════════════════════════════════════════════════════════════════
+// REGISTRE DES INTERFACES EXTERNES & PART-IS ISMS — ajout 02.10.2026
+// ORO.GEN.205 / ORO.GEN.200(a)(3) — Règl. (UE) 2023/203 Part-IS.I.OR
+// Clés : safInterfaces (tableau), safISMS ({assets,risks,incidents,compliance})
+// ══════════════════════════════════════════════════════════════════
+var SAFX = window.SAFX = (function(){
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function today(){return new Date().toISOString().slice(0,10);}
+  function get(key,def){try{var v=JSON.parse(localStorage.getItem(key)||'null');return v==null?def:v;}catch(e){return def;}}
+  function put(key,v){localStorage.setItem(key,JSON.stringify(v));if(typeof updateLastModified==='function')updateLastModified();if(typeof window.safCloudScheduleSave==='function')window.safCloudScheduleSave();}
+  function field(pfx,f,val){
+    var id=pfx+'-'+f.k, v=(val==null||val==='')?(f.def||''):val, inp;
+    var lab='<label class="field-label" for="'+id+'">'+esc(f.l)+(f.req?' <span class="req">*</span>':'')+'</label>';
+    if(f.t==='select') inp='<select id="'+id+'">'+f.o.map(function(o){return '<option'+(String(o)===String(v)?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select>';
+    else if(f.t==='area') inp='<textarea id="'+id+'" rows="3" placeholder="'+esc(f.ph||'')+'">'+esc(v)+'</textarea>';
+    else inp='<input id="'+id+'" type="'+(f.t||'text')+'" value="'+esc(v)+'" placeholder="'+esc(f.ph||'')+'"/>';
+    return '<div class="form-field" style="margin:0;'+(f.w?'grid-column:span '+f.w+';':'')+'">'+lab+inp+'</div>';
+  }
+  function form(cfg,item,onSave,onCancel){
+    return '<div class="chart-card" style="padding:20px;"><div class="chart-title" style="margin-bottom:12px;">'+esc(cfg.title(item))+'</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;">'+cfg.fields.map(function(f){return field(cfg.pfx,f,item[f.k]);}).join('')+'</div>'
+      +'<div style="display:flex;gap:8px;margin-top:12px;"><button class="btn btn-primary" onclick="'+onSave+'">✓ Save</button><button class="btn btn-ghost" onclick="'+onCancel+'">Cancel</button></div></div>';
+  }
+  function read(cfg){var o={},miss=[];cfg.fields.forEach(function(f){var el=document.getElementById(cfg.pfx+'-'+f.k);var v=el?String(el.value).trim():'';o[f.k]=v;if(f.req&&!v)miss.push(f.l);});return {o:o,miss:miss};}
+  function nextId(arr,p){var n=0;arr.forEach(function(x){var m=String(x.id||'').match(/(\d+)$/);if(m)n=Math.max(n,+m[1]);});return p+'-'+String(n+1).padStart(3,'0');}
+  function chip(t,c){return '<span style="display:inline-block;padding:1px 7px;margin:1px 2px 1px 0;border-radius:9px;font-size:9.5px;font-family:var(--font-mono);border:1px solid '+c+';color:'+c+';white-space:nowrap">'+esc(t)+'</span>';}
+  function riskRefs(s){
+    var ids=(typeof DB!=='undefined'&&Array.isArray(DB))?DB.map(function(r){return r&&r.id;}):null;
+    var refs=String(s||'').split(/[\s,;]+/).filter(Boolean);
+    if(!refs.length) return '<span style="color:var(--grey-400)">—</span>';
+    return refs.map(function(r){var ok=!ids||ids.indexOf(r)!==-1;return chip(r,ok?'#58a6ff':'#f85149');}).join('');
+  }
+  function kpi(items){return '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">'+items.map(function(k){return '<div class="chart-card" style="padding:10px 16px;min-width:140px;"><div style="font-size:22px;font-weight:700;color:'+(k.c||'var(--white)')+'">'+k.v+'</div><div style="font-size:10px;color:var(--grey-400);font-family:var(--font-mono)">'+esc(k.l)+'</div></div>';}).join('')+'</div>';}
+  function table(head,rows,empty){
+    if(!rows.length) return '<div class="chart-card" style="padding:28px;text-align:center;color:var(--grey-400);font-family:var(--font-mono);font-size:11px;">'+esc(empty)+'</div>';
+    return '<div class="chart-card" style="padding:0;overflow:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr>'+head.map(function(h){return '<th style="padding:9px;text-align:left;white-space:nowrap">'+esc(h)+'</th>';}).join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
+  }
+  function td(h,st){return '<td style="padding:9px;vertical-align:top;'+(st||'')+'">'+h+'</td>';}
+  function tr(cells){return '<tr style="border-top:1px solid rgba(255,255,255,.06);">'+cells.join('')+'</tr>';}
+  function btns(edit,del){return td('<div style="display:flex;gap:4px"><button class="btn btn-ghost" style="font-size:9px;padding:3px 7px" onclick="'+edit+'" title="Edit">✎</button><button class="btn btn-ghost" style="font-size:9px;padding:3px 7px" onclick="'+del+'" title="Delete">🗑</button></div>');}
+  function short(s,n){s=String(s||'');n=n||110;return esc(s.length>n?s.slice(0,n-1)+'…':s);}
+  return {esc:esc,today:today,get:get,put:put,form:form,read:read,nextId:nextId,chip:chip,riskRefs:riskRefs,kpi:kpi,table:table,td:td,tr:tr,btns:btns,short:short};
+})();
+
+// ── Registre des interfaces externes ────────────────────────────────
+var IFX_CFG = {pfx:'ifx', title:function(x){return x.id?'Edit interface '+x.id:'New external interface';}, fields:[
+  {k:'org',l:'Organisation',req:1,ph:'e.g. contracted Part-145, heliport operator, customer'},
+  {k:'type',l:'Interface type',t:'select',o:['Contracted maintenance (Part-145 / CAMO)','Subcontractor / contracted service','Customer / client','Aerodrome / heliport / landing site','ATS / ANSP','Fuel supplier','Ground handling','Training organisation (ATO / FSTD)','Competent authority','IT / data service provider','Other']},
+  {k:'status',l:'Status',t:'select',o:['Active','Under evaluation','Suspended','Terminated']},
+  {k:'scope',l:'Services / scope of the interface',req:1,t:'area',w:3},
+  {k:'hazards',l:'Safety hazards at the interface',t:'area',w:3,ph:'What can go wrong between SAF and this organisation: handover, data, competence, equipment, communication…'},
+  {k:'controls',l:'Controls / agreed arrangements',t:'area',w:3,ph:'Contract clauses, SLA, procedures, audits, coordination meetings…'},
+  {k:'agreement',l:'Contract / agreement ref.',ph:'Contract, MoU, SLA, OMM appendix…'},
+  {k:'contact',l:'Contact at the organisation'},
+  {k:'owner',l:'SAF interface owner',req:1},
+  {k:'risks',l:'Linked risk scenarios',ph:'SMS-12, SMS-40',w:2},
+  {k:'part_is',l:'Information security relevant (Part-IS)',t:'select',o:['No','Yes']},
+  {k:'last_review',l:'Last review',t:'date'},
+  {k:'next_review',l:'Next review',t:'date'}
+]};
+function ifxGet(){var a=SAFX.get('safInterfaces',[]);return Array.isArray(a)?a:[];}
+function ifxShowForm(id){
+  var w=document.getElementById('ifx-form');if(!w)return;
+  var x=id?(ifxGet().find(function(i){return i.id===id;})||{}):{};
+  w.style.display='';w.innerHTML=SAFX.form(IFX_CFG,x,"ifxSave('"+(id||'')+"')","document.getElementById('ifx-form').style.display='none'");
+  w.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function ifxSave(id){
+  var r=SAFX.read(IFX_CFG);if(r.miss.length){showToast('Mandatory: '+r.miss.join(', '),'error');return;}
+  var a=ifxGet(),i=id?a.findIndex(function(x){return x.id===id;}):-1;
+  var item=Object.assign({},i>=0?a[i]:{},r.o,{id:id||SAFX.nextId(a,'IF'),updated_at:new Date().toISOString()});
+  if(!item.created_at)item.created_at=item.updated_at;
+  if(i>=0)a[i]=item;else a.push(item);
+  SAFX.put('safInterfaces',a);document.getElementById('ifx-form').style.display='none';renderInterfaces();showToast('Interface '+item.id+' saved','success');
+}
+function ifxDelete(id){
+  if(!confirm('Delete interface '+id+'?'))return;
+  SAFX.put('safInterfaces',ifxGet().filter(function(x){return x.id!==id;}));renderInterfaces();showToast('Interface '+id+' deleted','success');
+}
+function renderInterfaces(){
+  var el=document.getElementById('ifx-list');if(!el)return;
+  var a=ifxGet(),t=SAFX.today();
+  var active=a.filter(function(x){return x.status!=='Terminated';});
+  var due=active.filter(function(x){return x.next_review&&x.next_review<t;});
+  var noRev=active.filter(function(x){return !x.next_review;});
+  var noRisk=active.filter(function(x){return !String(x.risks||'').trim();});
+  var rows=a.slice().sort(function(x,y){return String(x.id).localeCompare(String(y.id));}).map(function(x){
+    var rev=!x.next_review?SAFX.chip('no review date','#d29922'):(x.next_review<t&&x.status!=='Terminated'?SAFX.chip('overdue '+x.next_review,'#f85149'):SAFX.chip(x.next_review,'#3fb950'));
+    var st=x.status==='Active'?'#3fb950':(x.status==='Terminated'?'var(--grey-400)':'#d29922');
+    return SAFX.tr([SAFX.td('<b>'+SAFX.esc(x.id)+'</b>','white-space:nowrap'),SAFX.td('<b>'+SAFX.esc(x.org)+'</b><br><span style="color:var(--grey-400)">'+SAFX.esc(x.type)+'</span>'),
+      SAFX.td(SAFX.short(x.scope)),SAFX.td(SAFX.short(x.hazards)||'<span style="color:#d29922">not assessed</span>'),SAFX.td(SAFX.riskRefs(x.risks)),
+      SAFX.td(SAFX.esc(x.owner)),SAFX.td(rev),SAFX.td(SAFX.chip(x.status||'—',st)+(x.part_is==='Yes'?SAFX.chip('Part-IS','#a371f7'):'')),
+      SAFX.btns("ifxShowForm('"+x.id+"')","ifxDelete('"+x.id+"')")]);
+  });
+  el.innerHTML=SAFX.kpi([{v:active.length,l:'active interfaces'},{v:due.length,l:'reviews overdue',c:due.length?'#f85149':'#3fb950'},{v:noRev.length,l:'without review date',c:noRev.length?'#d29922':'#3fb950'},{v:noRisk.length,l:'not linked to a risk',c:noRisk.length?'#d29922':'#3fb950'}])
+    +SAFX.table(['ID','Organisation','Scope','Hazards at the interface','Risks','Owner','Next review','Status',''],rows,'No external interface recorded. Start with contracted maintenance, customers and landing-site operators.');
+}
+
+// ── Part-IS : système de management de la sécurité de l'information ──
+var ISMS_REQ = [
+  ['IS.I.OR.200','Information security management system (ISMS)'],
+  ['IS.I.OR.205','Information security risk assessment'],
+  ['IS.I.OR.210','Information security risk treatment'],
+  ['IS.I.OR.215','Information security internal reporting scheme'],
+  ['IS.I.OR.220','Information security incidents — detection, response and recovery'],
+  ['IS.I.OR.225','Response to findings notified by the competent authority'],
+  ['IS.I.OR.230','Information security external reporting scheme'],
+  ['IS.I.OR.235','Contracting of information security management activities'],
+  ['IS.I.OR.240','Personnel requirements'],
+  ['IS.I.OR.245','Record-keeping'],
+  ['IS.I.OR.250','Information security management manual (ISMM)'],
+  ['IS.I.OR.255','Changes to the information security management system'],
+  ['IS.I.OR.260','Continuous improvement']
+];
+var ISMS_LEVELS=['1','2','3','4','5'];
+var ISMS_CFG = {
+  assets:{pfx:'isa',idp:'ISA',label:'asset',title:function(x){return x.id?'Edit asset '+x.id:'New information asset';},fields:[
+    {k:'name',l:'Asset / system',req:1,ph:'e.g. flight planning tool, tracking platform, SMS suite'},
+    {k:'category',l:'Category',t:'select',o:['IT system / application','Operational data','Aircraft / avionics data','Network / infrastructure','Third-party service (cloud, SaaS)','Physical media / documents']},
+    {k:'owner',l:'Owner',req:1},
+    {k:'conf',l:'Confidentiality need',t:'select',o:['Low','Medium','High']},
+    {k:'integ',l:'Integrity need',t:'select',o:['Low','Medium','High']},
+    {k:'avail',l:'Availability need',t:'select',o:['Low','Medium','High']},
+    {k:'safety',l:'How a compromise could affect aviation safety',req:1,t:'area',w:3},
+    {k:'provider',l:'Provider / interface',ph:'Supplier, linked external interface (IF-xxx)'},
+    {k:'notes',l:'Notes',w:2}
+  ]},
+  risks:{pfx:'isr',idp:'ISR',label:'risk',title:function(x){return x.id?'Edit IS risk '+x.id:'New information security risk';},fields:[
+    {k:'title',l:'Threat scenario',req:1,w:2,ph:'e.g. ransomware encrypts flight planning data before dispatch'},
+    {k:'threat',l:'Threat type',t:'select',o:['Malware / ransomware','Phishing / social engineering','Unauthorised access','Data loss / corruption','Service outage (provider)','Insider error / misuse','GNSS / datalink interference','Physical theft / loss','Other']},
+    {k:'assets',l:'Assets concerned',ph:'ISA-001, ISA-004'},
+    {k:'owner',l:'Risk owner',req:1},
+    {k:'status',l:'Status',t:'select',o:['Open','Treatment in progress','Accepted','Closed']},
+    {k:'safety_impact',l:'Potential impact on aviation safety',req:1,t:'area',w:3},
+    {k:'likelihood',l:'Likelihood (1–5)',t:'select',o:ISMS_LEVELS,def:'3'},
+    {k:'impact',l:'Impact (1–5)',t:'select',o:ISMS_LEVELS,def:'3'},
+    {k:'review',l:'Next review',t:'date'},
+    {k:'treatment',l:'Treatment measures',t:'area',w:3},
+    {k:'res_likelihood',l:'Residual likelihood (1–5)',t:'select',o:ISMS_LEVELS,def:'2'},
+    {k:'res_impact',l:'Residual impact (1–5)',t:'select',o:ISMS_LEVELS,def:'3'},
+    {k:'sms',l:'Linked SMS scenarios',ph:'SMS-61'}
+  ]},
+  incidents:{pfx:'isi',idp:'ISI',label:'incident',title:function(x){return x.id?'Edit IS incident '+x.id:'New information security incident';},fields:[
+    {k:'date',l:'Detected on',t:'date',req:1},
+    {k:'title',l:'Short title',req:1,w:2},
+    {k:'classification',l:'Classification',t:'select',o:['Event','Incident','Major incident']},
+    {k:'safety_impact',l:'Impact on aviation safety',t:'select',o:['No','Possible','Yes']},
+    {k:'detected_by',l:'Detected by'},
+    {k:'description',l:'Description',req:1,t:'area',w:3},
+    {k:'response',l:'Containment, response and recovery',t:'area',w:3},
+    {k:'authority',l:'Report to competent authority',t:'select',o:['Pending','Not required','Reported']},
+    {k:'report_ref',l:'Report reference'},
+    {k:'report_date',l:'Reported on',t:'date'},
+    {k:'status',l:'Status',t:'select',o:['Open','Closed']},
+    {k:'lessons',l:'Lessons / improvement (IS.I.OR.260)',w:2}
+  ]}
+};
+var ISMS_TAB='overview';
+function ismsGet(){var d=SAFX.get('safISMS',{});if(!d||typeof d!=='object'||Array.isArray(d))d={};d.assets=d.assets||[];d.risks=d.risks||[];d.incidents=d.incidents||[];d.compliance=d.compliance||{};return d;}
+function ismsScore(l,i){var s=(+l||0)*(+i||0);return {s:s,c:s>=15?'#f85149':(s>=8?'#d29922':'#3fb950'),t:s>=15?'High':(s>=8?'Medium':'Low')};}
+function ismsLate(x){
+  if(!(x.safety_impact==='Yes'||x.safety_impact==='Possible')||x.authority==='Reported'||x.authority==='Not required'||!x.date)return false;
+  return (Date.now()-new Date(x.date+'T00:00:00').getTime())>72*3600e3;
+}
+function ismsShowForm(kind,id){
+  var cfg=ISMS_CFG[kind],w=document.getElementById('isms-form');if(!cfg||!w)return;
+  var x=id?(ismsGet()[kind].find(function(i){return i.id===id;})||{}):{};
+  w.style.display='';w.innerHTML=SAFX.form(cfg,x,"ismsSave('"+kind+"','"+(id||'')+"')","document.getElementById('isms-form').style.display='none'");
+  w.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function ismsSave(kind,id){
+  var cfg=ISMS_CFG[kind];var r=SAFX.read(cfg);if(r.miss.length){showToast('Mandatory: '+r.miss.join(', '),'error');return;}
+  var d=ismsGet(),a=d[kind],i=id?a.findIndex(function(x){return x.id===id;}):-1;
+  var item=Object.assign({},i>=0?a[i]:{},r.o,{id:id||SAFX.nextId(a,cfg.idp),updated_at:new Date().toISOString()});
+  if(!item.created_at)item.created_at=item.updated_at;
+  if(i>=0)a[i]=item;else a.push(item);
+  SAFX.put('safISMS',d);document.getElementById('isms-form').style.display='none';ISMS_TAB=kind;renderISMS();showToast(item.id+' saved','success');
+}
+function ismsDelete(kind,id){
+  if(!confirm('Delete '+id+'?'))return;
+  var d=ismsGet();d[kind]=d[kind].filter(function(x){return x.id!==id;});SAFX.put('safISMS',d);renderISMS();showToast(id+' deleted','success');
+}
+function ismsSetReq(req){
+  var d=ismsGet(),s=document.getElementById('isreq-st-'+req),e=document.getElementById('isreq-ev-'+req);
+  d.compliance[req]={status:s?s.value:'Not started',evidence:e?e.value.trim():'',updated_at:new Date().toISOString()};
+  SAFX.put('safISMS',d);renderISMS();showToast(req+' updated','success');
+}
+function ismsTab(t){ISMS_TAB=t;var f=document.getElementById('isms-form');if(f)f.style.display='none';renderISMS();}
+function renderISMS(){
+  var el=document.getElementById('isms-body');if(!el)return;
+  var d=ismsGet(),t=SAFX.today();
+  var openR=d.risks.filter(function(x){return x.status!=='Closed';});
+  var highR=openR.filter(function(x){return ismsScore(x.res_likelihood||x.likelihood,x.res_impact||x.impact).s>=15;});
+  var openI=d.incidents.filter(function(x){return x.status!=='Closed';});
+  var late=d.incidents.filter(ismsLate);
+  var applicable=ISMS_REQ.filter(function(r){return (d.compliance[r[0]]||{}).status!=='Not applicable';});
+  var done=applicable.filter(function(r){return (d.compliance[r[0]]||{}).status==='Implemented';});
+  var pct=applicable.length?Math.round(100*done.length/applicable.length):0;
+  var tabs=[['overview','Overview'],['compliance','Requirements'],['assets','Assets ('+d.assets.length+')'],['risks','IS risks ('+d.risks.length+')'],['incidents','Incidents ('+d.incidents.length+')']];
+  var h='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">'+tabs.map(function(x){return '<button class="btn '+(ISMS_TAB===x[0]?'btn-primary':'btn-ghost')+'" onclick="ismsTab(\''+x[0]+'\')">'+SAFX.esc(x[1])+'</button>';}).join('')+'</div>';
+  h+=SAFX.kpi([{v:pct+' %',l:'Part-IS requirements implemented',c:pct===100?'#3fb950':(pct>=50?'#d29922':'#f85149')},{v:d.assets.length,l:'information assets'},{v:highR.length,l:'high residual IS risks',c:highR.length?'#f85149':'#3fb950'},{v:openI.length,l:'open IS incidents',c:openI.length?'#d29922':'#3fb950'},{v:late.length,l:'reports beyond 72 h',c:late.length?'#f85149':'#3fb950'}]);
+  if(ISMS_TAB==='overview'){
+    var next=[];
+    if(!d.assets.length)next.push('Inventory the information assets and systems whose compromise could affect aviation safety (IS.I.OR.205).');
+    if(!d.risks.length)next.push('Assess the information security risks of these assets and record their treatment (IS.I.OR.205 / 210).');
+    if(applicable.length-done.length)next.push((applicable.length-done.length)+' Part-IS requirement(s) not yet implemented: see the Requirements tab.');
+    if(late.length)next.push(late.length+' incident(s) with possible safety impact not reported to the competent authority within 72 h (IS.I.OR.230).');
+    var noSms=openR.filter(function(x){return !String(x.sms||'').trim();});
+    if(noSms.length)next.push(noSms.length+' open IS risk(s) not linked to an SMS scenario: link them so the Risk Register reflects cyber threats.');
+    h+='<div class="chart-card" style="padding:18px 20px;"><div class="chart-title" style="margin-bottom:8px;">Next steps</div>'+(next.length?'<ul style="margin:0;padding-left:18px;font-size:12px;line-height:1.7;color:var(--grey-200)">'+next.map(function(n){return '<li>'+SAFX.esc(n)+'</li>';}).join('')+'</ul>':'<div style="font-size:12px;color:#3fb950">ISMS records complete and up to date.</div>')+'</div>';
+  } else if(ISMS_TAB==='compliance'){
+    var opts=['Not started','In progress','Implemented','Not applicable'];
+    h+=SAFX.table(['Requirement','Title','Status','Evidence / document reference','Updated',''],ISMS_REQ.map(function(r){
+      var c=d.compliance[r[0]]||{},st=c.status||'Not started',col=st==='Implemented'?'#3fb950':(st==='In progress'?'#d29922':(st==='Not applicable'?'var(--grey-400)':'#f85149'));
+      var id=r[0];
+      return SAFX.tr([SAFX.td('<b style="color:'+col+'">'+id+'</b>','white-space:nowrap'),SAFX.td(SAFX.esc(r[1])),
+        SAFX.td('<select id="isreq-st-'+id+'">'+opts.map(function(o){return '<option'+(o===st?' selected':'')+'>'+o+'</option>';}).join('')+'</select>'),
+        SAFX.td('<input id="isreq-ev-'+id+'" value="'+SAFX.esc(c.evidence||'')+'" placeholder="ISMM §, procedure, record…" style="width:100%;min-width:220px"/>'),
+        SAFX.td(c.updated_at?String(c.updated_at).slice(0,10):'—','white-space:nowrap;color:var(--grey-400)'),
+        SAFX.td('<button class="btn btn-ghost" style="font-size:9px;padding:3px 9px" onclick="ismsSetReq(\''+id+'\')">✓ Save</button>')]);
+    }),'');
+  } else {
+    var kind=ISMS_TAB,cfg=ISMS_CFG[kind],rows=[],head=[];
+    h+='<div style="margin-bottom:10px"><button class="btn btn-primary" onclick="ismsShowForm(\''+kind+'\')">＋ New '+cfg.label+'</button></div>';
+    var list=d[kind].slice().sort(function(x,y){return String(x.id).localeCompare(String(y.id));});
+    if(kind==='assets'){
+      head=['ID','Asset','Category','C / I / A','Safety relevance','Owner',''];
+      rows=list.map(function(x){var cia=[x.conf,x.integ,x.avail].map(function(v){return SAFX.chip((v||'—').charAt(0),v==='High'?'#f85149':(v==='Medium'?'#d29922':'#3fb950'));}).join('');
+        return SAFX.tr([SAFX.td('<b>'+x.id+'</b>'),SAFX.td('<b>'+SAFX.esc(x.name)+'</b>'+(x.provider?'<br><span style="color:var(--grey-400)">'+SAFX.esc(x.provider)+'</span>':'')),SAFX.td(SAFX.esc(x.category)),SAFX.td(cia,'white-space:nowrap'),SAFX.td(SAFX.short(x.safety)),SAFX.td(SAFX.esc(x.owner)),SAFX.btns("ismsShowForm('assets','"+x.id+"')","ismsDelete('assets','"+x.id+"')")]);});
+    } else if(kind==='risks'){
+      head=['ID','Threat scenario','Assets','Initial','Residual','Treatment','SMS link','Status / review',''];
+      rows=list.map(function(x){var a=ismsScore(x.likelihood,x.impact),b=ismsScore(x.res_likelihood,x.res_impact);var rv=x.review?(x.review<t&&x.status!=='Closed'?SAFX.chip('review overdue','#f85149'):SAFX.chip(x.review,'#3fb950')):'';
+        return SAFX.tr([SAFX.td('<b>'+x.id+'</b>'),SAFX.td('<b>'+SAFX.esc(x.title)+'</b><br><span style="color:var(--grey-400)">'+SAFX.esc(x.threat)+'</span>'),SAFX.td(SAFX.esc(x.assets||'—')),SAFX.td(SAFX.chip(a.t+' '+a.s,a.c)),SAFX.td(SAFX.chip(b.t+' '+b.s,b.c)),SAFX.td(SAFX.short(x.treatment)||'<span style="color:#d29922">none</span>'),SAFX.td(SAFX.riskRefs(x.sms)),SAFX.td(SAFX.esc(x.status)+'<br>'+rv),SAFX.btns("ismsShowForm('risks','"+x.id+"')","ismsDelete('risks','"+x.id+"')")]);});
+    } else {
+      head=['ID','Detected','Incident','Class','Safety impact','Authority report','Status',''];
+      rows=list.slice().sort(function(x,y){return String(y.date).localeCompare(String(x.date));}).map(function(x){var rep=x.authority==='Reported'?SAFX.chip('Reported '+(x.report_ref||''),'#3fb950'):(ismsLate(x)?SAFX.chip('Not reported > 72 h','#f85149'):SAFX.chip(x.authority||'—',x.authority==='Pending'?'#d29922':'var(--grey-400)'));
+        return SAFX.tr([SAFX.td('<b>'+x.id+'</b>'),SAFX.td(SAFX.esc(x.date),'white-space:nowrap'),SAFX.td('<b>'+SAFX.esc(x.title)+'</b><br>'+SAFX.short(x.description,90)),SAFX.td(SAFX.esc(x.classification)),SAFX.td(SAFX.chip(x.safety_impact||'—',x.safety_impact==='Yes'?'#f85149':(x.safety_impact==='Possible'?'#d29922':'#3fb950'))),SAFX.td(rep),SAFX.td(SAFX.esc(x.status)),SAFX.btns("ismsShowForm('incidents','"+x.id+"')","ismsDelete('incidents','"+x.id+"')")]);});
+    }
+    h+=SAFX.table(head,rows,'No record yet.');
+  }
+  el.innerHTML=h;
+}
+
 // ════════════════════════════════════════════════════════════════
 // EMERGENCY RESPONSE PLAN — UI functions
 // ════════════════════════════════════════════════════════════════
@@ -19937,10 +20197,10 @@ document.addEventListener('DOMContentLoaded', () => {
   updateBarrierAlertZone();
 });
 </script>
-// 22.09.2026 — plan d'audit EASA, table de correspondance et moteur de grilles retires :
-// aucun conteneur DOM ne les accueillait, ce code n'a jamais ete rendu. La surveillance
-// de conformite vit dans le Compliance Monitoring System ; seul le journal d'audits
-// internes SMS (renderSurveillanceView / showAuditForm / saveAudit) est conserve.
+<!-- 22.09.2026 — plan d'audit EASA, table de correspondance et moteur de grilles retires :
+     aucun conteneur DOM ne les accueillait, ce code n'a jamais ete rendu. La surveillance
+     de conformite vit dans le Compliance Monitoring System ; seul le journal d'audits
+     internes SMS (renderSurveillanceView / showAuditForm / saveAudit) est conserve. -->
 <script>
 
 // ════════════════════════════════════════════════════════════════
@@ -21865,7 +22125,7 @@ setTimeout(function(){
 
   // Liste des clés gérées (identique à safExportAllData / importJSON)
   var KEYS = ['safRiskDB','safRiskDBVersion','safEventCatalog','safEventCatalogVersion','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
-              'safLessons','safTrainingRecords','safERPExercises','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','lastModified',
+              'safLessons','safTrainingRecords','safERPExercises','safInterfaces','safISMS','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','lastModified',
               'ejsPublicKey','ejsServiceId','ejsTemplateId',
               'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap','safRemovedRiskIds','safArchivedRisks',
               ];
@@ -22330,7 +22590,9 @@ setTimeout(function(){
       // Ajout 11.09.2026 : module d'efficacite des barrieres.
       'safEffSaveCheck','safEffSaveSetup','safEffApplyCritical',
       // Ajout 14.09.2026 : restauration d'une etude de changement embarquee.
-      'safRestoreSeedMoc'
+      'safRestoreSeedMoc',
+      // Ajout 02.10.2026 : interfaces externes et Part-IS.
+      'ifxSave','ifxDelete','ismsSave','ismsDelete','ismsSetReq'
     ];
     var GUARD_MSG = (SAF_ROLE === 'authority')
       ? 'Accès autorité — consultation seule, aucune écriture possible.'

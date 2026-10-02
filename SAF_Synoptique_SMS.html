@@ -286,7 +286,7 @@ const NODES = [
    desc:'Objectifs de sécurité déclarés, mesurés par les SPI.'},
   {id:'spi', label:'Indicateurs de performance', sub:'SPI et seuils', x:X[3], y:Y[1], file:F_SAF,
    desc:'Indicateurs alimentés par les scénarios du registre, avec seuils d’alerte selon le Doc 9859.'},
-  {id:'srb', label:'Safety Review Board', sub:'Revues de direction', x:X[3], y:Y[2], file:F_CMS,
+  {id:'srb', label:'Safety Review Board', sub:'Revues de direction', x:X[3], y:Y[2], file:F_SAF,
    desc:'Revue périodique des indicateurs, des risques et des constats par la direction.'},
   {id:'ll', label:'Retour d’expérience', sub:'Lessons Learned, Safety Alerts', x:X[3], y:Y[3], file:F_SAF,
    desc:'Diffusion des enseignements tirés des occurrences.'},
@@ -298,14 +298,14 @@ const NODES = [
    desc:'Annexes du manuel d’exploitation.'},
   {id:'pub', label:'Registre publié', sub:'Vue lecteurs, sms_risk_register', x:X[4], y:Y[1],
    desc:'Projection du registre lisible par le compte lecteur mutualisé sms@saf-helico.com.'},
-  {id:'partis', label:'Sécurité de l’information', sub:'Part-IS, ISMS', x:X[4], y:Y[2], absent:true, re:/isms|part.?is|infosec/i,
-   desc:'Système de management de la sécurité de l’information exigé par Part-IS.'},
-  {id:'training', label:'Formation SMS', sub:'Enregistrements de formation', x:X[4], y:Y[3], absent:true, re:/training|formation/i,
-   desc:'Enregistrements de formation SMS du personnel.'},
-  {id:'erp', label:'Exercices ERP', sub:'Journal des exercices', x:X[4], y:Y[4], absent:true, re:/erp(?!ret)|exercis|exercice/i,
-   desc:'Journal des exercices du plan d’intervention d’urgence.'},
-  {id:'interfaces', label:'Interfaces externes', sub:'Registre des interfaces', x:X[4], y:Y[5], absent:true, re:/interface/i,
-   desc:'Registre des interfaces avec les organismes externes : sous-traitants, aérodromes, clients.'},
+  {id:'partis', label:'Sécurité de l’information', sub:'Part-IS — ISMS', x:X[4], y:Y[2], file:F_SAF, module:{view:'isms', key:'safISMS'},
+   desc:'Système de management de la sécurité de l’information (Règl. (UE) 2023/203, Part-IS.I.OR) : actifs, risques SI, incidents et exigences. Module « Part-IS — ISMS » du Safety.'},
+  {id:'training', label:'Formation SMS', sub:'SMS Training & Competence', x:X[4], y:Y[3], file:F_SAF, module:{view:'training', key:'safTrainingRecords'},
+   desc:'Enregistrements de formation SMS du personnel (AMC1 ORO.GEN.200(a)(4)). Module « SMS Training & Competence » du Safety.'},
+  {id:'erp', label:'Exercices ERP', sub:'Plan d’intervention d’urgence', x:X[4], y:Y[4], file:F_SAF, module:{view:'erp', key:'safERPExercises'},
+   desc:'Journal des exercices du plan d’intervention d’urgence. Module « Emergency Response Plan » du Safety.'},
+  {id:'interfaces', label:'Interfaces externes', sub:'External Interfaces', x:X[4], y:Y[5], file:F_SAF, module:{view:'interfaces', key:'safInterfaces'},
+   desc:'Registre des interfaces avec les organismes externes : sous-traitants, maintenance contractée, aérodromes, clients (ORO.GEN.205). Module « External Interfaces » du Safety.'},
 ];
 const NODE = Object.fromEntries(NODES.map(n => [n.id, n]));
 
@@ -378,18 +378,18 @@ const EDGES = [
   {id:'e22', from:'occ', to:'ll', label:'Leçons', lane:398, g1:.75, g2:.6, run:()=>chkLessons(),
    desc:'Les enseignements des occurrences sont diffusés en Safety Alerts.',
    fix:'Rouvrir les Safety Alerts concernées et recoller leur contenu (défaut de perte de corps connu depuis août 2026).'},
-  {id:'e23', from:'so', to:'training', label:'Compétences', g1:.2, run:()=>absentCheck(NODE.training.re),
+  {id:'e23', from:'so', to:'training', label:'Compétences', g1:.2, run:()=>moduleLink('training'),
    desc:'Les objectifs de sécurité s’appuient sur la formation SMS du personnel.',
-   fix:'Créer le module d’enregistrement des formations SMS.'},
-  {id:'e24', from:'srb', to:'erp', label:'Préparation', g1:.8, run:()=>absentCheck(NODE.erp.re),
+   fix:'Enregistrer les formations SMS et renouveler celles qui ont expiré, dans SMS Training & Competence.'},
+  {id:'e24', from:'srb', to:'erp', label:'Préparation', g1:.8, run:()=>moduleLink('erp'),
    desc:'La revue de direction examine les exercices du plan d’urgence.',
-   fix:'Créer le journal des exercices ERP.'},
-  {id:'e25', from:'rr', to:'partis', label:'Risques cyber', lane:278, g1:.7, g2:.5, run:()=>absentCheck(NODE.partis.re),
+   fix:'Planifier et enregistrer un exercice du plan d’urgence dans Emergency Response Plan.'},
+  {id:'e25', from:'rr', to:'partis', label:'Risques cyber', lane:278, g1:.7, g2:.5, run:()=>moduleLink('partis'),
    desc:'Les risques de sécurité de l’information sont gérés dans un ISMS Part-IS.',
-   fix:'Créer le module Part-IS.'},
-  {id:'e26', from:'moc', to:'interfaces', label:'Interfaces', lane:650, g1:.75, g2:.5, run:()=>absentCheck(NODE.interfaces.re),
+   fix:'Dans Part-IS — ISMS, évaluer les risques de sécurité de l’information et les relier aux scénarios SMS concernés.'},
+  {id:'e26', from:'moc', to:'interfaces', label:'Interfaces', lane:650, g1:.75, g2:.5, run:()=>moduleLink('interfaces'),
    desc:'Les changements sont évalués au regard des interfaces externes.',
-   fix:'Créer le registre des interfaces externes.'},
+   fix:'Dans External Interfaces, recenser les organismes externes et tenir à jour leurs revues.'},
   {id:'e27', from:'auth', to:'cloud', label:'Session', run:()=>chkSessionData(),
    desc:'La session connectée, avec son rôle et son second facteur, ouvre la lecture des données.',
    fix:'Se reconnecter et valider le code TOTP, puis vérifier le rôle dans user_roles.'},
@@ -507,6 +507,9 @@ async function fetchFiles(){
       CTX.files[f] = {ok:r.ok, code:r.status, size:t.length, text:t};
     } catch(e){ CTX.files[f] = {ok:false, code:0, size:0, text:''}; }
   }));
+  const s = CTX.files[F_SAF];
+  CTX.views = new Set(); CTX.viewsKnown = !!(s && s.ok && s.text);
+  if (CTX.viewsKnown){ const re = /id="view-([\w-]+)"/g; let m; while ((m = re.exec(s.text))) CTX.views.add(m[1]); }
 }
 async function scanNav(){
   CTX.nav = {archives:[], broken:[], scanned:0};
@@ -614,6 +617,61 @@ function cloudCheck(){
 function chkSessionData(){
   const a = authCheck(); if (a.status !== 'ok') return a;
   return cloudCheck();
+}
+const isGhost = n => !!(n.module && CTX.viewsKnown && !CTX.views.has(n.module.view));
+function smsVal(k){ const d = modData('sms_data'); return d ? parseMaybe(d[k]) : undefined; }
+function moduleCheck(n){
+  if (!CTX.viewsKnown) return R('na', 'Non vérifié', 'Le fichier Safety n’a pas pu être lu.');
+  if (isGhost(n)) return R('fail', 'Module absent', `La vue « ${n.module.view} » n’existe pas dans ${F_SAF} : la fonction reste à mettre en place.`);
+  return R('ok', 'Présent dans le Safety');
+}
+function moduleData(id){
+  const n = NODE[id];
+  if (!hasSms() || !isFull()) return naData();
+  const v = smsVal(n.module.key), t = TODAY();
+  if (id === 'training'){
+    const a = toList(v); if (!a.length) return R('warn', 'Aucune formation enregistrée', 'Le module existe mais ne contient aucun enregistrement.');
+    const exp = a.filter(x => { const d = parseD(x.valid_until); return d && d < t; });
+    if (exp.length) return R('warn', `${exp.length} sur ${a.length} formations expirées`, exp.slice(0, 8).map(x => x.person).join(', '));
+    return R('ok', plural(a.length, 'enregistrement') + ' à jour');
+  }
+  if (id === 'erp'){
+    const a = toList(v); if (!a.length) return R('warn', 'Aucun exercice enregistré', 'Aucun exercice du plan d’urgence n’a été consigné.');
+    const last = maxDate(a, /date/i), age = daysSince(last);
+    if (age != null && age > 365) return R('warn', `Dernier exercice le ${fmtD(last)}`, `Il y a ${age} jours : plus d’un an sans exercice.`);
+    return R('ok', `${plural(a.length, 'exercice')}, dernier le ${fmtD(last)}`);
+  }
+  if (id === 'interfaces'){
+    const a = toList(v).filter(x => x.status !== 'Terminated');
+    if (!a.length) return R('warn', 'Aucune interface recensée', 'Le registre des interfaces externes est vide.');
+    const due = a.filter(x => { const d = parseD(x.next_review); return !d || d < t; });
+    if (due.length) return R('warn', `${due.length} sur ${a.length} revues échues ou non planifiées`, due.slice(0, 8).map(x => `${x.id} ${x.org}`).join(', '));
+    return R('ok', plural(a.length, 'interface') + ' active' + (a.length > 1 ? 's' : '') + ', revues à jour');
+  }
+  if (id === 'partis'){
+    const d = (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+    const comp = d.compliance || {}, risks = toList(d.risks), inc = toList(d.incidents), assets = toList(d.assets);
+    const REQ = 13, na = Object.values(comp).filter(c => c && c.status === 'Not applicable').length;
+    const done = Object.values(comp).filter(c => c && c.status === 'Implemented').length, pct = Math.round(100 * done / Math.max(1, REQ - na));
+    const late = inc.filter(x => (x.safety_impact === 'Yes' || x.safety_impact === 'Possible') && x.authority === 'Pending' && daysSince(parseD(x.date)) * 24 > 72);
+    if (late.length) return R('fail', `${plural(late.length, 'incident')} non notifié${late.length > 1 ? 's' : ''} au-delà de 72 h`, late.map(x => x.id).join(', '));
+    if (!assets.length && !risks.length) return R('warn', 'ISMS à constituer', `Aucun actif ni risque SI enregistré ; exigences Part-IS mises en œuvre : ${pct} %.`);
+    if (pct < 100) return R('warn', `${pct} % des exigences Part-IS mises en œuvre`, `${assets.length} actifs, ${risks.length} risques SI, ${inc.length} incidents.`);
+    return R('ok', 'Exigences Part-IS mises en œuvre', `${assets.length} actifs, ${risks.length} risques SI.`);
+  }
+  return R('na', 'Non vérifié');
+}
+function moduleLink(id){
+  const n = NODE[id], m = moduleCheck(n);
+  if (m.status === 'fail') return m;
+  if (id === 'partis' && hasSms() && isFull()){
+    const d = smsVal('safISMS') || {}, open = toList(d.risks).filter(x => x.status !== 'Closed');
+    if (!open.length) return R('warn', 'Aucun risque SI évalué', 'Le registre des risques ne reçoit encore aucune menace de sécurité de l’information.');
+    const unl = open.filter(x => !hasText(x.sms));
+    if (unl.length) return R('warn', `${unl.length} sur ${open.length} risques SI non reliés au registre`, unl.slice(0, 8).map(x => x.id).join(', '));
+    return R('ok', `${open.length} risques SI reliés au registre`);
+  }
+  return moduleData(id);
 }
 function absentCheck(re){
   if (!hasSms() || !isFull()) return naData();
@@ -751,7 +809,7 @@ function chkPublication(){
   }
   return R('ok', `Publié le ${fmtD(pubD)}, ${arr.length} scénarios`);
 }
-function mocItems(){ return itemsOf(keysMatching(/moc/i)); }
+function mocItems(){ return itemsOf(keysMatching(/moc|changestud/i)); }
 function chkRootCause(){
   if (!hasSms() || !isFull()) return naData();
   const mocs = mocItems();
@@ -836,7 +894,7 @@ function nodeChecks(n){
   if (n.id === 'ref') out.push(['Module', chkReferentiel()]);
   if (n.id === 'pub') out.push(['Publication', chkPublication()]);
   if (n.id === 'email') out.push(['Envoi', manualCheck(EDGE.e2.manual)]);
-  if (n.absent) out.push(['Données', absentCheck(n.re)]);
+  if (n.module){ out.push(['Module', moduleCheck(n)]); out.push(['Enregistrements', moduleData(n.id)]); }
   if (n.manual) out.push([n.manual.label, manualCheck(n.manual)]);
   return out;
 }
@@ -917,7 +975,7 @@ function draw(){
     n.nsat = nodeChecks(n).length; n.sorbR = R + (sun ? 26 : 13);
     let sats = `<circle class="sorb" r="${n.sorbR}"/>`;
     for (let i = 0; i < n.nsat; i++) sats += `<circle class="sat st-na" r="${sun ? 6 : 4.5}"><title></title></circle>`;
-    h += `<g class="node st-na${n.absent ? ' absent' : ''}${sun ? ' sun' : ''}" id="N-${n.id}" data-k="n" data-id="${n.id}" tabindex="0" role="button" aria-label="Fonction ${esc(n.label)}" transform="translate(${r1(n.px)},${r1(n.py)})">
+    h += `<g class="node st-na${isGhost(n) ? ' absent' : ''}${sun ? ' sun' : ''}" id="N-${n.id}" data-k="n" data-id="${n.id}" tabindex="0" role="button" aria-label="Fonction ${esc(n.label)}" transform="translate(${r1(n.px)},${r1(n.py)})">
       ${sun ? `<circle class="corona" r="${R + 46}"/>` : ''}
       <circle class="halo" r="${R + 6}"/>
       <circle class="pl" r="${R}"/>
@@ -1009,7 +1067,7 @@ function paint(){
   for (const n of NODES){
     const s = RES['n:' + n.id] ? RES['n:' + n.id].status : 'na'; tally(s);
     const g = document.getElementById('N-' + n.id);
-    g.setAttribute('class', `node st-${s}${n.absent ? ' absent' : ''}${n.orb === 0 ? ' sun' : ''}`);
+    g.setAttribute('class', `node st-${s}${isGhost(n) ? ' absent' : ''}${n.orb === 0 ? ' sun' : ''}`);
     const ch = (RES['n:' + n.id] && RES['n:' + n.id].checks) || [];
     (n.sats || []).forEach((sat, i) => {
       const c = ch[i], st = c ? c[1].status : 'na';
@@ -1057,7 +1115,7 @@ function issueItems(){
   for (const n of NODES){
     const r = RES['n:' + n.id]; if (!r || (r.status !== 'fail' && r.status !== 'warn')) continue;
     const bad = r.checks.filter(c => c[1].status === r.status).map(c => c[1].value);
-    if (n.absent && EDGES.some(e => e.to === n.id && RES['e:' + e.id] && RES['e:' + e.id].status === r.status)) continue;
+    if (isGhost(n) && EDGES.some(e => e.to === n.id && RES['e:' + e.id] && RES['e:' + e.id].status === r.status)) continue;
     out.push({kind:'n', id:n.id, status:r.status, name:n.label, value:bad.join(', ')});
   }
   return out.sort((a, b) => RANK[b.status] - RANK[a.status]);
@@ -1097,7 +1155,7 @@ function renderPanel(){
   if (SEL.kind === 'n'){
     const n = NODE[SEL.id], r = RES['n:' + n.id] || {status:'na', checks:[]};
     const rel = EDGES.filter(e => e.from === n.id || e.to === n.id);
-    el.innerHTML = `<p class="kind">Fonction${n.absent ? ' attendue' : ''}</p><h3>${esc(n.label)}</h3>
+    el.innerHTML = `<p class="kind">Fonction${isGhost(n) ? ' attendue, absente du SMS' : ''}</p><h3>${esc(n.label)}</h3>
       <span class="pill st-${r.status}">${LABEL[r.status]}</span>
       <p class="desc">${esc(n.desc)}</p>
       <ul class="checks">${r.checks.map(c => checkLi(c[0], c[1])).join('')}</ul>
