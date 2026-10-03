@@ -15430,7 +15430,7 @@ function g_setF(el,rid,f){
 // ═══ SUPABASE STORAGE — AUDITS & FINDING EVIDENCE ═══
 var CMS_STORAGE_BUCKET='SMS Documents';
 var CMS_STORAGE_ROOT='Compliance/Audits';
-var CMS_STORAGE_MAX_FILE_SIZE=100*1024*1024;
+var CMS_STORAGE_MAX_FILE_SIZE=50*1024*1024;
 function safCMSStorageClient(){ return window.safSupabaseClient||null; }
 function safCMSCurrentRole(){
   if(typeof window.safGetCurrentRole==='function') return String(window.safGetCurrentRole()||'reader').toLowerCase();
@@ -15459,7 +15459,7 @@ function safCMSStorageName(name){
 async function safCMSUploadFile(folder,file){
   var c=safCMSStorageClient(); if(!c)throw new Error('Client Supabase indisponible');
   if(!safCMSAllowedFile(file))throw new Error('Format non autorisé : '+file.name);
-  if(file.size>CMS_STORAGE_MAX_FILE_SIZE)throw new Error('Fichier supérieur à 100 Mo : '+file.name);
+  if(file.size>CMS_STORAGE_MAX_FILE_SIZE)throw new Error('Fichier supérieur à 50 Mo : '+file.name);
   var path=folder+'/'+safCMSStorageName(file.name);
   var r=await c.storage.from(CMS_STORAGE_BUCKET).upload(path,file,{upsert:false,contentType:safCMSMime(file.name,file.type)});
   if(r.error)throw new Error(r.error.message||String(r.error));
@@ -16491,7 +16491,7 @@ function ap2Show(id,btn){
 <div class="cmsx-field"><label>Description de la constatation (écart) / Finding description (deviation)</label><textarea id="cmsx-f-desc" placeholder="Description de la non-conformité identifiée pendant l’audit / Description of the non-compliance identified during the audit"></textarea></div>
 <div class="cmsx-card" style="background:#08111f;margin-top:0;margin-bottom:14px;">
 <div class="cmsx-card-title" style="font-size:12px;">📎 Pièces justificatives de la constatation / Finding evidence</div>
-<div class="cmsx-note" style="font-size:10px;">PDF, DOCX, PPTX, XLSX, JPG, PNG — 100 Mo maximum. Envoi immédiat dans le stockage privé Supabase ; ouverture par lien signé valable 1 heure.</div>
+<div class="cmsx-note" style="font-size:10px;">PDF, DOCX, PPTX, XLSX, JPG, PNG — 50 Mo maximum. Envoi immédiat dans le stockage privé Supabase ; ouverture par lien signé valable 1 heure.</div>
 <input id="cmsx-f-file-input" type="file" multiple accept=".pdf,.docx,.pptx,.xlsx,.jpg,.jpeg,.png" onchange="cmsxFindingHandleFiles(this)" style="margin:7px 0;color:#c8d8f0;font-size:11px;"/>
 <div id="cmsx-f-file-list" style="margin-top:4px;"></div>
 <div id="cmsx-f-file-status" style="font-size:10px;color:#6a82a5;margin-top:5px;"></div>
@@ -17018,7 +17018,7 @@ function cmsxFindingHandleFiles(input){
   if(!safCMSCanWrite()){alert('Lecture seule : ajout de pièce jointe non autorisé. / Read-only: attachments cannot be added.');input.value='';return;}
   Array.from(input.files||[]).forEach(function(f){
     if(!safCMSAllowedFile(f)){alert('Format non autorisé / Unsupported format: '+f.name);return;}
-    if(f.size>CMS_STORAGE_MAX_FILE_SIZE){alert('Fichier supérieur à 100 Mo / File over 100 MB: '+f.name);return;}
+    if(f.size>CMS_STORAGE_MAX_FILE_SIZE){alert('Fichier supérieur à 50 Mo / File over 50 MB: '+f.name);return;}
     var id='pf_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);cmsxFindingPendingFiles[id]=f;cmsxFindingFiles[id]={id:id,name:f.name,type:safCMSMime(f.name,f.type),size:f.size,pending:true};
   });
   input.value='';cmsxFindingRenderFiles();
@@ -17869,7 +17869,7 @@ else { cmsxInit(); }
 <div class="cmsx-field"><label>Remarques / constatations / Remarks / findings</label><textarea id="saf-st-notes" placeholder="Constatations d’audit, points d’attention, actions en cours… / Audit findings, points of attention, ongoing actions..."></textarea></div>
 <div class="cmsx-card" style="background:#08111f;margin-top:10px;">
 <div class="cmsx-card-title" style="font-size:12px;">📎 Pièces jointes (contrat, certificat, rapport d’audit) / Attachments (contract, certificate, audit report)</div>
-<div class="cmsx-note" style="font-size:11px;">Formats acceptés : PDF, DOCX, PPTX, XLSX, JPG, PNG — 100 Mo maximum par fichier. Stockage privé Supabase ; l’ouverture utilise un lien temporaire valable 1 heure. / Accepted formats: PDF, DOCX, PPTX, XLSX, JPG, PNG — max 100 MB per file. Private Supabase Storage; files are opened through a 1-hour signed URL.</div>
+<div class="cmsx-note" style="font-size:11px;">Formats acceptés : PDF, DOCX, PPTX, XLSX, JPG, PNG — 50 Mo maximum par fichier. Stockage privé Supabase ; l’ouverture utilise un lien temporaire valable 1 heure. / Accepted formats: PDF, DOCX, PPTX, XLSX, JPG, PNG — max 50 MB per file. Private Supabase Storage; files are opened through a 1-hour signed URL.</div>
 <input accept=".pdf,.docx,.pptx,.xlsx,.jpg,.jpeg,.png" id="saf-st-file-input" multiple="" onchange="safSTHandleFiles(this)" style="margin:8px 0;color:#c8d8f0;font-size:12px;" type="file"/>
 <div id="saf-st-storage-status" style="font-family:var(--font-mono,monospace);font-size:10px;color:#6a82a5;min-height:14px;margin:3px 0 6px;"></div>
 <div id="saf-st-file-list" style="margin-top:6px;"></div>
@@ -18076,7 +18076,7 @@ function sfCloseModal(id){ var m=document.getElementById(id); if(m){ m.style.dis
 var ST_KEY='saf_sous_traitants';
 var ST_BUCKET='SMS Documents';
 var ST_ROOT='Compliance/Contractors';
-var ST_MAX_FILE_SIZE=100*1024*1024;
+var ST_MAX_FILE_SIZE=50*1024*1024;
 var stCurrentFiles={};       // metadata only: never persist File/Blob objects
 var stPendingFiles={};       // transient File objects awaiting upload
 var stCurrentFolder='';      // stable folder retained even if contractor reference changes
@@ -18188,7 +18188,7 @@ function safSTHandleFiles(input){
   var rejected=[];
   files.forEach(function(f){
     if(!safSTAllowedFile(f)){ rejected.push(f.name+' (format)'); return; }
-    if(f.size>ST_MAX_FILE_SIZE){ rejected.push(f.name+' (>100 Mo)'); return; }
+    if(f.size>ST_MAX_FILE_SIZE){ rejected.push(f.name+' (>50 Mo)'); return; }
     var fid='f'+sfId();
     stPendingFiles[fid]=f;
     stCurrentFiles[fid]={id:fid,name:f.name,type:safSTMimeFromName(f.name,f.type),size:f.size,pending:true};
@@ -21474,7 +21474,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     for(var i=0;i<files.length;i++){
       var f=files[i];
       if(!safSTAllowedFile(f)){alert('Format non autorisé / Unsupported format: '+f.name);continue;}
-      if(f.size>ST_MAX_FILE_SIZE){alert('Fichier supérieur à 100 Mo / File over 100 MB: '+f.name);continue;}
+      if(f.size>ST_MAX_FILE_SIZE){alert('Fichier supérieur à 50 Mo / File over 50 MB: '+f.name);continue;}
       var fid='f'+sfId();
       try{
         safSTSetStorageStatus('Envoi de « '+f.name+' »… / Uploading…');
@@ -21513,7 +21513,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     if(!cmsxFindingStorageFolder)cmsxFindingStorageFolder=cmsxFindingDefaultFolder(id,data);
     var files=Array.from(input.files||[]);input.value='';
     for(var i=0;i<files.length;i++){
-      var f=files[i];if(!safCMSAllowedFile(f)){alert('Format non autorisé / Unsupported format: '+f.name);continue;}if(f.size>CMS_STORAGE_MAX_FILE_SIZE){alert('Fichier supérieur à 100 Mo / File over 100 MB: '+f.name);continue;}
+      var f=files[i];if(!safCMSAllowedFile(f)){alert('Format non autorisé / Unsupported format: '+f.name);continue;}if(f.size>CMS_STORAGE_MAX_FILE_SIZE){alert('Fichier supérieur à 50 Mo / File over 50 MB: '+f.name);continue;}
       var k='ev_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);cmsxFindingFiles[k]={id:k,name:f.name,type:safCMSMime(f.name,f.type),size:f.size,pending:true};cmsxFindingRenderFiles();
       try{cmsxFindingStatus('Envoi de « '+f.name+' »… / Uploading…');var meta=await safCMSUploadFile(cmsxFindingStorageFolder,f);meta.id=k;cmsxFindingFiles[k]=meta;cmsxFindingRenderFiles();safAutoFindingCommit(true);}
       catch(e){delete cmsxFindingFiles[k];cmsxFindingRenderFiles();cmsxFindingStatus('Échec : '+e.message,true);alert('Échec de l’envoi / Upload failed:\n'+e.message);}
