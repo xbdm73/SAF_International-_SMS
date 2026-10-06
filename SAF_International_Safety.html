@@ -4827,7 +4827,7 @@ window.__SAF_E5X_RIT_PATCH='V2_2026-07-03';
     'ejsPublicKey','ejsServiceId','ejsTemplateId',
     'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining',
     'safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap',
-    'safRemovedRiskIds','safArchivedRisks',
+    'safRemovedRiskIds','safArchivedRisks','safRegisterNumbering','safArchiveSeq',
     'saf_international_safety_management_header_v1',
     'saf-seeds-done'
   ];
@@ -8685,15 +8685,50 @@ window.safRemovedRiskIds=safRemovedRiskIds;
 window.safMarkRiskRemoved=safMarkRiskRemoved;
 window.safUnmarkRiskRemoved=safUnmarkRiskRemoved;
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   06.10.2026 — NOUVELLE NUMEROTATION DU REGISTRE (SMS-01, 02…)
+   Une fois le registre archive puis « detache », le referentiel embarque
+   (INITIAL_DATA) ne sert plus de base : il n'est plus reconstruit a l'ouverture,
+   sinon un nouveau SMS-01 serait confondu avec l'ancien. Les risques de la
+   nouvelle serie portent register_series ; les copies anciennes encore presentes
+   dans un cache local ou cloud (sans ce marqueur) sont ignorees — elles sont
+   toutes dans l'archive. Etat sauvegarde dans la cle safRegisterNumbering.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var SAF_NUMBERING_KEY='safRegisterNumbering';
+function safNumberingState(){ try{ var v=JSON.parse(localStorage.getItem(SAF_NUMBERING_KEY)||'null'); return (v&&typeof v==='object')?v:null; }catch(e){ return null; } }
+function safNumberingDetached(){ var s=safNumberingState(); return !!(s&&s.detached&&s.series); }
+function __safMergeDetached(){
+  var st=safNumberingState(), gone=safRemovedRiskSet(), out=[], seen={}, live=null;
+  try{ live=DB; }catch(e){ live=null; }
+  Array.prototype.slice.call(arguments).forEach(function(src){
+    if(typeof src==='string'){ try{ src=JSON.parse(src); }catch(e){ src=null; } }
+    if(!Array.isArray(src)) return;
+    var trusted=(live!==null && src===live);
+    src.forEach(function(r){
+      if(!r||!/^SMS-\d{2,}$/.test(String(r.id||''))) return;
+      if(gone[String(r.id)]||seen[r.id]) return;
+      if(!trusted && r.register_series!==st.series) return;
+      if(!r.register_series) r.register_series=st.series;
+      seen[r.id]=1; out.push(r);
+    });
+  });
+  out.sort(function(a,b){ return String(a.id).localeCompare(String(b.id),undefined,{numeric:true}); });
+  return safApplyTaxonomyToDB(out);
+}
+window.safNumberingState=safNumberingState;
+window.safNumberingDetached=safNumberingDetached;
+
 /* Copie du referentiel, scenarios retires exclus. Tout chemin qui repart
    d'INITIAL_DATA passe par la, sinon les retraits sont annules. */
 function __safRefBase(){
+  if(safNumberingDetached()) return [];
   var gone = safRemovedRiskSet();
   return JSON.parse(JSON.stringify(INITIAL_DATA)).filter(function(r){ return !(r && gone[String(r.id)]); });
 }
 window.__safRefBase=__safRefBase;
 
 function __mergeSmsDBWithCustom(){
+  if(safNumberingDetached()) return __safMergeDetached.apply(null, arguments);
   var __gone = safRemovedRiskSet();
   var base=__safRefBase();
   var baseIds={};base.forEach(function(r){baseIds[r.id]=1;});
@@ -9424,6 +9459,8 @@ window.safExportAllData_object = function(){
     safOccActionEmailMap: _getLS('safOccActionEmailMap'),
     safRemovedRiskIds: _getLS('safRemovedRiskIds'),
     safArchivedRisks: _getLS('safArchivedRisks'),
+    safRegisterNumbering: _getLS('safRegisterNumbering'),
+    safArchiveSeq: _getLS('safArchiveSeq'),
   };
   Object.keys(allData).forEach(function(k){
     if(allData[k]===null || allData[k]===undefined) delete allData[k];
@@ -9519,7 +9556,7 @@ function safImportAllData(evt){
       var keys = ['safRiskDB','safRiskDBVersion','safEventCatalog','safEventCatalogVersion','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
                   'safLessons','safTrainingRecords','safERPExercises','safInterfaces','safISMS','safSRBMeetings','safAudits','lastModified',
                   'ejsPublicKey','ejsServiceId','ejsTemplateId',
-                  'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap','safRemovedRiskIds','safArchivedRisks',
+                  'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap','safRemovedRiskIds','safArchivedRisks','safRegisterNumbering','safArchiveSeq',
                   ];
       var count = 0;
       keys.forEach(function(k){
@@ -9568,6 +9605,7 @@ function saveDB() {
   // Instrumentation des ecritures : barriers[] ne peut plus se desynchroniser
   // du texte, quel que soit le chemin d edition (formulaire, MOC, import).
   try { safBarriersSyncAll(); } catch(e) { console.warn('[SAF] safBarriersSyncAll:', e); }
+  try{ if(safNumberingDetached()){ var _nst=safNumberingState(); DB.forEach(function(r){ if(r && !r.register_series) r.register_series=_nst.series; }); } }catch(e){}
   localStorage.setItem('safRiskDB', JSON.stringify(DB));
   try { localStorage.setItem('safRiskDBVersion', _DB_VERSION); } catch(e) {}
   try { ejsLoadConfig(); } catch(e) {}
@@ -12254,7 +12292,7 @@ function importJSON(event) {
         const allKeys = ['safRiskDB','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
                          'safLessons','safTrainingRecords','safERPExercises','safInterfaces','safISMS','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','lastModified',
                          'ejsPublicKey','ejsServiceId','ejsTemplateId',
-                         'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap','safRemovedRiskIds','safArchivedRisks',
+                         'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap','safRemovedRiskIds','safArchivedRisks','safRegisterNumbering','safArchiveSeq',
                          ];
         allKeys.forEach(function(k){ if(data[k]!=null){ localStorage.setItem(k,data[k]); imported.push(k); } });
         if(data['saf_header']!=null) localStorage.setItem('saf_international_safety_management_header_v1', data['saf_header']);
@@ -22127,7 +22165,7 @@ setTimeout(function(){
   var KEYS = ['safRiskDB','safRiskDBVersion','safEventCatalog','safEventCatalogVersion','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
               'safLessons','safTrainingRecords','safERPExercises','safInterfaces','safISMS','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','lastModified',
               'ejsPublicKey','ejsServiceId','ejsTemplateId',
-              'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap','safRemovedRiskIds','safArchivedRisks',
+              'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap','safRemovedRiskIds','safArchivedRisks','safRegisterNumbering','safArchiveSeq',
               ];
 
   // --- Chargement depuis la base --- (timeout 6s pour éviter le blocage)
@@ -26189,6 +26227,389 @@ window.cmxBridgeDiag    = function(){
       if (ov.classList.contains('open') && !canExport()) ov.classList.remove('open');
     }).observe(ov, { attributes: true, attributeFilter: ['class'] });
   }
+})();
+</script>
+<script id="saf-risk-archive-v3-saf">
+/* 06.10.2026 — ARCHIVE DU REGISTRE v3
+   Un risque archive prend un numero d'archive ARCH-001, ARCH-002… (jamais reutilise) ;
+   restaure, il reprend un numero SMS-xx :
+     - nouvelle numerotation active : le numero libre suivant de la nouvelle serie ;
+     - sinon : son ancien numero s'il est libre, a defaut le numero libre suivant.
+   Les references au risque (occurrences, barrieres, etudes de changement, bow-ties,
+   comptabilite des evenements, textes des autres risques…) suivent : SMS-37 -> ARCH-012
+   a l'archivage, ARCH-012 -> SMS-xx a la restauration. L'historique de la fiche garde
+   chaque numero porte (former_id = dernier numero SMS avant archivage).
+   Rien n'est efface ; « Archive all » telecharge d'abord une sauvegarde complete. */
+(function(){
+  'use strict';
+  var KEY = 'safArchivedRisks', SEQ_KEY = 'safArchiveSeq';
+  var DATA_KEYS = ['safEventCatalog','safChangeStudies','safSPITargets','safOccurrences','safLessons','safTrainingRecords','safERPExercises',
+    'safInterfaces','safISMS','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','safSafetyPolicy','safSafetyObjectives',
+    'safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders'];
+
+  function load(){ try{ var v = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
+  function store(list){ localStorage.setItem(KEY, JSON.stringify(list || [])); cloud(); }
+  function cloud(){ try{ if(typeof window.safCloudScheduleSave === 'function') window.safCloudScheduleSave(); }catch(e){} }
+  function role(){ try{ return (typeof safCurrentRole === 'function' ? safCurrentRole() : '').toLowerCase(); }catch(e){ return ''; } }
+  function canWrite(){ var r = role(); return r === 'admin' || r === 'editor'; }
+  function who(){ try{ return (typeof safCurrentUser === 'function' ? safCurrentUser() : '') || 'SMS User'; }catch(e){ return 'SMS User'; } }
+  function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function toast(m, t){ try{ showToast(m, t || 'success'); }catch(e){} }
+  function smsNum(id){ var m = String(id || '').match(/^SMS-(\d+)$/); return m ? parseInt(m[1], 10) : 0; }
+  function archNum(id){ var m = String(id || '').match(/^ARCH-(\d+)$/); return m ? parseInt(m[1], 10) : 0; }
+  function byNum(a, b){ return String(a.id).localeCompare(String(b.id), undefined, {numeric:true}); }
+  function detached(){ return typeof safNumberingDetached === 'function' && safNumberingDetached(); }
+  function nstate(){ return (typeof safNumberingState === 'function' && safNumberingState()) || null; }
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+  function refresh(){
+    try{ if(typeof renderTable === 'function') renderTable(); }catch(e){}
+    try{ if(typeof updateCounts === 'function') updateCounts(); }catch(e){}
+    var b = document.getElementById('saf-rr-archive-btn'); var n = load().length;
+    if(b) b.textContent = '🗄 Archive' + (n ? ' (' + n + ')' : '');
+  }
+
+  /* ── Remplacement des references (plusieurs a la fois, en une passe) ───── */
+  function swapper(map){
+    var keys = Object.keys(map); if(!keys.length) return function(s){ return s; };
+    keys.sort(function(a, b){ return b.length - a.length; });
+    var re = new RegExp('(^|[^\\w-])(' + keys.map(function(k){ return k.replace(/[-]/g, '\\-'); }).join('|') + ')(?!\\d)', 'g');
+    return function(s){ return String(s).replace(re, function(m, p, k){ return p + map[k]; }); };
+  }
+  function deepMap(v, fn, skip){
+    if(typeof v === 'string') return fn(v);
+    if(Array.isArray(v)) return v.map(function(x){ return deepMap(x, fn, skip); });
+    if(v && typeof v === 'object'){ var o = {}; Object.keys(v).forEach(function(k){ o[k] = (skip && skip[k]) ? v[k] : deepMap(v[k], fn, skip); }); return o; }
+    return v;
+  }
+  var KEEP = {former_id:1, archive_id:1, history:1};   // l'historique n'est jamais reecrit
+  function applyEverywhere(map, exceptRec){
+    var fn = swapper(map);
+    if(Array.isArray(DB)) DB.forEach(function(r, i){ if(r !== exceptRec) DB[i] = deepMap(r, fn, KEEP); });
+    DATA_KEYS.forEach(function(k){
+      var raw = null; try{ raw = localStorage.getItem(k); }catch(e){}
+      if(raw == null) return;
+      var nv = fn(raw); if(nv !== raw){ try{ localStorage.setItem(k, nv); }catch(e){} }
+    });
+    try{ if(typeof CHANGE_STUDIES !== 'undefined') CHANGE_STUDIES = JSON.parse(localStorage.getItem('safChangeStudies') || '[]'); }catch(e){}
+    try{ if(typeof eventAccountingLoad === 'function') eventAccountingLoad(true); }catch(e){}
+    return fn;
+  }
+
+  /* ── Numeros ──────────────────────────────────────────────────────────── */
+  function nextArch(){
+    var seq = 0; try{ seq = parseInt(localStorage.getItem(SEQ_KEY) || '0', 10) || 0; }catch(e){}
+    load().forEach(function(a){ seq = Math.max(seq, archNum(a && a.id)); });
+    seq += 1;
+    try{ localStorage.setItem(SEQ_KEY, String(seq)); }catch(e){}
+    return 'ARCH-' + String(seq).padStart(3, '0');
+  }
+  function usedSms(){
+    var s = {};
+    (Array.isArray(DB) ? DB : []).forEach(function(r){ if(r && r.id) s[r.id] = 1; });
+    try{ safRemovedRiskIds().forEach(function(id){ s[id] = 1; }); }catch(e){}
+    if(!detached()){
+      // Ancienne serie : le referentiel embarque et les anciens numeros des risques archives restent reserves
+      try{ INITIAL_DATA.forEach(function(r){ if(r && r.id) s[r.id] = 1; }); }catch(e){}
+      load().forEach(function(a){ if(a && a.former_id) s[a.former_id] = 1; });
+    }
+    return s;
+  }
+  function nextSms(){
+    var max = 0; Object.keys(usedSms()).forEach(function(id){ max = Math.max(max, smsNum(id)); });
+    return 'SMS-' + String(max + 1).padStart(2, '0');
+  }
+  window.safNextRiskId = nextSms;
+  window.eventAccountingNextRiskId = nextSms;
+
+  /* ── Archiver ─────────────────────────────────────────────────────────── */
+  function archiveRisks(ids, reason, bulk){
+    var now = new Date().toISOString(), by = who();
+    var list = load(), map = {}, moved = [];
+    ids.forEach(function(id){
+      var rec = (DB || []).find(function(r){ return r && r.id === id; });
+      if(!rec) return;
+      var aid = nextArch();
+      map[rec.id] = aid;
+      moved.push({rec:rec, aid:aid});
+    });
+    if(!moved.length) return [];
+    var fn = swapper(map);
+    moved.forEach(function(m){
+      var copy = deepMap(clone(m.rec), fn, KEEP);
+      copy.id = m.aid;
+      if(!Array.isArray(copy.history)) copy.history = [];
+      copy.history.push({action:'archived', date:now, by:by, reason:reason, from_id:m.rec.id, archive_id:m.aid});
+      list.push({ id:m.aid, former_id:m.rec.id, event:m.rec.event || '', family_id:m.rec.family_id || '', category:m.rec.category || '',
+                  residual_risk:m.rec.residual_risk || '', archived_at:now, archived_by:by, reason:reason, bulk:!!bulk, record:copy });
+    });
+    // Les autres entrees d'archive qui citaient ces risques suivent aussi
+    list = list.map(function(a){ return moved.some(function(m){ return m.aid === a.id; }) ? a : deepMap(a, fn, {former_id:1, id:1, archived_at:1, history:1}); });
+    store(list);
+    var check = load(); if(!moved.every(function(m){ return check.some(function(a){ return a.id === m.aid && a.record; }); })) throw new Error('archive check failed');
+    var gone = moved.map(function(m){ return m.rec.id; });
+    DB = DB.filter(function(r){ return gone.indexOf(r.id) === -1; }); filteredDB = DB.slice();
+    applyEverywhere(map);
+    if(!detached()){ try{ safMarkRiskRemoved(gone); }catch(e){} }   // empeche la reconstruction depuis le referentiel embarque
+    try{ saveDB(); }catch(e){}
+    refresh();
+    return moved.map(function(m){ return m.rec.id + ' → ' + m.aid; });
+  }
+
+  /* Archivage unitaire (bouton Delete / Archive d'une ligne du registre) */
+  window.safArchiveRisk = function(id){
+    if(!canWrite()){ toast('Lecture seule — archivage impossible / Read-only — archiving not possible', 'error'); return; }
+    var rec = (DB || []).find(function(r){ return r && r.id === id; });
+    if(!rec){ toast('Scénario introuvable / Scenario not found', 'error'); return; }
+    dialog('<div style="font-size:16px;font-weight:700;margin-bottom:6px;">Archiver / Archive ' + esc(rec.id) + '</div>'
+      + '<p style="margin:0 0 10px;">' + esc(rec.event || '') + '</p>'
+      + '<p style="margin:0 0 10px;">Le risque quitte le registre actif et devient <strong>' + esc(peekArch()) + '</strong> dans l\u2019archive. Restauré plus tard, il reprend un numéro SMS.<br><em>The risk leaves the active register and becomes ' + esc(peekArch()) + ' in the archive. Restored later, it takes an SMS number again.</em></p>'
+      + '<label style="display:block;font-weight:600;margin-bottom:4px;">Motif (obligatoire) / Reason (mandatory)</label>'
+      + '<textarea id="ar2-reason" rows="2" style="width:100%;box-sizing:border-box;border:1px solid #B7C3D0;border-radius:6px;padding:8px;font-family:inherit;font-size:13px;" placeholder="Activité arrêtée, fusionné avec un autre scénario, hors périmètre… / Activity discontinued, merged, out of scope…"></textarea>',
+      function(ov){
+        var reason = ov.querySelector('#ar2-reason').value.trim();
+        if(reason.length < 5) return 'Saisir un motif (5 caractères minimum) / Enter a reason (5 characters minimum).';
+        try{ var r = archiveRisks([id], reason, false); toast('✓ ' + r.join(', ') + ' — disponible dans l\u2019archive / available in the archive'); }
+        catch(e){ return 'Échec de l\u2019archivage — rien n\u2019a changé / Archiving failed — nothing changed (' + (e && e.message || e) + ').'; }
+        render(); return null;
+      });
+  };
+  function peekArch(){
+    var seq = 0; try{ seq = parseInt(localStorage.getItem(SEQ_KEY) || '0', 10) || 0; }catch(e){}
+    load().forEach(function(a){ seq = Math.max(seq, archNum(a && a.id)); });
+    return 'ARCH-' + String(seq + 1).padStart(3, '0');
+  }
+
+  /* ── Fenetre de confirmation ──────────────────────────────────────────── */
+  function dialog(html, onOk){
+    var ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:10050;background:rgba(15,30,46,.5);display:flex;align-items:center;justify-content:center;padding:16px;';
+    ov.innerHTML = '<div role="dialog" aria-modal="true" style="background:#fff;color:#13202E;border-radius:10px;max-width:560px;width:100%;padding:22px 24px;box-shadow:0 12px 40px rgba(15,30,46,.3);font-family:\'IBM Plex Sans\',Arial,sans-serif;font-size:13px;line-height:1.5;">' + html
+      + '<div id="ar2-err" style="min-height:16px;color:#C62828;font-size:12px;margin:6px 0;"></div>'
+      + '<div style="display:flex;justify-content:flex-end;gap:8px;"><button type="button" id="ar2-cancel" style="padding:8px 14px;border:1px solid #B7C3D0;background:#fff;border-radius:6px;cursor:pointer;">Annuler / Cancel</button>'
+      + '<button type="button" id="ar2-ok" style="padding:8px 14px;border:none;background:#B33A00;color:#fff;border-radius:6px;cursor:pointer;font-weight:600;">Confirmer / Confirm</button></div></div>';
+    document.body.appendChild(ov);
+    function close(){ ov.remove(); }
+    ov.querySelector('#ar2-cancel').onclick = close;
+    ov.addEventListener('keydown', function(e){ if(e.key === 'Escape') close(); });
+    ov.querySelector('#ar2-ok').onclick = function(){ var err = onOk(ov); if(err){ ov.querySelector('#ar2-err').textContent = err; } else close(); };
+    var f = ov.querySelector('textarea,input'); if(f) f.focus();
+    return ov;
+  }
+
+  /* ── Archiver tout le registre ────────────────────────────────────────── */
+  window.safArchiveAll = function(){
+    if(!canWrite()){ toast('Lecture seule — archivage impossible / Read-only — archiving not possible', 'error'); return; }
+    var n = Array.isArray(DB) ? DB.length : 0;
+    if(!n){ toast('Le registre actif est déjà vide / The active register is already empty', 'error'); return; }
+    dialog('<div style="font-size:16px;font-weight:700;margin-bottom:6px;">Archiver tout le registre / Archive the whole register (' + n + ')</div>'
+      + '<p style="margin:0 0 10px;">Chaque risque quitte le registre actif et prend un numéro d\u2019archive (' + esc(peekArch()) + ', …), complet et inchangé. Rien n\u2019est supprimé : vous restaurez ensuite uniquement les risques voulus, qui reprennent un numéro SMS.<br><em>Each risk takes an archive number, complete and unchanged; you then restore only the risks you want, each one taking an SMS number again.</em></p>'
+      + '<p style="margin:0 0 10px;"><strong>Une sauvegarde complète (JSON) est d\u2019abord téléchargée / A full backup (JSON) is downloaded first.</strong> Conservez-la / Keep it.</p>'
+      + '<label style="display:block;font-weight:600;margin-bottom:4px;">Motif (obligatoire, conservé dans l\u2019archive) / Reason (mandatory)</label>'
+      + '<textarea id="ar2-reason" rows="2" style="width:100%;box-sizing:border-box;border:1px solid #B7C3D0;border-radius:6px;padding:8px;font-family:inherit;font-size:13px;">Remise à zéro du registre — risques à réintégrer après revue / Register reset — risks to be re-introduced after review</textarea>'
+      + (detached() ? '' : '<label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;"><input type="checkbox" id="ar2-renum" checked/> <span><strong>Recommencer la numérotation à SMS-01 / Restart numbering at SMS-01.</strong> Les risques restaurés prennent SMS-01, SMS-02… dans l\u2019ordre de restauration ; décoché, un risque restauré reprend son ancien numéro. / Restored risks take SMS-01, SMS-02… in restore order; unticked, a restored risk takes back its former number.</span></label>')
+      + '<label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;"><input type="checkbox" id="ar2-ack"/> <span>J\u2019ai compris que les liens (occurrences, barrières, études de changement, bow-ties, comptabilité des événements) suivent le risque : numéro ARCH tant qu\u2019il est archivé, numéro SMS une fois restauré. / I understand that links follow the risk (ARCH number while archived, SMS number once restored).</span></label>',
+      function(ov){
+        var reason = ov.querySelector('#ar2-reason').value.trim();
+        if(reason.length < 5) return 'Saisir un motif (5 caractères minimum) / Enter a reason (5 characters minimum).';
+        if(!ov.querySelector('#ar2-ack').checked) return 'Cocher la case de confirmation / Tick the confirmation box.';
+        try{ safExportAllData(); }catch(e){ return 'Échec du téléchargement de la sauvegarde — rien n\u2019a été archivé / Backup download failed — nothing archived (' + (e && e.message || e) + ').'; }
+        var res;
+        try{ res = archiveRisks(DB.map(function(r){ return r.id; }), reason, true); }
+        catch(e){ return 'Échec de l\u2019archivage — vérifier le registre avant de réessayer / Archiving failed — check the register (' + (e && e.message || e) + ').'; }
+        var renum = ov.querySelector('#ar2-renum');
+        if(renum && renum.checked) startNumbering(true);
+        refresh();
+        setTimeout(function(){ try{ window.safArchiveOpen(); }catch(e){} }, 300);
+        toast('✓ ' + res.length + ' risques archivés / risks archived (ARCH-…)' + (detached() ? ' — nouvelle numérotation : le premier risque restauré sera SMS-01 / first risk restored will be SMS-01' : ''));
+        return null;
+      });
+  };
+
+  /* ── Nouvelle numerotation ────────────────────────────────────────────── */
+  function startNumbering(silent){
+    if(detached()) return true;
+    if(Array.isArray(DB) && DB.length){ toast('Archiver d\u2019abord tous les risques actifs / Archive all active risks first', 'error'); return false; }
+    var now = new Date().toISOString();
+    try{ localStorage.setItem('safRemovedRiskIds', '[]'); }catch(e){}
+    try{ localStorage.setItem('safRegisterNumbering', JSON.stringify({ detached:true, series:'S' + now.slice(0,10).replace(/-/g,''), since:now, by:who() })); }catch(e){}
+    cloud();
+    DB = []; filteredDB = []; try{ saveDB(); }catch(e){}
+    refresh(); render();
+    if(!silent) toast('✓ Nouvelle numérotation active — le prochain risque restauré ou créé sera SMS-01 / New numbering active — next risk will be SMS-01');
+    return true;
+  }
+  window.safStartNewNumbering = function(){ if(!canWrite()){ toast('Lecture seule — impossible / Read-only — not possible', 'error'); return false; } return startNumbering(false); };
+
+  /* ── Restaurer ────────────────────────────────────────────────────────── */
+  function targetId(entry){
+    if(!detached() && /^SMS-\d{2,}$/.test(entry.former_id || '') && !(DB || []).some(function(r){ return r.id === entry.former_id; })) return entry.former_id;
+    return nextSms();
+  }
+  window.safRestoreArchivedRisks = function(ids){
+    if(!canWrite()){ toast('Lecture seule — restauration impossible / Read-only — restoration not possible', 'error'); return; }
+    ids = (Array.isArray(ids) ? ids : [ids]).map(String);
+    var now = new Date().toISOString(), by = who(), done = [];
+    ids.forEach(function(aid){
+      var list = load(); var entry = list.find(function(a){ return a && a.id === aid; });
+      if(!entry || !entry.record) return;
+      var tid = targetId(entry);
+      if(tid === entry.former_id){ try{ safUnmarkRiskRemoved(tid); }catch(e){} }
+      var map = {}; map[aid] = tid;
+      var fn = swapper(map);
+      var rec = deepMap(clone(entry.record), fn, KEEP);
+      rec.id = tid;
+      if(entry.former_id && entry.former_id !== tid) rec.former_id = entry.former_id; else delete rec.former_id;
+      var st = nstate(); if(st && detached()) rec.register_series = st.series;
+      if(!Array.isArray(rec.history)) rec.history = [];
+      rec.history.push({action:'restored_from_archive', date:now, by:by, archive_id:aid, former_id:entry.former_id || '', new_id:tid});
+      DB.push(rec); DB.sort(byNum); filteredDB = DB.slice();
+      store(list.filter(function(a){ return a.id !== aid; }).map(function(a){ return deepMap(a, fn, {former_id:1, id:1, archived_at:1, history:1}); }));
+      applyEverywhere(map, rec);
+      done.push(aid + ' → ' + tid);
+    });
+    try{ saveDB(); }catch(e){}
+    refresh(); render();
+    if(done.length) toast('✓ Restauré / Restored : ' + done.join(', '));
+  };
+  window.safRestoreArchivedRisk = function(aid){
+    var e = load().find(function(a){ return a && a.id === aid; }); if(!e) return;
+    var t = targetId(e);
+    if(!confirm('Restaurer / Restore ' + aid + (e.former_id ? ' (ancien / former ' + e.former_id + ')' : '') + ' — ' + (e.event || '') + ' ?\n\nIl deviendra / It will become ' + t + '.')) return;
+    window.safRestoreArchivedRisks([aid]);
+  };
+
+  /* ── Protections a la creation ───────────────────────────────────────── */
+  var _submit = window.submitEntry;
+  if(typeof _submit === 'function'){
+    window.submitEntry = function(){
+      try{
+        if(!editingEntryId){
+          var typed = ((document.getElementById('f-report-id') || {}).value || '').trim();
+          if(/^ARCH-/i.test(typed)){ toast('Les numéros ARCH- sont réservés à l\u2019archive — laisser l\u2019ID vide / ARCH- numbers are reserved for the archive — leave the ID empty', 'error'); return; }
+          if(typed && usedSms()[typed] && !(DB || []).some(function(r){ return r.id === typed; })){
+            toast(typed + ' est réservé (ancien numéro d\u2019un risque archivé ou référentiel) — laisser l\u2019ID vide pour obtenir / is reserved — leave the ID empty to get ' + nextSms(), 'error'); return;
+          }
+        }
+      }catch(e){}
+      return _submit.apply(this, arguments);
+    };
+  }
+  var _copy = window.copyEntry;
+  if(typeof _copy === 'function'){
+    window.copyEntry = function(id){
+      var target = nextSms();
+      var before = (DB || []).map(function(r){ return r.id; });
+      var res = _copy.apply(this, arguments);
+      try{
+        var added = DB.filter(function(r){ return before.indexOf(r.id) === -1; });
+        if(added.length === 1 && added[0].id !== target){ added[0].id = target; DB.sort(byNum); filteredDB = DB.slice(); saveDB(); refresh(); }
+      }catch(e){}
+      return res;
+    };
+  }
+
+  /* ── Migration des entrees d'archive anterieures (SMS-xx ou OLD-SMS-xx) ── */
+  function migrate(){
+    var list = load(); if(!list.some(function(a){ return a && !/^ARCH-\d+$/.test(a.id); })) return;
+    var map = {}, inDB = {}; (DB || []).forEach(function(r){ inDB[r.id] = 1; });
+    list = list.map(function(a){
+      if(!a || /^ARCH-\d+$/.test(a.id)) return a;
+      var old = a.id, former = (a.former_id || old).replace(/^OLD-/, ''), aid = nextArch();
+      // Une reference « OLD-SMS-xx » est sans ambiguite ; une reference « SMS-xx » ne l'est
+      // que si ce numero n'est pas porte par un risque actif.
+      if(/^OLD-/.test(old) || !inDB[old]) map[old] = aid;
+      var e = deepMap(a, swapper((function(){ var m = {}; m[old] = aid; return m; })()), {former_id:1, archived_at:1, history:1});
+      e.id = aid; e.former_id = former; if(e.record) e.record.id = aid;
+      return e;
+    });
+    store(list);
+    applyEverywhere(map);
+    try{ saveDB(); }catch(e){}
+  }
+
+  /* ── Fenetre d'archive ────────────────────────────────────────────────── */
+  var FILTER = { fam:'', q:'' };
+  function famName(f){ try{ var x = SAF_FAMILY_BY_ID[f]; return x ? f + ' — ' + x.name : f; }catch(e){ return f; } }
+  function render(){
+    var body = document.getElementById('saf-rr-archive-body'); if(!body) return;
+    var all = load().slice().sort(byNum), w = canWrite();
+    if(!all.length){
+      body.innerHTML = '<div style="text-align:center;padding:34px;color:var(--grey-400);font-family:var(--font-mono);font-size:12px;border:1px dashed rgba(15,30,46,0.192);border-radius:8px;">Aucun risque archivé / No archived risk.</div>';
+      return;
+    }
+    var fams = {}; all.forEach(function(a){ var f = a.family_id || '—'; fams[f] = (fams[f] || 0) + 1; });
+    if(FILTER.fam && !fams[FILTER.fam]) FILTER.fam = '';
+    var q = FILTER.q.toLowerCase();
+    var list = all.filter(function(a){
+      return (!FILTER.fam || (a.family_id || '—') === FILTER.fam) &&
+             (!q || (a.id + ' ' + (a.former_id || '') + ' ' + a.event + ' ' + (a.family_id || '')).toLowerCase().indexOf(q) !== -1);
+    });
+    var st = nstate();
+    var banner = detached()
+      ? '<div style="margin-bottom:12px;padding:9px 12px;border-left:4px solid #3fb950;background:rgba(63,185,80,.10);border-radius:0 6px 6px 0;font-size:12px;line-height:1.5;"><strong>Nouvelle numérotation active / New numbering active</strong> depuis le / since ' + esc(String(st.since || '').slice(0, 10)) + '. Un risque restauré prend le numéro SMS suivant / A restored risk takes the next SMS number : <strong>' + esc(nextSms()) + '</strong>. Les risques cochés sont numérotés dans l\u2019ordre de la liste / Ticked risks are numbered in list order.</div>'
+      : '<div style="margin-bottom:12px;padding:9px 12px;border-left:4px solid #4A9FE0;background:rgba(74,159,224,.10);border-radius:0 6px 6px 0;font-size:12px;line-height:1.5;">Un risque restauré reprend son ancien numéro SMS s\u2019il est libre / A restored risk takes back its former SMS number when free.'
+        + ((w && (!Array.isArray(DB) || !DB.length)) ? ' <button type="button" class="btn btn-ghost" id="ar2-start-num" style="margin-left:8px;">Recommencer à SMS-01 / Restart at SMS-01</button>' : '') + '</div>';
+    var tools = '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;">'
+      + '<input id="ar2-q" type="text" placeholder="N° ARCH, ancien n° ou titre… / ARCH no., former no. or title…" value="' + esc(FILTER.q) + '" style="flex:1;min-width:200px;padding:7px 10px;border:1px solid rgba(255,255,255,.25);border-radius:6px;font-size:12px;background:rgba(255,255,255,.06);color:var(--white);">'
+      + '<select id="ar2-fam" style="padding:7px 10px;border:1px solid rgba(255,255,255,.25);border-radius:6px;font-size:12px;background:rgba(255,255,255,.06);color:var(--white);max-width:320px;"><option value="">Toutes les familles / All families (' + all.length + ')</option>'
+      + Object.keys(fams).sort().map(function(f){ return '<option value="' + esc(f) + '"' + (FILTER.fam === f ? ' selected' : '') + '>' + esc(famName(f)) + ' (' + fams[f] + ')</option>'; }).join('') + '</select>'
+      + (w ? '<button class="btn btn-ghost" id="ar2-selall" type="button">☑ Tout cocher / Select shown</button>'
+           + '<button class="btn btn-ghost" id="ar2-restore-sel" type="button" style="border-color:#3fb950;color:#3fb950;">↺ Restaurer la sélection / Restore selected (<span id="ar2-n">0</span>)</button>'
+           + (FILTER.fam ? '<button class="btn btn-ghost" id="ar2-restore-fam" type="button" style="border-color:var(--steel-bright,#4A9FE0);color:var(--steel-bright,#4A9FE0);">↺ Restaurer cette famille / Restore this family (' + list.length + ')</button>' : '') : '')
+      + '</div>';
+    body.innerHTML = banner + tools + '<div style="display:flex;flex-direction:column;gap:8px;">' + (list.length ? list.map(function(a){
+      var d = String(a.archived_at || '').slice(0, 10);
+      return '<label style="display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.14);border-left:4px solid var(--gold);border-radius:8px;padding:11px 14px;cursor:' + (w ? 'pointer' : 'default') + ';">'
+        + (w ? '<input type="checkbox" class="ar2-cb" value="' + esc(a.id) + '" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;">' : '')
+        + '<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;margin-bottom:2px;">'
+        + '<span style="font-family:var(--font-mono);color:var(--gold-light,#F0C040);">' + esc(a.id) + '</span> — ' + esc(a.event)
+        + (a.former_id ? ' <span style="font-family:var(--font-mono);font-size:10px;font-weight:400;color:var(--grey-400);">(ancien / former ' + esc(a.former_id) + ')</span>' : '') + '</div>'
+        + '<div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">' + esc(famName(a.family_id || '—')) + ' · résiduel ' + esc(a.residual_risk || '—') + ' · archivé le ' + esc(d) + ' par ' + esc(a.archived_by || '—') + '</div>'
+        + '<div style="font-size:11.5px;color:var(--grey-200);margin-top:4px;"><strong style="color:var(--gold-light);">Motif / Reason :</strong> ' + esc(a.reason) + '</div></div>'
+        + (w ? '<button class="btn btn-ghost" type="button" style="flex-shrink:0;" onclick="event.preventDefault();safRestoreArchivedRisk(\'' + esc(a.id) + '\')">↺ Restaurer</button>' : '')
+        + '</label>';
+    }).join('') : '<div style="padding:20px;text-align:center;color:var(--grey-400);">Aucun risque archivé pour ce filtre / No archived risk matches this filter.</div>') + '</div>';
+    var count = function(){ var n = body.querySelectorAll('.ar2-cb:checked').length; var s = document.getElementById('ar2-n'); if(s) s.textContent = n; };
+    body.querySelectorAll('.ar2-cb').forEach(function(c){ c.addEventListener('change', count); });
+    var qi = document.getElementById('ar2-q'); if(qi) qi.addEventListener('input', function(){ FILTER.q = qi.value; var p = qi.selectionStart; render(); var n = document.getElementById('ar2-q'); if(n){ n.focus(); n.setSelectionRange(p, p); } });
+    var fs = document.getElementById('ar2-fam'); if(fs) fs.addEventListener('change', function(){ FILTER.fam = fs.value; render(); });
+    var sa = document.getElementById('ar2-selall'); if(sa) sa.onclick = function(){ var cbs = body.querySelectorAll('.ar2-cb'); var all1 = Array.prototype.every.call(cbs, function(c){ return c.checked; }); cbs.forEach(function(c){ c.checked = !all1; }); count(); };
+    var rs = document.getElementById('ar2-restore-sel'); if(rs) rs.onclick = function(){
+      var ids = Array.prototype.map.call(body.querySelectorAll('.ar2-cb:checked'), function(c){ return c.value; });
+      if(!ids.length){ toast('Cocher d\u2019abord les risques à restaurer / Tick the risks to restore first', 'error'); return; }
+      if(confirm('Restaurer / Restore ' + ids.length + ' ?\n\n' + ids.join(', '))) window.safRestoreArchivedRisks(ids);
+    };
+    var rf = document.getElementById('ar2-restore-fam'); if(rf) rf.onclick = function(){
+      var ids = list.map(function(a){ return a.id; });
+      if(confirm('Restaurer les / Restore the ' + ids.length + ' risques archivés de / archived risks of ' + famName(FILTER.fam) + ' ?')) window.safRestoreArchivedRisks(ids);
+    };
+    var sn = document.getElementById('ar2-start-num'); if(sn) sn.onclick = function(){
+      if(confirm('Recommencer la numérotation à SMS-01 ?\nLes risques restaurés prendront SMS-01, SMS-02… dans l\u2019ordre de restauration. Le référentiel intégré ne sera plus reconstruit à l\u2019ouverture.\n\nRestart numbering at SMS-01? Restored risks take SMS-01, SMS-02… in restore order.')) window.safStartNewNumbering();
+    };
+  }
+  var _open = window.safArchiveOpen;
+  window.safArchiveOpen = function(){
+    try{ migrate(); }catch(e){}
+    if(typeof _open === 'function') _open();
+    var m = document.getElementById('saf-rr-archive-modal');
+    if(m && !document.getElementById('ar2-archive-all') && canWrite()){
+      var csv = m.querySelector('button[onclick="safArchiveExportCSV()"]');
+      if(csv){ var b = document.createElement('button'); b.id = 'ar2-archive-all'; b.className = 'btn btn-ghost'; b.type = 'button';
+        b.style.cssText = 'border-color:#ff8a5c;color:#ff8a5c;'; b.textContent = '⇣ Tout archiver / Archive all';
+        b.onclick = function(){ window.safArchiveAll(); }; csv.parentNode.insertBefore(b, csv); }
+    }
+    render();
+  };
+  /* Export CSV de l'archive : numero d'archive et ancien numero */
+  window.safArchiveExportCSV = function(){
+    var rows = [['N° archive / Archive no.','Ancien n° / Former no.','Événement / Event','Famille / Family','Risque résiduel / Residual risk','Archivé le / Archived on','Par / By','Motif / Reason']];
+    load().slice().sort(byNum).forEach(function(a){ rows.push([a.id, a.former_id || '', a.event, a.family_id, a.residual_risk, String(a.archived_at || '').slice(0, 10), a.archived_by, a.reason]); });
+    var csv = '\uFEFF' + rows.map(function(r){ return r.map(function(c){ return '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"'; }).join(';'); }).join('\n');
+    var el = document.createElement('a'); el.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+    el.download = 'RegistreRisques_Archive_' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(el); el.click(); document.body.removeChild(el);
+  };
+  setTimeout(function(){ try{ migrate(); refresh(); }catch(e){} }, 2500);
 })();
 </script>
 </body>

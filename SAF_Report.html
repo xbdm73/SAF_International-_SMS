@@ -12,7 +12,7 @@
 :root{
   --navy:#0D1B2A;--navy-mid:#1A2E42;--navy-light:#243B55;
   --steel-bright:#4A9FE0;--gold:#C9A227;--gold-light:#F0C040;
-  --white:#F4F6F8;--grey-200:#C8D0D8;--grey-400:#8896A0;--grey-600:#4A5568;
+  --white:#F4F6F8;--grey-200:#E3E8EE;--grey-400:#B9C5D0;--grey-600:#94A4B5;
   --red:#CC2200;--orange:#E05000;--yellow:#FFD700;--green-bright:#3fb950;
   --font-d:'Bebas Neue',sans-serif;--font-b:'IBM Plex Sans',sans-serif;--font-m:'IBM Plex Mono',monospace;
 }
@@ -21,7 +21,7 @@ body{font-family:var(--font-b);background:var(--navy);color:var(--white);min-hei
 
 /* ── LANG BAR ── */
 #lang-bar{background:var(--navy-light);border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:center;}
-.lb{width:160px;padding:11px 12px;font-family:var(--font-m);font-size:12px;letter-spacing:1px;color:var(--grey-400);background:none;border:none;border-bottom:3px solid transparent;cursor:pointer;text-transform:uppercase;transition:color .15s;text-align:center;}
+.lb{width:160px;padding:11px 12px;font-family:var(--font-m);font-size:14.5px;letter-spacing:1px;color:var(--grey-400);background:none;border:none;border-bottom:3px solid transparent;cursor:pointer;text-transform:uppercase;transition:color .15s;text-align:center;}
 .lb.on{color:var(--gold-light);border-bottom-color:var(--gold);}
 .lb:hover:not(.on){color:var(--white);}
 
@@ -31,19 +31,19 @@ body{font-family:var(--font-b);background:var(--navy);color:var(--white);min-hei
 #hdr-top{display:flex;align-items:center;justify-content:center;width:100%;position:relative;margin-bottom:4px;}
 #hdr-logo{height:80px;width:auto;object-fit:contain;display:block;}
 #hdr-title{font-family:var(--font-d);font-size:clamp(22px,5.4vw,36px);letter-spacing:.06em;color:var(--white);line-height:1;text-transform:uppercase;text-align:center;width:100%;}
-#hdr-tag{font-family:var(--font-m);font-size:10px;color:var(--gold-light);letter-spacing:.08em;text-transform:uppercase;text-align:center;width:100%;}
-#hdr-sub{font-family:var(--font-m);font-size:9px;color:#9db8d6;letter-spacing:.04em;text-align:center;width:100%;}
+#hdr-tag{font-family:var(--font-m);font-size:12.5px;color:var(--gold-light);letter-spacing:.08em;text-transform:uppercase;text-align:center;width:100%;}
+#hdr-sub{font-family:var(--font-m);font-size:12px;color:#9db8d6;letter-spacing:.04em;text-align:center;width:100%;}
 
 /* ── CONTAINER ── */
 #form-wrap,#ok-wrap{max-width:600px;margin:0 auto;padding:20px 16px 48px;}
 
 /* ── INTRO ── */
 .intro{background:var(--navy-mid);border:1px solid rgba(255,255,255,.08);border-left:3px solid var(--gold);border-radius:0 10px 10px 0;padding:16px 18px;margin-bottom:4px;}
-.intro p{display:block;font-size:12.5px;color:var(--grey-200);line-height:1.7;margin-bottom:8px;}
+.intro p{display:block;font-size:15px;color:var(--grey-200);line-height:1.7;margin-bottom:8px;}
 .intro p:last-child{margin-bottom:0;}
 
 /* ── SECTION LABEL ── */
-.slabel{font-family:var(--font-m);font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;padding:0 0 8px;border-bottom:1px solid rgba(201,162,39,.2);margin:28px 0 16px;}
+.slabel{font-family:var(--font-m);font-size:12px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;padding:0 0 8px;border-bottom:1px solid rgba(201,162,39,.2);margin:28px 0 16px;}
 
 /* ── BRANCHES (Safety / Security / Information Security) ── */
 #form-body.hidden{display:none;}
@@ -51,17 +51,17 @@ body{font-family:var(--font-b);background:var(--navy);color:var(--white);min-hei
 body.mode-safety .saf-only{display:block;}
 body.mode-security .sec-only{display:block;}
 body.mode-infosec .is-only{display:block;}
-.warn{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.55;margin-bottom:12px;}
+.warn{border-radius:8px;padding:12px 14px;font-size:14.5px;line-height:1.55;margin-bottom:12px;}
 .warn-red{background:rgba(204,34,0,.12);border:1px solid rgba(204,34,0,.4);color:#f0a89c;}
 .warn-gold{background:rgba(201,162,39,.10);border:1px solid rgba(201,162,39,.3);color:var(--gold-light);}
-.hint{font-size:11px;font-style:italic;color:var(--grey-400);line-height:1.5;margin-top:8px;}
+.hint{font-size:13.5px;font-style:italic;color:var(--grey-400);line-height:1.5;margin-top:8px;}
 
 /* ── REPORT TYPE SELECTOR ── */
 #rtype{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 4px;}
 .rt{padding:14px 8px;border:1.5px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.04);
     cursor:pointer;user-select:none;-webkit-user-select:none;text-align:center;transition:all .15s;}
 .rt .rt-t{font-family:var(--font-d);font-size:clamp(16px,4.6vw,20px);letter-spacing:.05em;color:var(--grey-200);line-height:1.1;}
-.rt .rt-s{font-family:var(--font-m);font-size:9px;letter-spacing:.5px;color:var(--grey-600);margin-top:5px;text-transform:uppercase;}
+.rt .rt-s{font-family:var(--font-m);font-size:12px;letter-spacing:.5px;color:var(--grey-600);margin-top:5px;text-transform:uppercase;}
 .rt:active{background:rgba(255,255,255,.08);}
 .rt.on{border-color:var(--gold);background:rgba(201,162,39,.12);}
 .rt.on .rt-t{color:var(--gold-light);}
@@ -70,17 +70,17 @@ body.mode-infosec .is-only{display:block;}
 /* ── "OTHER" SPECIFY FIELD ── */
 .oth{margin-top:8px;}
 .oth input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;
-  color:var(--white);font-family:var(--font-b);font-size:15px;padding:13px 14px;outline:none;
+  color:var(--white);font-family:var(--font-b);font-size:17px;padding:13px 14px;outline:none;
   -webkit-appearance:none;appearance:none;color-scheme:dark;transition:border-color .15s;}
 .oth input:focus{border-color:var(--steel-bright);}
 
 /* ── FIELD ── */
 .f{margin-bottom:14px;}
-.f>label{display:block;font-family:var(--font-m);font-size:10px;letter-spacing:1px;color:var(--grey-400);text-transform:uppercase;margin-bottom:6px;}
+.f>label{display:block;font-family:var(--font-m);font-size:12.5px;letter-spacing:1px;color:var(--grey-400);text-transform:uppercase;margin-bottom:6px;}
 .req{color:var(--gold-light);}
 .f input[type=text],.f input[type=email],.f input[type=tel],.f input[type=date],.f input[type=time],.f select,.f textarea{
   width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;
-  color:var(--white);font-family:var(--font-b);font-size:15px;padding:13px 14px;outline:none;
+  color:var(--white);font-family:var(--font-b);font-size:17px;padding:13px 14px;outline:none;
   -webkit-appearance:none;appearance:none;color-scheme:dark;transition:border-color .15s;}
 .f input:focus,.f select:focus,.f textarea:focus{border-color:var(--steel-bright);}
 .f select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238896A0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px;cursor:pointer;}
@@ -103,20 +103,20 @@ body.mode-infosec .is-only{display:block;}
   width:20px;height:20px;min-width:20px;flex-shrink:0;margin-top:1px;
   border:2px solid rgba(255,255,255,.25);border-radius:4px;background:transparent;
   display:flex;align-items:center;justify-content:center;
-  font-size:14px;font-weight:700;color:transparent;transition:all .15s;
+  font-size:16px;font-weight:700;color:transparent;transition:all .15s;
 }
 .rm{border-radius:50%;}
 .ci.on{border-color:var(--steel-bright);background:rgba(74,159,224,.1);}
 .ci.on .cm{border-color:var(--steel-bright);background:var(--steel-bright);color:var(--navy);}
 .ri.on{border-color:var(--steel-bright);background:rgba(74,159,224,.1);}
 .ri.on .rm{border-color:var(--steel-bright);background:var(--steel-bright);}
-.it{font-size:13px;color:var(--grey-200);line-height:1.4;flex:1;}
+.it{font-size:15.5px;color:var(--grey-200);line-height:1.4;flex:1;}
 
 /* ── CONSEQUENCE PILLS ── */
 .cpg{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
 .cp{display:flex;flex-direction:column;align-items:center;padding:10px 4px;border:1.5px solid rgba(255,255,255,.1);border-radius:8px;cursor:pointer;user-select:none;background:rgba(255,255,255,.04);text-align:center;transition:all .15s;}
 .cp .dot{width:10px;height:10px;border-radius:50%;margin-bottom:5px;}
-.cp .lbl{font-family:var(--font-m);font-size:9px;color:var(--grey-200);}
+.cp .lbl{font-family:var(--font-m);font-size:12px;color:var(--grey-200);}
 .cp[data-v="none"]  .dot{background:var(--green-bright);}
 .cp[data-v="minor"] .dot{background:var(--yellow);}
 .cp[data-v="med"]   .dot{background:var(--orange);}
@@ -135,8 +135,8 @@ body.mode-infosec .is-only{display:block;}
 #anon-track::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;background:var(--grey-400);border-radius:50%;transition:transform .2s,background .2s;}
 #anon-btn.on #anon-track{background:rgba(63,185,80,.3);}
 #anon-btn.on #anon-track::after{transform:translateX(20px);background:var(--green-bright);}
-#anon-lbl{font-size:13px;color:var(--white);font-weight:600;}
-#anon-sub{font-size:11px;color:var(--grey-400);margin-top:2px;}
+#anon-lbl{font-size:15.5px;color:var(--white);font-weight:600;}
+#anon-sub{font-size:13.5px;color:var(--grey-400);margin-top:2px;}
 #rep-fields{overflow:hidden;transition:max-height .3s ease,opacity .3s ease;max-height:520px;opacity:1;}
 #rep-fields.h{max-height:0!important;opacity:0;pointer-events:none;}
 
@@ -149,12 +149,12 @@ body.mode-infosec .is-only{display:block;}
 .fu2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .fu2 .fu{padding:16px 8px;}
 .fu-icon{font-size:28px;margin-bottom:8px;}
-.fu-txt{font-family:var(--font-m);font-size:11px;color:var(--grey-400);}
+.fu-txt{font-family:var(--font-m);font-size:13.5px;color:var(--grey-400);}
 .fu-txt strong{color:var(--steel-bright);}
 .fl{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
 .fi{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(74,159,224,.08);border:1px solid rgba(74,159,224,.2);border-radius:6px;}
-.fn{flex:1;font-size:12px;color:var(--grey-200);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.fr-btn{background:none;border:none;color:var(--grey-400);cursor:pointer;font-size:16px;padding:0 4px;}
+.fn{flex:1;font-size:14.5px;color:var(--grey-200);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fr-btn{background:none;border:none;color:var(--grey-400);cursor:pointer;font-size:17px;padding:0 4px;}
 
 /* ── SUBMIT ── */
 #btn-submit{width:100%;padding:16px;background:var(--gold);border:none;border-radius:10px;color:var(--navy);font-family:var(--font-d);font-size:22px;letter-spacing:.06em;cursor:pointer;margin-top:8px;transition:background .15s;}
@@ -162,7 +162,7 @@ body.mode-infosec .is-only{display:block;}
 #btn-submit:disabled{background:var(--grey-600);color:var(--grey-400);cursor:not-allowed;}
 
 /* ── STATUS ── */
-#status{display:none;padding:14px 16px;border-radius:8px;font-family:var(--font-m);font-size:12px;margin-top:14px;align-items:center;gap:10px;}
+#status{display:none;padding:14px 16px;border-radius:8px;font-family:var(--font-m);font-size:14.5px;margin-top:14px;align-items:center;gap:10px;}
 #status.show{display:flex;}
 #status.saving{background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.3);color:var(--gold-light);}
 #status.success{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);color:var(--green-bright);}
@@ -175,12 +175,12 @@ body.mode-infosec .is-only{display:block;}
 #ok-wrap.show{display:block;}
 #ok-icon{font-size:56px;margin-bottom:20px;}
 #ok-title{font-family:var(--font-d);font-size:32px;letter-spacing:.06em;color:var(--green-bright);margin-bottom:12px;}
-#ok-ref{font-family:var(--font-m);font-size:13px;color:var(--gold-light);background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.3);display:inline-block;padding:6px 16px;border-radius:20px;margin-bottom:20px;}
-#ok-msg{font-size:13px;color:var(--grey-400);line-height:1.7;max-width:360px;margin:0 auto 32px;}
-#btn-new{padding:13px 28px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--grey-200);font-family:var(--font-m);font-size:12px;cursor:pointer;}
+#ok-ref{font-family:var(--font-m);font-size:15.5px;color:var(--gold-light);background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.3);display:inline-block;padding:6px 16px;border-radius:20px;margin-bottom:20px;}
+#ok-msg{font-size:15.5px;color:var(--grey-400);line-height:1.7;max-width:360px;margin:0 auto 32px;}
+#btn-new{padding:13px 28px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--grey-200);font-family:var(--font-m);font-size:14.5px;cursor:pointer;}
 
 /* ── FOOTER ── */
-#footer{text-align:center;padding:24px 20px;font-family:var(--font-m);font-size:9px;color:var(--grey-600);border-top:1px solid rgba(255,255,255,.06);line-height:1.8;}
+#footer{text-align:center;padding:24px 20px;font-family:var(--font-m);font-size:12px;color:var(--grey-600);border-top:1px solid rgba(255,255,255,.06);line-height:1.8;}
 
 /* ── LANG ── */
 .fr,.en{display:inline;}
@@ -189,10 +189,51 @@ body.L-en .fr{display:none!important;}
 body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
 
 @media(max-width:400px){.cg2{grid-template-columns:1fr;}.frow{grid-template-columns:1fr;}.cpg{grid-template-columns:repeat(3,1fr);}}
+
+/* ── DANGEROUS GOODS REPORT BLOCK (06.10.2026) ── */
+.dg-only{display:none;}
+body.mode-dg .dg-only{display:block;}
+body.mode-dg .saf-only.dg-also{display:block;}
+#rtype{grid-template-columns:repeat(4,1fr)!important;}
+@media (max-width:520px){#rtype{grid-template-columns:repeat(2,1fr)!important;}}
+.dg{margin-top:4px;border:1.5px solid rgba(224,80,0,.5);border-radius:10px;background:rgba(224,80,0,.06);}
+.dg:not(.h){padding:14px 12px;max-height:none!important;}
+.dg-heslo:not(.h){max-height:none!important;margin-top:18px;padding-top:14px;border-top:1px dashed rgba(224,80,0,.45);}
+.dg-sub{font-family:var(--font-m);font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#ff9a6b;margin:6px 0 6px;}
+.dg-intro{font-size:14px;color:var(--grey-200);line-height:1.5;margin-bottom:12px;}
+.dg .ci{padding:9px 11px;}
+.dg-grid{display:grid;grid-template-columns:minmax(96px,32%) minmax(0,1fr) auto;gap:8px 8px;align-items:center;}
+.dg-th{font-family:var(--font-m);font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--grey-400);padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.1);}
+.dg-th-u{text-align:center;}
+.dg-l{font-size:14.5px;color:var(--grey-200);line-height:1.35;}
+.dg-in,.dg-oth{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:8px;color:var(--white);font-family:var(--font-b);font-size:16px;padding:10px 11px;outline:none;-webkit-appearance:none;appearance:none;color-scheme:dark;}
+.dg-in:focus,.dg-oth:focus{border-color:var(--steel-bright);}
+.dg-in:disabled{opacity:.75;font-style:italic;color:var(--grey-400);}
+.dg-miss{border-color:#f85149!important;background:rgba(248,81,73,.08)!important;}
+.dg-miss-g{outline:2px solid #f85149;outline-offset:3px;border-radius:8px;}
+.dg-unk{min-height:40px;padding:6px 8px;font-family:var(--font-m);font-size:12.5px;line-height:1.2;color:var(--grey-200);background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.18);border-radius:8px;cursor:pointer;white-space:nowrap;}
+.dg-unk[aria-pressed="true"]{background:rgba(240,192,64,.18);border-color:var(--gold);color:var(--gold-light);}
+#dg-switch{display:none;margin-top:10px;}
+#dg-switch button{margin-top:8px;padding:8px 12px;border-radius:6px;border:1px solid var(--gold);background:rgba(201,162,39,.15);color:var(--gold-light);font-family:var(--font-m);font-size:13.5px;cursor:pointer;}
+@media (max-width:440px){
+  .dg-grid{grid-template-columns:minmax(0,1fr) auto;}
+  .dg-th:first-child{display:none;}
+  .dg-l{grid-column:1 / -1;margin-top:6px;font-weight:600;}
+}
 </style>
 
 <style id="saf-guide-fab-style">
 .saf-guide-fab{position:fixed;right:22px;bottom:22px;z-index:99990;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;background:#C9A227;color:#0D1B2A;border:2px solid #F0C040;box-shadow:0 8px 24px rgba(0,0,0,.38);font-family:'IBM Plex Mono',monospace;font-size:21px;font-weight:800;transition:transform .15s,filter .15s}.saf-guide-fab:hover{transform:translateY(-2px);filter:brightness(1.08)}.saf-guide-fab:focus{outline:2px solid #fff;outline-offset:3px}@media print{.saf-guide-fab{display:none!important}}
+
+/* ── LISIBILITE (06.10.2026) : contraste du texte et des contours renforce, police agrandie ── */
+::placeholder{color:#A9B6C3;opacity:1;}
+.f input[type=text],.f input[type=email],.f input[type=tel],.f input[type=date],.f input[type=time],.f select,.f textarea,.oth input,.dg-in,.dg-oth{border-color:rgba(255,255,255,.32);}
+.ci:not(.on),.ri:not(.on),.rt:not(.on),#anon-btn:not(.on),.dg-unk[aria-pressed="false"]{border-color:rgba(255,255,255,.26);}
+.cm,.rm{border-color:rgba(255,255,255,.55);}
+.it{color:#EEF2F6;}
+.hint{color:#C3CDD7;}
+.slabel{border-bottom-color:rgba(201,162,39,.45);}
+.fu{border-color:rgba(255,255,255,.35);}
 </style>
 </head>
 <body class="L-fr">
@@ -225,7 +266,7 @@ body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
     <p class="en">Reporting is the foundation of aviation safety. Every event you report &mdash; even one that seems minor or that ended without consequence &mdash; lets us see a risk before it turns into an accident.</p>
     <p class="en">What you write here is treated in confidence and used to improve our operation, never to assign blame. The few minutes you spend on this report may one day save the life of a colleague.</p>
   </div>
-  <div id="saf-guide-context-link" style="text-align:right;margin:8px 2px 14px;"><a href="SAF_User_Guide.html#report" onclick="if(location.pathname.indexOf('/Archives/')!==-1)this.href='../SAF_User_Guide.html#report'" style="color:var(--gold-light);font-family:var(--font-m);font-size:10px;text-decoration:none;border:1px solid rgba(201,162,39,.25);padding:6px 10px;border-radius:6px;display:inline-block;">? MODE D'EMPLOI DU SIGNALEMENT</a></div>
+  <div id="saf-guide-context-link" style="text-align:right;margin:8px 2px 14px;"><a href="SAF_User_Guide.html#report" onclick="if(location.pathname.indexOf('/Archives/')!==-1)this.href='../SAF_User_Guide.html#report'" style="color:var(--gold-light);font-family:var(--font-m);font-size:12.5px;text-decoration:none;border:1px solid rgba(201,162,39,.25);padding:6px 10px;border-radius:6px;display:inline-block;">? MODE D'EMPLOI DU SIGNALEMENT</a></div>
 
   <!-- REPORT TYPE -->
   <div id="rtype">
@@ -240,6 +281,10 @@ body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
     <div class="rt" onclick="pickType(this,'Information Security')">
       <div class="rt-t">PART-IS</div>
       <div class="rt-s"><span class="fr">S&#233;curit&#233; de l&#39;information</span><span class="en">Information security</span></div>
+    </div>
+    <div class="rt" data-rt="dg" onclick="pickType(this,'Dangerous Goods')">
+      <div class="rt-t"><span class="fr">MD</span><span class="en">DANGEROUS GOODS</span></div>
+      <div class="rt-s"><span class="fr">Marchandises dangereuses</span><span class="en">DG occurrence</span></div>
     </div>
   </div>
 
@@ -304,10 +349,11 @@ body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
         <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it">Accident</span></div>
         <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it">Airprox</span></div>
         <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Situation &#224; risque</span><span class="en">Situation at risk</span></span></div>
-        <div class="ci" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it">Incident MD</span></div>
+        <div class="ci" data-dg="1" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Incident MD</span><span class="en">Dangerous goods incident</span></span></div>
         <div class="ci" onclick="tickBox(this)" style="grid-column:span 2"><span class="cm">&#10003;</span><span class="it"><span class="fr">Autre</span><span class="en">Other</span></span></div>
       </div>
       <div class="oth"><input type="text" id="f-avi-oth" placeholder="Autre &mdash; pr&#233;ciser&#8230; / Other &mdash; please specify&#8230;"/></div>
+      <div id="dg-switch" class="warn warn-gold"><span class="fr">Un événement marchandises dangereuses se déclare dans le rapport dédié « MD », qui recueille les informations obligatoires.</span><span class="en">A dangerous goods occurrence is reported with the dedicated “Dangerous goods” report, which collects the mandatory information.</span><br><button type="button" onclick="dgSwitchToReport()"><span class="fr">Passer au rapport MD →</span><span class="en">Switch to the Dangerous goods report →</span></button></div>
     </div>
   </div>
 
@@ -364,6 +410,9 @@ body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
     </div>
   </div>
 
+<!-- S3 DANGEROUS GOODS (bloc dedie, 06.10.2026) -->
+<div class="dg-only"><div class="slabel" data-fr="Marchandises dangereuses" data-en="Dangerous goods occurrence" data-req="1"></div><div class="f"><label><span class="fr">Implication de marchandises dangereuses (MD)</span><span class="en">Dangerous goods involvement</span> <span class="req">*</span></label><div class="rg" id="g-dg-inv"><div class="ri" data-v="No" onclick="dgPickInvolvement(this)"><span class="rm"></span><span class="it"><span class="fr">Non</span><span class="en">No</span></span></div><div class="ri" data-v="Yes — declared DG" onclick="dgPickInvolvement(this)"><span class="rm"></span><span class="it"><span class="fr">Oui — MD déclarées</span><span class="en">Yes — declared DG</span></span></div><div class="ri" data-v="Yes — suspected DG" onclick="dgPickInvolvement(this)"><span class="rm"></span><span class="it"><span class="fr">Oui — MD suspectées</span><span class="en">Yes — suspected DG</span></span></div><div class="ri" data-v="Yes — undeclared DG" onclick="dgPickInvolvement(this)"><span class="rm"></span><span class="it"><span class="fr">Oui — MD non déclarées</span><span class="en">Yes — undeclared DG</span></span></div><div class="ri" data-v="Yes — misdeclared DG" onclick="dgPickInvolvement(this)"><span class="rm"></span><span class="it"><span class="fr">Oui — MD mal déclarées</span><span class="en">Yes — misdeclared DG</span></span></div><div class="ri" data-v="Unknown" onclick="dgPickInvolvement(this)"><span class="rm"></span><span class="it"><span class="fr">Inconnu</span><span class="en">Unknown</span></span></div></div><div class="hint"><span class="fr">Toute réponse « Oui » ouvre le détail ci-dessous, alors obligatoire.</span><span class="en">Any “Yes” answer opens the details below, which are then mandatory.</span></div></div><div id="dg-sec" class="dg cond h" style="max-height:0;"><div class="f"><label><span class="fr">Nature de l’événement MD</span><span class="en">Nature of DG occurrence</span> <span class="req">*</span></label><div class="cg cg2" id="g-dg-nature"><div class="ci" data-v="Leakage / spillage" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Fuite / déversement</span><span class="en">Leakage / spillage</span></span></div><div class="ci" data-v="Fire / smoke / overheating" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Feu / fumée / surchauffe</span><span class="en">Fire / smoke / overheating</span></span></div><div class="ci" data-v="Damaged package" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Colis endommagé</span><span class="en">Damaged package</span></span></div><div class="ci" data-v="Incorrect packaging" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Emballage non conforme</span><span class="en">Incorrect packaging</span></span></div><div class="ci" data-v="Incorrect marking / labelling" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Marquage / étiquetage non conforme</span><span class="en">Incorrect marking / labelling</span></span></div><div class="ci" data-v="Incorrect documentation" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Documentation non conforme</span><span class="en">Incorrect documentation</span></span></div><div class="ci" data-v="Incorrect quantity" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Quantité non conforme</span><span class="en">Incorrect quantity</span></span></div><div class="ci" data-v="Incorrect loading / segregation" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Chargement / séparation non conforme</span><span class="en">Incorrect loading / segregation</span></span></div><div class="ci" data-v="Undeclared DG" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">MD non déclarées</span><span class="en">Undeclared DG</span></span></div><div class="ci" data-v="Misdeclared DG" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">MD mal déclarées</span><span class="en">Misdeclared DG</span></span></div><div class="ci" data-v="Lithium battery event" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Événement batterie lithium</span><span class="en">Lithium battery event</span></span></div><div class="ci" data-v="DG exposed to abnormal conditions" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">MD exposées à des conditions anormales</span><span class="en">DG exposed to abnormal conditions</span></span></div><div class="ci" data-v="Other" onclick="tickBox(this)" style="grid-column:span 2"><span class="cm">&#10003;</span><span class="it"><span class="fr">Autre</span><span class="en">Other</span></span></div></div><div class="oth"><input type="text" class="dg-oth" id="dg-nature-oth" placeholder="Autre — préciser… / Other — please specify…"/></div></div><div class="f"><label><span class="fr">Mode de transport</span><span class="en">Mode of carriage</span> <span class="req">*</span></label><div class="cg cg2" id="g-dg-mode"><div class="ci" data-v="Internal cargo" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Chargement interne</span><span class="en">Internal cargo</span></span></div><div class="ci" data-v="External load — HESLO" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Charge externe — HESLO</span><span class="en">External load — HESLO</span></span></div><div class="ci" data-v="Fuel for aircraft own use" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Carburant pour l’usage propre de l’aéronef</span><span class="en">Fuel for aircraft own use</span></span></div><div class="ci" data-v="Operational equipment" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Équipement opérationnel</span><span class="en">Operational equipment</span></span></div><div class="ci" data-v="Passenger baggage" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Bagages passagers</span><span class="en">Passenger baggage</span></span></div><div class="ci" data-v="Crew baggage" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">Bagages équipage</span><span class="en">Crew baggage</span></span></div><div class="ci" data-v="COMAT" onclick="tickBox(this)"><span class="cm">&#10003;</span><span class="it"><span class="fr">COMAT (matériel de l’exploitant)</span><span class="en">COMAT</span></span></div><div class="ci" data-v="Other" onclick="tickBox(this)" style="grid-column:span 2"><span class="cm">&#10003;</span><span class="it"><span class="fr">Autre</span><span class="en">Other</span></span></div></div><div class="oth"><input type="text" class="dg-oth" id="dg-mode-oth" placeholder="Autre — préciser… / Other — please specify…"/></div></div><div class="dg-sub"><span class="fr">Détail des marchandises dangereuses</span><span class="en">Dangerous goods details</span></div><div class="dg-intro"><span class="fr">Complétez chaque ligne : indiquez ce que vous savez, ou appuyez sur « Inconnu / N.D. » si l’information n’est pas connue ou pas disponible.</span><span class="en">Complete every line: enter what you know, or press “Unknown / N/A” when the information is not known or not available.</span></div><div class="dg-grid" role="group" aria-label="Dangerous goods details"><div class="dg-th"><span class="fr">Rubrique</span><span class="en">Item</span></div><div class="dg-th"><span class="fr">Information</span><span class="en">Information</span></div><div class="dg-th dg-th-u"><span class="fr">Inconnu</span><span class="en">Unknown</span></div><div class="dg-l" id="dg-l-date_time_location"><span class="fr">Date / heure et lieu</span><span class="en">Date / time and location</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-date_time_location" data-dg="date_time_location" aria-labelledby="dg-l-date_time_location" placeholder="ex. 06/10/2026 14h20 locale — aire de la base" data-ph-fr="ex. 06/10/2026 14h20 locale — aire de la base" data-ph-en="e.g. 2026-10-06 14:20 LT — base apron" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-product_description"><span class="fr">Description du produit</span><span class="en">Product description</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-product_description" data-dg="product_description" aria-labelledby="dg-l-product_description" placeholder="Nom, aspect, étiquettes ou marquages observés" data-ph-fr="Nom, aspect, étiquettes ou marquages observés" data-ph-en="Name, appearance, labels or markings seen" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-un_id_number"><span class="fr">Numéro ONU / ID</span><span class="en">UN / ID number</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-un_id_number" data-dg="un_id_number" aria-labelledby="dg-l-un_id_number" placeholder="ex. UN 1203" data-ph-fr="ex. UN 1203" data-ph-en="e.g. UN 1203" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-proper_shipping_name"><span class="fr">Désignation officielle de transport</span><span class="en">Proper shipping name</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-proper_shipping_name" data-dg="proper_shipping_name" aria-labelledby="dg-l-proper_shipping_name" placeholder="ex. Essence" data-ph-fr="ex. Essence" data-ph-en="e.g. Gasoline" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-class_division"><span class="fr">Classe / division</span><span class="en">Class / division</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-class_division" data-dg="class_division" aria-labelledby="dg-l-class_division" placeholder="ex. 3 — Liquides inflammables" data-ph-fr="ex. 3 — Liquides inflammables" data-ph-en="e.g. 3 — Flammable liquids" list="dg-list-class_division" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-quantity"><span class="fr">Quantité</span><span class="en">Quantity</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-quantity" data-dg="quantity" aria-labelledby="dg-l-quantity" placeholder="Nombre de colis et quantité nette, ex. 2 × 20 L" data-ph-fr="Nombre de colis et quantité nette, ex. 2 × 20 L" data-ph-en="Number of packages and net quantity, e.g. 2 × 20 L" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-packaging"><span class="fr">Type et état de l’emballage</span><span class="en">Packaging type and condition</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-packaging" data-dg="packaging" aria-labelledby="dg-l-packaging" placeholder="ex. Jerrican métallique — cabossé, bouchon desserré" data-ph-fr="ex. Jerrican métallique — cabossé, bouchon desserré" data-ph-en="e.g. Metal jerrican — dented, cap loose" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-leak_fire_smoke_damage"><span class="fr">Fuite, feu, fumée ou dommage</span><span class="en">Leak, fire, smoke or damage</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-leak_fire_smoke_damage" data-dg="leak_fire_smoke_damage" aria-labelledby="dg-l-leak_fire_smoke_damage" placeholder="Décrire ce qui a été constaté, ou Aucun" data-ph-fr="Décrire ce qui a été constaté, ou Aucun" data-ph-en="Describe what was seen, or None" list="dg-list-leak_fire_smoke_damage" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-package_location"><span class="fr">Localisation du colis</span><span class="en">Package location</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-package_location" data-dg="package_location" aria-labelledby="dg-l-package_location" placeholder="ex. Cabine, soute, charge externe, hangar, véhicule" data-ph-fr="ex. Cabine, soute, charge externe, hangar, véhicule" data-ph-en="e.g. Cabin, cargo hold, external load, hangar, vehicle" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div></div><div id="dg-heslo" class="dg-heslo cond h" style="max-height:0;"><div class="dg-sub">⚓ <span class="fr">Réservoir / fût suspendu — charge externe (HESLO)</span><span class="en">Suspended tank / drum — external load (HESLO)</span></div><div class="dg-intro"><span class="fr">Affiché car « Charge externe — HESLO » est coché. Chaque ligne est obligatoire.</span><span class="en">Shown because “External load — HESLO” is ticked. Every line is mandatory.</span></div><div class="dg-grid" role="group" aria-label="Suspended tank or drum"><div class="dg-th"><span class="fr">Rubrique</span><span class="en">Item</span></div><div class="dg-th"><span class="fr">Information</span><span class="en">Information</span></div><div class="dg-th dg-th-u"><span class="fr">Inconnu</span><span class="en">Unknown</span></div><div class="dg-l" id="dg-l-heslo_content"><span class="fr">Contenu exact</span><span class="en">Exact content</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-heslo_content" data-dg="heslo_content" aria-labelledby="dg-l-heslo_content" placeholder="ex. Jet A-1, gazole, nom commercial du produit" data-ph-fr="ex. Jet A-1, gazole, nom commercial du produit" data-ph-en="e.g. Jet A-1, diesel, product trade name" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-heslo_un_number"><span class="fr">Numéro ONU</span><span class="en">UN number</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-heslo_un_number" data-dg="heslo_un_number" aria-labelledby="dg-l-heslo_un_number" placeholder="ex. UN 1863" data-ph-fr="ex. UN 1863" data-ph-en="e.g. UN 1863" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-heslo_nominal_capacity"><span class="fr">Capacité nominale</span><span class="en">Nominal capacity</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-heslo_nominal_capacity" data-dg="heslo_nominal_capacity" aria-labelledby="dg-l-heslo_nominal_capacity" placeholder="ex. 1 000 L" data-ph-fr="ex. 1 000 L" data-ph-en="e.g. 1,000 L" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-heslo_actual_quantity"><span class="fr">Quantité réellement présente</span><span class="en">Quantity actually present</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-heslo_actual_quantity" data-dg="heslo_actual_quantity" aria-labelledby="dg-l-heslo_actual_quantity" placeholder="ex. 750 L" data-ph-fr="ex. 750 L" data-ph-en="e.g. 750 L" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-heslo_container_type"><span class="fr">Type de contenant</span><span class="en">Container type</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-heslo_container_type" data-dg="heslo_container_type" aria-labelledby="dg-l-heslo_container_type" placeholder="Choisir ou saisir" data-ph-fr="Choisir ou saisir" data-ph-en="Choose or type" list="dg-list-heslo_container_type" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-heslo_closure_venting"><span class="fr">Fermeture / mise à l’air</span><span class="en">Closure / venting</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-heslo_closure_venting" data-dg="heslo_closure_venting" aria-labelledby="dg-l-heslo_closure_venting" placeholder="ex. Bouchon vissé fermé, évent fermé" data-ph-fr="ex. Bouchon vissé fermé, évent fermé" data-ph-en="e.g. Screw cap closed, vent valve closed" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-heslo_lifting_points"><span class="fr">Nombre de points de levage</span><span class="en">Number of lifting points</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-heslo_lifting_points" data-dg="heslo_lifting_points" aria-labelledby="dg-l-heslo_lifting_points" placeholder="ex. 4" data-ph-fr="ex. 4" data-ph-en="e.g. 4" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-heslo_anti_sloshing"><span class="fr">Dispositif anti-ballottement</span><span class="en">Anti-sloshing device</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-heslo_anti_sloshing" data-dg="heslo_anti_sloshing" aria-labelledby="dg-l-heslo_anti_sloshing" placeholder="Choisir ou saisir" data-ph-fr="Choisir ou saisir" data-ph-en="Choose or type" list="dg-list-heslo_anti_sloshing" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-heslo_container_condition"><span class="fr">État du contenant</span><span class="en">Container condition</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-heslo_container_condition" data-dg="heslo_container_condition" aria-labelledby="dg-l-heslo_container_condition" placeholder="ex. Bon, cabossé, corrodé, sangles usées" data-ph-fr="ex. Bon, cabossé, corrodé, sangles usées" data-ph-en="e.g. Good, dented, corroded, worn straps" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-heslo_leak"><span class="fr">Fuite constatée</span><span class="en">Leak observed</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-heslo_leak" data-dg="heslo_leak" aria-labelledby="dg-l-heslo_leak" placeholder="Non, ou décrire" data-ph-fr="Non, ou décrire" data-ph-en="No, or describe" list="dg-list-heslo_leak" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-heslo_rupture_deformation"><span class="fr">Rupture ou déformation</span><span class="en">Rupture or deformation</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-heslo_rupture_deformation" data-dg="heslo_rupture_deformation" aria-labelledby="dg-l-heslo_rupture_deformation" placeholder="Non, ou décrire" data-ph-fr="Non, ou décrire" data-ph-en="No, or describe" list="dg-list-heslo_rupture_deformation" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-heslo_dropped_load"><span class="fr">Charge larguée / mouvement de charge non maîtrisé</span><span class="en">Dropped load / uncontrolled load movement</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-heslo_dropped_load" data-dg="heslo_dropped_load" aria-labelledby="dg-l-heslo_dropped_load" placeholder="Non, ou décrire" data-ph-fr="Non, ou décrire" data-ph-en="No, or describe" list="dg-list-heslo_dropped_load" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-heslo_contact"><span class="fr">Contact avec obstacle / sol</span><span class="en">Contact with obstacle / ground</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-heslo_contact" data-dg="heslo_contact" aria-labelledby="dg-l-heslo_contact" placeholder="Non, ou décrire" data-ph-fr="Non, ou décrire" data-ph-en="No, or describe" list="dg-list-heslo_contact" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div><div class="dg-l" id="dg-l-heslo_third_party"><span class="fr">Exposition de tiers</span><span class="en">Third-party exposure</span> <span class="req">*</span></div><div class="dg-v"><input type="text" class="dg-in" id="dg-heslo_third_party" data-dg="heslo_third_party" aria-labelledby="dg-l-heslo_third_party" placeholder="ex. Aucune, personnes sous la trajectoire de la charge" data-ph-fr="ex. Aucune, personnes sous la trajectoire de la charge" data-ph-en="e.g. None, persons under the load path" autocomplete="off"/></div><div class="dg-u"><button type="button" class="dg-unk" aria-pressed="false" onclick="dgToggleUnknown(this)" title="Inconnu / non disponible — Unknown / not available"><span class="fr">Inconnu / N.D.</span><span class="en">Unknown / N/A</span></button></div></div></div></div><datalist id="dg-list-class_division"><option value="1 — Explosifs / 1 — Explosives"></option><option value="2.1 — Gaz inflammables / 2.1 — Flammable gas"></option><option value="2.2 — Gaz ininflammables non toxiques / 2.2 — Non-flammable, non-toxic gas"></option><option value="2.3 — Gaz toxiques / 2.3 — Toxic gas"></option><option value="3 — Liquides inflammables / 3 — Flammable liquids"></option><option value="4.1 — Solides inflammables / 4.1 — Flammable solids"></option><option value="4.2 — Matières sujettes à l’inflammation spontanée / 4.2 — Spontaneously combustible"></option><option value="4.3 — Matières dangereuses au contact de l’eau / 4.3 — Dangerous when wet"></option><option value="5.1 — Matières comburantes / 5.1 — Oxidizing substances"></option><option value="5.2 — Peroxydes organiques / 5.2 — Organic peroxides"></option><option value="6.1 — Matières toxiques / 6.1 — Toxic substances"></option><option value="6.2 — Matières infectieuses / 6.2 — Infectious substances"></option><option value="7 — Matières radioactives / 7 — Radioactive material"></option><option value="8 — Matières corrosives / 8 — Corrosives"></option><option value="9 — Divers (dont batteries lithium) / 9 — Miscellaneous (incl. lithium batteries)"></option></datalist><datalist id="dg-list-leak_fire_smoke_damage"><option value="Aucun / None"></option><option value="Fuite / Leak"></option><option value="Feu / Fire"></option><option value="Fumée ou émanations / Smoke or fumes"></option><option value="Dommage au colis uniquement / Package damage only"></option></datalist><datalist id="dg-list-heslo_container_type"><option value="Réservoir souple / Flexible tank (bladder)"></option><option value="Réservoir rigide / Rigid tank"></option><option value="Fût (200 L) / Drum (200 L)"></option><option value="GRV (IBC) / IBC"></option><option value="Jerrican"></option><option value="Autre / Other"></option></datalist><datalist id="dg-list-heslo_anti_sloshing"><option value="Aucun / None"></option><option value="Chicanes internes / Internal baffles"></option><option value="Poche / réservoir souple / Bladder / flexible tank"></option><option value="Autre / Other"></option></datalist><datalist id="dg-list-heslo_leak"><option value="Non / No"></option><option value="Oui / Yes"></option></datalist><datalist id="dg-list-heslo_rupture_deformation"><option value="Non / No"></option><option value="Oui / Yes"></option></datalist><datalist id="dg-list-heslo_dropped_load"><option value="Non / No"></option><option value="Charge larguée / Dropped load"></option><option value="Mouvement de charge non maîtrisé (oscillation, rotation) / Uncontrolled load movement (oscillation, spin)"></option></datalist><datalist id="dg-list-heslo_contact"><option value="Non / No"></option><option value="Oui / Yes"></option></datalist></div>
+
   <!-- S4 A&#201;RONEF -->
   <div class="slabel" data-fr="A&#233;ronef &amp; Personnel" data-en="Aircraft &amp; Personnel"></div>
   <div class="frow">
@@ -394,7 +443,7 @@ body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
     <select id="f-base"><option value=""></option><option>Albertville</option><option>Sion</option><option>Autre / Other</option></select>
     <div class="oth"><input type="text" id="f-base-oth" placeholder="Autre base &mdash; pr&#233;ciser&#8230; / Other base &mdash; please specify&#8230;"/></div>
   </div>
-  <div class="saf-only">
+  <div class="saf-only dg-also">
     <div class="f">
       <label><span class="fr">Phase de vol</span><span class="en">Flight phase</span></label>
       <div class="cg cg2" id="g-phase">
@@ -607,7 +656,7 @@ body.L-fr .en-block,.body.L-en .fr-block{display:none!important;}
     <button id="btn-submit" onclick="submit()"><span class="fr">ENVOYER LE SIGNALEMENT</span><span class="en">SUBMIT REPORT</span></button>
     <div id="status">
       <span class="spin" id="spin"></span>
-      <span id="si" style="display:none;font-size:18px;flex-shrink:0;"></span>
+      <span id="si" style="display:none;font-size:20px;flex-shrink:0;"></span>
       <span id="st"></span>
     </div>
   </div>
@@ -835,7 +884,7 @@ function setStatus(type,txt){
 
 /* ── VALIDATE ── */
 function validate(){
-  if(!DATA.rtype){setStatus('error','Choisir Safety, Security ou Part-IS / Choose Safety, Security or Part-IS');return false;}
+  if(!DATA.rtype){setStatus('error','Choisir Safety, Security, Part-IS ou MD / Choose Safety, Security, Part-IS or Dangerous goods');return false;}
   if(!g('f-date')){setStatus('error','Date obligatoire / Date required');return false;}
   if(!DATA.entity){setStatus('error','Entité obligatoire / Entity required');return false;}
   if(!g('f-loc')){setStatus('error','Lieu obligatoire / Location required');return false;}
@@ -867,8 +916,12 @@ async function submit(){
   const occ={
     id:ref, report_type:DATA.rtype, date:g('f-date'), time_local:g('f-time'),
     entity:DATA.entity, entity_other:g('f-entity-oth'),
-    event_types_avi:allChecked('#g-avi'),
-    event_type_avi_other:g('f-avi-oth'),
+    event_types_avi:DATA.rtype==='Dangerous Goods'?[DG_EVENT_LABEL]:allChecked('#g-avi'),
+    event_type_avi_other:DATA.rtype==='Dangerous Goods'?'':g('f-avi-oth'),
+    dangerous_goods:dgEccairs(), dg_involvement:dgMode()?DG_INV:'',
+    dg_nature:dgInvolved()?dgChecked('g-dg-nature'):[], dg_nature_other:dgInvolved()?g('dg-nature-oth'):'',
+    dg_mode_of_carriage:dgInvolved()?dgChecked('g-dg-mode'):[], dg_mode_other:dgInvolved()?g('dg-mode-oth'):'',
+    dg_details:dgCollect(), dg_heslo:dgCollectHeslo(),
     report_domain:isIS?'infosec':(isSec?'security':'safety'),
     security_types:isSec?allChecked('#g-sec'):[],
     security_type_other:isSec?g('f-sec-oth'):'',
@@ -885,7 +938,7 @@ async function submit(){
     aircraft_secured:isSec?(DATA.acSecured||''):'',
     detection:isIS?g('f-detect-is'):(isSec?g('f-detect'):''),
     evidence:isIS?allChecked('#g-evid-is'):(isSec?allChecked('#g-evid'):[]),
-    severity:isIS?'infosec':(isSec?'security':(allChecked('#g-avi')[0]||'hazard')),
+    severity:isIS?'infosec':(isSec?'security':(DATA.rtype==='Dangerous Goods'?DG_EVENT_LABEL:(allChecked('#g-avi')[0]||'hazard'))),
     aircraft_type:g('f-ac'), aircraft_reg:g('f-reg'),
     pic:g('f-pic'), copilot:g('f-copilot'), tsop:g('f-tsop'), other_persons:g('f-oth'),
     dossier_ref:g('f-dos'), location:g('f-loc'), base:g('f-base'), base_other:g('f-base-oth'),
@@ -934,7 +987,7 @@ async function submit(){
       document.getElementById('form-wrap').style.display='none';
       document.getElementById('footer').style.display='none';
       document.getElementById('ok-ref').textContent=ref;
-      const to=DATA.rtype==='Safety'?'Safety Manager':'Security Manager';
+      const to=(DATA.rtype==='Safety'||DATA.rtype==='Dangerous Goods')?'Safety Manager':'Security Manager';
       document.getElementById('ok-to-fr').textContent=to;
       document.getElementById('ok-to-en').textContent=to;
       document.getElementById('ok-wrap').classList.add('show');
@@ -983,5 +1036,121 @@ function resetForm(){
 </script>
 
 <a class="saf-guide-fab" href="SAF_User_Guide.html#report" onclick="if(location.pathname.indexOf('/Archives/')!==-1)this.href='../SAF_User_Guide.html#report'" title="Mode d'emploi SAF" aria-label="Mode d'emploi SAF">?</a>
+
+<script id="dg-report-block-v3">
+/* 06.10.2026 — Signalement « Dangerous Goods » : 4e type de rapport, a cote de
+   Safety / Security / Part-IS. Le bloc dedie demande l'implication MD (obligatoire) ;
+   toute reponse « Yes — … » rend obligatoires : nature de l'evenement (>= 1),
+   mode de transport (>= 1), et chaque rubrique du detail (texte ou
+   « Unknown / Not available »). Si « External load — HESLO » est coche, le bloc reservoir/fut suspendu (14 rubriques) devient aussi obligatoire.
+   Donnees envoyees (valeurs en anglais) :
+     report_type 'Dangerous Goods' · report_domain 'safety' · event_types_avi ["Incident MD"]
+     dangerous_goods 'Yes'|'No'|'Unknown' (ECCAIRS 129) · dg_involvement
+     dg_nature[] · dg_nature_other · dg_mode_of_carriage[] · dg_mode_other · dg_details{} · dg_heslo{} */
+var DG_KEYS = ["date_time_location", "product_description", "un_id_number", "proper_shipping_name", "class_division", "quantity", "packaging", "leak_fire_smoke_damage", "package_location"];
+var DG_HESLO_KEYS = ["heslo_content", "heslo_un_number", "heslo_nominal_capacity", "heslo_actual_quantity", "heslo_container_type", "heslo_closure_venting", "heslo_lifting_points", "heslo_anti_sloshing", "heslo_container_condition", "heslo_leak", "heslo_rupture_deformation", "heslo_dropped_load", "heslo_contact", "heslo_third_party"];
+var DG_LABELS = {"date_time_location": "Date / heure et lieu / Date / time and location", "product_description": "Description du produit / Product description", "un_id_number": "Numéro ONU / ID / UN / ID number", "proper_shipping_name": "Désignation officielle de transport / Proper shipping name", "class_division": "Classe / division / Class / division", "quantity": "Quantité / Quantity", "packaging": "Type et état de l’emballage / Packaging type and condition", "leak_fire_smoke_damage": "Fuite, feu, fumée ou dommage / Leak, fire, smoke or damage", "package_location": "Localisation du colis / Package location", "heslo_content": "Contenu exact / Exact content", "heslo_un_number": "Numéro ONU / UN number", "heslo_nominal_capacity": "Capacité nominale / Nominal capacity", "heslo_actual_quantity": "Quantité réellement présente / Quantity actually present", "heslo_container_type": "Type de contenant / Container type", "heslo_closure_venting": "Fermeture / mise à l’air / Closure / venting", "heslo_lifting_points": "Nombre de points de levage / Number of lifting points", "heslo_anti_sloshing": "Dispositif anti-ballottement / Anti-sloshing device", "heslo_container_condition": "État du contenant / Container condition", "heslo_leak": "Fuite constatée / Leak observed", "heslo_rupture_deformation": "Rupture ou déformation / Rupture or deformation", "heslo_dropped_load": "Charge larguée / mouvement de charge non maîtrisé / Dropped load / uncontrolled load movement", "heslo_contact": "Contact avec obstacle / sol / Contact with obstacle / ground", "heslo_third_party": "Exposition de tiers / Third-party exposure"};
+var DG_MSG = {"inv": "Implication MD obligatoire / Dangerous goods involvement required", "nature": "Nature de l’événement MD : cocher au moins une case / Nature of DG occurrence: tick at least one", "natureOther": "Nature MD « Autre » : préciser / DG nature “Other”: please specify", "mode": "Mode de transport : cocher au moins une case / Mode of carriage: tick at least one", "modeOther": "Mode de transport « Autre » : préciser / Mode of carriage “Other”: please specify", "item": "Marchandises dangereuses — rubrique manquante / Dangerous goods — missing item: "};
+var DG_EVENT_LABEL = "Incident MD";
+var DG_UNKNOWN = 'Unknown / Not available';
+var DG_INV = '';
+function dgMode(){ return document.body.classList.contains('mode-dg'); }
+function dgInvolved(){ return dgMode() && /^Yes/.test(DG_INV); }
+function dgChecked(gid){ return Array.prototype.map.call(document.querySelectorAll('#' + gid + ' .ci.on'), function(e){ return e.dataset.v; }); }
+function dgHeslo(){ return dgInvolved() && dgChecked('g-dg-mode').indexOf('External load — HESLO') !== -1; }
+function dgSync(){
+  var sec = document.getElementById('dg-sec');
+  if(sec) sec.classList.toggle('h', !dgInvolved());
+  var hs = document.getElementById('dg-heslo');
+  if(hs) hs.classList.toggle('h', !dgHeslo());
+  if(dgInvolved()){
+    var dtl = document.getElementById('dg-date_time_location');
+    if(dtl && !dtl.value && !dtl.disabled){
+      var d = [g('f-date'), g('f-time')].filter(Boolean).join(' ');
+      dtl.value = [d, g('f-loc')].filter(Boolean).join(' — ');
+    }
+  }
+  var sw = document.getElementById('dg-switch'), b = document.querySelector('#g-avi .ci[data-dg="1"]');
+  if(sw) sw.style.display = (b && b.classList.contains('on') && document.body.classList.contains('mode-safety')) ? 'block' : 'none';
+}
+function dgPickInvolvement(el){
+  el.closest('.rg').querySelectorAll('.ri').forEach(function(r){ r.classList.remove('on'); });
+  el.classList.add('on');
+  DG_INV = el.dataset.v || '';
+  var w = document.getElementById('g-dg-inv'); if(w) w.classList.remove('dg-miss-g');
+  dgSync();
+}
+function dgSwitchToReport(){
+  var card = document.querySelector('#rtype .rt[data-rt="dg"]');
+  if(card) window.pickType(card, 'Dangerous Goods');
+}
+function dgToggleUnknown(btn){
+  var cell = btn.closest('.dg-u'); var inp = cell && cell.previousElementSibling.querySelector('.dg-in');
+  if(!inp) return;
+  var on = btn.getAttribute('aria-pressed') !== 'true';
+  btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  if(on){ inp.dataset.prev = inp.value; inp.value = DG_UNKNOWN; inp.disabled = true; }
+  else { inp.disabled = false; inp.value = inp.dataset.prev || ''; inp.focus(); }
+  inp.classList.remove('dg-miss');
+}
+function dgRead(keys){ var o = {}; keys.forEach(function(k){ var i = document.getElementById('dg-' + k); o[k] = i ? i.value.trim() : ''; }); return o; }
+function dgCollect(){ return dgInvolved() ? dgRead(DG_KEYS) : null; }
+function dgCollectHeslo(){ return dgHeslo() ? dgRead(DG_HESLO_KEYS) : null; }
+function dgEccairs(){ if(!dgMode() || !DG_INV) return ''; return /^Yes/.test(DG_INV) ? 'Yes' : DG_INV; }
+function dgCheck(){
+  if(!dgMode()) return null;
+  if(!DG_INV) return { el: document.getElementById('g-dg-inv'), msg: DG_MSG.inv, group: true };
+  if(!dgInvolved()) return null;
+  var nat = dgChecked('g-dg-nature');
+  if(!nat.length) return { el: document.getElementById('g-dg-nature'), msg: DG_MSG.nature, group: true };
+  if(nat.indexOf('Other') !== -1 && !g('dg-nature-oth')) return { el: document.getElementById('dg-nature-oth'), msg: DG_MSG.natureOther };
+  var md = dgChecked('g-dg-mode');
+  if(!md.length) return { el: document.getElementById('g-dg-mode'), msg: DG_MSG.mode, group: true };
+  if(md.indexOf('Other') !== -1 && !g('dg-mode-oth')) return { el: document.getElementById('dg-mode-oth'), msg: DG_MSG.modeOther };
+  var keys = DG_KEYS.concat(dgHeslo() ? DG_HESLO_KEYS : []);
+  var miss = keys.filter(function(k){ var i = document.getElementById('dg-' + k); return !i || !i.value.trim(); });
+  document.querySelectorAll('#dg-sec .dg-in').forEach(function(i){ i.classList.toggle('dg-miss', miss.indexOf(i.dataset.dg) !== -1); });
+  if(miss.length) return { el: document.getElementById('dg-' + miss[0]), msg: DG_MSG.item + DG_LABELS[miss[0]] + (miss.length > 1 ? ' (+' + (miss.length - 1) + ')' : '') };
+  return null;
+}
+function dgReset(){
+  DG_INV = '';
+  document.querySelectorAll('#dg-sec .dg-in, #dg-sec .dg-oth').forEach(function(i){ i.disabled = false; i.value = ''; i.dataset.prev = ''; i.classList.remove('dg-miss'); });
+  document.querySelectorAll('#dg-sec .dg-unk').forEach(function(b){ b.setAttribute('aria-pressed', 'false'); });
+  document.body.classList.remove('mode-dg');
+  dgSync();
+}
+(function(){
+  var _tick = window.tickBox, _validate = window.validate, _reset = window.resetForm, _pick = window.pickType;
+  window.tickBox = function(el){ _tick(el); dgSync(); };
+  window.pickType = function(el, val){
+    document.body.classList.toggle('mode-dg', val === 'Dangerous Goods');
+    _pick(el, val);
+    renumber();
+    dgSync();
+  };
+  window.resetForm = function(){ _reset(); dgReset(); };
+  if(typeof window.setLang === 'function'){
+    var _lang = window.setLang;
+    window.setLang = function(l){ _lang(l); document.querySelectorAll('.dg-in[data-ph-en]').forEach(function(i){ i.placeholder = i.dataset['ph' + (l === 'en' ? 'En' : 'Fr')]; }); };
+  }
+  window.validate = function(){
+    if(!_validate()) return false;
+    var p = dgCheck();
+    if(p){
+      setStatus('error', p.msg);
+      if(p.el){
+        p.el.classList.add(p.group ? 'dg-miss-g' : 'dg-miss');
+        p.el.scrollIntoView({behavior:'smooth', block:'center'});
+        if(!p.group) setTimeout(function(){ p.el.focus(); }, 350);
+      }
+      return false;
+    }
+    return true;
+  };
+  document.addEventListener('input', function(e){ if(e.target && e.target.classList) e.target.classList.remove('dg-miss'); });
+  document.addEventListener('click', function(e){ var c = e.target.closest && e.target.closest('#g-dg-nature, #g-dg-mode'); if(c) c.classList.remove('dg-miss-g'); });
+})();
+</script>
 </body>
 </html>
