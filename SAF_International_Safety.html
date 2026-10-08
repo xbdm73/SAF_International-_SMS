@@ -10517,7 +10517,14 @@ function rrInitLayout(){
     /* La hauteur des bandeaux varie avec la largeur (flex-wrap) et avec
        l'ouverture du panneau de filtres : on observe plutot que de deviner. */
     if(window.ResizeObserver){
-      var ro = new ResizeObserver(function(){ _rrFitTable(); });
+      /* Ajustement différé d'une frame : appeler _rrFitTable() directement dans le
+         rappel modifie la mise en page observée et déclenche l'erreur navigateur
+         « ResizeObserver loop completed with undelivered notifications ». */
+      var _rrRoPending = false;
+      var ro = new ResizeObserver(function(){
+        if(_rrRoPending) return; _rrRoPending = true;
+        requestAnimationFrame(function(){ _rrRoPending = false; _rrFitTable(); });
+      });
       ['rr-filter-bar','rr-toolbar'].forEach(function(id){
         var e = document.getElementById(id); if(e) ro.observe(e);
       });
@@ -16258,7 +16265,7 @@ const ECCAIRS_OCC_FIELDS = [
   {key:'highest_damage', code:'432', label:'Highest Damage', type:'select', req:true, entity:'Occurrence', dtype:2, options:['Destroyed','Substantial','Minor','None','Unknown']},
   {key:'injury_level', code:'451', label:'Injury Level', type:'select', req:true, entity:'Occurrence', dtype:2, options:['Fatal','Serious','Minor','None','Unknown']},
   {key:'weather_relevant', code:'606', label:'Weather Relevant', type:'select', req:true, entity:'Occurrence', dtype:2, options:['Yes','No','Unknown']},
-  {key:'dangerous_goods', code:'129', label:'Dangerous Goods Involved', type:'select', req:true, entity:'Occurrence', dtype:2, options:['Yes','No','Unknown']},
+  {key:'dangerous_goods', code:'129', label:'Dangerous Goods Involved', type:'select', req:true, entity:'Occurrence', dtype:2, options:['Yes','No','Unknown'], fallback:function(o){var v=String(o.dangerous_goods||'');return /^(Yes|No|Unknown)$/.test(v)?v:'';}},
   // ── REPORTING HISTORY (entity: Reporting_History, ID 53) ──────────
   {key:'reporting_entity', code:'447', label:'Reporting Entity', type:'select', req:true, entity:'Reporting_History', dtype:3, options:['SAF International','FOCA','EASA','Other operator'], fallback:function(o){return o.entity||'SAF International';}},
   {key:'report_identification', code:'438', label:'Report Identification', type:'text', req:true, entity:'Reporting_History', dtype:1, fallback:function(o){return o.id||'';}},
@@ -16755,11 +16762,56 @@ window.occGetEccairsFields = occGetEccairsFields;
 window.occNativeMselUpdate = occNativeMselUpdate;
 window.occEccairsCompleteness = occEccairsCompleteness;
 
+/* ── Marchandises dangereuses : affichage des champs du rapport MD (SAF_Report.html, 06.10.2026) ──
+   Le formulaire envoie dg_involvement, dg_nature[], dg_mode_of_carriage[],
+   dg_details{9 rubriques} et dg_heslo{14 rubriques} ; l'import les conserve
+   tels quels dans l'occurrence, ce bloc les rend lisibles à l'instruction. */
+var OCC_DG_LABELS = {
+  date_time_location:'Date / heure et lieu', product_description:'Description du produit', un_id_number:'N° ONU / ID',
+  proper_shipping_name:'Désignation officielle de transport', class_division:'Classe / division', quantity:'Quantité',
+  packaging:'Type et état de l’emballage', leak_fire_smoke_damage:'Fuite, feu, fumée ou dommage', package_location:'Localisation du colis',
+  heslo_content:'Contenu exact', heslo_un_number:'N° ONU', heslo_nominal_capacity:'Capacité nominale', heslo_actual_quantity:'Quantité réellement présente',
+  heslo_container_type:'Type de contenant', heslo_closure_venting:'Fermeture / mise à l’air', heslo_lifting_points:'Points de levage',
+  heslo_anti_sloshing:'Dispositif anti-ballottement', heslo_container_condition:'État du contenant', heslo_leak:'Fuite constatée',
+  heslo_rupture_deformation:'Rupture ou déformation', heslo_dropped_load:'Charge larguée / mouvement non maîtrisé',
+  heslo_contact:'Contact obstacle / sol', heslo_third_party:'Exposition de tiers'
+};
+function _occDgDetailsHtml(occ){
+  occ = occ || {};
+  var isDg = occ.report_type==='Dangerous Goods' || !!occ.dg_involvement || !!occ.dg_details;
+  if(!isDg) return '';
+  var e = occHtmlEsc, unk = /^Unknown \/ Not available$/;
+  var list = function(a, other){ a = Array.isArray(a) ? a.slice() : []; if(other) a = a.map(function(x){ return x==='Other' ? 'Other — '+other : x; }); return a.join(', '); };
+  var kv = function(label, val){ return '<div><span style="color:var(--grey-400);">'+e(label)+' :</span> <strong style="color:var(--white);">'+(val ? e(val) : '<span style="color:#f85149;">non renseigné</span>')+'</strong></div>'; };
+  var table = function(title, obj){
+    if(!obj || typeof obj!=='object') return '';
+    var keys = Object.keys(obj); if(!keys.length) return '';
+    return '<div style="grid-column:1/-1;margin-top:8px;"><div style="font-size:9px;letter-spacing:1px;color:#ff9a6b;text-transform:uppercase;margin-bottom:4px;">'+e(title)+'</div>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:11px;">' + keys.map(function(k){
+          var v = String(obj[k]==null ? '' : obj[k]);
+          return '<tr style="border-top:1px solid rgba(255,255,255,.06);"><td style="padding:4px 8px 4px 0;color:var(--grey-400);width:42%;vertical-align:top;">'+e(OCC_DG_LABELS[k]||k)+'</td>'
+            + '<td style="padding:4px 0;vertical-align:top;'+(unk.test(v)?'color:var(--grey-400);font-style:italic;':'color:var(--white);font-weight:600;')+'">'+(v ? e(v) : '—')+'</td></tr>';
+        }).join('') + '</table></div>';
+  };
+  var inv = occ.dg_involvement || '';
+  var invColor = /^Yes/.test(inv) ? '#f85149' : (inv ? 'var(--grey-200)' : '#d29922');
+  return '<div class="occ-dg-block" style="margin-top:12px;padding:10px 12px;border:1px solid rgba(224,80,0,.45);border-radius:6px;background:rgba(224,80,0,.06);">'
+    + '<div style="font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:#ff9a6b;text-transform:uppercase;margin-bottom:8px;">☢ Marchandises dangereuses — rapport MD</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px 20px;font-family:var(--font-mono);font-size:11px;">'
+    + '<div><span style="color:var(--grey-400);">Implication MD :</span> <strong style="color:'+invColor+';">'+e(inv||'non renseignée')+'</strong></div>'
+    + '<div><span style="color:var(--grey-400);">ECCAIRS 129 (Dangerous Goods Involved) :</span> <strong style="color:var(--white);">'+e(occ.dangerous_goods||'—')+'</strong></div>'
+    + (/^Yes/.test(inv) ? kv('Nature de l’événement', list(occ.dg_nature, occ.dg_nature_other)) + kv('Mode de transport', list(occ.dg_mode_of_carriage, occ.dg_mode_other)) : '')
+    + table('Détail de l’événement', occ.dg_details)
+    + table('Charge externe HESLO — réservoir / fût suspendu', occ.dg_heslo)
+    + '</div></div>';
+}
+
 function _occMobileReportDetailsHtml(occ){
   var hasAny = occ.pic||occ.tsop||occ.other_persons||occ.dossier_ref||occ.base||occ.maintenance_concern||
     (occ.maintenance_types&&occ.maintenance_types.length)||occ.maintenance_ref||occ.consequence||
     (occ.pressure&&occ.pressure.length)||occ.cyber_description||occ.comments||occ.attachments_count||
-    (occ.event_types_avi&&occ.event_types_avi.length)||(occ.event_types_cyber&&occ.event_types_cyber.length);
+    (occ.event_types_avi&&occ.event_types_avi.length)||(occ.event_types_cyber&&occ.event_types_cyber.length)||
+    occ.report_type==='Dangerous Goods'||!!occ.dg_involvement||!!occ.dg_details;
   if(!hasAny) return '';
   var consLabels={none:'Aucune / None',minor:'Légère / Minor',med:'Moyenne / Medium',major:'Grave / Major',other:'Autre / Other'};
   var row=function(label,val){ if(!val || (Array.isArray(val)&&!val.length)) return ''; return '<div><span style="color:var(--grey-400);">'+occHtmlEsc(label)+':</span> <strong style="color:var(--white);">'+occHtmlEsc(Array.isArray(val)?val.join(', '):val)+'</strong></div>'; };
@@ -16782,6 +16834,7 @@ function _occMobileReportDetailsHtml(occ){
   return '<div style="margin-bottom:14px;padding:12px 14px;background:rgba(74,159,224,.05);border:1px solid rgba(74,159,224,.2);border-radius:6px;">'
     +'<div style="font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:var(--steel-bright);text-transform:uppercase;margin-bottom:8px;">📱 Détails du signalement mobile</div>'
     +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px 20px;font-family:var(--font-mono);font-size:11px;">'+body+'</div>'
+    +(typeof _occDgDetailsHtml==='function'?_occDgDetailsHtml(occ):'')
     +'</div>';
 }
 function showOccurrenceForm(editId){
@@ -23618,7 +23671,7 @@ function occRestoreHFACS(hfacs,severity){
     /* 10.09.2026 — la ligne de titres de colonnes du Risk Register est exclue
        de la couche bilingue : elle reste en anglais. Le titre de la vue, lui,
        garde ses deux langues (voir la regle sur .dash-title plus bas). */
-    return !!el.closest('script,style,noscript,textarea,input,canvas,svg,code,pre,[contenteditable="true"],.rte,.cs-sig-wrap,.cms-title-fr,.cms-title-en,#view-database thead,#saf-cloud-bar,#saf-mfa-overlay,.saf-rit-picker [role=listbox],.saf-rit-picker [id$="-sel"]');
+    return !!el.closest('script,style,noscript,textarea,input,canvas,svg,code,pre,[contenteditable="true"],.rte,.cs-sig-wrap,.cms-title-fr,.cms-title-en,#view-database thead,#saf-cloud-bar,#saf-mfa-overlay,.occ-dg-block,.saf-rit-picker [role=listbox],.saf-rit-picker [id$="-sel"]');
   }
   function preserveOptionValue(el){
     if(el && el.tagName==='OPTION' && !el.hasAttribute('value')) el.setAttribute('value', el.textContent || '');
