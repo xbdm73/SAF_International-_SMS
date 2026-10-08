@@ -4566,32 +4566,54 @@ function updateOaciDefinitionDropdown(sel) {
   </div>
   <div id="cs-import-feedback" style="margin-top:8px;font-family:var(--font-mono);font-size:10px;min-height:14px;"></div>
 </div>
-<div style="margin-bottom:18px;padding:16px 18px;background:rgba(192,68,0,.08);border:1px solid rgba(192,68,0,.3);border-radius:10px;">
-  <div style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:#e0824a;letter-spacing:.06em;margin-bottom:10px;">◈ CYBERSECURITY RISK IDENTIFICATION — EASA PART-IS</div>
-  <div style="font-size:11px;color:var(--grey-400);font-family:var(--font-mono);margin-bottom:14px;line-height:1.6;">Conformément au Règlement (UE) 2023/203 (Part-IS), évaluer si le changement étudié introduit, modifie ou expose un risque de sécurité de l'information (accès aux systèmes, données, interfaces numériques, prestataires IT).</div>
-  <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:14px;">
-    <div class="form-field" style="margin:0;"><label class="field-label">Risque cybersécurité identifié dans l'étude ?</label>
-      <select id="c-cyber-risk-flag" onchange="csCyberRiskToggle()">
-        <option value="" style="background:#0d1b2a;color:#f4f6f8;">Non évalué</option>
-        <option value="no" style="background:#0d1b2a;color:#f4f6f8;">Non — aucun risque de sécurité de l'information identifié</option>
-        <option value="yes" style="background:#0d1b2a;color:#f4f6f8;">Oui — risque de sécurité de l'information identifié</option>
-      </select>
+<div id="isx-block" style="margin-bottom:18px;padding:16px 18px;background:rgba(192,68,0,.08);border:1px solid rgba(192,68,0,.3);border-radius:10px;" oninput="isxMocRefresh()" onchange="isxMocRefresh()">
+  <div style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:#e0824a;letter-spacing:.06em;margin-bottom:10px;">◈ VOLET SÉCURITÉ DE L'INFORMATION — PART-IS (IS.I.OR.255 · MGSI §2)</div>
+  <div style="font-size:11px;color:var(--grey-400);margin-bottom:14px;line-height:1.6;max-width:110ch;">Chaque étude du changement comporte ce volet. L'absence d'impact est une conclusion d'analyse, tracée et justifiée — pas une dispense d'analyse. Le scénario IS est coté selon la méthode EBIOS RM du MGSI (gravité de l'événement redouté × vraisemblance), et non sur la matrice OACI : la cotation OACI de la décomposition des actions porte sur l'événement indésirable sécurité auquel il se rattache.</div>
+  <div class="form-grid" style="grid-template-columns:2fr 1fr;gap:14px;">
+    <div class="form-field" style="margin:0;"><label class="field-label" for="c-cyber-risk-flag">Le changement a-t-il un impact potentiel sur un système d'information, une donnée opérationnelle ou une interface numérique ?</label>
+      <select id="c-cyber-risk-flag" onchange="csCyberRiskToggle()"><option value="" style="background:#0d1b2a;color:#f4f6f8;">— Non répondu —</option><option value="no" style="background:#0d1b2a;color:#f4f6f8;">Non — absence d'impact (justification obligatoire)</option><option value="yes" style="background:#0d1b2a;color:#f4f6f8;">Oui — volet IS obligatoire, RDSI informé</option></select>
     </div>
-    <div class="form-field" style="margin:0;"><label class="field-label">Référence Part-IS / action SGSI</label>
-      <input id="c-cyber-risk-partis-ref" type="text" placeholder="e.g. IS.I.OR.205 / IS.I.OR.230 / registre SGSI réf…"/>
-    </div>
+    <div class="form-field" style="margin:0;"><label class="field-label" for="c-cyber-risk-partis-ref">Référence Part-IS / action SMSI</label><input id="c-cyber-risk-partis-ref" type="text" placeholder="ex. IS.I.OR.205 / IS.I.OR.255 / réf. RRSI…"/></div>
   </div>
-  <div id="c-cyber-risk-detail-wrap" style="display:none;margin-top:14px;">
-    <div class="form-field form-full" style="margin:0;"><label class="field-label">Description du risque cybersécurité identifié</label>
-      <textarea id="c-cyber-risk-description" placeholder="Systèmes/données concernés, vecteur de menace, impact potentiel sur la sécurité des vols ou la navigabilité, mesures Part-IS applicables (SGSI, contrôle d'accès, sous-traitants, plan de contingence)…"></textarea>
-    </div>
-    <button type="button"
-      onclick="var s=document.getElementById('c-risk-cat-select'); if(s){s.value='Cybersécurité (Part-IS)'; csOnCategoryChange();} document.getElementById('c-risk-cat-select')?.scrollIntoView({behavior:'smooth',block:'center'});"
-      style="margin-top:10px;display:inline-flex;align-items:center;gap:8px;padding:7px 14px;background:rgba(27,108,168,.2);border:1px solid rgba(27,108,168,.45);border-radius:6px;color:var(--steel-bright);font-family:var(--font-mono);font-size:11px;cursor:pointer;">
-      ↑ Importer depuis le registre — catégorie Cybersécurité (Part-IS)
-    </button>
+  <div id="isx-no-wrap" style="display:none;margin-top:14px;"><div class="form-field form-full" style="margin:0;grid-column:1/-1;"><label class="field-label" for="c-is-no-justif">Justification de l'absence d'impact</label><textarea id="c-is-no-justif" placeholder="Systèmes, données et interfaces examinés, et pourquoi le changement ne les affecte pas…"></textarea></div></div>
+  <div id="c-cyber-risk-detail-wrap" style="display:none;margin-top:6px;">
+   <div class="form-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;">
+    <div style="grid-column:1/-1;font-family:var(--font-mono);font-size:10px;font-weight:700;color:#e0824a;letter-spacing:.05em;margin-top:8px;border-top:1px solid rgba(192,68,0,.2);padding-top:10px;">Scénario et événement redouté</div>
+    <div class="form-field form-full" style="margin:0;grid-column:1/-1;"><label class="field-label" for="c-cyber-risk-description">Scénario de menace</label><textarea id="c-cyber-risk-description" placeholder="Systèmes/données concernés, vecteur de menace, enchaînement jusqu'à l'événement redouté…"></textarea></div>
+    <div style="grid-column:span 2;"><div class="form-field" style="margin:0;"><label class="field-label" for="c-is-er">Événement redouté (ER)</label><input id="c-is-er" type="text" placeholder="ex. altération des données d'entretien CAMO"/></div></div>
+    <div class="form-field" style="margin:0;"><label class="field-label" for="c-is-grav">Gravité de l'ER (MGSI §2.1.1)</label><select id="c-is-grav"><option value="" style="background:#0d1b2a;color:#f4f6f8;">—</option><option value="G1 — Minimale" style="background:#0d1b2a;color:#f4f6f8;">G1 — Minimale</option><option value="G2 — Significative" style="background:#0d1b2a;color:#f4f6f8;">G2 — Significative</option><option value="G3 — Grave" style="background:#0d1b2a;color:#f4f6f8;">G3 — Grave</option><option value="G4 — Critique" style="background:#0d1b2a;color:#f4f6f8;">G4 — Critique</option><option value="G5 — Catastrophique" style="background:#0d1b2a;color:#f4f6f8;">G5 — Catastrophique</option></select></div>
+    <div style="grid-column:1/-1;font-family:var(--font-mono);font-size:10px;font-weight:700;color:#e0824a;letter-spacing:.05em;margin-top:8px;border-top:1px solid rgba(192,68,0,.2);padding-top:10px;">Source de risque et objectif visé (MGSI §2.1.2)</div>
+    <div class="form-field" style="margin:0;"><label class="field-label" for="c-is-sr">Source de risque (SR)</label><input id="c-is-sr" type="text" placeholder="ex. cybercriminel, prestataire négligent, erreur interne"/></div>
+    <div class="form-field" style="margin:0;"><label class="field-label" for="c-is-ov">Objectif visé (OV)</label><input id="c-is-ov" type="text" placeholder="ex. extorsion, sabotage, vol de données"/></div>
+    <div></div>
+    <div class="form-field" style="margin:0;"><label class="field-label" for="c-is-motiv">Motivation</label><select id="c-is-motiv"><option value="" style="background:#0d1b2a;color:#f4f6f8;">—</option><option value="1 — Peu motivé" style="background:#0d1b2a;color:#f4f6f8;">1 — Peu motivé</option><option value="2 — Motivé" style="background:#0d1b2a;color:#f4f6f8;">2 — Motivé</option><option value="3 — Très motivé" style="background:#0d1b2a;color:#f4f6f8;">3 — Très motivé</option></select></div>
+    <div class="form-field" style="margin:0;"><label class="field-label" for="c-is-res">Ressources</label><select id="c-is-res"><option value="" style="background:#0d1b2a;color:#f4f6f8;">—</option><option value="1 — Moyennes" style="background:#0d1b2a;color:#f4f6f8;">1 — Moyennes</option><option value="2 — Importantes" style="background:#0d1b2a;color:#f4f6f8;">2 — Importantes</option><option value="3 — Illimitées" style="background:#0d1b2a;color:#f4f6f8;">3 — Illimitées</option></select></div>
+    <div class="form-field" style="margin:0;"><label class="field-label">Pertinence du couple SR/OV</label><div id="isx-pert" style="padding-top:8px;"></div></div>
+    <div style="grid-column:1/-1;font-family:var(--font-mono);font-size:10px;font-weight:700;color:#e0824a;letter-spacing:.05em;margin-top:8px;border-top:1px solid rgba(192,68,0,.2);padding-top:10px;">Vraisemblance, traitement et acceptation</div>
+    <div class="form-field" style="margin:0;"><label class="field-label" for="c-is-v-init">Vraisemblance initiale</label><select id="c-is-v-init"><option value="" style="background:#0d1b2a;color:#f4f6f8;">—</option><option value="1 — Improbable" style="background:#0d1b2a;color:#f4f6f8;">1 — Improbable</option><option value="2 — Possible" style="background:#0d1b2a;color:#f4f6f8;">2 — Possible</option><option value="3 — Probable" style="background:#0d1b2a;color:#f4f6f8;">3 — Probable</option><option value="4 — Très probable" style="background:#0d1b2a;color:#f4f6f8;">4 — Très probable</option></select></div>
+    <div class="form-field" style="margin:0;"><label class="field-label">Cotation initiale</label><div id="isx-acc-init" style="padding-top:8px;"></div></div>
+    <div style="grid-row:span 3;"><div id="isx-matrix"></div><div style="font-size:9.5px;color:var(--grey-400);margin-top:6px;line-height:1.5;">La gravité est celle de l'événement redouté : les mesures agissent sur la vraisemblance. V4 est toujours inacceptable ; la gravité durcit le critère pour G3 à G5.</div></div>
+    <div style="grid-column:span 2;"><div class="form-field" style="margin:0;"><label class="field-label" for="c-is-measures">Mesures de traitement (prévention, protection, détection, réaction, résilience)</label><textarea id="c-is-measures" placeholder="Mesures retenues — les actions correspondantes vont dans le plan d'actions de la MoC (RDSI responsable des actions techniques)"></textarea></div></div>
+    <div class="form-field" style="margin:0;"><label class="field-label" for="c-is-v-res">Vraisemblance résiduelle</label><select id="c-is-v-res"><option value="" style="background:#0d1b2a;color:#f4f6f8;">—</option><option value="1 — Improbable" style="background:#0d1b2a;color:#f4f6f8;">1 — Improbable</option><option value="2 — Possible" style="background:#0d1b2a;color:#f4f6f8;">2 — Possible</option><option value="3 — Probable" style="background:#0d1b2a;color:#f4f6f8;">3 — Probable</option><option value="4 — Très probable" style="background:#0d1b2a;color:#f4f6f8;">4 — Très probable</option></select></div>
+    <div class="form-field" style="margin:0;"><label class="field-label">Cotation résiduelle</label><div id="isx-acc-res" style="padding-top:8px;"></div></div>
+    <div id="isx-tol-wrap" style="display:none;grid-column:1/-1;"><div class="form-field" style="margin:0;"><label class="field-label" for="c-is-tol-justif">Justification de l'acceptation du risque tolérable (PRC)</label><textarea id="c-is-tol-justif" placeholder="Pourquoi le risque résiduel est accepté en l'état, et comment il est surveillé…"></textarea></div></div>
+    <div style="grid-column:1/-1;font-family:var(--font-mono);font-size:10px;font-weight:700;color:#e0824a;letter-spacing:.05em;margin-top:8px;border-top:1px solid rgba(192,68,0,.2);padding-top:10px;">Rattachement</div>
+    <div class="form-field" style="margin:0;"><label class="field-label" for="c-is-safety-impact">Le scénario peut-il avoir un impact sur la sécurité des vols ?</label><select id="c-is-safety-impact"><option value="" style="background:#0d1b2a;color:#f4f6f8;">—</option><option value="no" style="background:#0d1b2a;color:#f4f6f8;">Non</option><option value="yes" style="background:#0d1b2a;color:#f4f6f8;">Oui — rattachement à la cartographie</option></select></div>
+    <div id="isx-ei-wrap" style="display:none;"><div class="form-field" style="margin:0;"><label class="field-label" for="c-is-ei">Événement indésirable de la cartographie (MGSI §2.3.5)</label><input id="c-is-ei" type="text" placeholder="Identifiant du registre (ex. SMS-61)" list="isx-ei-list" autocomplete="off"/></div><datalist id="isx-ei-list"></datalist></div>
+    <div class="form-field" style="margin:0;"><label class="field-label" for="c-is-rrsi-ref">Référence RRSI</label><input id="c-is-rrsi-ref" type="text" placeholder="Scénario ou mesure pérenne reporté(e) au RRSI"/></div>
+    <div style="grid-column:1/-1;font-family:var(--font-mono);font-size:10px;font-weight:700;color:#e0824a;letter-spacing:.05em;margin-top:8px;border-top:1px solid rgba(192,68,0,.2);padding-top:10px;">Instruction et validation</div>
+    <div class="form-field" style="margin:0;"><label class="field-label" for="c-is-rsc">Instruit par (RSC)</label><input id="c-is-rsc" type="text" placeholder=""/></div>
+    <div class="form-field" style="margin:0;"><label class="field-label" for="c-is-rdsi">Co-instruit par (RDSI / RDSI adjoint)</label><input id="c-is-rdsi" type="text" placeholder=""/></div>
+    <div></div>
+    <div class="form-field" style="margin:0;"><label class="field-label" for="c-is-prc-name">Validation — PRC (nom)</label><input id="c-is-prc-name" type="text" placeholder=""/></div>
+    <div class="form-field" style="margin:0;"><label class="field-label" for="c-is-prc-date">Date de validation</label><input id="c-is-prc-date" type="date" placeholder=""/></div>
+    <div class="form-field" style="margin:0;"><label class="field-label" for="c-is-prc-decision">Décision PRC</label><select id="c-is-prc-decision"><option value="" style="background:#0d1b2a;color:#f4f6f8;">— En attente —</option><option value="validated" style="background:#0d1b2a;color:#f4f6f8;">Volet IS validé</option><option value="refused" style="background:#0d1b2a;color:#f4f6f8;">Volet IS refusé</option></select></div>
+    <div class="form-field form-full" style="margin:0;grid-column:1/-1;"><label class="field-label" for="c-is-prc-comment">Commentaire / conditions de la PRC</label><textarea id="c-is-prc-comment" placeholder=""></textarea></div>
+   </div>
   </div>
+  <div id="isx-status" style="margin-top:14px;padding:10px 12px;border:1px solid rgba(255,255,255,.12);border-radius:6px;font-size:11px;line-height:1.6;"></div>
 </div>
+
 <div style="margin-bottom:18px;">
   <button type="button"
     onclick="showView('occurrences'); setTimeout(function(){ showOccurrenceForm(); }, 80);"
@@ -11531,7 +11553,7 @@ function previewEntry() {
 // ══════════════════════════════════════════════════════════════════
 // CHANGE STUDY / MANAGEMENT OF CHANGE
 // ══════════════════════════════════════════════════════════════════
-const CHANGE_FIELDS = ['title','ref','assessment-type','workflow-status','version-num','version-note','description','detailed-description','decision-origin','root-cause-ref','impact-assessment','duration','start-date','end-date','doc-archiving','regulations','assessors','version','version-date','history','followup-comments','acm-name','acm-signature','assessors-signature','authority-approval','risk-reduction-summary','conclusions','signature','diffusion','cyber-risk-flag','cyber-risk-partis-ref','cyber-risk-description'];
+const CHANGE_FIELDS = ['title','ref','assessment-type','workflow-status','version-num','version-note','description','detailed-description','decision-origin','root-cause-ref','impact-assessment','duration','start-date','end-date','doc-archiving','regulations','assessors','version','version-date','history','followup-comments','acm-name','acm-signature','assessors-signature','authority-approval','risk-reduction-summary','conclusions','signature','diffusion','cyber-risk-flag','cyber-risk-partis-ref','cyber-risk-description','is-no-justif','is-er','is-grav','is-sr','is-ov','is-motiv','is-res','is-v-init','is-measures','is-v-res','is-tol-justif','is-safety-impact','is-ei','is-rrsi-ref','is-rsc','is-rdsi','is-prc-name','is-prc-date','is-prc-decision','is-prc-comment'];
 // ── Assessor name list (shared dropdown) ──
 const ASSESSOR_NAMES = ['Thierry BERGERET','Xavier BOUVET','Sacha CARRERE','Julien METRO','Jean Louis CAMUS'];
 const CS_NAME_PICKERS = ['assessors','assessors-signature','signature']; // fields using the name picker
@@ -11594,6 +11616,7 @@ function saveChangeStudy(_silent) {
   const missing = required.filter(([id]) => { var v=getChangeVal(id).trim(); if(id==='ref') v=v.replace(/^MOC-?$/,''); return !v; }).map(([,label]) => label);
   if(missing.length && !_silent) { showToast('Please fill required fields: ' + missing.join(', '), 'error'); return; }
   const data = collectChangeStudy();
+  if(typeof isxMocGate==='function' && !isxMocGate(data, _silent)) return;
   if(_silent && (!data.ref || data.ref.replace(/^MOC-?/,'').trim()==='')) return;
   var _autoOldRef = window.__safAutoMocRef || window.__safStorageMocRef || '';
   var idx = CHANGE_STUDIES.findIndex(x => x.ref === data.ref);
@@ -11633,9 +11656,12 @@ function csDurationChange(val) {
 
 // ── Cybersecurity risk block (Part-IS): show/hide description sub-field ──
 function csCyberRiskToggle() {
-  const flag = document.getElementById('c-cyber-risk-flag')?.value;
-  const wrap = document.getElementById('c-cyber-risk-detail-wrap');
-  if (wrap) wrap.style.display = (flag === 'yes') ? '' : 'none';
+  if (typeof isxMocRefresh === 'function') isxMocRefresh();
+  else {
+    const flag = document.getElementById('c-cyber-risk-flag')?.value;
+    const wrap = document.getElementById('c-cyber-risk-detail-wrap');
+    if (wrap) wrap.style.display = (flag === 'yes') ? '' : 'none';
+  }
   if (typeof saveState === 'function') saveState();
 }
 
@@ -12750,6 +12776,8 @@ function _buildChangeStudyReport(cs) {
     <h2>2 — Detailed Description</h2><p style="margin-bottom:12px">${_csNl2br(cs.detailed_description)}</p>
 
     <h2>3 — Impact Assessment</h2><p style="margin-bottom:12px">${_csNl2br(cs.impact_assessment)}</p>
+
+    ${(typeof isxMocReportHTML==='function') ? isxMocReportHTML(cs) : ''}
 
     <h2>4 — Actions Carried Out</h2>
     ${actionsHTML}
@@ -19615,7 +19643,7 @@ function renderSavedCSList(){
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap;">'
       +'<span style="font-weight:700;color:var(--white);font-size:13px;">'+(cs.title||'(no title)')+'</span>'
       +'<span class="cs-status-badge '+cfg.cls+'">'+cfg.icon+' '+cfg.label+'</span>'
-      +(cs.version_num?'<span style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">v'+cs.version_num+'</span>':'')
+      +(cs.version_num?'<span style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">v'+cs.version_num+'</span>':'')+(typeof isxMocChip==='function'?isxMocChip(cs):'')
       +'</div>'
       +'<div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);">'+(cs.ref||'—')+' · '+(cs.assessment_type||'—')+' · '+savedDt+'</div>'
       +(vh.length?'<div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;">'
@@ -19690,6 +19718,7 @@ function loadCSIntoForm(ref){
     csRenumber();
   }
   if(typeof csDurationChange==='function') csDurationChange();
+  if(typeof isxMocLoad==='function') isxMocLoad(cs);
   if(typeof csCyberRiskToggle==='function') csCyberRiskToggle();
   document.getElementById('change-form')?.scrollIntoView({behavior:'smooth',block:'start'});
   showToast('✓ Loaded: '+cs.title,'success');
@@ -19851,6 +19880,77 @@ function renderInterfaces(){
     +SAFX.table(['ID','Organisation','Scope','Hazards at the interface','Risks','Owner','Next review','Status',''],rows,'No external interface recorded. Start with contracted maintenance, customers and landing-site operators.');
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   ISX — Part-IS : méthode d'appréciation des risques de sécurité de
+   l'information (EBIOS RM).  Échelles reprises de MGSI :
+     · gravité de l'événement redouté G1–G5          (MGSI §2.1.1)
+     · pertinence SR/OV = motivation × ressources     (MGSI §2.1.2)
+     · vraisemblance 1–4                              (MGSI §2.1.4.1)
+   Critère d'acceptation : matrice gravité × vraisemblance (08.10.2026).
+   La ligne V4 reste toujours inacceptable (règle MGSI §2.3.3) ; la
+   gravité durcit le critère pour G3 à G5. Jamais moins strict que MGSI.
+   ════════════════════════════════════════════════════════════════════ */
+(function(){
+  var LANG = 'fr';
+  function num(v){ var m = String(v==null?'':v).match(/\d/); return m ? +m[0] : 0; }
+  var GRAV = [[1,'Minimale','Minimal'],[2,'Significative','Significant'],[3,'Grave','Serious'],[4,'Critique','Critical'],[5,'Catastrophique','Catastrophic']];
+  var VRAIS = [[1,'Improbable','Unlikely'],[2,'Possible','Possible'],[3,'Probable','Likely'],[4,'Très probable','Very likely']];
+  var MOTIV = [[1,'Peu motivé','Low motivation'],[2,'Motivé','Motivated'],[3,'Très motivé','Highly motivated']];
+  var RESS  = [[1,'Moyennes','Moderate'],[2,'Importantes','Significant'],[3,'Illimitées','Unlimited']];
+  // Lignes = vraisemblance, colonnes = G1..G5
+  var ACC = { 4:['I','I','I','I','I'], 3:['A','T','T','I','I'], 2:['A','A','T','T','I'], 1:['A','A','A','T','T'] };
+  var ACC_META = {
+    A:{ c:'#3fb950', fr:'Acceptable', en:'Acceptable', sfr:'Acceptable', sen:'Acceptable' },
+    T:{ c:'#d29922', fr:'Tolérable — acceptation motivée', en:'Tolerable — justified acceptance', sfr:'Tolérable', sen:'Tolerable' },
+    I:{ c:'#f85149', fr:'Inacceptable — mesures complémentaires', en:'Unacceptable — further measures', sfr:'Inacceptable', sen:'Unacceptable' }
+  };
+  // Ressources (lignes) × motivation (colonnes) — tableau MGSI §2.1.2
+  var PERT = { 3:['M','F','F'], 2:['P','M','F'], 1:['P','P','M'] };
+  var PERT_META = {
+    P:{ c:'#3fb950', fr:'Peu pertinent', en:'Low relevance' },
+    M:{ c:'#d29922', fr:'Moyennement pertinent', en:'Moderately relevant' },
+    F:{ c:'#f85149', fr:'Fortement pertinent', en:'Highly relevant' }
+  };
+  function lbl(arr, n, prefix){ var x = arr.filter(function(a){return a[0]===n;})[0]; if(!x) return ''; return (prefix||'') + n + ' — ' + (LANG==='fr'?x[1]:x[2]); }
+  function opts(arr, prefix){ return arr.map(function(a){ return lbl(arr, a[0], prefix); }); }
+  function accept(g, v){ g=num(g); v=num(v); if(!g||!v||g>5||v>4) return ''; return ACC[v][g-1]; }
+  function pert(m, r){ m=num(m); r=num(r); if(!m||!r||m>3||r>3) return ''; return PERT[r][m-1]; }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function chip(text, c){ return '<span style="display:inline-block;padding:1px 8px;border-radius:9px;font-size:10px;font-family:var(--font-mono);border:1px solid '+c+';color:'+c+';white-space:nowrap;">'+esc(text)+'</span>'; }
+  function accChip(code, extra){ var m = ACC_META[code]; if(!m) return chip(LANG==='fr'?'Non coté':'Not rated','var(--grey-400)'); return chip((extra?extra+' · ':'')+(LANG==='fr'?m.sfr:m.sen), m.c); }
+  function pertChip(code){ var m = PERT_META[code]; return m ? chip(LANG==='fr'?m.fr:m.en, m.c) : ''; }
+  // Matrice 4×5 : ○ = cotation initiale, ● = cotation résiduelle
+  function matrixHTML(g, vi, vr){
+    g=num(g); vi=num(vi); vr=num(vr);
+    var bg = {A:'rgba(63,185,80,.22)', T:'rgba(210,153,34,.25)', I:'rgba(248,81,73,.25)'};
+    var h = '<table style="border-collapse:separate;border-spacing:2px;font-family:var(--font-mono);font-size:9.5px;">'
+      + '<tr><td></td>' + [1,2,3,4,5].map(function(x){ return '<td style="text-align:center;padding:2px 6px;color:var(--grey-400);'+(x===g?'font-weight:700;':'')+'">G'+x+'</td>'; }).join('') + '</tr>';
+    [4,3,2,1].forEach(function(v){
+      h += '<tr><td style="padding:2px 6px;color:var(--grey-400);white-space:nowrap;'+((v===vi||v===vr)?'font-weight:700;':'')+'">V'+v+'</td>';
+      [1,2,3,4,5].forEach(function(x){
+        var code = ACC[v][x-1], mark = '';
+        if(x===g && v===vr) mark = '●'; else if(x===g && v===vi) mark = '○';
+        h += '<td style="width:30px;height:20px;text-align:center;background:'+bg[code]+';border-radius:3px;'+(mark?'outline:1.5px solid '+ACC_META[code].c+';':'')+'">'+mark+'</td>';
+      });
+      h += '</tr>';
+    });
+    return h + '</table>';
+  }
+  window.ISX = {
+    lang: LANG, num: num, esc: esc, chip: chip,
+    accept: accept, pert: pert, accChip: accChip, pertChip: pertChip, matrixHTML: matrixHTML,
+    ACC_META: ACC_META, PERT_META: PERT_META,
+    gLabel: function(n){ return lbl(GRAV, num(n), 'G'); },
+    vLabel: function(n){ return lbl(VRAIS, num(n)); },
+    mLabel: function(n){ return lbl(MOTIV, num(n)); },
+    rLabel: function(n){ return lbl(RESS, num(n)); },
+    gOptions: function(){ return opts(GRAV, 'G'); },
+    vOptions: function(){ return opts(VRAIS); },
+    mOptions: function(){ return opts(MOTIV); },
+    rOptions: function(){ return opts(RESS); }
+  };
+})();
+
 // ── Part-IS : système de management de la sécurité de l'information ──
 var ISMS_REQ = [
   ['IS.I.OR.200','Information security management system (ISMS)'],
@@ -19886,14 +19986,20 @@ var ISMS_CFG = {
     {k:'assets',l:'Assets concerned',ph:'ISA-001, ISA-004'},
     {k:'owner',l:'Risk owner',req:1},
     {k:'status',l:'Status',t:'select',o:['Open','Treatment in progress','Accepted','Closed']},
+    {k:'er',l:'Feared event — ER (MGSI §2.1.1)',req:1,w:2,ph:'e.g. corruption of CAMO maintenance data'},
+    {k:'gravity',l:'ER severity G1–G5 (MGSI §2.1.1)',t:'select',o:[''].concat(ISX.gOptions()),req:1},
+    {k:'sr',l:'Risk source — SR (MGSI §2.1.2)',ph:'e.g. cybercriminal, negligent provider'},
+    {k:'ov',l:'Target objective — OV',ph:'e.g. extortion, sabotage'},
+    {k:'motivation',l:'SR motivation',t:'select',o:[''].concat(ISX.mOptions())},
+    {k:'resources',l:'SR resources',t:'select',o:[''].concat(ISX.rOptions())},
     {k:'safety_impact',l:'Potential impact on aviation safety',req:1,t:'area',w:3},
-    {k:'likelihood',l:'Likelihood (1–5)',t:'select',o:ISMS_LEVELS,def:'3'},
-    {k:'impact',l:'Impact (1–5)',t:'select',o:ISMS_LEVELS,def:'3'},
+    {k:'v_init',l:'Initial likelihood 1–4 (MGSI §2.1.4.1)',t:'select',o:[''].concat(ISX.vOptions()),req:1},
+    {k:'v_res',l:'Residual likelihood 1–4',t:'select',o:[''].concat(ISX.vOptions())},
     {k:'review',l:'Next review',t:'date'},
     {k:'treatment',l:'Treatment measures',t:'area',w:3},
-    {k:'res_likelihood',l:'Residual likelihood (1–5)',t:'select',o:ISMS_LEVELS,def:'2'},
-    {k:'res_impact',l:'Residual impact (1–5)',t:'select',o:ISMS_LEVELS,def:'3'},
-    {k:'sms',l:'Linked SMS scenarios',ph:'SMS-61'}
+    {k:'tol_justif',l:'Justification of acceptance (tolerable residual risk — PRC)',t:'area',w:3},
+    {k:'rrsi',l:'RRSI reference (group register)',ph:'Scenario ID in the group RRSI'},
+    {k:'sms',l:'Linked undesired event(s) — risk register (MGSI §2.3.5)',ph:'SMS-61',w:2}
   ]},
   incidents:{pfx:'isi',idp:'ISI',label:'incident',title:function(x){return x.id?'Edit IS incident '+x.id:'New information security incident';},fields:[
     {k:'date',l:'Detected on',t:'date',req:1},
@@ -19911,7 +20017,18 @@ var ISMS_CFG = {
   ]}
 };
 var ISMS_TAB='overview';
-function ismsGet(){var d=SAFX.get('safISMS',{});if(!d||typeof d!=='object'||Array.isArray(d))d={};d.assets=d.assets||[];d.risks=d.risks||[];d.incidents=d.incidents||[];d.compliance=d.compliance||{};return d;}
+function ismsGet(){var d=SAFX.get('safISMS',{});if(!d||typeof d!=='object'||Array.isArray(d))d={};d.assets=d.assets||[];d.risks=d.risks||[];d.incidents=d.incidents||[];d.compliance=d.compliance||{};d.risks.forEach(ismsMigrateRisk);return d;}
+// Ancienne échelle (vraisemblance 1–5 × impact 1–5) -> EBIOS MGSI (G1–G5, V1–4).
+// Conversion proposée, marquée « à vérifier » ; persistée seulement au prochain enregistrement de la fiche.
+function ismsMigrateRisk(x){
+  if(!x||x.scale==='EBIOS')return;
+  if(x.gravity||x.v_init){x.scale='EBIOS';return;}
+  var cap=function(v){var n=ISX.num(v);return n?Math.min(4,n):0;};
+  var g=ISX.num(x.impact), vi=cap(x.likelihood), vr=cap(x.res_likelihood);
+  if(g)x.gravity=ISX.gLabel(g); if(vi)x.v_init=ISX.vLabel(vi); if(vr)x.v_res=ISX.vLabel(vr);
+  x.scale='EBIOS'; x.scale_migrated=true;
+}
+function ismsCode(x,res){return ISX.accept(x.gravity,res?(x.v_res||x.v_init):x.v_init);}
 function ismsScore(l,i){var s=(+l||0)*(+i||0);return {s:s,c:s>=15?'#f85149':(s>=8?'#d29922':'#3fb950'),t:s>=15?'High':(s>=8?'Medium':'Low')};}
 function ismsLate(x){
   if(!(x.safety_impact==='Yes'||x.safety_impact==='Possible')||x.authority==='Reported'||x.authority==='Not required'||!x.date)return false;
@@ -19928,8 +20045,10 @@ function ismsSave(kind,id){
   var d=ismsGet(),a=d[kind],i=id?a.findIndex(function(x){return x.id===id;}):-1;
   var item=Object.assign({},i>=0?a[i]:{},r.o,{id:id||SAFX.nextId(a,cfg.idp),updated_at:new Date().toISOString()});
   if(!item.created_at)item.created_at=item.updated_at;
+  if(kind==='risks'){item.scale='EBIOS';delete item.scale_migrated;['likelihood','impact','res_likelihood','res_impact'].forEach(function(k){delete item[k];});
+    var _c=ismsCode(item,true);window.__ismsWarn=_c==='I'?'residual risk unacceptable, further measures required':((_c==='T'&&!String(item.tol_justif||'').trim())?'tolerable residual risk, PRC acceptance justification missing':'');}
   if(i>=0)a[i]=item;else a.push(item);
-  SAFX.put('safISMS',d);document.getElementById('isms-form').style.display='none';ISMS_TAB=kind;renderISMS();showToast(item.id+' saved','success');
+  SAFX.put('safISMS',d);document.getElementById('isms-form').style.display='none';ISMS_TAB=kind;renderISMS();showToast(item.id+' saved'+(window.__ismsWarn?' — '+window.__ismsWarn:''),window.__ismsWarn?'error':'success');window.__ismsWarn='';
 }
 function ismsDelete(kind,id){
   if(!confirm('Delete '+id+'?'))return;
@@ -19945,7 +20064,9 @@ function renderISMS(){
   var el=document.getElementById('isms-body');if(!el)return;
   var d=ismsGet(),t=SAFX.today();
   var openR=d.risks.filter(function(x){return x.status!=='Closed';});
-  var highR=openR.filter(function(x){return ismsScore(x.res_likelihood||x.likelihood,x.res_impact||x.impact).s>=15;});
+  var highR=openR.filter(function(x){return ismsCode(x,true)==='I';});
+  var tolR=openR.filter(function(x){return ismsCode(x,true)==='T'&&!String(x.tol_justif||'').trim();});
+  var migR=d.risks.filter(function(x){return x.scale_migrated;});
   var openI=d.incidents.filter(function(x){return x.status!=='Closed';});
   var late=d.incidents.filter(ismsLate);
   var applicable=ISMS_REQ.filter(function(r){return (d.compliance[r[0]]||{}).status!=='Not applicable';});
@@ -19953,13 +20074,16 @@ function renderISMS(){
   var pct=applicable.length?Math.round(100*done.length/applicable.length):0;
   var tabs=[['overview','Overview'],['compliance','Requirements'],['assets','Assets ('+d.assets.length+')'],['risks','IS risks ('+d.risks.length+')'],['incidents','Incidents ('+d.incidents.length+')']];
   var h='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">'+tabs.map(function(x){return '<button class="btn '+(ISMS_TAB===x[0]?'btn-primary':'btn-ghost')+'" onclick="ismsTab(\''+x[0]+'\')">'+SAFX.esc(x[1])+'</button>';}).join('')+'</div>';
-  h+=SAFX.kpi([{v:pct+' %',l:'Part-IS requirements implemented',c:pct===100?'#3fb950':(pct>=50?'#d29922':'#f85149')},{v:d.assets.length,l:'information assets'},{v:highR.length,l:'high residual IS risks',c:highR.length?'#f85149':'#3fb950'},{v:openI.length,l:'open IS incidents',c:openI.length?'#d29922':'#3fb950'},{v:late.length,l:'reports beyond 72 h',c:late.length?'#f85149':'#3fb950'}]);
+  h+=SAFX.kpi([{v:pct+' %',l:'Part-IS requirements implemented',c:pct===100?'#3fb950':(pct>=50?'#d29922':'#f85149')},{v:d.assets.length,l:'information assets'},{v:highR.length,l:'unacceptable residual IS risks',c:highR.length?'#f85149':'#3fb950'},{v:tolR.length,l:'tolerable risks without PRC justification',c:tolR.length?'#d29922':'#3fb950'},{v:openI.length,l:'open IS incidents',c:openI.length?'#d29922':'#3fb950'},{v:late.length,l:'reports beyond 72 h',c:late.length?'#f85149':'#3fb950'}]);
   if(ISMS_TAB==='overview'){
     var next=[];
     if(!d.assets.length)next.push('Inventory the information assets and systems whose compromise could affect aviation safety (IS.I.OR.205).');
     if(!d.risks.length)next.push('Assess the information security risks of these assets and record their treatment (IS.I.OR.205 / 210).');
     if(applicable.length-done.length)next.push((applicable.length-done.length)+' Part-IS requirement(s) not yet implemented: see the Requirements tab.');
     if(late.length)next.push(late.length+' incident(s) with possible safety impact not reported to the competent authority within 72 h (IS.I.OR.230).');
+    if(highR.length)next.push(highR.length+' open IS risk(s) with an unacceptable residual rating: further measures required (MGSI §2.3.3).');
+    if(tolR.length)next.push(tolR.length+' tolerable residual IS risk(s) without a justified PRC acceptance.');
+    if(migR.length)next.push(migR.length+' IS risk(s) converted from the former 1–5 × 1–5 scale: check severity and likelihood, then save each record.');
     var noSms=openR.filter(function(x){return !String(x.sms||'').trim();});
     if(noSms.length)next.push(noSms.length+' open IS risk(s) not linked to an SMS scenario: link them so the Risk Register reflects cyber threats.');
     h+='<div class="chart-card" style="padding:18px 20px;"><div class="chart-title" style="margin-bottom:8px;">Next steps</div>'+(next.length?'<ul style="margin:0;padding-left:18px;font-size:12px;line-height:1.7;color:var(--grey-200)">'+next.map(function(n){return '<li>'+SAFX.esc(n)+'</li>';}).join('')+'</ul>':'<div style="font-size:12px;color:#3fb950">ISMS records complete and up to date.</div>')+'</div>';
@@ -19983,9 +20107,10 @@ function renderISMS(){
       rows=list.map(function(x){var cia=[x.conf,x.integ,x.avail].map(function(v){return SAFX.chip((v||'—').charAt(0),v==='High'?'#f85149':(v==='Medium'?'#d29922':'#3fb950'));}).join('');
         return SAFX.tr([SAFX.td('<b>'+x.id+'</b>'),SAFX.td('<b>'+SAFX.esc(x.name)+'</b>'+(x.provider?'<br><span style="color:var(--grey-400)">'+SAFX.esc(x.provider)+'</span>':'')),SAFX.td(SAFX.esc(x.category)),SAFX.td(cia,'white-space:nowrap'),SAFX.td(SAFX.short(x.safety)),SAFX.td(SAFX.esc(x.owner)),SAFX.btns("ismsShowForm('assets','"+x.id+"')","ismsDelete('assets','"+x.id+"')")]);});
     } else if(kind==='risks'){
-      head=['ID','Threat scenario','Assets','Initial','Residual','Treatment','SMS link','Status / review',''];
-      rows=list.map(function(x){var a=ismsScore(x.likelihood,x.impact),b=ismsScore(x.res_likelihood,x.res_impact);var rv=x.review?(x.review<t&&x.status!=='Closed'?SAFX.chip('review overdue','#f85149'):SAFX.chip(x.review,'#3fb950')):'';
-        return SAFX.tr([SAFX.td('<b>'+x.id+'</b>'),SAFX.td('<b>'+SAFX.esc(x.title)+'</b><br><span style="color:var(--grey-400)">'+SAFX.esc(x.threat)+'</span>'),SAFX.td(SAFX.esc(x.assets||'—')),SAFX.td(SAFX.chip(a.t+' '+a.s,a.c)),SAFX.td(SAFX.chip(b.t+' '+b.s,b.c)),SAFX.td(SAFX.short(x.treatment)||'<span style="color:#d29922">none</span>'),SAFX.td(SAFX.riskRefs(x.sms)),SAFX.td(SAFX.esc(x.status)+'<br>'+rv),SAFX.btns("ismsShowForm('risks','"+x.id+"')","ismsDelete('risks','"+x.id+"')")]);});
+      head=['ID','Threat scenario / feared event','SR / OV','Initial','Residual','Treatment','Linked UE / RRSI','Status / review',''];
+      h+='<div class="chart-card" style="padding:12px 16px;margin-bottom:12px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;">'+ISX.matrixHTML(0,0,0)+'<div style="font-size:11px;color:var(--grey-400);max-width:70ch;line-height:1.6;">Acceptance criterion — severity of the feared event (G1–G5) × likelihood (1–4), MGSI §2 method. Green: acceptable. Amber: tolerable, accepted by the PRC with a written justification. Red: unacceptable, further measures required. Likelihood 4 is always unacceptable (MGSI §2.3.3); severity tightens the criterion from G3 upwards.</div></div>';
+      rows=list.map(function(x){var g=ISX.num(x.gravity),vi=ISX.num(x.v_init),vr=ISX.num(x.v_res||x.v_init),ca=ISX.accept(g,vi),cb=ISX.accept(g,vr),pc=ISX.pert(x.motivation,x.resources);var rv=x.review?(x.review<t&&x.status!=='Closed'?SAFX.chip('review overdue','#f85149'):SAFX.chip(x.review,'#3fb950')):'';
+        return SAFX.tr([SAFX.td('<b>'+x.id+'</b>'),SAFX.td('<b>'+SAFX.esc(x.title)+'</b><br><span style="color:var(--grey-400)">'+SAFX.esc(x.threat)+(x.er?' · ER: '+SAFX.esc(x.er):'')+(x.assets?' · '+SAFX.esc(x.assets):'')+'</span>'+(x.scale_migrated?'<br>'+SAFX.chip('converted from 1–5 scale — to verify','#d29922'):'')),SAFX.td(SAFX.esc(x.sr||'—')+' / '+SAFX.esc(x.ov||'—')+(pc?'<br>'+ISX.pertChip(pc):'')),SAFX.td(ca?ISX.chip('G'+g+'·V'+vi,ISX.ACC_META[ca].c):'—'),SAFX.td(cb?ISX.accChip(cb,'G'+g+'·V'+vr)+((cb==='T'&&!String(x.tol_justif||'').trim())?'<br>'+SAFX.chip('no PRC justification','#d29922'):''):'—'),SAFX.td(SAFX.short(x.treatment)||'<span style="color:#d29922">none</span>'),SAFX.td(SAFX.riskRefs(x.sms)+(x.rrsi?'<br><span style="color:var(--grey-400)">RRSI '+SAFX.esc(x.rrsi)+'</span>':'')),SAFX.td(SAFX.esc(x.status)+'<br>'+rv),SAFX.btns("ismsShowForm('risks','"+x.id+"')","ismsDelete('risks','"+x.id+"')")]);});
     } else {
       head=['ID','Detected','Incident','Class','Safety impact','Authority report','Status',''];
       rows=list.slice().sort(function(x,y){return String(y.date).localeCompare(String(x.date));}).map(function(x){var rep=x.authority==='Reported'?SAFX.chip('Reported '+(x.report_ref||''),'#3fb950'):(ismsLate(x)?SAFX.chip('Not reported > 72 h','#f85149'):SAFX.chip(x.authority||'—',x.authority==='Pending'?'#d29922':'var(--grey-400)'));
@@ -26611,6 +26736,160 @@ window.cmxBridgeDiag    = function(){
   };
   setTimeout(function(){ try{ migrate(); refresh(); }catch(e){} }, 2500);
 })();
+</script>
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   ISX-MOC — volet « sécurité de l'information » de l'étude du changement
+   (IS.I.OR.255 · MGSI §2 et §4.4). Règle bloquante : une MoC ne peut
+   passer au statut APPROVED que si ce volet est complet et validé.
+   ════════════════════════════════════════════════════════════════════ */
+var ISX_ENT = {"msg": {"noAnswer": "Question filtre sans réponse (impact sur un SI, une donnée opérationnelle ou une interface numérique)", "noJustif": "Absence d'impact non justifiée — l'absence d'impact est une conclusion d'analyse, pas une dispense", "missing": "Manquant : ", "fDesc": "scénario de menace", "fEr": "événement redouté", "fGrav": "gravité (G1–G5)", "fSr": "source de risque", "fVi": "vraisemblance initiale", "fMeas": "mesures de traitement", "fVr": "vraisemblance résiduelle", "fRsc": "RSC instructeur", "fRdsi": "RDSI co-instructeur", "vrGtVi": "Vraisemblance résiduelle supérieure à la vraisemblance initiale", "unacc": "Risque résiduel inacceptable ({g}·{v}) — mesures complémentaires requises", "tolJustif": "Risque résiduel tolérable : justification de l'acceptation par la PRC manquante", "safetyQ": "Impact sur la sécurité des vols non qualifié", "eiMissing": "Événement indésirable de la cartographie non rattaché (MGSI §2.3.5)", "prcRefused": "Volet IS refusé par la PRC", "prcMissing": "Validation PRC absente (requise avant mise en œuvre)", "prcNameDate": "Nom ou date de la validation PRC manquant", "blockTitle": "Approbation bloquée", "complete": "Volet IS complet — l'approbation est possible", "toastBlock": "Approbation refusée : {n} point(s) du volet sécurité de l'information", "toastSilent": "Statut APPROVED retiré : volet IS incomplet ({n} point(s))", "chipNo": "IS : sans impact", "chipIncomplete": "IS incomplet"}, "rep": {"title": "3a — Information security (Part-IS · IS.I.OR.255 · MGSI §2)", "filter": "Impact on information systems / data / digital interfaces", "yes": "Yes", "no": "No", "notAnswered": "Not answered", "partis": "Part-IS reference / ISMS action", "noJustif": "Justification of no impact", "scenario": "Threat scenario", "er": "Feared event (ER) — severity", "srov": "Risk source / target objective", "vInit": "Initial likelihood", "measures": "Treatment measures", "vRes": "Residual likelihood", "tol": "Justification of acceptance (tolerable)", "safety": "Impact on flight safety", "ei": "linked undesired event", "rrsi": "RRSI reference", "instr": "Assessed by RSC / RDSI", "prc": "PRC validation", "validated": "Validated", "refused": "Refused", "pending": "Not validated", "legend": "Severity × likelihood acceptance matrix — ○ initial, ● residual. Green acceptable, amber tolerable (justified PRC acceptance), red unacceptable.", "incomplete": "Incomplete IS assessment:"}};
+var ISX_MOC_KEYS = ['is-no-justif','is-er','is-grav','is-sr','is-ov','is-motiv','is-res','is-v-init','is-measures','is-v-res','is-tol-justif','is-safety-impact','is-ei','is-rrsi-ref','is-rsc','is-rdsi','is-prc-name','is-prc-date','is-prc-decision','is-prc-comment'];
+
+function isxMocFromForm(){
+  var d = {};
+  ['cyber-risk-flag','cyber-risk-description','cyber-risk-partis-ref'].concat(ISX_MOC_KEYS).forEach(function(k){
+    var el = document.getElementById('c-'+k); d[k.replace(/-/g,'_')] = el ? String(el.value||'').trim() : '';
+  });
+  return d;
+}
+
+// Liste des manques qui bloquent l'approbation. d = objet à clés « _ ».
+function isxMocErrors(d){
+  var M = ISX_ENT.msg, e = [];
+  var flag = d.cyber_risk_flag || '';
+  var s = function(v){ return String(v==null?'':v).trim(); };
+  if(!flag){ e.push(M.noAnswer); return e; }
+  if(flag === 'no'){ if(!s(d.is_no_justif)) e.push(M.noJustif); return e; }
+  [['cyber_risk_description',M.fDesc],['is_er',M.fEr],['is_grav',M.fGrav],['is_sr',M.fSr],['is_v_init',M.fVi],['is_measures',M.fMeas],['is_v_res',M.fVr],['is_rsc',M.fRsc],['is_rdsi',M.fRdsi]]
+    .forEach(function(p){ if(!s(d[p[0]])) e.push(M.missing + p[1]); });
+  var vi = ISX.num(d.is_v_init), vr = ISX.num(d.is_v_res);
+  if(vi && vr && vr > vi) e.push(M.vrGtVi);
+  var code = ISX.accept(d.is_grav, d.is_v_res);
+  if(code === 'I') e.push(M.unacc.replace('{g}','G'+ISX.num(d.is_grav)).replace('{v}','V'+vr));
+  if(code === 'T' && !s(d.is_tol_justif)) e.push(M.tolJustif);
+  if(!s(d.is_safety_impact)) e.push(M.safetyQ);
+  else if(d.is_safety_impact === 'yes' && !s(d.is_ei)) e.push(M.eiMissing);
+  if(d.is_prc_decision === 'refused') e.push(M.prcRefused);
+  else if(d.is_prc_decision !== 'validated') e.push(M.prcMissing);
+  else if(!s(d.is_prc_name) || !s(d.is_prc_date)) e.push(M.prcNameDate);
+  return e;
+}
+
+function isxShow(id, on){ var el = document.getElementById(id); if(el) el.style.display = on ? '' : 'none'; }
+
+function isxMocRefresh(){
+  var d = isxMocFromForm(), flag = d.cyber_risk_flag;
+  isxShow('c-cyber-risk-detail-wrap', flag === 'yes');
+  isxShow('isx-no-wrap', flag === 'no');
+  isxShow('isx-ei-wrap', d.is_safety_impact === 'yes');
+  // Liste des événements indésirables du registre (rattachement cartographie)
+  var dl = document.getElementById('isx-ei-list');
+  if(dl && !dl.__filled && typeof DB !== 'undefined' && Array.isArray(DB)){
+    dl.innerHTML = DB.filter(function(r){ return r && r.id; }).map(function(r){
+      return '<option value="'+ISX.esc(r.id)+'">'+ISX.esc(String(r.event||r.undesirable_event||'').slice(0,90))+'</option>';
+    }).join('');
+    dl.__filled = DB.length > 0;
+  }
+  var p = document.getElementById('isx-pert'); if(p) p.innerHTML = ISX.pertChip(ISX.pert(d.is_motiv, d.is_res)) || '<span style="color:var(--grey-400);font-size:10px;">—</span>';
+  var gi = ISX.num(d.is_grav), vi = ISX.num(d.is_v_init), vr = ISX.num(d.is_v_res);
+  var ci = ISX.accept(gi, vi), cr = ISX.accept(gi, vr);
+  var a1 = document.getElementById('isx-acc-init'); if(a1) a1.innerHTML = ci ? ISX.accChip(ci, 'G'+gi+'·V'+vi) : ISX.accChip('');
+  var a2 = document.getElementById('isx-acc-res');  if(a2) a2.innerHTML = cr ? ISX.accChip(cr, 'G'+gi+'·V'+vr) : ISX.accChip('');
+  var mx = document.getElementById('isx-matrix'); if(mx) mx.innerHTML = ISX.matrixHTML(gi, vi, vr);
+  isxShow('isx-tol-wrap', cr === 'T');
+  var st = document.getElementById('isx-status');
+  if(st){
+    var errs = isxMocErrors(d);
+    st.innerHTML = errs.length
+      ? '<div style="color:#f85149;font-weight:700;margin-bottom:4px;">'+ISX.esc(ISX_ENT.msg.blockTitle)+' ('+errs.length+')</div><ul style="margin:0;padding-left:18px;">'+errs.map(function(x){ return '<li>'+ISX.esc(x)+'</li>'; }).join('')+'</ul>'
+      : '<div style="color:#3fb950;font-weight:700;">'+ISX.esc(ISX_ENT.msg.complete)+'</div>';
+    st.style.borderColor = errs.length ? 'rgba(248,81,73,.45)' : 'rgba(63,185,80,.45)';
+  }
+}
+
+// Chargement d'une MoC : chaque champ du volet est réécrit (vide si absent)
+// pour ne pas hériter des valeurs de l'étude ouverte précédemment.
+function isxMocLoad(cs){
+  ['cyber-risk-flag','cyber-risk-description','cyber-risk-partis-ref'].concat(ISX_MOC_KEYS).forEach(function(k){
+    var el = document.getElementById('c-'+k); if(!el) return;
+    var v = cs ? cs[k.replace(/-/g,'_')] : '';
+    el.value = (v==null) ? '' : v;
+  });
+  isxMocRefresh();
+}
+
+// Garde appelée par saveChangeStudy() juste après collectChangeStudy().
+function isxMocGate(data, silent){
+  if(!data || data.workflow_status !== 'approved') return true;
+  var prev = (typeof CHANGE_STUDIES !== 'undefined') ? CHANGE_STUDIES.find(function(x){ return x && x.ref === data.ref; }) : null;
+  if(prev && prev.workflow_status === 'approved') return true;   // déjà approuvée avant la règle : pastille dans la liste
+  var errs = isxMocErrors(data);
+  if(!errs.length) return true;
+  var back = (prev && prev.workflow_status && prev.workflow_status !== 'approved') ? prev.workflow_status : 'review';
+  var now = Date.now();
+  if(silent){
+    data.workflow_status = back;
+    var sel = document.getElementById('c-workflow-status'); if(sel) sel.value = back;
+    if(typeof csRenderWorkflowBar === 'function') csRenderWorkflowBar(back);
+    if(!window.__isxWarnAt || now - window.__isxWarnAt > 15000){ window.__isxWarnAt = now; if(typeof showToast==='function') showToast(ISX_ENT.msg.toastSilent.replace('{n}', errs.length), 'error'); }
+    isxMocRefresh();
+    return true;
+  }
+  if(typeof showToast==='function') showToast(ISX_ENT.msg.toastBlock.replace('{n}', errs.length) + ' — ' + errs[0], 'error');
+  isxMocRefresh();
+  var blk = document.getElementById('isx-block'); if(blk) blk.scrollIntoView({behavior:'smooth', block:'center'});
+  return false;
+}
+
+function isxMocChip(cs){
+  var errs = isxMocErrors(cs||{});
+  if(!errs.length){
+    if((cs||{}).cyber_risk_flag === 'no') return ISX.chip(ISX_ENT.msg.chipNo, 'var(--grey-400)');
+    var cr = ISX.accept(cs.is_grav, cs.is_v_res);
+    return ISX.chip('IS G'+ISX.num(cs.is_grav)+'·V'+ISX.num(cs.is_v_res)+' ✓', (ISX.ACC_META[cr]||{c:'#3fb950'}).c);
+  }
+  return ISX.chip(ISX_ENT.msg.chipIncomplete, (cs||{}).workflow_status === 'approved' ? '#f85149' : '#d29922');
+}
+
+function isxMocReportHTML(cs){
+  cs = cs || {};
+  var R = ISX_ENT.rep, e = ISX.esc;
+  var nl = function(s){ return s ? e(s).replace(/\n/g,'<br>') : '—'; };
+  var row = function(k, v){ return '<tr><td style="width:220px;font-weight:600">'+k+'</td><td>'+v+'</td></tr>'; };
+  var flag = cs.cyber_risk_flag || '';
+  var h = '<h2>'+R.title+'</h2><table style="margin-bottom:12px">';
+  h += row(R.filter, flag==='yes' ? '<b>'+R.yes+'</b>' : (flag==='no' ? R.no : '<span style="color:#CC2200;">'+R.notAnswered+'</span>'));
+  if(cs.cyber_risk_partis_ref) h += row(R.partis, e(cs.cyber_risk_partis_ref));
+  if(flag === 'no'){
+    h += row(R.noJustif, nl(cs.is_no_justif));
+  } else if(flag === 'yes'){
+    var g = ISX.num(cs.is_grav), vi = ISX.num(cs.is_v_init), vr = ISX.num(cs.is_v_res);
+    var ci = ISX.accept(g, vi), cr = ISX.accept(g, vr), pc = ISX.pert(cs.is_motiv, cs.is_res);
+    var accTxt = function(c){ var m = ISX.ACC_META[c]; return m ? '<span style="color:'+m.c+';font-weight:700;">'+(ISX.lang==='fr'?m.fr:m.en)+'</span>' : '—'; };
+    h += row(R.scenario, nl(cs.cyber_risk_description));
+    h += row(R.er, nl(cs.is_er) + (g ? ' — <b>'+e(ISX.gLabel(g))+'</b>' : ''));
+    h += row(R.srov, nl(cs.is_sr) + ' / ' + nl(cs.is_ov) + (pc ? ' — '+e((ISX.PERT_META[pc]||{})[ISX.lang]||'') : ''));
+    h += row(R.vInit, vi ? e(ISX.vLabel(vi))+' → '+accTxt(ci) : '—');
+    h += row(R.measures, nl(cs.is_measures));
+    h += row(R.vRes, vr ? e(ISX.vLabel(vr))+' → '+accTxt(cr) : '—');
+    if(cr === 'T') h += row(R.tol, nl(cs.is_tol_justif));
+    h += row(R.safety, cs.is_safety_impact==='yes' ? R.yes+' — '+R.ei+' <b>'+e(cs.is_ei||'—')+'</b>' : (cs.is_safety_impact==='no' ? R.no : '—'));
+    h += row(R.rrsi, e(cs.is_rrsi_ref||'—'));
+    h += row(R.instr, e(cs.is_rsc||'—')+' / '+e(cs.is_rdsi||'—'));
+    var dec = cs.is_prc_decision==='validated' ? '<span style="color:#1A7A32;font-weight:700;">✓ '+R.validated+'</span>' : (cs.is_prc_decision==='refused' ? '<span style="color:#CC2200;font-weight:700;">✕ '+R.refused+'</span>' : '<span style="color:#CC2200;">'+R.pending+'</span>');
+    h += row(R.prc, dec+' — '+e(cs.is_prc_name||'—')+' — '+e(cs.is_prc_date||'—')+(cs.is_prc_comment?'<br>'+nl(cs.is_prc_comment):''));
+    h += '</table><div style="margin:-4px 0 12px;">'+ISX.matrixHTML(g, vi, vr).replace(/var\(--grey-400\)/g,'#8896A0')+'<div style="font-size:9px;color:#8896A0;margin-top:3px;">'+R.legend+'</div></div>';
+    var errs = isxMocErrors(cs);
+    if(errs.length) h += '<p style="color:#CC2200;font-size:10px;margin-bottom:12px;"><b>'+R.incomplete+'</b> '+errs.map(e).join(' · ')+'</p>';
+    return h;
+  }
+  h += '</table>';
+  var errs2 = isxMocErrors(cs);
+  if(errs2.length) h += '<p style="color:#CC2200;font-size:10px;margin-bottom:12px;"><b>'+R.incomplete+'</b> '+errs2.map(e).join(' · ')+'</p>';
+  return h;
+}
+
 </script>
 </body>
 </html>
