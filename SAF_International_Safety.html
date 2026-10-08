@@ -15941,50 +15941,65 @@ function occGetWhyCount(){
   while(document.getElementById('occ-fw-why-'+count))count++;
   return Math.max(count,5);
 }
+// ── 5 Whys — même forme que le CMS : « Pourquoi n » (question) puis « Réponse n », ouverture progressive ──
+// Données inchangées : five_whys.whys[i] = question, five_whys.becauses[i] = réponse.
+// Facteurs contributifs : five_whys.cf_occurred / cf_detection / cf_extent / cf_extent_note.
+var OCC_FW_L={why:'Why',ans:'Answer',lab:function(k,n){return k==='why'?('Pourquoi '+n+' / Why '+n):('Réponse '+n+' / Answer '+n);},phw:["ex. : Pourquoi l\u2019\u00e9l\u00e9ment de la liste de contr\u00f4le n\u2019a-t-il pas \u00e9t\u00e9 compl\u00e9t\u00e9 avant le d\u00e9part ? / e.g. Why was the checklist item not completed before departure?", "ex. : Pourquoi la liste de contr\u00f4le n\u2019\u00e9tait-elle pas accessible \u00e0 l\u2019\u00e9quipage ? / e.g. Why was the checklist not accessible to the crew?", "ex. : Pourquoi la proc\u00e9dure ne d\u00e9finit-elle pas son emplacement ? / e.g. Why does the procedure not define its location?", "ex. : Pourquoi la proc\u00e9dure n\u2019a-t-elle jamais \u00e9t\u00e9 mise \u00e0 jour apr\u00e8s la r\u00e9vision de l\u2019OMM ? / e.g. Why was the procedure never updated after the OMM revision?", "ex. : Pourquoi n\u2019existe-t-il aucun cycle de revue des mises \u00e0 jour de proc\u00e9dure ? / e.g. Why does no review cycle exist for procedure updates?"],pha:["ex. : Parce que la liste de contr\u00f4le n\u2019\u00e9tait pas accessible \u00e0 l\u2019\u00e9quipage \u00e0 ce stade / e.g. Because the checklist was not accessible to the crew at that stage", "ex. : Parce que la proc\u00e9dure de gestion documentaire ne d\u00e9finit pas son emplacement / e.g. Because the document management procedure does not define its location", "ex. : Parce que la proc\u00e9dure n\u2019a jamais \u00e9t\u00e9 mise \u00e0 jour apr\u00e8s la derni\u00e8re r\u00e9vision de l\u2019OMM / e.g. Because the procedure was never updated after the latest OMM revision", "ex. : Parce qu\u2019aucun cycle de revue ne permet de maintenir les proc\u00e9dures align\u00e9es sur les r\u00e9visions de l\u2019OMM / e.g. Because no review cycle exists to keep procedures aligned with OMM revisions", "ex. : Parce que la responsabilit\u00e9 du d\u00e9clenchement de la revue n\u2019a jamais \u00e9t\u00e9 attribu\u00e9e / e.g. Because responsibility for triggering the review was never assigned"]};
+function occFwEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function occFwPairHTML(i){
+  var pw=OCC_FW_L.phw[i]||'', pa=OCC_FW_L.pha[i]||'';
+  return '<div class="form-field occ-fw-pair" id="occ-fw-why-wrap-'+i+'" style="margin:0 0 8px;'+(i===0?'':'display:none;')+'"><label class="field-label">'+OCC_FW_L.lab('why',i+1)+'</label><textarea id="occ-fw-why-'+i+'" rows="2" oninput="occFwCascade()" placeholder="'+occFwEsc(pw)+'"></textarea></div>'
+    +'<div class="form-field occ-fw-pair" id="occ-fw-ans-wrap-'+i+'" style="margin:0 0 8px;display:none;"><label class="field-label">'+OCC_FW_L.lab('ans',i+1)+'</label><textarea id="occ-fw-because-'+i+'" rows="2" oninput="occFwCascade()" placeholder="'+occFwEsc(pa)+'"></textarea></div>';
+}
+function occFwChainHTML(n){var h='';for(var i=0;i<(n||5);i++)h+=occFwPairHTML(i);return h;}
+function occFwCascade(){
+  var v=function(id){var e=document.getElementById(id);return e?String(e.value||'').trim():'';};
+  var show=function(id,c){var e=document.getElementById(id);if(e)e.style.display=c?'':'none';};
+  var n=0;while(document.getElementById('occ-fw-why-'+n))n++;
+  for(var i=0;i<n;i++){
+    var w=v('occ-fw-why-'+i), a=v('occ-fw-because-'+i), prevA=i===0||!!v('occ-fw-because-'+(i-1));
+    var wr=document.getElementById('occ-fw-why-wrap-'+i);
+    show('occ-fw-why-wrap-'+i, i===0||(i<5&&prevA)||!!(wr&&wr.dataset.added)||!!w||!!a);
+    show('occ-fw-ans-wrap-'+i, !!w||!!a);
+  }
+  show('occ-fw-remove-last', n>5);
+  show('occ-fw-rootcause-wrap', !!v('occ-fw-because-0')||!!v('occ-fw-root-cause'));
+}
+function occFwExtentLabel(x){return x==='systemic'?'Systemic':(x==='isolated'?'Isolated':'To be determined');}
+function occFwHasCf(fw){fw=fw||{};return !!(fw.cf_occurred||fw.cf_detection||fw.cf_extent||fw.cf_extent_note);}
+// Lignes de tableau « Why n / Answer n » pour les impressions
+function occFwRowsHTML(fw){
+  fw=fw||{};var w=fw.whys||[],b=fw.becauses||[],h='';
+  for(var i=0;i<Math.max(w.length,b.length);i++){
+    if(!w[i]&&!b[i])continue;
+    h+='<tr><td style="padding:7px 12px 2px;font-weight:800;color:#C98000;white-space:nowrap;vertical-align:top;">Why '+(i+1)+'</td><td style="padding:7px 12px 2px;border-left:3px solid #C98000;">'+occFwEsc(w[i]||'—')+'</td></tr>'
+      +'<tr><td style="padding:2px 12px 8px;font-weight:700;font-size:10px;color:#8896a0;white-space:nowrap;vertical-align:top;">Answer '+(i+1)+'</td><td style="padding:2px 12px 8px;border-left:3px solid #e3b341;">'+occFwEsc(b[i]||'—')+'</td></tr>';
+  }
+  return h;
+}
+function occFwCfPrintHTML(fw){
+  fw=fw||{};if(!occFwHasCf(fw))return '';
+  return '<div style="margin:10px 0;padding:10px 14px;border-left:4px solid #4A9FE0;background:#f2f7fc;border-radius:0 5px 5px 0;">'
+    +'<div style="font-size:10px;font-weight:700;color:#2a6fb0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Contributing factors</div>'
+    +'<div style="margin:4px 0;"><b>1 — Why did it happen?</b><br>'+occFwEsc(fw.cf_occurred||'—')+'</div>'
+    +'<div style="margin:4px 0;"><b>2 — Why was it not detected?</b><br>'+occFwEsc(fw.cf_detection||'—')+'</div>'
+    +'<div style="margin:4px 0;"><b>3 — Isolated or systemic case?</b> '+occFwExtentLabel(fw.cf_extent)+(fw.cf_extent_note?'<br>'+occFwEsc(fw.cf_extent_note):'')+'</div></div>';
+}
 function occAddWhyRow(){
-  var chain=document.getElementById('occ-fw-chain');
-  if(!chain)return;
-  // Count existing WHY rows
+  var chain=document.getElementById('occ-fw-chain'); if(!chain)return;
   var i=0;while(document.getElementById('occ-fw-why-'+i))i++;
-  var lc='#e3b341';
-  // Arrow before new row
-  var arr=document.createElement('div');arr.className='occ-fw-arrow';arr.textContent='↓';chain.appendChild(arr);
-  // WHY row
-  var whyRow=document.createElement('div');whyRow.className='occ-fw-row';whyRow.id='occ-fw-row-'+i;
-  var whyLabel=document.createElement('div');
-  whyLabel.innerHTML='<div class="occ-fw-label">WHY #'+(i+1)+'</div><div class="occ-fw-prompt">Why?</div>';
-  var whyTA=document.createElement('textarea');whyTA.id='occ-fw-why-'+i;whyTA.rows=2;whyTA.placeholder='Answer '+(i+1)+'…';
-  var delBtn=document.createElement('button');delBtn.type='button';delBtn.textContent='✕ Remove';
-  delBtn.title='Remove this WHY';
-  delBtn.style.cssText='display:block;margin-top:6px;padding:2px 8px;background:rgba(255,60,60,.15);border:1px solid rgba(255,80,80,.3);border-radius:4px;color:#ff9090;font-family:var(--font-mono);font-size:10px;cursor:pointer;white-space:nowrap;';
-  delBtn.addEventListener('click',function(){
-    // Remove: the BECAUSE row, the arrow before, and this WHY row
-    var prev=whyRow.previousElementSibling;
-    var becRow=whyRow.nextElementSibling;
-    if(prev&&prev.classList.contains('occ-fw-arrow'))prev.remove();
-    if(becRow)becRow.remove();
-    whyRow.remove();
-    // Renumber all remaining WHY rows
-    var idx=0;
-    chain.querySelectorAll('.occ-fw-row').forEach(function(r){
-      var ta=r.querySelector('textarea[id^="occ-fw-why-"]');
-      if(ta){ta.id='occ-fw-why-'+idx;r.id='occ-fw-row-'+idx;var lbl=r.querySelector('.occ-fw-label');if(lbl)lbl.textContent='WHY #'+(idx+1);idx++;}
-      var bt=r.querySelector('textarea[id^="occ-fw-because-"]');
-      if(bt){bt.id='occ-fw-because-'+(idx-1);}
-    });
-  });
-  // Keep same 2-col grid as .occ-fw-row — put delete button inside the label cell
-  whyLabel.appendChild(delBtn);
-  // No style override needed — .occ-fw-row CSS applies naturally
-  whyRow.appendChild(whyLabel);whyRow.appendChild(whyTA);
-  chain.appendChild(whyRow);
-  // BECAUSE row
-  var becRow=document.createElement('div');becRow.className='occ-fw-row';becRow.style.cssText='margin-top:4px;opacity:.85;';
-  var becLabel=document.createElement('div');becLabel.innerHTML='<div class="occ-fw-label" style="font-size:9px;color:var(--grey-400);letter-spacing:.08em;">BECAUSE</div>';
-  var becTA=document.createElement('textarea');becTA.id='occ-fw-because-'+i;becTA.rows=2;becTA.placeholder='Because…';becTA.style.cssText='font-style:italic;border-left-color:rgba(255,255,255,.2);background:rgba(255,255,255,.02);';
-  becRow.appendChild(becLabel);becRow.appendChild(becTA);
-  chain.appendChild(becRow);
-  whyTA.focus();
+  chain.insertAdjacentHTML('beforeend',occFwPairHTML(i));
+  var w=document.getElementById('occ-fw-why-wrap-'+i); if(w)w.dataset.added='1';
+  occFwCascade();
+  if(arguments.length===0){var ta=document.getElementById('occ-fw-why-'+i); if(ta){try{ta.focus();}catch(e){}}}
+}
+function occFwRemoveLast(){
+  var n=0;while(document.getElementById('occ-fw-why-'+n))n++;
+  if(n<=5)return;
+  var i=n-1, w=document.getElementById('occ-fw-why-wrap-'+i), a=document.getElementById('occ-fw-ans-wrap-'+i);
+  var hasData=((document.getElementById('occ-fw-why-'+i)||{}).value||'').trim()||((document.getElementById('occ-fw-because-'+i)||{}).value||'').trim();
+  if(hasData&&!confirm('Supprimer le pourquoi '+(i+1)+' et sa réponse ? / Remove Why '+(i+1)+' and its answer?'))return;
+  if(w)w.remove(); if(a)a.remove(); occFwCascade();
 }
 function occGetFiveWhys(){
   var n=occGetWhyCount();
@@ -16005,11 +16020,14 @@ function occGetFiveWhys(){
   var conclusion=(document.getElementById('occ-fw-conclusion')?.value||'').trim();
   var riskLink=(document.getElementById('occ-fw-risk-link')?.value||document.getElementById('fw-risk-link')?.value||'').trim();
   var dbAction=(document.getElementById('occ-fw-db-action')?.value||document.getElementById('fw-db-action')?.value||'').trim();
-  if(!whys.some(Boolean)&&!becauses.some(Boolean)&&!root&&!actions.length&&!notes&&!conclusion&&!riskLink&&!dbAction) return null;
-  return {whys:whys,becauses:becauses,root_cause:root,corrective_actions:actions,notes:notes,conclusion:conclusion,risk_link:riskLink,db_action:dbAction,saved_at:new Date().toISOString()};
+  var cfO=(document.getElementById('occ-fw-cf-occurred')?.value||'').trim(), cfD=(document.getElementById('occ-fw-cf-detection')?.value||'').trim(), cfE=document.getElementById('occ-fw-cf-extent')?.value||'', cfN=(document.getElementById('occ-fw-cf-extent-note')?.value||'').trim();
+  if(!whys.some(Boolean)&&!becauses.some(Boolean)&&!root&&!actions.length&&!notes&&!conclusion&&!riskLink&&!dbAction)
+    if(!cfO&&!cfD&&!cfE&&!cfN) return null;
+  return {whys:whys,becauses:becauses,root_cause:root,corrective_actions:actions,notes:notes,conclusion:conclusion,risk_link:riskLink,db_action:dbAction,cf_occurred:cfO,cf_detection:cfD,cf_extent:cfE,cf_extent_note:cfN,saved_at:new Date().toISOString()};
 }
 function occRestoreFiveWhys(fw){
   fw=fw||{}; var whys=fw.whys||['','','','',''];var becauses=fw.becauses||['','','','',''];
+  (function(){var keep=Math.max(5,(fw.whys||[]).length,(fw.becauses||[]).length);var k=keep;while(document.getElementById('occ-fw-why-wrap-'+k)){var w=document.getElementById('occ-fw-why-wrap-'+k),an=document.getElementById('occ-fw-ans-wrap-'+k);if(w)w.remove();if(an)an.remove();k++;}})();
   // Ensure at least 5 entries
   while(whys.length<5)whys.push('');
   while(becauses.length<5)becauses.push('');
@@ -16020,11 +16038,13 @@ function occRestoreFiveWhys(fw){
   });
   // Add extra WHY rows if data has more than 5
   for(var i=5;i<whys.length;i++){
-    if(!document.getElementById('occ-fw-why-'+i)) occAddWhyRow();
+    if(!document.getElementById('occ-fw-why-'+i)) occAddWhyRow(true);
     var el=document.getElementById('occ-fw-why-'+i); if(el)el.value=whys[i]||'';
     var bel=document.getElementById('occ-fw-because-'+i); if(bel)bel.value=becauses[i]||'';
   }
   var rc=document.getElementById('occ-fw-root-cause'); if(rc)rc.value=fw.root_cause||'';
+  [['occ-fw-cf-occurred','cf_occurred'],['occ-fw-cf-detection','cf_detection'],['occ-fw-cf-extent','cf_extent'],['occ-fw-cf-extent-note','cf_extent_note']].forEach(function(p){var e=document.getElementById(p[0]);if(e)e.value=fw[p[1]]||'';});
+  occFwCascade();
   var rcm=document.getElementById('fw-root-cause'); if(rcm)rcm.value=fw.root_cause||'';
   var nt=document.getElementById('occ-fw-notes'); if(nt)nt.value=fw.notes||'';
   var cl=document.getElementById('occ-fw-conclusion'); if(cl)cl.value=fw.conclusion||'';
@@ -16938,14 +16958,27 @@ function showOccurrenceForm(editId){
       <div class="occ-jc-head"><div><div class="occ-fw-title">5 Whys — Root Cause Analysis</div><div class="occ-fw-note">Method integrated into occurrence creation to identify root causes and associated actions.</div></div><button type="button" class="occ-panel-toggle" onclick="occTogglePanel('occ-fw-body',this)"><span class="occ-panel-chevron">▼</span> Replier / déplier</button></div>
       <div id="occ-fw-body" class="occ-panel-body">
         <div class="occ-fw-grid">
-          <div class="occ-fw-chain" id="occ-fw-chain">
-            ${(function(){var prompts=['Why did this occurrence happen?','Why did that happen?','Why was that allowed or possible?','Why was the barrier not effective?','What is the underlying root factor?'];return prompts.map(function(prompt,i){return '<div class="occ-fw-row" id="occ-fw-row-'+i+'"><div><div class="occ-fw-label">WHY #'+(i+1)+'</div><div class="occ-fw-prompt">'+prompt+'</div></div><textarea id="occ-fw-why-'+i+'" rows="2" placeholder="Answer '+(i+1)+'…"></textarea></div><div class="occ-fw-row" style="margin-top:4px;opacity:.85;"><div><div class="occ-fw-label" style="font-size:9px;color:var(--grey-400);letter-spacing:.08em;">BECAUSE</div></div><textarea id="occ-fw-because-'+i+'" rows="2" placeholder="Because…" style="font-style:italic;border-left-color:rgba(255,255,255,.2);background:rgba(255,255,255,.02);"></textarea></div><div class="occ-fw-arrow">↓</div>';}).join('');})()}
-          </div>
-          <div style="margin-bottom:12px;">
-            <button type="button" onclick="occAddWhyRow()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 14px;background:rgba(232,160,32,.1);border:1px dashed #e3b341;border-radius:5px;color:#e3b341;font-family:var(--font-mono);font-size:11px;cursor:pointer;"><span style="font-size:15px;font-weight:700;">+</span> Add WHY</button>
+          <div class="occ-fw-left">
+            <div class="occ-fw-note" style="margin-bottom:10px;">Saisissez « Pourquoi 1 » (la question), puis la réponse en dessous. Une fois renseigné, « Pourquoi 2 » s’ouvre, et ainsi de suite ; la chaîne s’arrête dès qu’un « Pourquoi » reste vide. / Write "Why 1" (the question), then its answer below. Once answered, "Why 2" opens, and so on — the chain stops whenever you leave a "Why" empty.</div>
+            <div class="occ-fw-chain" id="occ-fw-chain" style="gap:0;">${occFwChainHTML(5)}</div>
+            <div style="margin:2px 0 12px;display:flex;gap:6px;align-items:center;">
+              <button type="button" onclick="occAddWhyRow()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 14px;background:rgba(232,160,32,.1);border:1px dashed #e3b341;border-radius:5px;color:#e3b341;font-family:var(--font-mono);font-size:11px;cursor:pointer;"><span style="font-size:15px;font-weight:700;">+</span> Add WHY</button>
+              <button type="button" id="occ-fw-remove-last" onclick="occFwRemoveLast()" style="display:none;padding:5px 10px;background:rgba(255,60,60,.12);border:1px solid rgba(255,80,80,.3);border-radius:5px;color:#d05050;font-family:var(--font-mono);font-size:10px;cursor:pointer;">✕ Retirer le dernier / Remove last</button>
+            </div>
+            <div class="form-field" id="occ-fw-rootcause-wrap" style="margin:4px 0 12px;display:none;"><label class="field-label">Cause racine identifiée / Root cause identified</label><textarea id="occ-fw-root-cause" class="occ-fw-root" rows="4" placeholder="Synthétiser la ou les causes racines issues des 5 pourquoi — elles doivent orienter les actions ci-dessous / Summarise the root cause(s) resulting from the 5 Whys — this should drive the actions below" oninput="occRefreshEccairsDeadlinePreview();occFwCascade()"></textarea></div>
+            <div id="occ-fw-cf-block" style="margin-top:14px;padding-top:12px;border-top:1px dashed rgba(232,160,32,.35);">
+              <div class="occ-fw-title" style="margin-bottom:4px;">🧩 Facteurs contributifs / Contributing factors</div>
+              <div class="occ-fw-note" style="margin-bottom:10px;">Trois questions complémentaires aux 5 pourquoi : comment l’événement s’est produit, pourquoi il n’a pas été détecté plus tôt, et quelle est son étendue. / Three questions complementing the 5 Whys: how the event occurred, why it was not detected earlier, and how far it extends.</div>
+              <div class="form-field" style="margin:0 0 8px;"><label class="field-label">1 — Pourquoi est-ce arrivé ? / 1 — Why did it happen?</label><textarea id="occ-fw-cf-occurred" rows="2" placeholder="Facteurs ayant conduit à l’événement : procédure, formation, ressources, charge de travail, communication, organisation… / Factors that led to the event: procedure, training, resources, workload, communication, organisation…"></textarea></div>
+              <div class="form-field" style="margin:0 0 8px;"><label class="field-label">2 — Pourquoi ne s’en est-on pas rendu compte ? / 2 — Why was it not detected?</label><textarea id="occ-fw-cf-detection" rows="2" placeholder="Contrôle, supervision, revue ou barrière qui aurait dû détecter ou arrêter l’événement et ne l’a pas fait — et pourquoi / Check, supervision, review or barrier that should have detected or stopped the event and did not — and why"></textarea></div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start;">
+                <div class="form-field" style="margin:0;"><label class="field-label">3 — Cas isolé ou systématique ? / 3 — Isolated or systemic case?</label><select id="occ-fw-cf-extent" style="width:100%;"><option value="">— À déterminer / — To be determined —</option><option value="isolated">Cas isolé / Isolated case</option><option value="systemic">Systématique / Systemic</option></select></div>
+                <div class="form-field" style="margin:0;"><label class="field-label">Justification et périmètre vérifié / Justification and extent checked</label><textarea id="occ-fw-cf-extent-note" rows="2" placeholder="Ce qui a été vérifié pour conclure : autres bases, équipages, aéronefs, périodes, dossiers échantillonnés… / What was checked to conclude: other bases, crews, aircraft, periods, records sampled…"></textarea></div>
+              </div>
+            </div>
           </div>
           <div class="occ-fw-side">
-            <div class="form-field" style="margin:0 0 12px;"><label class="field-label">Root cause</label><textarea id="occ-fw-root-cause" class="occ-fw-root" rows="4" placeholder="5 Whys analysis conclusion: organisational cause, process, barrier, training, interface, supervision…" oninput="occRefreshEccairsDeadlinePreview()"></textarea></div>
+            
             <div class="form-field" style="margin:0;"><label class="field-label">Evidence / notes</label><textarea id="occ-fw-notes" rows="3" placeholder="Facts, evidence, assumptions, documents reviewed…"></textarea></div>
           </div>
         </div>
@@ -17497,9 +17530,9 @@ function openFiveWhys(occId){
       const row=document.createElement('div');row.dataset.fwIdx=i;
       row.style.cssText='display:grid;grid-template-columns:140px 1fr auto;gap:12px;align-items:start;margin-bottom:6px;';
       const label=document.createElement('div');label.style.cssText='padding-top:8px;';
-      const wnum=document.createElement('div');wnum.style.cssText='font-family:var(--font-mono);font-size:14px;font-weight:800;color:'+lc+';';wnum.textContent='WHY #'+(i+1);
+      const wnum=document.createElement('div');wnum.style.cssText='font-family:var(--font-mono);font-size:14px;font-weight:800;color:'+lc+';';wnum.textContent=OCC_FW_L.lab('why',i+1);
       const wprompt=document.createElement('div');wprompt.style.cssText='font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-top:3px;line-height:1.4;';
-      wprompt.textContent=FW_PROMPTS[i]||'Why?';
+      wprompt.textContent='';
       label.appendChild(wnum);label.appendChild(wprompt);row.appendChild(label);
       const wta=document.createElement('textarea');wta.id='fw-why-'+i;wta.rows=2;wta.placeholder='Answer '+(i+1)+'…';
       wta.style.cssText='width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-left:3px solid '+lc+';border-radius:0 6px 6px 0;color:var(--white);padding:8px 10px;font-size:11px;resize:vertical;';
@@ -17540,7 +17573,7 @@ function openFiveWhys(occId){
       const bcrow=document.createElement('div');bcrow.dataset.fwBcIdx=i;
       bcrow.style.cssText='display:grid;grid-template-columns:140px 1fr;gap:12px;align-items:start;margin-bottom:4px;';
       const bclabel=document.createElement('div');bclabel.style.cssText='padding-top:6px;';
-      const bctag=document.createElement('div');bctag.style.cssText='font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--grey-400);letter-spacing:.05em;';bctag.textContent='BECAUSE';
+      const bctag=document.createElement('div');bctag.style.cssText='font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--grey-400);letter-spacing:.05em;';bctag.textContent=OCC_FW_L.lab('ans',i+1);
       bclabel.appendChild(bctag);bcrow.appendChild(bclabel);
       const bcta=document.createElement('textarea');bcta.id='fw-because-'+i;bcta.rows=2;bcta.placeholder='Because…';
       bcta.style.cssText='width:100%;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);border-left:3px solid rgba(255,255,255,.15);border-radius:0 6px 6px 0;color:var(--grey-200);padding:8px 10px;font-size:11px;resize:vertical;font-style:italic;';
@@ -17556,7 +17589,8 @@ function openFiveWhys(occId){
       const n=chain.querySelectorAll('[data-fw-idx]').length;
       fwAddArrow();fwBuildRow(n,'','');
     });
-    chain.appendChild(addBtn);
+    addBtn.style.display='none';chain.appendChild(addBtn);
+    if(occFwHasCf(saved))chain.insertAdjacentHTML('beforeend','<div style="margin-top:14px;padding:12px 14px;border:1px solid rgba(74,159,224,.35);border-radius:8px;"><div style="font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:1px;color:#4A9FE0;margin-bottom:8px;">🧩 '+occFwEsc("Facteurs contributifs / Contributing factors")+'</div>'+[["1 \u2014 Pourquoi est-ce arriv\u00e9 ? / 1 \u2014 Why did it happen?",saved.cf_occurred],["2 \u2014 Pourquoi ne s\u2019en est-on pas rendu compte ? / 2 \u2014 Why was it not detected?",saved.cf_detection],["3 \u2014 Cas isol\u00e9 ou syst\u00e9matique ? / 3 \u2014 Isolated or systemic case?",occFwExtentLabel(saved.cf_extent)+(saved.cf_extent_note?' — '+saved.cf_extent_note:'')]].map(function(q){return '<div style="margin-bottom:8px;font-size:11px;"><div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-bottom:3px;">'+occFwEsc(q[0])+'</div><div>'+occFwEsc(q[1]||'—')+'</div></div>';}).join('')+'</div>');
   }
   const rc=document.getElementById('fw-root-cause');if(rc)rc.value=saved.root_cause||'';
   const rci=document.getElementById('occ-fw-root-cause');if(rci&&saved.root_cause)rci.value=saved.root_cause;
@@ -17708,7 +17742,7 @@ function saveFiveWhys(){
   const occs=getOccurrences();
   const occ=occs.find(o=>o.id===_fwCurrentOccId);
   if(!occ)return;
-  occ.five_whys={whys,becauses,root_cause,corrective_actions,risk_link,db_action,saved_at:new Date().toISOString()};
+  occ.five_whys=Object.assign({},occ.five_whys||{},{whys,becauses,root_cause,corrective_actions,risk_link,db_action,saved_at:new Date().toISOString()});
   saveOccurrences(occs);
   if(risk_link){
     const r=DB.find(x=>x.id===risk_link);
@@ -17738,7 +17772,7 @@ function saveFiveWhys(){
     showToast('✓ 5 Whys saved for '+_fwId,'success');
   }
 }
-function printFiveWhys(){if(!_fwCurrentOccId)return;const occ=getOccurrences().find(o=>o.id===_fwCurrentOccId);if(!occ)return;const fw=occ.five_whys||{};const whys=fw.whys||[];const becauses=fw.becauses||[];const whyRows=whys.map((w,i)=>{if(!w)return '';var bc=becauses[i]?'<tr><td style="padding:2px 12px 10px 12px;font-weight:700;font-size:10px;color:#8896a0;font-family:monospace;vertical-align:top;white-space:nowrap;">BECAUSE</td><td style="padding:2px 12px 10px 12px;border-left:3px solid #e3b341;font-style:italic;color:#475569;">'+becauses[i]+'</td></tr>':'';return '<tr><td style="padding:8px 12px 2px 12px;font-weight:800;color:#C98000;font-size:13px;vertical-align:top;white-space:nowrap;">WHY #'+(i+1)+'</td><td style="padding:8px 12px 2px 12px;border-left:3px solid #C98000;">'+w+'</td></tr>'+bc;}).join('');const corrHTML=(fw.corrective_actions||[]).length?'<ul style="margin:6px 0 0;padding-left:18px;">'+(fw.corrective_actions.map(a=>'<li>'+occFWActionLabel(a)+'</li>').join(''))+'</ul>':'<em>None defined</em>';const w=window.open('','_blank');w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>5 Whys — '+occ.id+'</title><style>body{font-family:"Segoe UI",Arial,sans-serif;max-width:820px;margin:28px auto;color:#1a2535;font-size:12px;}h1{font-size:18px;font-weight:700;color:#C98000;margin-bottom:4px;}.meta{font-size:10px;color:#6b7a8d;font-family:monospace;margin-bottom:18px;}.problem{background:#fff3e0;border-left:4px solid #C98000;padding:12px 16px;border-radius:0 6px 6px 0;margin-bottom:20px;font-weight:600;font-size:13px;}table{width:100%;border-collapse:collapse;margin-bottom:20px;}td{padding:8px 12px;border-bottom:1px solid #e8ecf0;vertical-align:top;}.box{padding:12px 16px;border-radius:0 6px 6px 0;margin-bottom:20px;}.label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}.footer{margin-top:28px;padding-top:10px;border-top:1px solid #e0e8f0;font-size:9px;color:#8896a0;font-family:monospace;display:flex;justify-content:space-between;}@media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style></head><body><h1>&#127919; 5 WHYS — Root Cause Analysis</h1><div class="meta">'+occ.id+' · '+occ.date+' · '+(occ.severity||'').toUpperCase()+' · SAF International · AS 332 C1 Super Puma</div><div class="problem"><strong>Problem:</strong> '+(occ.description||'—')+'</div><table>'+whyRows+'</table>'+(fw.root_cause?'<div class="box" style="background:#fffde7;border-left:4px solid #e3b341;"><div class="label" style="color:#C98000;">Root Cause</div>'+fw.root_cause+'</div>':'')+'<div class="box" style="background:#f1f8f1;border-left:4px solid #1a7a4a;"><div class="label" style="color:#1a7a4a;">Corrective Actions</div>'+corrHTML+'</div>'+(fw.risk_link?'<p><strong>Linked risk:</strong> '+fw.risk_link+'</p>':'')+'<div class="footer"><span>SAF International — SMS 5 Whys — '+occ.id+'</span><span>Generated '+new Date().toLocaleDateString('en-GB')+'</span></div><script>window.onload=function(){window.print();}<\/script></body></html>');w.document.close();}
+function printFiveWhys(){if(!_fwCurrentOccId)return;const occ=getOccurrences().find(o=>o.id===_fwCurrentOccId);if(!occ)return;const fw=occ.five_whys||{};const whys=fw.whys||[];const becauses=fw.becauses||[];const whyRows=whys.map((w,i)=>{if(!w)return '';var bc=becauses[i]?'<tr><td style="padding:2px 12px 10px 12px;font-weight:700;font-size:10px;color:#8896a0;font-family:monospace;vertical-align:top;white-space:nowrap;">BECAUSE</td><td style="padding:2px 12px 10px 12px;border-left:3px solid #e3b341;font-style:italic;color:#475569;">'+becauses[i]+'</td></tr>':'';return '<tr><td style="padding:8px 12px 2px 12px;font-weight:800;color:#C98000;font-size:13px;vertical-align:top;white-space:nowrap;">WHY #'+(i+1)+'</td><td style="padding:8px 12px 2px 12px;border-left:3px solid #C98000;">'+w+'</td></tr>'+bc;}).join('');const corrHTML=(fw.corrective_actions||[]).length?'<ul style="margin:6px 0 0;padding-left:18px;">'+(fw.corrective_actions.map(a=>'<li>'+occFWActionLabel(a)+'</li>').join(''))+'</ul>':'<em>None defined</em>';const w=window.open('','_blank');w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>5 Whys — '+occ.id+'</title><style>body{font-family:"Segoe UI",Arial,sans-serif;max-width:820px;margin:28px auto;color:#1a2535;font-size:12px;}h1{font-size:18px;font-weight:700;color:#C98000;margin-bottom:4px;}.meta{font-size:10px;color:#6b7a8d;font-family:monospace;margin-bottom:18px;}.problem{background:#fff3e0;border-left:4px solid #C98000;padding:12px 16px;border-radius:0 6px 6px 0;margin-bottom:20px;font-weight:600;font-size:13px;}table{width:100%;border-collapse:collapse;margin-bottom:20px;}td{padding:8px 12px;border-bottom:1px solid #e8ecf0;vertical-align:top;}.box{padding:12px 16px;border-radius:0 6px 6px 0;margin-bottom:20px;}.label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}.footer{margin-top:28px;padding-top:10px;border-top:1px solid #e0e8f0;font-size:9px;color:#8896a0;font-family:monospace;display:flex;justify-content:space-between;}@media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style></head><body><h1>&#127919; 5 WHYS — Root Cause Analysis</h1><div class="meta">'+occ.id+' · '+occ.date+' · '+(occ.severity||'').toUpperCase()+' · SAF International · AS 332 C1 Super Puma</div><div class="problem"><strong>Problem:</strong> '+(occ.description||'—')+'</div><table>'+occFwRowsHTML(fw)+'</table>'+occFwCfPrintHTML(fw)+(fw.root_cause?'<div class="box" style="background:#fffde7;border-left:4px solid #e3b341;"><div class="label" style="color:#C98000;">Root Cause</div>'+fw.root_cause+'</div>':'')+'<div class="box" style="background:#f1f8f1;border-left:4px solid #1a7a4a;"><div class="label" style="color:#1a7a4a;">Corrective Actions</div>'+corrHTML+'</div>'+(fw.risk_link?'<p><strong>Linked risk:</strong> '+fw.risk_link+'</p>':'')+'<div class="footer"><span>SAF International — SMS 5 Whys — '+occ.id+'</span><span>Generated '+new Date().toLocaleDateString('en-GB')+'</span></div><script>window.onload=function(){window.print();}<\/script></body></html>');w.document.close();}
 
 /* stubs vides supprimés — les vraies définitions sont plus bas dans ce bloc */
 // ════════════════════════════════════════════════════════════════
@@ -20629,7 +20663,8 @@ function _buildSafNotes(occ, uncoded){
   L.push('Notes: '+(jc.notes||''));
   L.push('');
   L.push('=== 5 Whys Root Cause Analysis ===');
-  whys.forEach(function(w,i){ if(w) L.push('Why '+(i+1)+': '+w); });
+  whys.forEach(function(w,i){ var b=(fw.becauses||[])[i]||''; if(w||b){ L.push('Why '+(i+1)+': '+(w||'')); L.push('Answer '+(i+1)+': '+b); } });
+  if(occFwHasCf(fw)){ L.push('Contributing factors — 1 Why did it happen: '+(fw.cf_occurred||'')); L.push('Contributing factors — 2 Why was it not detected: '+(fw.cf_detection||'')); L.push('Contributing factors — 3 Isolated or systemic: '+occFwExtentLabel(fw.cf_extent)+(fw.cf_extent_note?' — '+fw.cf_extent_note:'')); }
   L.push('Root Cause: '+(fw.root_cause||''));
   L.push('Corrective Actions: '+(occFWActionDisplayList(fw.corrective_actions||[]).join(' | ')));
   L.push('Notes: '+(fw.notes||''));
@@ -20990,7 +21025,9 @@ function exportOccurrenceCSV(id){
     ['ARMS - Notes',(occ.arms||{}).notes||''],
     ['5W - WHY 1',(fw.whys||[])[0]||''],['5W - WHY 2',(fw.whys||[])[1]||''],
     ['5W - WHY 3',(fw.whys||[])[2]||''],['5W - WHY 4',(fw.whys||[])[3]||''],
-    ['5W - WHY 5',(fw.whys||[])[4]||''],['Root Cause',fw.root_cause||''],
+    ['5W - WHY 5',(fw.whys||[])[4]||''],
+    ['5W - ANSWER 1',(fw.becauses||[])[0]||''],['5W - ANSWER 2',(fw.becauses||[])[1]||''],['5W - ANSWER 3',(fw.becauses||[])[2]||''],['5W - ANSWER 4',(fw.becauses||[])[3]||''],['5W - ANSWER 5',(fw.becauses||[])[4]||''],
+    ['CF1 - Why did it happen',fw.cf_occurred||''],['CF2 - Why not detected',fw.cf_detection||''],['CF3 - Isolated / systemic',fw.cf_extent?occFwExtentLabel(fw.cf_extent):''],['CF3 - Extent checked',fw.cf_extent_note||''],['Root Cause',fw.root_cause||''],
     ['Corrective Actions',occFWActionDisplayList(fw.corrective_actions||[]).join(' | ')],
     ['5W Notes',fw.notes||''],
     ['Created At',occ.created_at||occ.date],['Updated At',occ.updated_at||occ.created_at||occ.date]
@@ -21102,7 +21139,7 @@ function exportOccurrencePDF(id){
     +'<div class="box">'+armsHTML+'</div>'
     +'<h2>8 · 5 Whys — Root Cause Analysis</h2>'
     +'<div class="box">'
-    +(whyRows?'<table style="margin-bottom:10px;">'+whyRows+'</table>':'<p style="color:#8896a0;font-size:11px;">No 5 Whys analysis recorded.</p>')
+    +(occFwRowsHTML(fw)?'<table style="margin-bottom:10px;">'+occFwRowsHTML(fw)+'</table>':'<p style="color:#8896a0;font-size:11px;">No 5 Whys analysis recorded.</p>')+occFwCfPrintHTML(fw)
     +(fw.root_cause?'<div class="root-box"><div style="font-size:10px;font-weight:700;color:#C98000;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Root Cause</div><p style="margin:0;line-height:1.5;">'+fw.root_cause+'</p></div>':'')
     +'<div class="corr-box"><div style="font-size:10px;font-weight:700;color:#1a7a4a;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Corrective / Preventive Actions</div>'+corrHTML+'</div>'
     +'</div>'
