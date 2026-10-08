@@ -1946,7 +1946,7 @@ function safExportPDF() {
 <div class="saf-nav-row" style="display:flex;align-items:center;gap:4px;overflow-x:auto;">
 <a class="saf-nav-link" data-saf-tool="home" href="index.html" style="--saf-nav-accent:#e8f0fe;">⌂ HOME</a>
 <div class="saf-nav-sep"></div>
-<a class="saf-nav-link" data-saf-tool="sms" href="Archives/SAF_International_Safety.html" style="--saf-nav-accent:#e07070;"><span style="color:#e07070">■</span> SMS</a>
+<a class="saf-nav-link" data-saf-tool="sms" href="SAF_International_Safety.html" style="--saf-nav-accent:#e07070;"><span style="color:#e07070">■</span> SMS</a>
 <a class="saf-nav-link" data-saf-tool="cms" href="SAF_International_Compliance_Monitoring_System.html" style="--saf-nav-accent:#70a8e0;"><span style="color:#70a8e0">■</span> CMS</a>
 <a class="saf-nav-link" data-saf-tool="omm" href="SAF_International_Appendices_OMM.html" style="--saf-nav-accent:#70d0a0;"><span style="color:#70d0a0">■</span> OMM</a>
 <a class="saf-nav-link" data-saf-tool="guide" href="#" onclick="if(window.safGuideOpen){window.safGuideOpen();}else{var o=document.getElementById('safGuideOverlay');if(o){o.classList.add('open');document.body.style.overflow='hidden';}}return false;" style="--saf-nav-accent:#F0C040;"><span style="color:#F0C040">?</span> MODE D'EMPLOI</a>
@@ -8486,12 +8486,11 @@ function updateSrbProgress(){
     else if(sel&&sel.value==='partial') partial++;
     else if(sel&&sel.value==='nok') nok++;
   });
-  document.getElementById('ss-total').textContent=total;
-  document.getElementById('ss-ok').textContent=ok;
-  document.getElementById('ss-partial').textContent=partial;
-  document.getElementById('ss-nok').textContent=nok;
+  // Les compteurs n'existent que si le bloc de progression SRB est présent dans la page
+  function _set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+  _set('ss-total',total);_set('ss-ok',ok);_set('ss-partial',partial);_set('ss-nok',nok);
   var pct=total>0?Math.round(ok/total*100):0;
-  document.getElementById('srb-prog-fill').style.width=pct+'%';
+  var fill=document.getElementById('srb-prog-fill'); if(fill)fill.style.width=pct+'%';
 }
 
 function resetSRB(){
