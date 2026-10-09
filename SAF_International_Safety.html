@@ -1703,7 +1703,9 @@ nav { top: 118px !important; }
 <style id="saf-guide-fab-style">
 .saf-guide-fab{position:fixed;right:22px;bottom:22px;z-index:99990;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;background:#C9A227;color:#0D1B2A;border:2px solid #F0C040;box-shadow:0 8px 24px rgba(0,0,0,.38);font-family:'IBM Plex Mono',monospace;font-size:21px;font-weight:800;transition:transform .15s,filter .15s}.saf-guide-fab:hover{transform:translateY(-2px);filter:brightness(1.08)}.saf-guide-fab:focus{outline:2px solid #fff;outline-offset:3px}@media print{.saf-guide-fab{display:none!important}}
 </style>
-</head>
+<style id="saf-performance-20261009-style">
+.safp{background:#101e30;color:#e8f0fe;border:1px solid #34506e;border-radius:12px;padding:18px;margin:20px 0;font-family:Arial,sans-serif}.safp h2{font-size:19px;margin:0 0 8px;color:#fff}.safp .safp-sub{color:#a8bbd1;font-size:12px;line-height:1.6;margin-bottom:12px}.safp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.safp-card{border:1px solid #34465e;background:#14253b;border-radius:9px;padding:13px}.safp-card h3{font-size:14px;margin:0 0 7px;color:#fff}.safp-card label{display:block;font-size:11px;margin:8px 0 3px;color:#c3d4e8}.safp-card input{background:#081522;color:white;border:1px solid #56708c;border-radius:5px;padding:7px;max-width:100%;width:100%;font-size:13px}.safp-out{font-weight:700;margin-top:9px;padding:7px;border-radius:5px;background:#25384e;font-size:13px}.safp-out.green{background:#174b38;color:#baf5cd}.safp-out.amber{background:#63451a;color:#ffe5a1}.safp-out.red{background:#6d2328;color:#ffcccc}.safp-out.na{background:#35465a;color:#d9e0ed}.safp-footer{color:#a8bbd1;font-size:11px;margin-top:14px;line-height:1.5}.safp button{background:#245b88;border:1px solid #5290c4;border-radius:5px;color:white;padding:7px 12px;cursor:pointer;margin-top:8px}
+</style></head>
 <body>
 <div id="app">
 <!-- ═══ HEADER ═══════════════════════════════════════════════════════════ -->
@@ -3132,7 +3134,7 @@ function updateOaciDefinitionDropdown(sel) {
   <div style="margin-bottom:6px;"><b>SPT — Safety Performance Target:</b> the acceptable value (and green/amber/red thresholds) set for each SPI. Comparing the current SPI value against its SPT is what drives the automatic status shown in the table below.</div>
   <div><b>CAPA — Corrective Action / Preventive Action:</b> the actions raised to fix a finding (corrective) or to stop a potential issue before it occurs (preventive). Here CAPA are pulled automatically from audit records, MOC change studies and change-control items, and tracked through three indicators: actions open &gt;30 days, repeat findings, and closure effectiveness (closed without recurrence).</div>
 </div>
-<div id="spi-content"></div></div>
+<section class="safp" id="saf-performance-sms"></section><div id="spi-content"></div></div>
 <div class="view" id="view-safetypolicy">
 <div class="dash-header"><div><div class="dash-title">🔒 SAFETY POLICY &amp; OBJECTIVES</div><div class="dash-subtitle">ORO.GEN.200(a)(2) &amp; AMC1 ORO.GEN.200(a)(2) — Politique de sécurité signée par l'Accountable Manager, diffusée, versionnée et revue annuellement</div></div></div>
 <div style="padding:0 28px 28px;display:flex;flex-direction:column;gap:20px;">
@@ -26981,5 +26983,33 @@ function isxMocReportHTML(cs){
 }
 
 </script>
-</body>
+<script id="saf-performance-20261009-script">
+(function(){'use strict';
+const sets={
+ cms:{key:'saf_compliance_20261009_v1',title:'COMPLIANCE MONITORING — C-01 à C-04',subtitle:'Indicateurs CMM · SPT internes proposés · saisie documentée, sans substitution aux registres. Les valeurs ne sont pas inventées.',items:[
+ {id:'C-01',name:'Programme d’audits',hint:'Audits dus / réalisés à temps. Rouge si audit critique ou domaine non couvert.',fields:[['yes','Audits achevés à temps'],['total','Audits arrivés à échéance'],['critical','Audit critique en retard ou domaine hors cycle (0/1)']],calc:'pct100'},
+ {id:'C-02',name:'Constats clôturés à temps',hint:'Autorité 100 % ; internes ≥ 90 %. Les observations ne sont pas des non-conformités.',fields:[['ay','Autorité : clôturés dans le délai'],['at','Autorité : constats échus'],['iy','Internes : clôturés dans le délai'],['it','Internes : constats échus']],calc:'dual'},
+ {id:'C-03',name:'Récurrence des constats',hint:'Revue sur 24 mois ; associer les constats par exigence et cause racine.',fields:[['major','Groupes récurrents majeurs'],['minor','Groupes récurrents mineurs']],calc:'recurrence'},
+ {id:'C-04',name:'Conformité des changements',hint:'Uniquement changements mis en œuvre nécessitant une revue préalable.',fields:[['yes','Changements avec revue préalable validée'],['total','Changements mis en œuvre concernés']],calc:'pct100'}]},
+ sms:{key:'saf_ops_spi_20261009_v1',title:'APP11-OMM — 4 SPI OPÉRATIONNELS DÉCLARÉS',subtitle:'SPO HESLO environ 89 % des heures ; NCC 10 % ; MCF 1 % ; CAT futur. Indicateurs séparés des SPI de processus et CAMO déjà présents.',items:[
+ {id:'SPI-OPS-01',name:'Maîtrise des risques avant mission',hint:'≥95 % des dossiers échantillonnés conformes, et aucune barrière critique manquante.',fields:[['yes','Dossiers contrôlés conformes'],['total','Dossiers contrôlés'],['critical','Barrières critiques manquantes (nombre)']],calc:'pct95'},
+ {id:'SPI-OPS-02',name:'Événements charge externe HESLO',hint:'0 largage involontaire ; ≤1 précurseur pour 1 000 rotations (provisoire, à étalonner).',fields:[['drops','Largages involontaires'],['precursors','Événements précurseurs'],['total','Rotations HESLO']],calc:'heslo'},
+ {id:'SPI-OPS-03',name:'Événements techniques en vol',hint:'Taux pour 1 000 heures, SPT ≤3 provisoire et non validé sans historique CAMO.',fields:[['events','Événements techniques significatifs'],['total','Heures de vol'],['repeat','Répétitions même ATA sur 6 mois (0/1)']],calc:'technical'},
+ {id:'SPI-OPS-04',name:'Reporting et retour au déclarant',hint:'≥90 % des retours initiaux sous 30 jours ; taux de déclaration indicatif, sans seuil artificiel.',fields:[['reports','Rapports reçus'],['returns','Retours initiaux dans les 30 jours'],['hours','Heures de vol']],calc:'reporting'}]}};
+function number(v){if(v===''||v===null||v===undefined)return null;var x=Number(v);return Number.isFinite(x)&&x>=0?x:null;}
+function render(kind){var cfg=sets[kind],host=document.getElementById('saf-performance-'+kind);if(!host)return;var saved={};try{saved=JSON.parse(localStorage.getItem(cfg.key)||'{}')||{}}catch(e){}host.innerHTML='<h2>'+cfg.title+'</h2><p class="safp-sub">'+cfg.subtitle+'</p><div class="safp-grid">'+cfg.items.map(it=>'<section class="safp-card"><h3>'+it.id+' — '+it.name+'</h3><p class="safp-sub">'+it.hint+'</p>'+it.fields.map(f=>'<label>'+f[1]+'<input type="number" min="0" step="1" data-ind="'+it.id+'" data-field="'+f[0]+'" placeholder="Non renseigné"></label>').join('')+'<div class="safp-out na" id="safp-result-'+kind+'-'+it.id+'">N/A · Données non renseignées</div></section>').join('')+'</div><p class="safp-footer">Saisie locale dans ce navigateur, conservée sous une clé distincte. Export JSON possible pour conservation. Aucun résultat n’est synchronisé automatiquement avec Supabase ou les registres existants. Zéro événement n’est confirmé que si le volume d’exposition est renseigné.</p><button type="button" id="safp-export-'+kind+'">Exporter les saisies JSON</button>';
+function evaluate(it){var obj=saved[it.id]||{},v={};it.fields.forEach(f=>v[f[0]]=number(obj[f[0]]));var status='na',txt='N/A · Données insuffisantes';function pct(a,b){return b>0&&a!==null&&a<=b?100*a/b:null}function fmt(x){return x.toFixed(1).replace('.',',')}var x;
+switch(it.calc){case 'pct100':x=pct(v.yes,v.total);if(x!==null&&v.critical!==null){status=v.critical>0?'red':x>=100?'green':x>=90?'amber':'red';txt=fmt(x)+' % ('+v.yes+'/'+v.total+')';}break;
+case 'pct95':x=pct(v.yes,v.total);if(x!==null&&v.critical!==null){status=v.critical>0?'red':x>=95?'green':x>=80?'amber':'red';txt=fmt(x)+' % ('+v.yes+'/'+v.total+')';}break;
+case 'dual':var a=pct(v.ay,v.at),b=pct(v.iy,v.it);if((a!==null||v.at===0)&&(b!==null||v.it===0)&&v.at!==null&&v.it!==null){status=(a!==null&&a<100)||(b!==null&&b<75)?'red':b!==null&&b<90?'amber': 'green';txt='Autorité '+(a===null?'N/A':fmt(a)+' %')+' · Interne '+(b===null?'N/A':fmt(b)+' %');if(v.at===0&&v.it===0)status='na';}break;
+case 'recurrence':if(v.major!==null&&v.minor!==null){status=v.major>0?'red':v.minor>0?'amber':'green';txt=v.major+' majeur(s) · '+v.minor+' mineur(s)';}break;
+case 'heslo':if(v.total>0&&v.drops!==null&&v.precursors!==null){x=1000*v.precursors/v.total;status=v.drops>0||x>2?'red':x>1?'amber':'green';txt=v.drops+' largage(s) · '+fmt(x)+' précurseur(s)/1 000 rotations';}break;
+case 'technical':if(v.total>0&&v.events!==null&&v.repeat!==null){x=1000*v.events/v.total;status=v.repeat>0||x>5?'red':x>3?'amber':'green';txt=fmt(x)+' événement(s)/1 000 HdV';}break;
+case 'reporting':x=pct(v.returns,v.reports);if(x!==null&&v.hours!==null){status=x>=90?'green':x>=75?'amber':'red';txt=fmt(x)+' % retour ('+v.returns+'/'+v.reports+')'+(v.hours>0?' · '+fmt(v.reports*100/v.hours)+' rapports/100 HdV':'');}break;}
+var result=document.getElementById('safp-result-'+kind+'-'+it.id);if(result){result.className='safp-out '+status;result.textContent=txt+(status==='na'?'':' · '+({green:'VERT',amber:'ORANGE',red:'ROUGE'}[status]));}}
+host.querySelectorAll('input[data-ind]').forEach(el=>{var rec=saved[el.dataset.ind]||{};el.value=rec[el.dataset.field]===undefined?'':rec[el.dataset.field];el.addEventListener('input',function(){(saved[el.dataset.ind]||(saved[el.dataset.ind]={}))[el.dataset.field]=el.value;try{localStorage.setItem(cfg.key,JSON.stringify(saved))}catch(e){}evaluate(cfg.items.find(it=>it.id===el.dataset.ind));});});cfg.items.forEach(evaluate);
+host.querySelector('#safp-export-'+kind).addEventListener('click',function(){var blob=new Blob([JSON.stringify({version:'2026-10-09',type:kind,entries:saved},null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='SAF_'+kind+'_indicators_20261009.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);});}
+function init(){Object.keys(sets).forEach(render)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script></body>
 </html>
