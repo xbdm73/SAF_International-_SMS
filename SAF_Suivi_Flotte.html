@@ -96,7 +96,7 @@ footer .err{color:var(--lost)}
 <div id="app">
   <aside id="side">
     <header>
-      <a class="home" href="index.html">← Accueil SAF International</a>
+      <a class="home" href="SAF_Portail.html">← Portail SAF International</a>
       <h1>Suivi flotte</h1>
       <p id="sub">Chargement…</p>
     </header>
@@ -117,7 +117,7 @@ footer .err{color:var(--lost)}
   <div id="map"></div>
 </div>
 
-<div id="gate" role="alert"><p id="gate-msg">Vérification de la session…</p><a href="index.html">Aller à l'accueil</a></div>
+<div id="gate" role="alert"><p id="gate-msg">Vérification de la session…</p><a href="SAF_Portail.html">Retour au portail</a></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -455,7 +455,7 @@ function gate(msg){ clearInterval(timer); document.getElementById("gate-msg").te
 async function boot(){
   const {data}=await sb.auth.getSession();
   const session=data.session;
-  if(!session){ location.replace("index.html"); return; }
+  if(!session){ location.replace("SAF_Portail.html"); return; }
   // Rôle lu comme dans index.html ; l'accès réel est décidé par la RLS (admin, editor, reader)
   let role="reader";
   try{
@@ -465,10 +465,10 @@ async function boot(){
   if(!["admin","editor","reader"].includes(role)){ gate("Le suivi flotte n'est pas ouvert à ce compte."); return; }
   load(); clearInterval(timer); timer=setInterval(load,CONFIG.refreshMs);
 }
-document.getElementById("logout").onclick=async()=>{await sb.auth.signOut(); location.replace("index.html");};
+document.getElementById("logout").onclick=async()=>{await sb.auth.signOut(); location.replace("SAF_Portail.html");};
 document.getElementById("win").onchange=load;
 document.getElementById("fit").onclick=()=>{selected=null; fitAll(); load();};
-sb.auth.onAuthStateChange(ev=>{ if(ev==="SIGNED_OUT") location.replace("index.html"); });
+sb.auth.onAuthStateChange(ev=>{ if(ev==="SIGNED_OUT") location.replace("SAF_Portail.html"); });
 boot();
 </script>
 </body>
