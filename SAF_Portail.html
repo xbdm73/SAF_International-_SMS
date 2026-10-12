@@ -39,7 +39,7 @@ button,input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:6px}
 
 /* ---------- Barre supérieure ---------- */
-.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;height:60px;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;height:84px;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.01em;text-decoration:none}
 .brand-mark{width:26px;height:26px;border-radius:6px;background:var(--text);color:var(--bg);display:grid;place-items:center;font-size:11px;font-weight:700;letter-spacing:.04em}
 .crumb-sep{color:var(--faint);font-size:18px;font-weight:300}
@@ -55,16 +55,16 @@ button,input{font:inherit;color:inherit}
 .iconbtn.login[hidden]{display:none}
 /* ---------- Logo SAF International (version claire / sombre) ---------- */
 .top-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:block;line-height:0}
-.top-logo img{height:44px;width:auto}
+.top-logo img{height:68px;width:auto}
 .logo-dark,.gate-logo .logo-dark{display:none}
 :root[data-theme="dark"] .logo-light{display:none}
 :root[data-theme="dark"] .logo-dark{display:inline}
 .gate-logo{line-height:0;margin:0 0 18px}
-.gate-logo img{height:64px;width:auto}
-@media (max-width:760px){ .org{display:none} .top-logo img{height:36px} }
+.gate-logo img{height:96px;width:auto}
+@media (max-width:760px){ .org{display:none} .top{height:68px} .top-logo img{height:50px} }
 /* ---------- Accès réservé (admin, editor, reader) ---------- */
 body:not(.granted) .shell{display:none}
-.gate{display:none;min-height:calc(100% - 60px);align-items:center;justify-content:center;padding:32px 16px}
+.gate{display:none;min-height:calc(100% - 84px);align-items:center;justify-content:center;padding:32px 16px}
 body.gated .gate{display:flex}
 .gate-box{max-width:420px;width:100%;text-align:center;border:1px solid var(--line);border-radius:12px;padding:32px 28px;background:var(--panel, transparent)}
 .gate-box h1{font-size:18px;margin:0 0 8px}
@@ -75,7 +75,7 @@ body.gated .gate{display:flex}
 .gate-report:hover{color:var(--text)}
 
 /* ---------- Structure ---------- */
-.shell{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:calc(100% - 60px)}
+.shell{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:calc(100% - 84px)}
 .side{border-right:1px solid var(--line);padding:18px 10px;display:flex;flex-direction:column;gap:2px;background:var(--panel)}
 .side h4{margin:14px 10px 6px;font-size:12px;font-weight:500;color:var(--faint)}
 .side h4:first-child{margin-top:0}

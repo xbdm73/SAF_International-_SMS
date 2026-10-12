@@ -346,18 +346,21 @@ function detailsHTML(reg){
 }
 
 /* ---------- Données ---------- */
-let lastPs=null;
-async function load(){
+let lastPs=null, loading=false, lastOk=0;
+function isAuthError(e){ const m=String(e&&(e.message||e.code)||e||""); return /jwt|token|401|PGRST30/i.test(m); }
+async function load(retried){
+  if(loading) return; loading=true;
   const hours=+document.getElementById("win").value;
   const winStart=Date.now()-hours*3600e3;
   const since=new Date(Math.min(winStart, Date.now()-36*3600e3)).toISOString(); // 36 h pour le journal
   try{
     const [ac,pos,ps]=await Promise.all([
       sb.from("fleet_aircraft").select("reg,type,imei,provider,active").order("reg"),
-      sb.from("fleet_positions").select("reg,fix_time,lat,lon,alt_m,heading,speed").gte("fix_time",since).order("fix_time",{ascending:true}).limit(10000),
+      sb.from("fleet_positions").select("reg,fix_time,lat,lon,alt_m,heading,speed").gte("fix_time",since).order("fix_time",{ascending:false}).limit(1000),
       sb.from("fleet_poll_state").select("last_poll,last_result").eq("id",1).maybeSingle(),
     ]);
     if(ac.error) throw ac.error; if(pos.error) throw pos.error;
+    pos.data.reverse();   // ordre chronologique pour les traces et l'analyse des vols
     fleet=ac.data;
     const lasts=await Promise.all(fleet.map(a=>sb.from("fleet_positions").select("reg,fix_time,lat,lon,alt_m,heading,speed").eq("reg",a.reg).order("fix_time",{ascending:false}).limit(2)));
     state={};
@@ -367,13 +370,36 @@ async function load(){
       state[a.reg]={ac:a,last:two[0]||null,prev:two[1]||null,
         trail:all.filter(p=>new Date(p.fix_time)>=winStart), an:analyze(all)};
     });
-    lastPs=ps.data;
+    lastPs=ps.data; lastOk=Date.now();
     render(lastPs);
     if(selected) ensureDetails(selected);
   }catch(e){
+    if(!retried && isAuthError(e)){
+      // Jeton expiré (onglet en veille, PC sorti de veille) : renouvellement puis nouvel essai
+      loading=false;
+      const r=await sb.auth.refreshSession().catch(()=>({error:true}));
+      if(r && !r.error && r.data && r.data.session) return load(true);
+      location.replace("SAF_Portail.html"); return;
+    }
     document.getElementById("foot").innerHTML=`<span class="err">Lecture impossible : ${esc(e.message||e)}. Nouvel essai dans ${CONFIG.refreshMs/1000} s.</span>`;
-  }
+  }finally{ loading=false; }
 }
+/* Les navigateurs ralentissent ou suspendent les minuteries des onglets en arrière-plan
+   et des ordinateurs en veille : on relit immédiatement au retour, puis on relance le cycle. */
+function restartCycle(){ clearInterval(timer); load(); timer=setInterval(load,CONFIG.refreshMs); }
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && Date.now()-lastOk>CONFIG.refreshMs/2) restartCycle(); });
+window.addEventListener("focus",()=>{ if(Date.now()-lastOk>CONFIG.refreshMs) restartCycle(); });
+window.addEventListener("online",restartCycle);
+/* Garde-fou visible : si l'affichage n'a pas pu être actualisé depuis plus de 2 cycles */
+setInterval(()=>{
+  if(!lastOk || document.visibilityState!=="visible") return;
+  const late=Date.now()-lastOk;
+  if(late>2*CONFIG.refreshMs){
+    const f=document.getElementById("foot");
+    if(!f.querySelector(".stale")) f.innerHTML+=` <span class="err stale">Affichage non actualisé depuis ${Math.round(late/60000)||1} min — nouvel essai en cours.</span>`;
+    load();
+  }
+},10000);
 
 function render(ps){
   const list=document.getElementById("list"); const scroll=list.scrollTop; list.innerHTML="";
@@ -463,10 +489,10 @@ async function boot(){
     if(r.data&&r.data[0]&&r.data[0].role) role=String(r.data[0].role).toLowerCase();
   }catch(e){}
   if(!["admin","editor","reader"].includes(role)){ gate("Le suivi flotte n'est pas ouvert à ce compte."); return; }
-  load(); clearInterval(timer); timer=setInterval(load,CONFIG.refreshMs);
+  restartCycle();
 }
 document.getElementById("logout").onclick=async()=>{await sb.auth.signOut(); location.replace("SAF_Portail.html");};
-document.getElementById("win").onchange=load;
+document.getElementById("win").onchange=()=>load();
 document.getElementById("fit").onclick=()=>{selected=null; fitAll(); load();};
 sb.auth.onAuthStateChange(ev=>{ if(ev==="SIGNED_OUT") location.replace("SAF_Portail.html"); });
 boot();
