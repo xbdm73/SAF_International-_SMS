@@ -24,7 +24,20 @@ button,input,select{font:inherit;color:inherit}
 #app{display:grid;grid-template-columns:340px 1fr;height:100%}
 #side{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;
   padding-top:env(safe-area-inset-top,0px)}
-#map{height:100%;width:100%;background:var(--paper)}
+#maps{height:100%;width:100%;display:grid;gap:2px;background:var(--line);grid-template-columns:1fr;grid-template-rows:1fr}
+#maps[data-n="2"]{grid-template-columns:1fr 1fr}
+#maps[data-n="3"]{grid-template-columns:1fr 1fr 1fr}
+#maps[data-n="4"]{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.pane{position:relative;min-width:0;min-height:0;background:var(--paper)}
+.pane .map{position:absolute;inset:0}
+.pane-bar{position:absolute;z-index:800;left:10px;top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;
+  background:rgba(13,27,42,.92);border:1px solid var(--line);border-radius:6px;padding:5px 8px;max-width:calc(100% - 80px);font-size:13px}
+.pane-bar select{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:3px 6px;font-weight:600}
+.pane-bar .pst{color:var(--ink-2);white-space:nowrap}
+.pane-bar .pst b{font-weight:600}
+.pane-bar .pst[data-st=live] b{color:var(--live)} .pane-bar .pst[data-st=ground] b{color:var(--ground)} .pane-bar .pst[data-st=lost] b{color:var(--lost)}
+.pane-bar button{background:var(--signal);color:#111;border:0;border-radius:4px;padding:3px 8px;font-weight:600;cursor:pointer}
+.pane-bar button[hidden]{display:none}
 
 header{padding:18px 20px 12px;border-bottom:1px solid var(--line)}
 header h1{font-family:var(--cond);font-weight:700;font-size:26px;letter-spacing:.01em;margin:0;line-height:1;color:var(--signal)}
@@ -86,7 +99,9 @@ footer .err{color:var(--lost)}
 
 @media (max-width:760px){
   #app{grid-template-columns:1fr;grid-template-rows:55% 45%}
-  #map{grid-row:1} #side{grid-row:2;border-right:0;border-top:1px solid var(--line);padding-top:0}
+  #maps{grid-row:1} #side{grid-row:2;border-right:0;border-top:1px solid var(--line);padding-top:0}
+  #maps[data-n="2"],#maps[data-n="3"]{grid-template-columns:1fr;grid-auto-rows:1fr}
+  #maps[data-n="4"]{grid-template-columns:1fr 1fr}
   header{padding:10px 16px 8px} header h1{font-size:22px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -108,13 +123,20 @@ footer .err{color:var(--lost)}
         <option value="12">12 h</option>
         <option value="24">24 h</option>
       </select>
+      <label for="split">Vue</label>
+      <select id="split" title="Découper l'écran pour suivre plusieurs appareils">
+        <option value="1">1 carte</option>
+        <option value="2">2 cartes</option>
+        <option value="3">3 cartes</option>
+        <option value="4">4 cartes</option>
+      </select>
       <button id="fit" type="button">Toute la flotte</button>
       <button id="logout" type="button">Déconnexion</button>
     </div>
     <ul id="list"></ul>
     <footer id="foot">—</footer>
   </aside>
-  <div id="map"></div>
+  <div id="maps" data-n="1"></div>
 </div>
 
 <div id="gate" role="alert"><p id="gate-msg">Vérification de la session…</p><a href="SAF_Portail.html">Retour au portail</a></div>
@@ -139,20 +161,86 @@ const COLORS = {live:"#3CC882", ground:"#5B9BE0", stale:"#6C7784", lost:"#E5484D
 // Même client et même stockage de session que index.html : pas de seconde connexion
 const sb = supabase.createClient(CONFIG.url, CONFIG.key);
 
-/* ---------- Carte ---------- */
-const map = L.map("map", {zoomControl:true}).setView([45.9, 6.8], 8);
-const layers = {
-  "Topo (OpenTopoMap)": L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"© OpenTopoMap, © OSM"}),
-  "Plan (OSM)": L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}),
-  "swisstopo": L.tileLayer("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg",{maxZoom:18,attribution:"© swisstopo"}),
-  "Satellite (Esri)": L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"© Esri"}),
-};
-layers["Topo (OpenTopoMap)"].addTo(map);
-L.control.layers(layers, null, {position:"topright"}).addTo(map);
-L.control.scale({imperial:false}).addTo(map);
-BASES.forEach(b => L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null})}).addTo(map));
-
-const markers = {}, trails = {};
+/* ---------- Cartes (écran découpable en 1 à 4 cartes) ----------
+   Chaque carte suit soit toute la flotte (vue libre), soit un appareil choisi :
+   elle se recentre sur lui à chaque actualisation, jusqu'à ce qu'on la déplace à la main. */
+function makeLayers(){
+  return {
+    "Topo (OpenTopoMap)": L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"© OpenTopoMap, © OSM"}),
+    "Plan (OSM)": L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}),
+    "swisstopo": L.tileLayer("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg",{maxZoom:18,attribution:"© swisstopo"}),
+    "Satellite (Esri)": L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"© Esri"}),
+  };
+}
+const VIEW_KEY="saf_fleet_view";
+function loadView(){ try{ const v=JSON.parse(localStorage.getItem(VIEW_KEY)||"null"); if(v&&v.n>=1&&v.n<=4&&Array.isArray(v.follow)) return v; }catch(e){} return {n:1,follow:[null,null,null,null]}; }
+function saveView(){ try{ localStorage.setItem(VIEW_KEY,JSON.stringify({n:panes.length,follow:viewFollow})); }catch(e){} }
+let viewFollow=loadView().follow.concat([null,null,null,null]).slice(0,4);
+const panes=[];
+function createPane(i){
+  const el=document.createElement("div"); el.className="pane";
+  el.innerHTML=`<div class="map"></div><div class="pane-bar"><select aria-label="Appareil suivi sur cette carte"></select><span class="pst"></span><button type="button" hidden>Recentrer</button></div>`;
+  document.getElementById("maps").appendChild(el);
+  const m=L.map(el.querySelector(".map"),{zoomControl:false}).setView([45.9,6.8],8);
+  L.control.zoom({position:"bottomright"}).addTo(m);
+  const lay=makeLayers(); lay["Topo (OpenTopoMap)"].addTo(m);
+  L.control.layers(lay,null,{position:"topright"}).addTo(m);
+  L.control.scale({imperial:false,position:"bottomleft"}).addTo(m);
+  BASES.forEach(b => L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null}),keyboard:false}).addTo(m));
+  const pane={i,el,map:m,markers:{},trails:{},follow:viewFollow[i]||null,moved:false,fitted:false,
+    sel:el.querySelector("select"),pst:el.querySelector(".pst"),btn:el.querySelector("button")};
+  // Déplacement à la main : on arrête de suivre jusqu'au clic sur « Recentrer »
+  m.on("dragstart",()=>{ if(pane.follow){ pane.moved=true; pane.btn.hidden=false; } });
+  pane.btn.onclick=()=>{ pane.moved=false; pane.btn.hidden=true; centerPane(pane,true); };
+  pane.sel.onchange=()=>{ pane.follow=pane.sel.value||null; viewFollow[i]=pane.follow; saveView();
+    pane.moved=false; pane.btn.hidden=true; pane.fitted=false; centerPane(pane,true); render(lastPs); };
+  L.DomEvent.disableClickPropagation(el.querySelector(".pane-bar"));
+  L.DomEvent.disableScrollPropagation(el.querySelector(".pane-bar"));
+  return pane;
+}
+function setSplit(n){
+  n=Math.max(1,Math.min(4,+n||1));
+  // Proposer d'office un appareil différent dans chaque nouvelle carte
+  while(panes.length<n){
+    const i=panes.length;
+    if(i>0 && !viewFollow[i] && fleet.length){
+      const used=new Set(viewFollow.slice(0,i).filter(Boolean));
+      const next=fleet.find(a=>a.active && !used.has(a.reg) && state[a.reg]?.last);
+      viewFollow[i]=next?next.reg:null;
+    }
+    panes.push(createPane(i));
+  }
+  while(panes.length>n){ const p=panes.pop(); p.map.remove(); p.el.remove(); }
+  document.getElementById("maps").dataset.n=n;
+  document.getElementById("split").value=String(n);
+  saveView();
+  setTimeout(()=>{ panes.forEach(p=>{ p.map.invalidateSize(); centerPane(p,false); }); if(lastPs) render(lastPs); },60);
+}
+function centerPane(pane,force){
+  if(pane.follow){
+    const last=state[pane.follow]?.last; if(!last) return;
+    if(pane.moved && !force) return;
+    const z=pane.fitted?pane.map.getZoom():Math.max(pane.map.getZoom(),11);
+    pane.map.setView([last.lat,last.lon],z,{animate:false}); pane.fitted=true;
+  } else if(force || !pane.fitted){
+    const ll=Object.values(state).filter(s=>s.last).map(s=>[s.last.lat,s.last.lon]);
+    if(ll.length){ pane.map.fitBounds(L.latLngBounds(ll).pad(.3),{maxZoom:11}); pane.fitted=true; }
+  }
+}
+function paneBars(){
+  for(const p of panes){
+    const opts=[`<option value="">Toute la flotte</option>`].concat(fleet.map(a=>`<option value="${esc(a.reg)}"${!a.active?" disabled":""}>${esc(a.reg)}${!a.active?" (non suivi)":""}</option>`));
+    const html=opts.join("");
+    if(p.sel.dataset.h!==html){ p.sel.innerHTML=html; p.sel.dataset.h=html; }
+    p.sel.value=p.follow||"";
+    if(p.follow){
+      const a=fleet.find(x=>x.reg===p.follow), last=state[p.follow]?.last;
+      const st=a&&a.active?status(last):{k:"none",t:"Suivi non activé"};
+      p.pst.dataset.st=st.k;
+      p.pst.innerHTML=`<b>${esc(st.t)}</b>${last?` · ${esc(ago(last.fix_time))}`:""}`;
+    } else { p.pst.dataset.st=""; p.pst.textContent=""; }
+  }
+}
 let fleet = [], state = {}, selected = null, firstFit = true;
 
 /* ---------- Utilitaires ---------- */
@@ -437,29 +525,35 @@ function render(ps){
     </div>`;
     const go=()=>{
       if(selected===a.reg){ selected=null; render(lastPs); return; }
-      selected=a.reg; if(last) map.setView([last.lat,last.lon],Math.max(map.getZoom(),11));
+      selected=a.reg;
+      // Centrer la carte qui suit cet appareil, sinon la première carte
+      if(last){ const p=panes.find(x=>x.follow===a.reg)||panes[0];
+        if(p.follow===a.reg){ p.moved=false; p.btn.hidden=true; }
+        p.map.setView([last.lat,last.lon],Math.max(p.map.getZoom(),11)); }
       render(lastPs); ensureDetails(a.reg);
     };
     li.onclick=e=>{ if(e.target.closest(".det")) return; go(); };
     li.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};
     list.appendChild(li);
 
-    // Marqueur
-    if(last){
-      const spot=last.lat.toFixed(3)+","+last.lon.toFixed(3);
-      const idx=stackCount[spot]=(stackCount[spot]??-1)+1;
-      const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl" style="top:${-11+idx*23}px">${esc(a.reg)}</span></div>`;
-      const icon=L.divIcon({className:"",html,iconSize:[0,0]});
-      if(markers[a.reg]) markers[a.reg].setLatLng([last.lat,last.lon]).setIcon(icon);
-      else markers[a.reg]=L.marker([last.lat,last.lon],{icon,keyboard:false}).addTo(map).on("click",go);
-      markers[a.reg].off("click").on("click",go);
-      markers[a.reg].setZIndexOffset(st.k==="lost"?1000:st.k==="live"?500:0);
-    }
-    // Trace
+    // Marqueur et trace, sur chaque carte
+    const spot=last?last.lat.toFixed(3)+","+last.lon.toFixed(3):null;
+    const idx=last?(stackCount[spot]=(stackCount[spot]??-1)+1):0;
     const pts=s.trail.map(p=>[p.lat,p.lon]);
-    if(trails[a.reg]) trails[a.reg].setLatLngs(pts);
-    else trails[a.reg]=L.polyline(pts,{weight:3,opacity:.85}).addTo(map);
-    trails[a.reg].setStyle({color:COLORS[st.k],weight:selected===a.reg?5:3,opacity:selected&&selected!==a.reg?.35:.85});
+    for(const p of panes){
+      const focus=p.follow||selected;   // appareil mis en avant sur cette carte
+      if(last){
+        const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl" style="top:${-11+idx*23}px">${esc(a.reg)}</span></div>`;
+        const icon=L.divIcon({className:"",html,iconSize:[0,0]});
+        if(p.markers[a.reg]) p.markers[a.reg].setLatLng([last.lat,last.lon]).setIcon(icon);
+        else p.markers[a.reg]=L.marker([last.lat,last.lon],{icon,keyboard:false}).addTo(p.map);
+        p.markers[a.reg].off("click").on("click",go);
+        p.markers[a.reg].setZIndexOffset(p.follow===a.reg?2000:st.k==="lost"?1000:st.k==="live"?500:0);
+      }
+      if(p.trails[a.reg]) p.trails[a.reg].setLatLngs(pts);
+      else p.trails[a.reg]=L.polyline(pts,{weight:3,opacity:.85}).addTo(p.map);
+      p.trails[a.reg].setStyle({color:COLORS[st.k],weight:focus===a.reg?5:3,opacity:focus&&focus!==a.reg?.35:.85});
+    }
   }
   list.scrollTop=scroll;
   document.getElementById("sub").textContent=
@@ -468,11 +562,15 @@ function render(ps){
   f.textContent=`Affichage mis à jour ${new Date().toLocaleTimeString("fr-FR")}`+
     (ps?.last_poll?` · relais NSE ${ago(ps.last_poll)}`:"");
   if(ps?.last_poll && minsAgo(ps.last_poll)>5) f.innerHTML+=` <span class="err">Le relais ne tourne plus.</span>`;
-  if(firstFit){ fitAll(); firstFit=false; }
+  paneBars();
+  panes.forEach(p=>centerPane(p,false));   // les cartes qui suivent un appareil se recentrent
+  firstFit=false;
 }
 function fitAll(){
-  const ll=Object.values(state).filter(s=>s.last).map(s=>[s.last.lat,s.last.lon]);
-  if(ll.length) map.fitBounds(L.latLngBounds(ll).pad(.3),{maxZoom:11});
+  // « Toute la flotte » : la première carte revient en vue libre sur l'ensemble
+  const p=panes[0]; if(!p) return;
+  p.follow=null; viewFollow[0]=null; saveView(); p.moved=false; p.btn.hidden=true; p.fitted=false;
+  centerPane(p,true);
 }
 
 /* ---------- Session (partagée avec l'accueil) ---------- */
@@ -493,6 +591,8 @@ async function boot(){
 }
 document.getElementById("logout").onclick=async()=>{await sb.auth.signOut(); location.replace("SAF_Portail.html");};
 document.getElementById("win").onchange=()=>load();
+document.getElementById("split").onchange=e=>setSplit(e.target.value);
+setSplit(loadView().n);
 document.getElementById("fit").onclick=()=>{selected=null; fitAll(); load();};
 sb.auth.onAuthStateChange(ev=>{ if(ev==="SIGNED_OUT") location.replace("SAF_Portail.html"); });
 boot();
