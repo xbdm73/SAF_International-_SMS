@@ -195,6 +195,8 @@ a.sys:hover{border-color:var(--line-strong);background:var(--card-hover)}
    SYSTÈMES — url vide = carte « À configurer » non cliquable.
    url relative (ex. 'index.html') = fichier du même dépôt GitHub.
    url absolue (https://…) = application hébergée ailleurs.
+   roles (facultatif) = carte affichée seulement pour ces rôles de
+   user_roles. Confort d'interface : l'accès réel est décidé par la RLS.
    ================================================================ */
 const SAF_SYSTEMS = [
   { id:'sms', color:'#e3a33b', icon:'shield',
@@ -221,11 +223,14 @@ const SAF_SYSTEMS = [
     name:{fr:'Suivi flotte', en:'Fleet tracking'},
     desc:{fr:'Position en temps réel de HB-ZIP, HB-ZKN et F-HRTS.',
           en:'Live position of HB-ZIP, HB-ZKN and F-HRTS.'},
-    url:'SAF_Suivi_Flotte.html' }
+    url:'SAF_Suivi_Flotte.html',
+    roles:['admin','editor','reader'] }
 ];
 
-/* Projet Supabase dont la session est lue (lecture seule, aucun appel réseau) */
+/* Projet Supabase du SMS : session lue en local, rôle lu dans user_roles */
 const SAF_SUPABASE_REF = 'qaqehmxoehcvzcojcqkm';
+const SAF_SUPABASE_URL = 'https://'+SAF_SUPABASE_REF+'.supabase.co';
+const SAF_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q';
 
 const ICONS = {
   shield:'<path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3z"/><path d="m9 12 2 2 4-4"/>',
@@ -264,6 +269,7 @@ let lang  = store.get('saf_portal_lang','fr');
 let view  = store.get('saf_portal_view','grid');
 let theme = store.get('saf_portal_theme', null);
 const health = {};               // id -> ok | err | ext | pending | cfg
+let userRole = null;             // null = pas encore lu ; 'anon' = pas de session valide ; 'none' = aucune ligne
 const recent = store.get('saf_portal_recent',{});
 
 const t = (k,vars) => { let s=(T[lang]&&T[lang][k])||T.fr[k]||k; if(vars) for(const v in vars) s=s.replace('{'+v+'}',vars[v]); return s; };
@@ -305,6 +311,37 @@ function renderWho(){
   box.classList.add('on'); txt.textContent=email; box.title=t('session')+' : '+email;
 }
 
+/* ---------- rôle SMS (pour les cartes réservées) ---------- */
+function readSession(){
+  let s=null;
+  try{ s=JSON.parse(localStorage.getItem('sb-'+SAF_SUPABASE_REF+'-auth-token')||'null'); }catch(e){}
+  if(!s) return null;
+  const cur = s.currentSession || s;
+  const email = cur.user?.email, token = cur.access_token, exp = cur.expires_at;
+  if(!email || !token || (exp && exp*1000 < Date.now())) return null;
+  return { email, token };
+}
+let roleSeq = 0;
+async function resolveRole(){
+  const seq = ++roleSeq;
+  const ses = readSession();
+  let role = 'anon';
+  if(ses){
+    try{
+      const q = SAF_SUPABASE_URL+'/rest/v1/user_roles?select=role&limit=1&user_email=ilike.'
+              + encodeURIComponent(String(ses.email).trim());
+      const r = await fetch(q,{ headers:{ apikey:SAF_SUPABASE_ANON, Authorization:'Bearer '+ses.token }, cache:'no-store' });
+      const rows = r.ok ? await r.json() : [];
+      role = rows && rows[0] && rows[0].role ? String(rows[0].role).toLowerCase() : 'none';
+    }catch(e){ role = 'none'; }
+  }
+  if(seq !== roleSeq) return;     // une lecture plus récente a pris le relais
+  userRole = role; render();
+}
+/* Carte sans « roles » : visible par tous. Avec « roles » : masquée tant que
+   le rôle n'est pas lu, puis affichée seulement s'il figure dans la liste. */
+const visible = s => !s.roles || (userRole && s.roles.includes(userRole));
+
 /* ---------- état de chaque système ---------- */
 async function check(sys){
   if(!sys.url){ health[sys.id]='cfg'; return; }
@@ -339,8 +376,9 @@ function card(s){
 
 function filtered(){
   const q=document.getElementById('q').value.trim().toLowerCase();
-  if(!q) return SAF_SYSTEMS;
-  return SAF_SYSTEMS.filter(s=>[s.name.fr,s.name.en,s.desc.fr,s.desc.en,s.id].join(' ').toLowerCase().includes(q));
+  const base=SAF_SYSTEMS.filter(visible);
+  if(!q) return base;
+  return base.filter(s=>[s.name.fr,s.name.en,s.desc.fr,s.desc.en,s.id].join(' ').toLowerCase().includes(q));
 }
 
 function render(){
@@ -371,12 +409,13 @@ document.getElementById('btn-theme').onclick=()=>{
   theme = document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
   store.set('saf_portal_theme',theme); applyTheme();
 };
-window.addEventListener('storage',e=>{ if(e.key && e.key.startsWith('sb-')) renderWho(); });
-window.addEventListener('pageshow',()=>{ renderWho(); render(); });
+window.addEventListener('storage',e=>{ if(e.key && e.key.startsWith('sb-')){ renderWho(); resolveRole(); } });
+window.addEventListener('pageshow',()=>{ renderWho(); render(); resolveRole(); });
 
 /* ---------- démarrage ---------- */
 applyTheme(); applyLang();
 SAF_SYSTEMS.forEach(check);
+resolveRole();
 </script>
 </body>
 </html>
