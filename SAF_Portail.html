@@ -51,6 +51,8 @@ button,input{font:inherit;color:inherit}
 .who.on .dot{background:var(--ok)}
 .iconbtn{display:inline-grid;place-items:center;height:30px;min-width:30px;padding:0 8px;border:1px solid var(--line);border-radius:7px;background:transparent;cursor:pointer;color:var(--muted);font-size:12px;font-weight:600}
 .iconbtn:hover{color:var(--text);border-color:var(--line-strong)}
+.iconbtn.login{color:var(--text);text-decoration:none;font-weight:500;white-space:nowrap}
+.iconbtn.login[hidden]{display:none}
 
 /* ---------- Structure ---------- */
 .shell{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:calc(100% - 52px)}
@@ -137,6 +139,7 @@ a.sys:hover{border-color:var(--line-strong);background:var(--card-hover)}
   <div class="org">SAF International <small>CH.AOC.3052</small></div>
   <div class="spacer"></div>
   <div class="who" id="who" title=""><i class="dot"></i><span id="who-txt"></span></div>
+  <a class="iconbtn login" id="btn-login" href="index.html?next=SAF_Portail.html" hidden></a>
   <button class="iconbtn" id="btn-lang" type="button" aria-label="Langue / Language">EN</button>
   <button class="iconbtn" id="btn-theme" type="button" aria-label="Thème">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -247,7 +250,7 @@ const T = {
        s_ok:'En ligne', s_err:'Injoignable', s_pending:'Vérification', s_cfg:'À configurer', s_ext:'Externe',
        opened:'Ouvert', never:'Jamais ouvert', notcfg:'Adresse non renseignée',
        empty:'Aucun système ne correspond à « {q} ».',
-       anon:'Non connecté', session:'Session SMS', expired:'Session SMS expirée',
+       anon:'Non connecté', session:'Session SMS', expired:'Session SMS expirée', login:'Se connecter',
        ago_now:'à l\u2019instant', ago_m:'il y a {n} min', ago_h:'il y a {n} h', ago_d:'il y a {n} j' },
   en:{ nav_org:'Organisation', nav_systems:'Systems', nav_report:'Report an occurrence', bases:'Sion · Albertville',
        title:'Systems', subtitle:'Choose the system you want to work in.',
@@ -255,7 +258,7 @@ const T = {
        s_ok:'Online', s_err:'Unreachable', s_pending:'Checking', s_cfg:'Not configured', s_ext:'External',
        opened:'Opened', never:'Never opened', notcfg:'No address set',
        empty:'No system matches \u201c{q}\u201d.',
-       anon:'Not signed in', session:'SMS session', expired:'SMS session expired',
+       anon:'Not signed in', session:'SMS session', expired:'SMS session expired', login:'Sign in',
        ago_now:'just now', ago_m:'{n} min ago', ago_h:'{n} h ago', ago_d:'{n} d ago' }
 };
 
@@ -305,9 +308,11 @@ function renderWho(){
   try{ s=JSON.parse(localStorage.getItem('sb-'+SAF_SUPABASE_REF+'-auth-token')||'null'); }catch(e){}
   const email = s && (s.user?.email || s.currentSession?.user?.email);
   const exp   = s && (s.expires_at || s.currentSession?.expires_at);
+  const login=document.getElementById('btn-login');
+  login.textContent=t('login'); login.hidden=true;
   box.classList.remove('on');
-  if(!email){ txt.textContent=t('anon'); box.title=''; return; }
-  if(exp && exp*1000 < Date.now()){ txt.textContent=t('expired'); box.title=email; return; }
+  if(!email){ txt.textContent=t('anon'); box.title=''; login.hidden=false; return; }
+  if(exp && exp*1000 < Date.now()){ txt.textContent=t('expired'); box.title=email; login.hidden=false; return; }
   box.classList.add('on'); txt.textContent=email; box.title=t('session')+' : '+email;
 }
 

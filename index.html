@@ -471,7 +471,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   <p class="section-label">Accès aux outils<span class="bi-en">Tool access</span></p>
   <div class="tools-grid">
 
-    <a class="tool-card" id="card-sms" data-module="sms" href="Archives/SAF_International_Safety.html">
+    <a class="tool-card" id="card-sms" data-module="sms" href="SAF_International_Safety.html">
       <div class="tool-header">
         <div class="tool-icon icon-sms">🛡️</div>
         <span class="tool-name">Gestion de la sécurité<span class="bi-en">Safety Management</span></span>
@@ -481,7 +481,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
       <span class="tool-tag tag-sms">SMS</span>
     </a>
 
-    <a class="tool-card" id="card-cms" data-module="cms" href="Archives/SAF_International_Compliance_Monitoring_System.html">
+    <a class="tool-card" id="card-cms" data-module="cms" href="SAF_International_Compliance_Monitoring_System.html">
       <div class="tool-header">
         <div class="tool-icon icon-cms">📋</div>
         <span class="tool-name">Surveillance de la conformité<span class="bi-en">Compliance Monitoring</span></span>
@@ -491,7 +491,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
       <span class="tool-tag tag-cms">CMS</span>
     </a>
 
-    <a class="tool-card" id="card-omm" data-module="omm" href="Archives/SAF_International_Appendices_OMM.html">
+    <a class="tool-card" id="card-omm" data-module="omm" href="SAF_International_Appendices_OMM.html">
       <div class="tool-header">
         <div class="tool-icon icon-omm">📁</div>
         <span class="tool-name">Annexes OMM<span class="bi-en">OMM Appendices</span></span>
@@ -501,7 +501,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
       <span class="tool-tag tag-omm">OMM</span>
     </a>
 
-    <a class="tool-card" id="card-synoptique" data-module="synoptique" href="Archives/SAF_Synoptique_SMS.html">
+    <a class="tool-card" id="card-synoptique" data-module="synoptique" href="SAF_Synoptique_SMS.html">
       <div class="tool-header">
         <div class="tool-icon icon-synoptique">🧭</div>
         <span class="tool-name">Synoptique du SMS<span class="bi-en">SMS synoptic</span></span>
@@ -511,7 +511,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
       <span class="tool-tag tag-synoptique">SMS</span>
     </a>
 
-    <a class="tool-card" id="card-guide" data-module="guide" href="Archives/SAF_User_Guide.html">
+    <a class="tool-card" id="card-guide" data-module="guide" href="SAF_User_Guide.html">
       <div class="tool-header">
         <div class="tool-icon" style="background:rgba(201,162,39,.15);color:var(--gold-light);font-family:var(--font-mono);font-weight:700;">?</div>
         <span class="tool-name">Mode d'emploi SAF</span>
@@ -751,7 +751,17 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
     applyRole(SAF_ROLE, email);
   }
 
+  // Retour après connexion (?next=…) : uniquement une page .html de ce site,
+  // jamais une adresse externe ni un chemin (pas de redirection ouverte).
+  var SAF_NEXT = (function(){
+    try{
+      var n = new URLSearchParams(location.search).get('next') || '';
+      return (/^[A-Za-z0-9_-]+\.html$/.test(n) && n !== 'index.html') ? n : '';
+    }catch(e){ return ''; }
+  })();
+
   function onAuthenticated(session){
+    if(SAF_NEXT){ location.replace(SAF_NEXT); return; }
     overlay.style.display = 'none';
     var email = session.user.email;
     userInfo.textContent = email;
