@@ -235,6 +235,28 @@ body.mode-dg .saf-only.dg-also{display:block;}
 .slabel{border-bottom-color:rgba(201,162,39,.45);}
 .fu{border-color:rgba(255,255,255,.35);}
 </style>
+
+<style id="saf-policy-style">
+/* ── SAFETY POLICY (13.10.2026) ── */
+#saf-policy{background:var(--navy-mid);border:1px solid rgba(201,162,39,.45);border-top:3px solid var(--gold);border-radius:10px;margin:4px 0 18px;overflow:hidden;}
+#saf-policy-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px 12px;}
+#saf-policy-head h2{font-family:var(--font-d);font-weight:400;font-size:clamp(22px,5vw,28px);letter-spacing:.05em;color:var(--white);line-height:1;}
+#saf-policy-tog{flex-shrink:0;padding:7px 12px;border-radius:6px;border:1px solid rgba(201,162,39,.6);background:rgba(201,162,39,.12);color:var(--gold-light);font-family:var(--font-m);font-size:12.5px;cursor:pointer;}
+#saf-policy-tog:focus-visible{outline:2px solid var(--steel-bright);outline-offset:2px;}
+#saf-policy-body{padding:0 18px 18px;color:#EEF2F6;font-size:15px;line-height:1.65;}
+#saf-policy.closed #saf-policy-body{display:none;}
+#saf-policy-body p{margin-bottom:10px;}
+#saf-policy-body .pol-first{font-family:var(--font-d);font-size:clamp(20px,4.6vw,24px);letter-spacing:.04em;color:var(--gold-light);line-height:1.2;margin:14px 0 4px;}
+#saf-policy-body h3{font-family:var(--font-m);font-weight:600;font-size:13px;letter-spacing:1px;color:var(--gold);padding-bottom:6px;border-bottom:1px solid rgba(201,162,39,.35);margin:20px 0 10px;}
+#saf-policy-body ul{padding-left:20px;margin-bottom:6px;}
+#saf-policy-body li{margin-bottom:8px;}
+#saf-policy-body li ul{margin-top:6px;list-style:circle;}
+#saf-policy-body li p{margin:6px 0 0;}
+#saf-policy-sig{margin-top:22px;padding-top:14px;border-top:1px solid rgba(255,255,255,.12);}
+#saf-policy-sig p{margin-bottom:6px;}
+#saf-policy-sig .sig-name{font-family:var(--font-d);font-size:22px;letter-spacing:.06em;color:var(--white);margin-top:10px;}
+@media print{#saf-policy-tog{display:none;}#saf-policy.closed #saf-policy-body{display:block;}}
+</style>
 </head>
 <body class="L-fr">
 
@@ -259,6 +281,66 @@ body.mode-dg .saf-only.dg-also{display:block;}
 <!-- FORM -->
 <div id="form-wrap">
 
+  <!-- SAFETY POLICY (13.10.2026) — visible a l'ouverture -->
+  <section id="saf-policy" aria-labelledby="saf-policy-title">
+    <div id="saf-policy-head">
+      <h2 id="saf-policy-title">Company Safety Policy</h2>
+      <button type="button" id="saf-policy-tog" aria-expanded="true" aria-controls="saf-policy-body" onclick="togglePolicy()"><span class="fr">R&#233;duire</span><span class="en">Collapse</span></button>
+    </div>
+    <div id="saf-policy-body">
+      <p>The safety policy is communicated and visible to all staff, internal and external, and applies equally to flight operations and to continuing airworthiness management.</p>
+      <p class="pol-first">Safety is the first priority in everything we do.</p>
+
+      <h3>Safety culture</h3>
+      <ul>
+        <li>We build and maintain a proactive, systematic and positive safety culture across all our aviation and continuing airworthiness activities, and we apply Human Factors principles in our decisions and procedures.</li>
+        <li>We apply Just Culture principles to internal safety reporting and to the investigation of occurrences. Information on occurrences is never made available or used:
+          <ul>
+            <li>to attribute blame or liability to front-line staff, subcontractors, contractors or any other person for actions, omissions or decisions commensurate with their experience and training; or</li>
+            <li>for any purpose other than the maintenance or improvement of aviation safety.</li>
+          </ul>
+          <p>This protection does not apply in cases of deliberate rule-breach or gross negligence.</p>
+        </li>
+        <li>We actively encourage everyone, including Pilots, TSOP/maintenance staff, CAMO staff and subcontractors, to report malfunctions, incidents, continuing airworthiness-related errors and hazards, without fear of reprisal.</li>
+      </ul>
+
+      <h3>Responsibility &amp; accountability</h3>
+      <ul>
+        <li>Safety is a primary responsibility of the Accountable Manager and of every manager. Each manager is accountable for developing, resourcing and delivering the safety strategy in their area.</li>
+        <li>Accountabilities and responsibilities for safety and for continuing airworthiness are clearly defined at every level of the organisation.</li>
+        <li>Compliance with our procedures, and with the applicable standards and regulations, is verified through our Compliance Monitoring function and our internal investigation process. The outcome of every check feeds back into our risk management.</li>
+        <li>All personnel are required to cooperate fully with compliance monitoring activities and internal investigations.</li>
+      </ul>
+
+      <h3>Risk management &amp; compliance</h3>
+      <ul>
+        <li>We identify hazards and manage risks, both operational and continuing airworthiness, to reduce them to a level that is As Low As Reasonably Practicable (ALARP).</li>
+        <li>We comply with all applicable legislation and regulations, adopt practices that improve safety standards, and keep our processes updated as these evolve.</li>
+        <li>We ensure that externally supplied systems, services and subcontracted activities meet the safety standards required for our operations.</li>
+      </ul>
+
+      <h3>Resources, training &amp; performance</h3>
+      <ul>
+        <li>Staff are trained and competent, and are only given tasks that match their skills. They receive the safety information, training and Human Factors awareness they need.</li>
+        <li>We provide the skilled and trained resources necessary to implement our safety strategy and policy.</li>
+        <li>We set measurable safety objectives and targets, monitor safety performance against them, and take corrective action through regular management and Safety Review Board meetings.</li>
+      </ul>
+
+      <h3>Continuous improvement &amp; communication</h3>
+      <ul>
+        <li>We are committed to maintaining and continuously improving the overall effectiveness of our management system.</li>
+        <li>This policy and safety objectives are communicated throughout the organisation and is made available to all personnel and subcontractors.</li>
+      </ul>
+
+      <div id="saf-policy-sig">
+        <p>Sion on 1 November 2026</p>
+        <p>Accountable Manager,</p>
+        <!-- SIGNATURE ACM : remplacer ce commentaire par <img src="data:image/png;base64,..." alt="Signature Jean Louis CAMUS" style="height:64px;width:auto;display:block;margin-top:8px;"/> -->
+        <p class="sig-name">Jean Louis CAMUS</p>
+      </div>
+    </div>
+  </section>
+
   <!-- INTRO -->
   <div class="intro" style="margin-top:4px;">
     <p class="fr">Le signalement est le fondement de la s&#233;curit&#233; a&#233;rienne. Chaque &#233;v&#232;nement que vous signalez &mdash; m&#234;me celui qui para&#238;t mineur ou qui s&#39;est termin&#233; sans cons&#233;quence &mdash; nous permet de voir un risque avant qu&#39;il ne devienne un accident.</p>
@@ -266,7 +348,7 @@ body.mode-dg .saf-only.dg-also{display:block;}
     <p class="en">Reporting is the foundation of aviation safety. Every event you report &mdash; even one that seems minor or that ended without consequence &mdash; lets us see a risk before it turns into an accident.</p>
     <p class="en">What you write here is treated in confidence and used to improve our operation, never to assign blame. The few minutes you spend on this report may one day save the life of a colleague.</p>
   </div>
-  <div id="saf-guide-context-link" style="text-align:right;margin:8px 2px 14px;"><a href="SAF_User_Guide.html#report" onclick="if(location.pathname.indexOf('/Archives/')!==-1)this.href='../SAF_User_Guide.html#report'" style="color:var(--gold-light);font-family:var(--font-m);font-size:12.5px;text-decoration:none;border:1px solid rgba(201,162,39,.25);padding:6px 10px;border-radius:6px;display:inline-block;">? MODE D'EMPLOI DU SIGNALEMENT</a></div>
+  <div id="saf-guide-context-link" style="text-align:right;margin:8px 2px 14px;"><a href="Archives/SAF_User_Guide.html#report" onclick="if(location.pathname.indexOf('/Archives/')!==-1)this.href='../SAF_User_Guide.html#report'" style="color:var(--gold-light);font-family:var(--font-m);font-size:12.5px;text-decoration:none;border:1px solid rgba(201,162,39,.25);padding:6px 10px;border-radius:6px;display:inline-block;">? MODE D'EMPLOI DU SIGNALEMENT</a></div>
 
   <!-- REPORT TYPE -->
   <div id="rtype">
@@ -1035,7 +1117,7 @@ function resetForm(){
 }
 </script>
 
-<a class="saf-guide-fab" href="SAF_User_Guide.html#report" onclick="if(location.pathname.indexOf('/Archives/')!==-1)this.href='../SAF_User_Guide.html#report'" title="Mode d'emploi SAF" aria-label="Mode d'emploi SAF">?</a>
+<a class="saf-guide-fab" href="Archives/SAF_User_Guide.html#report" onclick="if(location.pathname.indexOf('/Archives/')!==-1)this.href='../SAF_User_Guide.html#report'" title="Mode d'emploi SAF" aria-label="Mode d'emploi SAF">?</a>
 
 <script id="dg-report-block-v3">
 /* 06.10.2026 — Signalement « Dangerous Goods » : 4e type de rapport, a cote de
@@ -1151,6 +1233,14 @@ function dgReset(){
   document.addEventListener('input', function(e){ if(e.target && e.target.classList) e.target.classList.remove('dg-miss'); });
   document.addEventListener('click', function(e){ var c = e.target.closest && e.target.closest('#g-dg-nature, #g-dg-mode'); if(c) c.classList.remove('dg-miss-g'); });
 })();
+</script>
+<script id="saf-policy-js">
+function togglePolicy(){
+  var b=document.getElementById('saf-policy'),t=document.getElementById('saf-policy-tog');
+  var closed=b.classList.toggle('closed');
+  t.setAttribute('aria-expanded',closed?'false':'true');
+  t.innerHTML=closed?'<span class="fr">Lire la politique</span><span class="en">Read the policy</span>':'<span class="fr">R&#233;duire</span><span class="en">Collapse</span>';
+}
 </script>
 </body>
 </html>
