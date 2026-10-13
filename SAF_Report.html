@@ -252,9 +252,11 @@ body.mode-dg .saf-only.dg-also{display:block;}
 #saf-policy-body li{margin-bottom:8px;}
 #saf-policy-body li ul{margin-top:6px;list-style:circle;}
 #saf-policy-body li p{margin:6px 0 0;}
-#saf-policy-sig{margin-top:22px;padding-top:14px;border-top:1px solid rgba(255,255,255,.12);}
-#saf-policy-sig p{margin-bottom:6px;}
-#saf-policy-sig .sig-name{font-family:var(--font-d);font-size:22px;letter-spacing:.06em;color:var(--white);margin-top:10px;}
+#saf-policy .saf-policy-sig{margin-top:22px;padding-top:14px;border-top:1px solid rgba(255,255,255,.12);}
+#saf-policy .saf-policy-sig p{margin-bottom:6px;}
+#saf-policy .saf-policy-sig .sig-name{font-family:var(--font-d);font-size:22px;letter-spacing:.06em;color:var(--white);margin-top:10px;}
+body.L-fr .pol-en{display:none;}
+body.L-en .pol-fr{display:none;}
 @media print{#saf-policy-tog{display:none;}#saf-policy.closed #saf-policy-body{display:block;}}
 </style>
 </head>
@@ -284,10 +286,63 @@ body.mode-dg .saf-only.dg-also{display:block;}
   <!-- SAFETY POLICY (13.10.2026) — visible a l'ouverture -->
   <section id="saf-policy" aria-labelledby="saf-policy-title">
     <div id="saf-policy-head">
-      <h2 id="saf-policy-title">Company Safety Policy</h2>
+      <h2 id="saf-policy-title"><span class="fr">Politique de s&#233;curit&#233; de l&#39;entreprise</span><span class="en">Company Safety Policy</span></h2>
       <button type="button" id="saf-policy-tog" aria-expanded="true" aria-controls="saf-policy-body" onclick="togglePolicy()"><span class="fr">R&#233;duire</span><span class="en">Collapse</span></button>
     </div>
     <div id="saf-policy-body">
+      <div class="pol-fr" lang="fr">
+      <p>La politique de s&#233;curit&#233; est communiqu&#233;e et rendue visible &#224; l&#39;ensemble du personnel, interne et externe, et s&#39;applique de la m&#234;me mani&#232;re aux op&#233;rations a&#233;riennes et &#224; la gestion du maintien de la navigabilit&#233;.</p>
+      <p class="pol-first">La s&#233;curit&#233; est notre premi&#232;re priorit&#233; dans tout ce que nous faisons.</p>
+
+      <h3>Culture de s&#233;curit&#233;</h3>
+      <ul>
+        <li>Nous construisons et entretenons une culture de s&#233;curit&#233; proactive, syst&#233;matique et positive dans l&#39;ensemble de nos activit&#233;s a&#233;ronautiques et de maintien de la navigabilit&#233;, et nous appliquons les principes des facteurs humains dans nos d&#233;cisions et nos proc&#233;dures.</li>
+        <li>Nous appliquons les principes de la culture juste (Just Culture) au signalement interne et aux enqu&#234;tes sur les &#233;v&#232;nements. Les informations relatives aux &#233;v&#232;nements ne sont jamais rendues disponibles ni utilis&#233;es&nbsp;:
+          <ul>
+            <li>pour attribuer une faute ou une responsabilit&#233; au personnel de premi&#232;re ligne, aux sous-traitants, aux prestataires ou &#224; toute autre personne pour des actions, omissions ou d&#233;cisions proportionn&#233;es &#224; leur exp&#233;rience et &#224; leur formation&nbsp;; ou</li>
+            <li>&#224; toute autre fin que le maintien ou l&#39;am&#233;lioration de la s&#233;curit&#233; a&#233;rienne.</li>
+          </ul>
+          <p>Cette protection ne s&#39;applique pas en cas de violation d&#233;lib&#233;r&#233;e des r&#232;gles ou de n&#233;gligence grave.</p>
+        </li>
+        <li>Nous encourageons activement chacun, y compris les pilotes, le personnel TSOP/maintenance, le personnel CAMO et les sous-traitants, &#224; signaler les dysfonctionnements, les incidents, les erreurs li&#233;es au maintien de la navigabilit&#233; et les dangers, sans crainte de repr&#233;sailles.</li>
+      </ul>
+
+      <h3>Responsabilit&#233; et obligation de rendre compte</h3>
+      <ul>
+        <li>La s&#233;curit&#233; rel&#232;ve en premier lieu de la responsabilit&#233; de l&#39;Accountable Manager et de chaque responsable. Chaque responsable r&#233;pond de l&#39;&#233;laboration, de la dotation en moyens et de la mise en &#339;uvre de la strat&#233;gie de s&#233;curit&#233; dans son domaine.</li>
+        <li>Les responsabilit&#233;s et obligations de rendre compte en mati&#232;re de s&#233;curit&#233; et de maintien de la navigabilit&#233; sont clairement d&#233;finies &#224; chaque niveau de l&#39;organisme.</li>
+        <li>Le respect de nos proc&#233;dures, ainsi que des normes et r&#233;glementations applicables, est v&#233;rifi&#233; par notre fonction de surveillance de la conformit&#233; (Compliance Monitoring) et par notre processus d&#39;enqu&#234;te interne. Le r&#233;sultat de chaque contr&#244;le alimente notre gestion des risques.</li>
+        <li>L&#39;ensemble du personnel est tenu de coop&#233;rer pleinement aux activit&#233;s de surveillance de la conformit&#233; et aux enqu&#234;tes internes.</li>
+      </ul>
+
+      <h3>Gestion des risques et conformit&#233;</h3>
+      <ul>
+        <li>Nous identifions les dangers et g&#233;rons les risques, tant op&#233;rationnels que li&#233;s au maintien de la navigabilit&#233;, afin de les ramener &#224; un niveau aussi bas que raisonnablement possible (ALARP).</li>
+        <li>Nous nous conformons &#224; l&#39;ensemble de la l&#233;gislation et des r&#233;glementations applicables, adoptons des pratiques qui am&#233;liorent les standards de s&#233;curit&#233; et tenons nos processus &#224; jour au fil de leurs &#233;volutions.</li>
+        <li>Nous veillons &#224; ce que les syst&#232;mes, services et activit&#233;s sous-trait&#233;es fournis par des tiers r&#233;pondent aux standards de s&#233;curit&#233; requis pour nos op&#233;rations.</li>
+      </ul>
+
+      <h3>Ressources, formation et performance</h3>
+      <ul>
+        <li>Le personnel est form&#233; et comp&#233;tent, et ne se voit confier que des t&#226;ches correspondant &#224; ses comp&#233;tences. Il re&#231;oit les informations de s&#233;curit&#233;, la formation et la sensibilisation aux facteurs humains dont il a besoin.</li>
+        <li>Nous fournissons les ressources qualifi&#233;es et form&#233;es n&#233;cessaires &#224; la mise en &#339;uvre de notre strat&#233;gie et de notre politique de s&#233;curit&#233;.</li>
+        <li>Nous fixons des objectifs et des cibles de s&#233;curit&#233; mesurables, suivons la performance de s&#233;curit&#233; au regard de ceux-ci et engageons des actions correctives lors des r&#233;unions r&#233;guli&#232;res de direction et du Safety Review Board.</li>
+      </ul>
+
+      <h3>Am&#233;lioration continue et communication</h3>
+      <ul>
+        <li>Nous nous engageons &#224; maintenir et &#224; am&#233;liorer en continu l&#39;efficacit&#233; globale de notre syst&#232;me de gestion.</li>
+        <li>Cette politique et les objectifs de s&#233;curit&#233; sont communiqu&#233;s dans l&#39;ensemble de l&#39;organisme et mis &#224; la disposition de tout le personnel et des sous-traitants.</li>
+      </ul>
+
+      <div class="saf-policy-sig">
+        <p>Sion, le 1<sup>er</sup> novembre 2026</p>
+        <p>L&#39;Accountable Manager,</p>
+        <p class="sig-name">Jean Louis CAMUS</p>
+      </div>
+      </div>
+
+      <div class="pol-en" lang="en">
       <p>The safety policy is communicated and visible to all staff, internal and external, and applies equally to flight operations and to continuing airworthiness management.</p>
       <p class="pol-first">Safety is the first priority in everything we do.</p>
 
@@ -332,11 +387,13 @@ body.mode-dg .saf-only.dg-also{display:block;}
         <li>This policy and safety objectives are communicated throughout the organisation and is made available to all personnel and subcontractors.</li>
       </ul>
 
-      <div id="saf-policy-sig">
+      <div class="saf-policy-sig">
         <p>Sion on 1 November 2026</p>
         <p>Accountable Manager,</p>
         <!-- SIGNATURE ACM : remplacer ce commentaire par <img src="data:image/png;base64,..." alt="Signature Jean Louis CAMUS" style="height:64px;width:auto;display:block;margin-top:8px;"/> -->
         <p class="sig-name">Jean Louis CAMUS</p>
+      </div>
+    
       </div>
     </div>
   </section>
