@@ -8500,7 +8500,9 @@ async function occBulkTaxoApply(){
     var val = String(r.value||'');
     if(val === cur) return;
     if(val && (typeof DB==='undefined' || !DB.some(function(x){ return x && x.id===val; }))) return;
+    var _others = occRiskLinks(occ).filter(function(x){ return x!==cur && x!==val; });
     occ.risk_link = val;
+    occ.risk_links = (val ? [val] : []).concat(_others);
     if(occ.five_whys && typeof occ.five_whys==='object') occ.five_whys.risk_link = val;
     nr++;
   });
@@ -10017,9 +10019,52 @@ function probThreshUpdateFlightHours(input) {
   if (spiInput) spiInput.value = input.value;
 }
 
+// ── Liens multiples occurrence → risques SMS (risk_links[]) ──
+// risk_link reste le lien principal (1er de la liste) pour compatibilité ascendante.
+function occRiskLinks(o){
+  if(!o) return [];
+  var out=[];
+  function add(v){ v=String(v||'').trim(); if(v && out.indexOf(v)===-1) out.push(v); }
+  add(o.risk_link);
+  if(Array.isArray(o.risk_links)) o.risk_links.forEach(add);
+  if(o.five_whys && typeof o.five_whys==='object') add(o.five_whys.risk_link);
+  return out;
+}
+function occRiskLinkFormGet(){
+  var h=document.getElementById('occ-risk-links');
+  return h && h.value ? h.value.split(',').filter(Boolean) : [];
+}
+function occRiskLinkFormSet(arr){
+  var list=[]; (arr||[]).forEach(function(v){ v=String(v||'').trim(); if(v && list.indexOf(v)===-1) list.push(v); });
+  var h=document.getElementById('occ-risk-links'); if(h) h.value=list.join(',');
+  var p=document.getElementById('occ-risk-link'); if(p) p.value=list[0]||'';
+  var box=document.getElementById('occ-risk-chips'); if(!box) return;
+  var esc=function(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+  box.innerHTML = list.length ? list.map(function(id,i){
+    var r=(typeof DB!=='undefined'&&Array.isArray(DB))?DB.find(function(x){return x&&x.id===id;}):null;
+    var tip=r?(r.event||r.title||''):'Risque introuvable dans le registre';
+    return '<span title="'+esc(tip)+'" style="display:inline-flex;align-items:center;gap:5px;padding:2px 4px 2px 8px;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.4);border-radius:12px;font-family:var(--font-mono);font-size:10px;color:var(--gold-light);">'
+      +(i===0&&list.length>1?'<span style="font-size:8px;opacity:.7;">★</span>':'')+esc(id)
+      +'<button type="button" onclick="occRiskLinkRemove(\''+esc(id)+'\')" title="Retirer" style="background:none;border:none;color:var(--grey-400);cursor:pointer;font-size:12px;line-height:1;padding:0 2px;">×</button></span>';
+  }).join('') : '<span style="font-family:var(--font-mono);font-size:10px;color:var(--grey-600);">Aucun risque lié</span>';
+}
+function occRiskLinkAdd(id){
+  if(!id) return;
+  var l=occRiskLinkFormGet(); if(l.indexOf(id)===-1) l.push(id);
+  occRiskLinkFormSet(l); if(typeof occMarkDirty==='function') occMarkDirty();
+}
+function occRiskLinkRemove(id){
+  occRiskLinkFormSet(occRiskLinkFormGet().filter(function(x){return x!==id;}));
+  if(typeof occMarkDirty==='function') occMarkDirty();
+}
+function occRiskLinksMerge(primary, formList){
+  var out=[]; [primary].concat(formList||[]).forEach(function(v){ v=String(v||'').trim(); if(v && out.indexOf(v)===-1) out.push(v); });
+  return out;
+}
+
 // ── Link occurrence counts (register) to a suggested probability class ──
 function occurrencesForRisk(riskId) {
-  return getOccurrences().filter(o => o.risk_link === riskId);
+  return getOccurrences().filter(o => occRiskLinks(o).indexOf(riskId) !== -1);
 }
 
 function occurrencesForRiskLast12Months(riskId) {
@@ -16877,7 +16922,7 @@ function showOccurrenceForm(editId){
       <div class="form-field" style="margin:0;"><label class="field-label">Occurrence ID <span class="req">*</span><span style="font-size:9px;color:var(--grey-600);margin-left:5px;font-style:italic;">modifiable</span></label><input id="occ-custom-id" type="text" placeholder="ex. OCC-2024-001" style="width:100%;font-family:var(--font-mono);font-size:11px;" title="Identifiant unique de l'occurrence — modifiable librement"/></div>
       <div class="form-field" style="margin:0;"><label class="field-label">Date <span class="req">*</span></label><input id="occ-date" type="date" style="width:100%;" onchange="occRefreshEccairsDeadlinePreview()"/></div>
       <div class="form-field" style="margin:0;"><label class="field-label">Severity</label><select id="occ-severity" style="width:100%;" onchange="occCheckHFACSTrigger()"><option value="" style="background:#0d1b2a;color:#f4f6f8;">Select…</option><option value="accident" style="background:#0d1b2a;color:#f4f6f8;">Accident</option><option value="serious" style="background:#0d1b2a;color:#f4f6f8;">Serious Incident</option><option value="incident" style="background:#0d1b2a;color:#f4f6f8;">Incident</option><option value="hazard" style="background:#0d1b2a;color:#f4f6f8;">Hazard / Near miss</option></select></div>
-      <div class="form-field" style="margin:0;"><label class="field-label">Linked risk ID</label><select id="occ-risk-link" style="width:100%;"><option value="" style="background:#0d1b2a;color:#f4f6f8;">None</option>${DB.map(r=>`<option value="${r.id}" style="background:#0d1b2a;color:#f4f6f8;">${r.id} — ${(r.event||'').slice(0,40)}</option>`).join('')}</select></div>
+      <div class="form-field" style="margin:0;"><label class="field-label">Linked risk ID(s)</label><input type="hidden" id="occ-risk-link" value=""/><input type="hidden" id="occ-risk-links" value=""/><div id="occ-risk-chips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px;"><span style="font-family:var(--font-mono);font-size:10px;color:var(--grey-600);">Aucun risque lié</span></div><select id="occ-risk-add" style="width:100%;" onchange="occRiskLinkAdd(this.value);this.value='';"><option value="" style="background:#0d1b2a;color:#f4f6f8;">＋ Ajouter un risque SMS…</option>${DB.map(r=>`<option value="${r.id}" style="background:#0d1b2a;color:#f4f6f8;">${r.id} — ${(r.event||'').slice(0,40)}</option>`).join('')}</select></div>
     </div>
     <div class="form-field" style="margin:0 0 12px;"><label class="field-label">Description <span class="req">*</span></label><textarea id="occ-desc" rows="3" placeholder="Brief factual description…"></textarea></div>
     ${occRenderEventAccounting(_occ)}
@@ -17186,7 +17231,7 @@ function showOccurrenceForm(editId){
     document.getElementById('occ-severity').value   = _occ.severity || '';
     document.getElementById('occ-desc').value       = _occ.description || '';
     document.getElementById('occ-location').value   = _occ.location || '';
-    document.getElementById('occ-risk-link').value  = _occ.risk_link || '';
+    occRiskLinkFormSet(occRiskLinks(_occ));
     document.getElementById('occ-eccairs-reportable').checked =
       (typeof _occ.eccairs_reportable !== 'undefined') ? !!_occ.eccairs_reportable : (['accident','serious','incident'].indexOf(_occ.severity)!==-1);
     document.getElementById('occ-awareness-datetime').value = occToLocalInput(_occ.awareness_datetime || '');
@@ -17315,7 +17360,8 @@ function saveOccurrence(_silent){
       description:  desc,
       location:     (document.getElementById('occ-location')?.value||'').trim(),
       actions:      getOccActions(),
-      risk_link:    eventAccounting.risk_link||document.getElementById('occ-risk-link')?.value||'',
+      risk_link:    occRiskLinksMerge(eventAccounting.risk_link, occRiskLinkFormGet())[0]||'',
+      risk_links:   occRiskLinksMerge(eventAccounting.risk_link, occRiskLinkFormGet()),
       catalog_event_id: eventAccounting.catalog_event_id,
       catalog_event_mode: eventAccounting.catalog_event_mode,
       taxonomy_occurrence_category: eventAccounting.taxonomy_occurrence_category||'',
@@ -17368,7 +17414,8 @@ function saveOccurrence(_silent){
       description: desc,
       location:    (document.getElementById('occ-location')?.value||'').trim(),
       actions:     getOccActions(),
-      risk_link:   eventAccounting.risk_link||document.getElementById('occ-risk-link')?.value||'',
+      risk_link:   occRiskLinksMerge(eventAccounting.risk_link, occRiskLinkFormGet())[0]||'',
+      risk_links:  occRiskLinksMerge(eventAccounting.risk_link, occRiskLinkFormGet()),
       catalog_event_id: eventAccounting.catalog_event_id,
       catalog_event_mode: eventAccounting.catalog_event_mode,
       taxonomy_occurrence_category: eventAccounting.taxonomy_occurrence_category||'',
@@ -17401,9 +17448,14 @@ function saveOccurrence(_silent){
     if(typeof renderEventAccounting==='function' && document.getElementById('view-eventaccounting')?.classList.contains('active')) renderEventAccounting();
     if(typeof updatePendingBadge==='function') updatePendingBadge();
     if(!_silent) showToast('✓ Occurrence '+occ.id+' saved','success');
-    if(occ.risk_link){
-      var r=DB.find(function(x){return x.id===occ.risk_link;});
-      if(r){if(!r.history)r.history=[];r.history.push(safStamp({action:'occurrence_linked',date:occ.date,occ_id:occ.id}));saveDB();}
+    var _rls=occRiskLinks(occ);
+    if(_rls.length){
+      var _chg=false;
+      _rls.forEach(function(rid){
+        var r=DB.find(function(x){return x.id===rid;});
+        if(r){if(!r.history)r.history=[];r.history.push(safStamp({action:'occurrence_linked',date:occ.date,occ_id:occ.id}));_chg=true;}
+      });
+      if(_chg) saveDB();
     }
   }
 }
@@ -17422,7 +17474,7 @@ function renderOccurrenceList() {
   var thisYear = new Date().getFullYear();
   var byYear   = occs.filter(function(o){return new Date(o.date).getFullYear()===thisYear;}).length;
   var accSer   = occs.filter(function(o){return o.severity==='accident'||o.severity==='serious';}).length;
-  var linked   = occs.filter(function(o){return o.risk_link;}).length;
+  var linked   = occs.filter(function(o){return occRiskLinks(o).length;}).length;
 
   var html = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;">'
     + '<div style="background:var(--navy-mid);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;text-align:center;"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:var(--steel-bright);">' + occs.length + '</div><div style="font-size:10px;color:var(--grey-400);font-family:var(--font-mono);margin-top:4px;">Total occurrences</div></div>'
@@ -17464,7 +17516,7 @@ function renderOccurrenceList() {
       + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;">' + o.date + '</td>'
       + '<td style="padding:8px 14px;"><span style="background:' + sc + '22;color:' + sc + ';border:1px solid ' + sc + '55;border-radius:3px;padding:2px 7px;font-family:var(--font-mono);font-size:9px;font-weight:700;">' + sl + '</span></td>'
       + '<td style="padding:8px 14px;color:var(--grey-200);">' + (o.description || '').slice(0, 55) + '</td>'
-      + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--gold-light);">' + (o.risk_link || '—') + '</td>'
+      + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--gold-light);">' + (occRiskLinks(o).join(', ') || '—') + '</td>'
       + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);">' + (o.catalog_event_id || '—') + '</td>'
       + '<td style="padding:8px 14px;text-align:center;">' + (function(){
           var arc = o.arms && o.arms.arc_class;
@@ -20697,7 +20749,7 @@ function _buildSafNotes(occ, uncoded){
   }
   L.push('=== SAF metadata ===');
   L.push('Occurrence ID: '+occ.id);
-  L.push('Linked Risk ID: '+(occ.risk_link||'None'));
+  L.push('Linked Risk ID: '+(occRiskLinks(occ).join(', ')||'None'));
   L.push('Source: '+(occ.source||'safety_management'));
   L.push('Status: '+(occ.status||''));
   L.push('Reporter identity: RESTRICTED — intentionally excluded from this export under Reg. (EU) 376/2014 confidentiality / protection principles.');
@@ -21064,7 +21116,7 @@ function exportOccurrenceCSV(id){
     ['Field','Value'],
     ['Report ID',occ.id],['Date',occ.date],['Severity',occ.severity||''],
     ['Description',occ.description||''],['Location',occ.location||''],
-    ['Linked Risk ID',occ.risk_link||''],
+    ['Linked Risk ID',occRiskLinks(occ).join(', ')],
     ['Contributing Factors',(occ.contributing_factors||[]).join(' | ')],
     ['Immediate Actions',(occ.actions||[]).join(' | ')],
     ['JC - Action Intended',jc.intended||''],['JC - Consequence Intended',jc.consequence||''],
@@ -21174,7 +21226,7 @@ function exportOccurrencePDF(id){
     +'<div class="box"><table>'
     +'<tr><td style="width:160px;font-weight:700;color:#475569;padding:6px 10px;">Report ID</td><td style="padding:6px 10px;"><strong>'+occ.id+'</strong></td><td style="width:160px;font-weight:700;color:#475569;padding:6px 10px;">Date</td><td style="padding:6px 10px;">'+occ.date+'</td></tr>'
     +'<tr><td style="font-weight:700;color:#475569;padding:6px 10px;">Severity</td><td style="padding:6px 10px;"><span class="sev" style="background:'+sc+';">'+sl+'</span></td><td style="font-weight:700;color:#475569;padding:6px 10px;">Location</td><td style="padding:6px 10px;">'+(occ.location||'—')+'</td></tr>'
-    +'<tr><td style="font-weight:700;color:#475569;padding:6px 10px;">Linked Risk</td><td style="padding:6px 10px;">'+(occ.risk_link||'None')+'</td><td style="font-weight:700;color:#475569;padding:6px 10px;">Reporting Entity</td><td style="padding:6px 10px;">SAF International</td></tr>'
+    +'<tr><td style="font-weight:700;color:#475569;padding:6px 10px;">Linked Risk</td><td style="padding:6px 10px;">'+(occRiskLinks(occ).join(', ')||'None')+'</td><td style="font-weight:700;color:#475569;padding:6px 10px;">Reporting Entity</td><td style="padding:6px 10px;">SAF International</td></tr>'
     +'</table></div>'
     +'<h2>2 · Event Description</h2>'
     +'<div class="box" style="line-height:1.55;">'+(occ.description||'—')+'</div>'
@@ -26151,8 +26203,7 @@ window.cmxBridgeDiag    = function(){
     if(!id) return [];
     return occurrences().filter(function(o){
       if(!o) return false;
-      var l = o.risk_link || (o.five_whys && o.five_whys.risk_link) || '';
-      return String(l)===String(id);
+      return occRiskLinks(o).indexOf(String(id)) !== -1;
     }).sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
   }
 
