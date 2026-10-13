@@ -16720,6 +16720,16 @@ function occToggleEccairsReportable(){
   var cb=document.getElementById('occ-eccairs-reportable');
   var body=document.getElementById('occ-eccairs-reportable-body');
   if(body) body.style.display = (cb && cb.checked) ? '' : 'none';
+  // Le bloc ECCAIRS2 · Flight Operation suit l'état de la case : replié si
+  // l'événement n'est pas soumis au compte rendu obligatoire, déplié sinon.
+  // Le bouton « Replier / déplier » reste utilisable manuellement ensuite.
+  var fo=document.getElementById('occ-eccairs-body');
+  if(fo){
+    var collapse=!(cb && cb.checked);
+    fo.classList.toggle('collapsed', collapse);
+    var btn=fo.parentNode && fo.parentNode.querySelector('.occ-panel-toggle');
+    if(btn) btn.classList.toggle('collapsed', collapse);
+  }
   occRefreshEccairsDeadlinePreview();
 }
 // Recomputes and displays the ECCAIRS2 deadline previews inside the open occurrence form.
