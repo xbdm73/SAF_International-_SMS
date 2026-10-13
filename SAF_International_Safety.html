@@ -16896,8 +16896,6 @@ function showOccurrenceForm(editId){
       </div>
     </div>
 
-    ${occRenderEccairsFields(_occ)}
-
     <div class="occ-jc-wrap" style="margin-bottom:14px;">
       <div class="occ-jc-head"><div><div class="occ-jc-title">📅 ECCAIRS2 — Notification &amp; délais réglementaires</div><div class="occ-jc-note">Règl. (UE) 376/2014 art. 4 &amp; 13 — 72 h après connaissance de l’événement par SAF ; si l’analyse identifie un risque réel ou potentiel : premiers résultats/actions sous 30 jours et résultats finaux, si requis, en principe sous 3 mois à compter de la notification par le reporter.</div></div></div>
       <div class="occ-panel-body" style="padding:14px 16px;">
@@ -16931,6 +16929,8 @@ function showOccurrenceForm(editId){
         </div>
       </div>
     </div>
+
+    ${occRenderEccairsFields(_occ)}
 
     <div class="occ-jc-wrap">
       <div class="occ-jc-head"><div><div class="occ-jc-title">Decision tree — Error / Violation / Indiscipline</div><div class="occ-jc-note">Answer YES / NO until a clear conclusion is reached.</div></div><div style="display:flex;gap:8px;align-items:center;"><button type="button" onclick="occResetJustCulture()" style="padding:4px 12px;background:rgba(248,81,73,.12);border:1px solid rgba(248,81,73,.35);border-radius:5px;color:#ff9090;font-family:var(--font-mono);font-size:10px;cursor:pointer;" title="Reset">↺ Reset</button><button type="button" class="occ-panel-toggle" onclick="occTogglePanel('occ-jc-body',this)"><span class="occ-panel-chevron">▼</span> Replier / déplier</button></div></div>
