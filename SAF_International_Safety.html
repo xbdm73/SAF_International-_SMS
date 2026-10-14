@@ -1449,6 +1449,38 @@ details.occ-own-pick>summary:focus-visible{outline:2px solid #e3b341;outline-off
 .occ-ll-chip{display:inline-flex;align-items:center;gap:5px;padding:2px 4px 2px 8px;border-radius:12px;font-family:var(--font-mono);font-size:10px;}
 .occ-ll-chip a{color:inherit;text-decoration:none;cursor:pointer;}
 .occ-ll-chip a:hover{text-decoration:underline;}
+
+/* Suivi des actions */
+.occ-fw-action-sent{flex-shrink:0;font-family:var(--font-mono);font-size:9px;color:#3fb950;white-space:nowrap;cursor:help;}
+.at-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:0 0 16px;}
+.at-kpi{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;cursor:pointer;text-align:left;}
+.at-kpi:hover{border-color:rgba(232,160,32,.45);}
+.at-kpi-v{font-family:var(--font-mono);font-size:22px;font-weight:700;line-height:1;}
+.at-kpi-l{font-family:var(--font-mono);font-size:10px;color:var(--grey-400);}
+.at-table{width:100%;border-collapse:collapse;font-size:11px;}
+.at-table th{text-align:left;font-family:var(--font-mono);font-size:9px;letter-spacing:1px;color:var(--grey-400);padding:8px;border-bottom:1px solid rgba(255,255,255,.12);white-space:nowrap;}
+.at-table td{padding:8px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top;color:var(--grey-200);}
+.at-table tr.at-late td{background:rgba(248,81,73,.06);}
+.at-table tr.at-late td:first-child{box-shadow:inset 3px 0 0 #f85149;}
+.at-table tr.at-closed td{opacity:.6;}
+.at-text{max-width:420px;white-space:pre-wrap;color:var(--white)!important;}
+.at-ref{color:var(--gold-light);font-family:var(--font-mono);font-size:10px;cursor:pointer;text-decoration:none;}
+.at-ref:hover{text-decoration:underline;}
+.at-sub{font-family:var(--font-mono);font-size:9px;color:var(--grey-600);margin-top:2px;}
+.at-src{font-family:var(--font-mono);font-size:9px;padding:2px 7px;border-radius:3px;white-space:nowrap;}
+.at-src-OCC{background:rgba(232,160,32,.12);color:#e3b341;border:1px solid rgba(232,160,32,.35);}
+.at-src-MOC{background:rgba(74,159,224,.12);color:#4A9FE0;border:1px solid rgba(74,159,224,.35);}
+.at-st,.at-due{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:5px;color:var(--white);font-family:var(--font-mono);font-size:10px;padding:5px 6px;color-scheme:dark;}
+.at-pill{font-family:var(--font-mono);font-size:10px;}
+.at-st-closed{color:#3fb950!important;}.at-st-progress{color:#4A9FE0!important;}.at-st-todo{color:var(--grey-200);}
+.at-late-tag{font-family:var(--font-mono);font-size:9px;color:#f85149;font-weight:700;margin-top:3px;}
+.at-sent{font-family:var(--font-mono);font-size:10px;color:#3fb950;cursor:help;}
+.at-unsent{font-family:var(--font-mono);font-size:10px;color:#e3b341;}
+.at-btn{padding:3px 8px;margin-left:4px;background:rgba(74,159,224,.12);border:1px solid rgba(74,159,224,.4);border-radius:4px;color:#4A9FE0;font-family:var(--font-mono);font-size:11px;cursor:pointer;}
+.at-chk input{width:auto!important;margin:0;accent-color:#e3b341;}
+.at-chk{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);white-space:nowrap;}
+.at-empty{color:var(--grey-400);font-family:var(--font-mono);font-size:12px;padding:20px;text-align:center;border:1px dashed rgba(255,255,255,.1);border-radius:8px;}
+@media (max-width:900px){.at-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -1973,6 +2005,10 @@ nav { top: 118px !important; }
 <div class="nav-item" onclick="showView('occurrences')">
 <span class="icon">⚡</span>
 <span class="nav-item-text"><span class="nav-app-code">APP12-OMM</span><span class="nav-app-title">Occurrence Log <span class="count" id="cnt-pending-reports" style="background:#f85149;color:#fff;border-radius:10px;padding:1px 6px;font-size:9px;display:none;"></span></span></span>
+</div>
+<div class="nav-item" onclick="showView('actions')">
+<span class="icon">☑</span>
+<span class="nav-item-text"><span class="nav-app-title">Suivi des actions <span class="count" id="cnt-actions-late" style="background:#f85149;color:#fff;border-radius:10px;padding:1px 6px;font-size:9px;display:none;"></span></span></span>
 </div>
 <div class="nav-item" onclick="showView('eventaccounting')">
 <span class="icon">∑</span>
@@ -3352,6 +3388,28 @@ function updateOaciDefinitionDropdown(sel) {
 </div></div>
 </div>
 
+<div class="view" id="view-actions">
+  <div class="dash-header">
+    <div><div class="dash-title">SUIVI DES ACTIONS</div><div class="dash-subtitle">Actions correctives / préventives de l'Occurrence Log et actions des études de changement (MOC) — ORO.GEN.200(a)(3)</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-gold" onclick="atExportCSV()">⇩ EXPORT CSV</button>
+      <button class="btn btn-ghost" onclick="renderActionTracker()">↺ ACTUALISER</button>
+    </div>
+  </div>
+  <div style="padding:0 28px 28px;">
+    <div id="at-kpis" class="at-kpis"></div>
+    <div class="filter-bar">
+      <span class="filter-label">FILTRE</span>
+      <input id="at-search" type="text" placeholder="Référence, action, responsable…" oninput="AT.q=this.value;renderActionTracker()"/>
+      <select id="at-source" onchange="AT.src=this.value;renderActionTracker()"><option value="">Toutes sources</option><option value="OCC">Occurrence Log</option><option value="MOC">Études de changement</option></select>
+      <select id="at-status" onchange="AT.st=this.value;renderActionTracker()"><option value="open" selected>Ouvertes</option><option value="unsent">Ouvertes non notifiées</option><option value="closed">Clôturées</option><option value="all">Toutes</option></select>
+      <select id="at-owner" onchange="AT.own=this.value;renderActionTracker()"></select>
+      <label class="at-chk"><input type="checkbox" id="at-late" onchange="AT.late=this.checked;renderActionTracker()"/> En retard seulement</label>
+      <span id="at-count" class="at-sub" style="margin-left:auto;"></span>
+    </div>
+    <div id="at-wrap"></div>
+  </div>
+</div>
 <div class="view" id="view-eventaccounting">
   <div class="dash-header">
     <div><div class="dash-title">EVENT TAXONOMY & ACCOUNTING</div><div style="font-family:var(--font-mono);font-size:11px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase;margin:4px 0 2px;">APP13-OMM</div><div class="dash-subtitle">Three-level structure: occurrence category → stable SAF family → risk scenario. Counters include only occurrences linked after implementation.</div></div>
@@ -11965,6 +12023,7 @@ function showView(name) {
   if(name==='bowtie')    { btPopulateSelect(); renderBowtie(); }
   if(name==='occurrences'){ renderOccurrenceList(); if(typeof updatePendingBadge==='function') updatePendingBadge(); }
   if(name==='eventaccounting') renderEventAccounting();
+  if(name==='actions')     { var _ao=document.getElementById('at-owner'); if(_ao) delete _ao.dataset.filled; renderActionTracker(); }
   if(name==='lessons')     renderLessonsList();
   if(name==='training')    renderSMSTraining();
   if(name==='interfaces')  renderInterfaces();
@@ -14772,6 +14831,15 @@ function computeCAPAKPI(){
     actions.push({source:'change-control', id:c.id || ('CC-' + actions.length), date:date, closed:closed, text:c.description || c.title || c.regulation || '', followup:_safeDate(c.due_date), effective:!!c.effectiveness_review});
   });
 
+  _getLSArray('safOccurrences').forEach(function(o){
+    var fw=o&&o.five_whys; if(!fw||!Array.isArray(fw.corrective_actions)) return;
+    fw.corrective_actions.forEach(function(a,i){
+      if(typeof a!=='object'||a===null||!String(a.text||'').trim()) return;
+      actions.push({source:'occurrence', id:(o.id||'OCC')+'#'+(i+1), date:_safeDate(a.created_at)||_safeDate(o.date)||now,
+        closed:a.status==='Completed', text:a.text, followup:_safeDate(a.actionDate), effective:false});
+    });
+  });
+
   var open = actions.filter(function(a){ return !a.closed; });
   var openGt30 = open.filter(function(a){ return _daysBetween(a.date, now) > 30 || (a.followup && a.followup < now); }).length;
 
@@ -16006,7 +16074,7 @@ function occBuildActionEmail(row){
     +'\nMerci de confirmer la prise en compte, le statut et l\'échéance de réalisation.\n\nCordialement,';
   window.location.href='mailto:'+emails.map(encodeURIComponent).join(',')+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
 }
-function occEmailFWAction(btn){var row=btn.closest('.occ-fw-action-row')||btn.closest('div');if(row)occBuildActionEmail(row);}
+function occEmailFWAction(btn){var row=btn.closest('.occ-fw-action-row');if(row){occSendFWAction(row);return;}row=btn.closest('div');if(row)occBuildActionEmail(row);}
 function occResetActionEmailMap(){if(confirm('Reset saved email addresses for NPFO / NPCT / NPGO / NPCA / ACM / SM / CMM / Other?')){localStorage.removeItem('safOccActionEmailMap');showToast('Email addresses reset','success');}}
 function occFWActionDisplayList(arr){return (arr||[]).map(occFWActionLabel).filter(Boolean);}
 
@@ -16080,6 +16148,256 @@ function llApplyOccLinks(lessonId,wanted){
   });
   if(chg)saveOccurrences(occs);
 }
+
+// ══ Actions de l'Occurrence Log : identifiant, envoi aux responsables, suivi ══
+// Chaque action porte : id (OA-…), created_at, closed_at (posé au passage en
+// Completed), email_log[] = {to, owner, at, by, via:'emailjs'|'mailto'}.
+function occNewActionId(){return 'OA-'+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,5).toUpperCase();}
+function occActionRowInit(row,value){
+  var v=(typeof value==='object'&&value!==null)?value:{};
+  row.dataset.aid=v.id||occNewActionId();
+  row.dataset.created=v.created_at||new Date().toISOString();
+  row.dataset.closed=v.closed_at||'';
+  row.dataset.log=JSON.stringify(Array.isArray(v.email_log)?v.email_log:[]);
+}
+function occActionRowLog(row){try{return JSON.parse(row.dataset.log||'[]');}catch(e){return [];}}
+function occActionMeta(row,a){
+  a.id=row.dataset.aid||occNewActionId();
+  a.created_at=row.dataset.created||new Date().toISOString();
+  a.email_log=occActionRowLog(row);
+  a.closed_at=a.status==='Completed'?(row.dataset.closed||new Date().toISOString().slice(0,10)):'';
+  return a;
+}
+function occFmtDT(iso){if(!iso)return '';var d=new Date(iso);if(isNaN(d))return iso;return d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
+function occActionSentSummary(log){
+  log=log||[];if(!log.length)return '';
+  var last=log[log.length-1];
+  var ok=log.filter(function(l){return l.via==='emailjs';}).length;
+  return (ok?'✓ Envoyé':'✉ Préparé')+' '+occFmtDT(last.at).slice(0,10);
+}
+function occActionSentTitle(log){return (log||[]).map(function(l){return occFmtDT(l.at)+' — '+(l.owner?l.owner+' <'+l.to+'>':l.to)+(l.via==='mailto'?' (client mail)':'')+(l.by?' — par '+l.by:'');}).join('\n');}
+function occActionSentRefresh(row){
+  var sp=row.querySelector('.occ-fw-action-sent');if(!sp)return;
+  var log=occActionRowLog(row);
+  sp.textContent=occActionSentSummary(log);
+  sp.title=occActionSentTitle(log);
+  sp.style.display=log.length?'':'none';
+}
+// Destinataires : une adresse par type de personnel coché (mémorisée par fonction)
+function occActionRecipients(owners,ownerCustom){
+  var out=[];
+  for(var i=0;i<owners.length;i++){
+    var lab=owners[i]==='To be specified'?(ownerCustom||'Autre / To be specified'):owners[i];
+    var em=occGetActionEmail(owners[i],ownerCustom);
+    if(!em)return null;
+    em.split(/[;,]/).map(function(x){return x.trim();}).filter(Boolean).forEach(function(e1){
+      if(!out.some(function(r){return r.to.toLowerCase()===e1.toLowerCase();}))out.push({owner:lab,to:e1});
+    });
+  }
+  return out;
+}
+// Envoi d'une action. ctx = {occId, date, desc, root} ; a = action (text, owners, owner_custom, status, actionDate).
+// cb(entries) reçoit les lignes à ajouter à email_log (rien si annulé ou échec complet).
+function occActionDispatch(ctx,a,cb){
+  var text=String(a.text||'').trim();
+  if(!text){showToast('Renseigner d\'abord le texte de l\'action.','error');return;}
+  var owners=occFWActionOwners(a);
+  if(!owners.length){showToast('Sélectionner au moins un responsable / processus.','error');return;}
+  var rec=occActionRecipients(owners,a.owner_custom||'');
+  if(!rec||!rec.length)return;
+  if(!confirm('Envoyer cette action à :\n\n'+rec.map(function(r){return '• '+r.owner+' <'+r.to+'>';}).join('\n')+'\n\nAction : '+text+(a.actionDate?'\nÉchéance : '+a.actionDate:'')))return;
+  var who=(typeof safCurrentUser==='function'?safCurrentUser():'')||'';
+  var now=new Date().toISOString();
+  var cfg=(typeof ejsLoadConfig==='function')?ejsLoadConfig():{};
+  var subject='[SAF SMS] Action corrective / préventive — '+ctx.occId;
+  var ownersLbl=owners.map(function(o){return o==='To be specified'?(a.owner_custom||'Autre'):o;}).join(', ');
+  if(cfg.pk&&cfg.sid&&cfg.tid&&typeof emailjs!=='undefined'){
+    var jobs=rec.map(function(r){
+      var params={to_email:r.to,to_name:r.owner,subject:subject,
+        action_num:ctx.num||'',action_text:text+(ctx.root?'\n\nCause racine identifiée / Root cause: '+ctx.root:''),
+        change_ref:ctx.occId,change_title:'Occurrence '+ctx.occId+(ctx.date?' du '+ctx.date:'')+(ctx.desc?' — '+String(ctx.desc).slice(0,180):''),
+        due_date:a.actionDate||'—',from_name:'SAF International — SMS',
+        owners:ownersLbl,status:a.status||'Not started',source:'Occurrence Log'};
+      return emailjs.send(cfg.sid,cfg.tid,params).then(function(){return {to:r.to,owner:r.owner,at:now,by:who,via:'emailjs'};},function(err){return {error:(err&&(err.text||err.message))||'échec',to:r.to};});
+    });
+    showToast('⏳ Envoi en cours ('+rec.length+')…','success');
+    Promise.all(jobs).then(function(res){
+      var ok=res.filter(function(x){return !x.error;}),ko=res.filter(function(x){return x.error;});
+      if(ok.length)showToast('✓ Action envoyée à '+ok.map(function(x){return x.to;}).join(', '),'success');
+      if(ko.length)showToast('✗ Échec pour '+ko.map(function(x){return x.to+' ('+x.error+')';}).join(', '),'error');
+      if(ok.length&&cb)cb(ok);
+    });
+  }else{
+    // EmailJS non configuré : on prépare le message dans le client mail
+    var body='Bonjour,\n\nUne action corrective / préventive vous est assignée dans le cadre du suivi SMS SAF International.\n\n'
+      +'Occurrence : '+ctx.occId+'\n'+(ctx.date?'Date : '+ctx.date+'\n':'')
+      +'Responsable(s) : '+ownersLbl+'\n'+'Statut : '+(a.status||'Not started')+'\n'
+      +(a.actionDate?'Échéance : '+a.actionDate+'\n':'')+'Action : '+text+'\n'
+      +(ctx.desc?'\nDescription de l\'occurrence :\n'+ctx.desc+'\n':'')
+      +(ctx.root?'\nCause racine identifiée :\n'+ctx.root+'\n':'')
+      +'\nMerci de confirmer la prise en compte, le statut et l\'échéance de réalisation.\n\nCordialement,';
+    window.location.href='mailto:'+rec.map(function(r){return encodeURIComponent(r.to);}).join(',')+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+    showToast('EmailJS non configuré (Export & Import → Email settings) — message ouvert dans le client mail','error');
+    if(cb)cb(rec.map(function(r){return {to:r.to,owner:r.owner,at:now,by:who,via:'mailto'};}));
+  }
+}
+// Envoi depuis le formulaire d'occurrence
+function occSendFWAction(row){
+  if(!row)return;
+  var a={text:(row.querySelector('.occ-fw-action-input')?.value||'').trim(),owners:occReadOwners(row),
+    owner_custom:(row.querySelector('.occ-fw-action-owner-custom')?.value||'').trim(),
+    status:row.querySelector('.occ-fw-action-status')?.value||'Not started',
+    actionDate:row.querySelector('.occ-fw-action-date')?.value||''};
+  var list=[].slice.call(document.querySelectorAll('#occ-fw-actions-list .occ-fw-action-row'));
+  var ctx={occId:(document.getElementById('occ-custom-id')?.value||'Occurrence').trim(),
+    date:(document.getElementById('occ-date')?.value||'').trim(),
+    desc:(document.getElementById('occ-desc')?.value||'').trim(),
+    root:(document.getElementById('occ-fw-root-cause')?.value||'').trim(),num:list.indexOf(row)+1};
+  occActionDispatch(ctx,a,function(entries){
+    row.dataset.log=JSON.stringify(occActionRowLog(row).concat(entries));
+    occActionSentRefresh(row);
+    if(typeof occMarkDirty==='function')occMarkDirty();
+    // Persister tout de suite pour que l'action apparaisse dans le suivi
+    if(document.getElementById('occ-edit-id')?.value||ctx.occId){try{saveOccurrence(true);}catch(e){}}
+    if(typeof renderActionTracker==='function'&&document.getElementById('view-actions')?.classList.contains('active'))renderActionTracker();
+  });
+}
+
+// ══ Suivi des actions — Occurrence Log + études de changement (MOC) ══
+var AT={q:'',src:'',st:'open',own:'',late:false};
+function atToday(){return new Date().toISOString().slice(0,10);}
+function atCollect(){
+  var out=[];
+  (typeof getOccurrences==='function'?getOccurrences():[]).forEach(function(o){
+    var fw=o&&o.five_whys;if(!fw||!Array.isArray(fw.corrective_actions))return;
+    fw.corrective_actions.forEach(function(a,i){
+      if(typeof a!=='object'||a===null)a={text:String(a||'')};
+      if(!String(a.text||'').trim())return;
+      var st=a.status==='Completed'?'closed':(a.status==='In progress'?'progress':'todo');
+      out.push({src:'OCC',ref:o.id,idx:i,aid:a.id||'',num:i+1,text:a.text,owners:occFWActionOwners(a),ownersLbl:occFWActionOwnerDisplay(a)||'—',
+        due:a.actionDate||'',st:st,closed:a.closed_at||'',log:Array.isArray(a.email_log)?a.email_log:[],origin:o.date||'',ctx:(o.description||'')});
+    });
+  });
+  (typeof CHANGE_STUDIES!=='undefined'&&Array.isArray(CHANGE_STUDIES)?CHANGE_STUDIES:[]).forEach(function(cs){
+    if(!cs)return;var acts=[],fu={};
+    try{acts=cs.c_actions_list?JSON.parse(cs.c_actions_list):(Array.isArray(cs.actions)?cs.actions:[]);}catch(e){acts=[];}
+    try{fu=cs.c_fu_data?JSON.parse(cs.c_fu_data):{};}catch(e){fu={};}
+    (acts||[]).forEach(function(a,i){
+      if(!a||!String(a.text||'').trim())return;var f=fu[a.id]||{};
+      var st=f.status==='clos'?'closed':(f.status==='en-cours'?'progress':'todo');
+      out.push({src:'MOC',ref:cs.ref||'',idx:i,aid:a.id||'',num:i+1,text:a.text,owners:a.nominatedPerson?[a.nominatedPerson]:[],ownersLbl:a.nominatedPerson||'—',
+        due:f.due||'',st:st,closed:f.closing||'',log:a.emailSent?[{to:a.email||'',at:a.emailSent,via:'emailjs'}]:[],origin:(cs.created_at||cs.version_date||cs.date||'').slice(0,10),ctx:cs.title||''});
+    });
+  });
+  return out;
+}
+function atIsLate(r){return r.st!=='closed'&&r.due&&r.due<atToday();}
+function atJs(t){return atEsc(String(t==null?'':t).replace(/\\/g,'\\\\').replace(/'/g,"\\'"));}
+function atEsc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function renderActionTracker(){
+  var wrap=document.getElementById('at-wrap');if(!wrap)return;
+  var all=atCollect();
+  atUpdateNavBadge();
+  var k={tot:all.length,open:all.filter(function(r){return r.st!=='closed';}).length,late:all.filter(atIsLate).length,
+    closed:all.filter(function(r){return r.st==='closed';}).length,unsent:all.filter(function(r){return r.st!=='closed'&&!r.log.length;}).length};
+  var kp=document.getElementById('at-kpis');
+  if(kp)kp.innerHTML=[['Actions',k.tot,'var(--white)',''],['Ouvertes',k.open,'#4A9FE0','open'],['En retard',k.late,k.late?'#f85149':'#3fb950','late'],['Non notifiées',k.unsent,k.unsent?'#e3b341':'#3fb950','unsent'],['Clôturées',k.closed,'#3fb950','closed']]
+    .map(function(x){return '<button type="button" class="at-kpi" onclick="atQuick(\''+x[3]+'\')"><span class="at-kpi-v" style="color:'+x[2]+';">'+x[1]+'</span><span class="at-kpi-l">'+x[0]+'</span></button>';}).join('');
+  var ownSel=document.getElementById('at-owner');
+  if(ownSel&&!ownSel.dataset.filled){var set={};all.forEach(function(r){r.owners.forEach(function(o){set[o]=1;});});
+    ownSel.innerHTML='<option value="">Tous les responsables</option>'+Object.keys(set).sort().map(function(o){return '<option value="'+atEsc(o)+'">'+atEsc(o==='To be specified'?'Autre':o)+'</option>';}).join('');ownSel.dataset.filled='1';ownSel.value=AT.own;}
+  var q=AT.q.toLowerCase();
+  var rows=all.filter(function(r){
+    if(AT.src&&r.src!==AT.src)return false;
+    if(AT.st==='open'&&r.st==='closed')return false;
+    if(AT.st==='closed'&&r.st!=='closed')return false;
+    if(AT.st==='unsent'&&(r.st==='closed'||r.log.length))return false;
+    if(AT.late&&!atIsLate(r))return false;
+    if(AT.own&&r.owners.indexOf(AT.own)===-1)return false;
+    if(q&&(r.ref+' '+r.text+' '+r.ownersLbl+' '+r.ctx).toLowerCase().indexOf(q)===-1)return false;
+    return true;
+  }).sort(function(a,b){
+    var la=atIsLate(a)?0:1,lb=atIsLate(b)?0:1;if(la!==lb)return la-lb;
+    var ca=a.st==='closed'?1:0,cb=b.st==='closed'?1:0;if(ca!==cb)return ca-cb;
+    return (a.due||'9999').localeCompare(b.due||'9999');
+  });
+  var cnt=document.getElementById('at-count');if(cnt)cnt.textContent=rows.length+' / '+all.length;
+  if(!rows.length){wrap.innerHTML='<div class="at-empty">Aucune action pour ces filtres.</div>';return;}
+  var stLbl={todo:'Not started',progress:'In progress',closed:'Completed'};
+  wrap.innerHTML='<div class="table-wrap"><table class="at-table"><thead><tr><th>Source</th><th>Référence</th><th>Action</th><th>Responsable(s)</th><th>Échéance</th><th>Statut</th><th>Notification</th><th></th></tr></thead><tbody>'
+  +rows.map(function(r){
+    var late=atIsLate(r);
+    var key=atJs(r.ref)+'\',\''+atJs(r.aid)+'\','+r.idx;
+    var stCell,dueCell,sendBtn='';
+    if(r.src==='OCC'){
+      stCell='<select class="at-st at-st-'+r.st+'" onchange="atSetField(\''+key+',\'status\',this.value)">'+['Not started','In progress','Completed'].map(function(o){return '<option value="'+o+'"'+(stLbl[r.st]===o?' selected':'')+'>'+o+'</option>';}).join('')+'</select>'+(r.closed&&r.st==='closed'?'<div class="at-sub">clôturée '+atEsc(r.closed)+'</div>':'');
+      dueCell='<input type="date" class="at-due" value="'+atEsc(r.due)+'" onchange="atSetField(\''+key+',\'actionDate\',this.value)"/>';
+      sendBtn='<button type="button" class="at-btn" title="Envoyer / renvoyer aux responsables" onclick="atSend(\''+key+')">✉</button>';
+    }else{
+      stCell='<span class="at-pill at-st-'+r.st+'">'+stLbl[r.st]+'</span>'+(r.closed&&r.st==='closed'?'<div class="at-sub">clôturée '+atEsc(r.closed)+'</div>':'');
+      dueCell='<span>'+(r.due?atEsc(r.due):'—')+'</span>';
+    }
+    var notif=r.log.length?'<span class="at-sent" title="'+atEsc(occActionSentTitle(r.log))+'">'+atEsc(occActionSentSummary(r.log))+(r.log.length>1?' ('+r.log.length+')':'')+'</span>':(r.st==='closed'?'<span class="at-sub">—</span>':'<span class="at-unsent">Non notifiée</span>');
+    return '<tr class="'+(late?'at-late':'')+(r.st==='closed'?' at-closed':'')+'">'
+      +'<td><span class="at-src at-src-'+r.src+'">'+(r.src==='OCC'?'Occurrence':'MOC')+'</span></td>'
+      +'<td><a class="at-ref" onclick="atOpen(\''+r.src+'\',\''+atJs(r.ref)+'\')" title="'+atEsc(r.ctx)+'">'+atEsc(r.ref)+'</a><div class="at-sub">#'+r.num+(r.origin?' · '+atEsc(r.origin):'')+'</div></td>'
+      +'<td class="at-text">'+atEsc(r.text)+'</td>'
+      +'<td>'+atEsc(r.ownersLbl)+'</td>'
+      +'<td>'+dueCell+(late?'<div class="at-late-tag">En retard</div>':'')+'</td>'
+      +'<td>'+stCell+'</td>'
+      +'<td>'+notif+'</td>'
+      +'<td style="white-space:nowrap;">'+sendBtn+'<button type="button" class="at-btn" title="Ouvrir la fiche source" onclick="atOpen(\''+r.src+'\',\''+atJs(r.ref)+'\')">↗</button></td></tr>';
+  }).join('')+'</tbody></table></div>';
+}
+function atQuick(k){
+  AT.late=false;
+  if(k==='late'){AT.st='open';AT.late=true;}else if(k)AT.st=k;else AT.st='all';
+  var s=document.getElementById('at-status');if(s)s.value=AT.st;var l=document.getElementById('at-late');if(l)l.checked=AT.late;
+  renderActionTracker();
+}
+function atFind(ref,aid,idx){
+  var occs=getOccurrences(),o=occs.find(function(x){return x.id===ref;});
+  if(!o||!o.five_whys||!Array.isArray(o.five_whys.corrective_actions))return null;
+  var arr=o.five_whys.corrective_actions,i=aid?arr.findIndex(function(a){return a&&a.id===aid;}):-1;
+  if(i<0)i=idx;if(i<0||i>=arr.length)return null;
+  if(typeof arr[i]!=='object'||arr[i]===null)arr[i]={text:String(arr[i]||''),status:'Not started'};
+  if(!arr[i].id)arr[i].id=occNewActionId();
+  return {occs:occs,o:o,a:arr[i],i:i};
+}
+function atSetField(ref,aid,idx,field,val){
+  var f=atFind(ref,aid,idx);if(!f){showToast('Action introuvable','error');return;}
+  f.a[field]=val;
+  if(field==='status')f.a.closed_at=val==='Completed'?(f.a.closed_at||atToday()):'';
+  f.a.updated_at=new Date().toISOString();
+  f.o.updated_at=new Date().toISOString();
+  saveOccurrences(f.occs);
+  renderActionTracker();
+  showToast('✓ Action mise à jour — '+ref,'success');
+}
+function atSend(ref,aid,idx){
+  var f=atFind(ref,aid,idx);if(!f){showToast('Action introuvable','error');return;}
+  var fw=f.o.five_whys||{};
+  occActionDispatch({occId:f.o.id,date:f.o.date||'',desc:f.o.description||'',root:fw.root_cause||'',num:f.i+1},f.a,function(entries){
+    var g=atFind(ref,f.a.id,f.i);if(!g)return;
+    g.a.email_log=(Array.isArray(g.a.email_log)?g.a.email_log:[]).concat(entries);
+    saveOccurrences(g.occs);renderActionTracker();
+  });
+}
+function atOpen(src,ref){
+  if(src==='OCC'){llGoToOccurrence(ref);return;}
+  showView('change');setTimeout(function(){if(typeof showChangeStudyForm==='function')showChangeStudyForm(ref);},80);
+}
+function atExportCSV(){
+  var e=function(v){v=String(v==null?'':v);return /[",;\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  var stLbl={todo:'Not started',progress:'In progress',closed:'Completed'};
+  var rows=[['Source','Référence','N°','Action','Responsable(s)','Échéance','Statut','Clôture','En retard','Notifications','Dernier envoi']]
+    .concat(atCollect().map(function(r){var last=r.log.length?r.log[r.log.length-1]:null;
+      return [r.src==='OCC'?'Occurrence':'MOC',r.ref,r.num,r.text,r.ownersLbl,r.due,stLbl[r.st],r.closed,atIsLate(r)?'Oui':'',r.log.map(function(l){return l.to;}).join(' ; '),last?last.at:''];}));
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+rows.map(function(r){return r.map(e).join(',');}).join('\n')],{type:'text/csv;charset=utf-8'}));
+  a.download='SAF_Suivi_Actions_'+atToday()+'.csv';document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1000);
+}
 function occTogglePanel(bodyId, btn){
   var body=document.getElementById(bodyId); if(!body)return;
   var collapsed=body.classList.toggle('collapsed');
@@ -16088,19 +16406,22 @@ function occTogglePanel(bodyId, btn){
 function occAddFWAction(value){
   var list=document.getElementById('occ-fw-actions-list'); if(!list)return;
   var row=document.createElement('div'); row.className='occ-fw-action-row';
+  occActionRowInit(row,value);
   var val=occFWActionText(value);
   var owners=occFWActionOwners(value);
   var status=occFWActionStatus(value);
   row.innerHTML='<input type="text" class="occ-fw-action-input" placeholder="Corrective / preventive action…" value="'+val.replace(/"/g,'&quot;')+'"/>'
     +occOwnerPickerHTML(owners,'occ-fw-action-owners')
     +'<input type="text" class="occ-fw-action-owner-custom" placeholder="Name / function…" value="'+occFWActionOwnerCustom(value).replace(/"/g,'&quot;')+'" style="display:'+(owners.indexOf('To be specified')>-1?'block':'none')+';flex-shrink:0;width:150px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--white);font-family:var(--font-mono);font-size:10px;padding:8px 8px;"/>'
-    +'<button type="button" onclick="occEmailFWAction(this)" title="Send an email to the selected owner(s)" style="flex-shrink:0;padding:3px 8px;background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.45);border-radius:4px;color:#4A9FE0;font-family:var(--font-mono);font-size:11px;cursor:pointer;">✉</button>'
+    +'<span class="occ-fw-action-sent"></span>'
+    +'<button type="button" onclick="occEmailFWAction(this)" title="Envoyer l\'action par email aux personnes sélectionnées / Send to selected owner(s)" style="flex-shrink:0;padding:3px 8px;background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.45);border-radius:4px;color:#4A9FE0;font-family:var(--font-mono);font-size:11px;cursor:pointer;">✉</button>'
     +'<select class="occ-fw-action-status" title="Action status" onchange="occUpdateActionStatusStyle(this)" style="'+occActionStatusBaseStyle()+occFWActionStatusStyle(status)+'">'+occFWActionStatusOptions(status)+'</select>'
     +'<span style="font-family:var(--font-mono);font-size:9px;color:var(--gold-light);white-space:nowrap;flex-shrink:0;">Action date</span>'
     +'<input type="date" class="occ-fw-action-date" title="Action date" value="'+occFWActionDate(value)+'" style="flex-shrink:0;width:132px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--white);font-family:var(--font-mono);font-size:10px;padding:7px 8px;color-scheme:dark;"/>'
     +'<button type="button" onclick="occRemoveFWAction(this)" style="flex-shrink:0;padding:3px 8px;background:rgba(255,60,60,.15);border:1px solid rgba(255,80,80,.3);border-radius:4px;color:#ff9090;font-family:var(--font-mono);font-size:11px;cursor:pointer;">✕</button>';
   list.appendChild(row);
   occUpdateActionStatusStyle(row.querySelector('.occ-fw-action-status'));
+  occActionSentRefresh(row);
   if(typeof value!=='string' && !(typeof value==='object'&&value!==null)) row.querySelector('input').focus();
 }
 function occRemoveFWAction(btn){
@@ -16188,7 +16509,7 @@ function occGetFiveWhys(){
     var owner_custom=(row.querySelector('.occ-fw-action-owner-custom')?.value||'').trim();
     var status=row.querySelector('.occ-fw-action-status')?.value||'Not started';
     var actionDate=row.querySelector('.occ-fw-action-date')?.value||'';
-    return text?{text:text,owners:owners,owner:owners.join(' / '),owner_custom:owner_custom,status:status,actionDate:actionDate}:null;
+    return text?occActionMeta(row,{text:text,owners:owners,owner:owners.join(' / '),owner_custom:owner_custom,status:status,actionDate:actionDate}):null;
   }).filter(Boolean);
   var notes=(document.getElementById('occ-fw-notes')?.value||'').trim();
   var conclusion=(document.getElementById('occ-fw-conclusion')?.value||'').trim();
@@ -17600,8 +17921,10 @@ function saveOccurrence(_silent){
     }
   }
 }
+function atUpdateNavBadge(){try{var n=atCollect().filter(atIsLate).length;var b=document.getElementById('cnt-actions-late');if(b){b.textContent=n;b.style.display=n?'':'none';b.title=n+' action(s) en retard';}}catch(e){}}
 function renderOccurrenceList() {
   if(typeof occBulkTaxoBadge==='function'){ try{ occBulkTaxoBadge(); }catch(e){} }
+  atUpdateNavBadge();
   if(typeof renderECCAIRSTracker==='function') renderECCAIRSTracker();
   var el = document.getElementById('occ-list-wrap');
   if (!el) return;
@@ -17850,6 +18173,7 @@ function fwAddCorrectiveAction(value){
   if(!list)return;
   const row=document.createElement('div');
   row.className='fw-corrective-row';
+  occActionRowInit(row,value);
   row.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;';
   const inp=document.createElement('input');
   inp.type='text';
@@ -17927,7 +18251,7 @@ function saveFiveWhys(){
     const owner_custom=(row.querySelector('.fw-corrective-owner-custom')?.value||'').trim();
     const status=row.querySelector('.fw-corrective-status')?.value||'Not started';
     const actionDate=row.querySelector('.fw-corrective-action-date')?.value||'';
-    return text?{text,owners,owner,owner_custom,status,actionDate}:null;
+    return text?occActionMeta(row,{text,owners,owner,owner_custom,status,actionDate}):null;
   }).filter(Boolean);
   if(!whys.some(Boolean)){
     if(fb){fb.textContent='⚠ Fill at least one Why.';fb.style.color='#f85149';}
@@ -23113,7 +23437,9 @@ setTimeout(function(){
       // Ajout 14.09.2026 : restauration d'une etude de changement embarquee.
       'safRestoreSeedMoc',
       // Ajout 02.10.2026 : interfaces externes et Part-IS.
-      'ifxSave','ifxDelete','ismsSave','ismsDelete','ismsSetReq'
+      'ifxSave','ifxDelete','ismsSave','ismsDelete','ismsSetReq',
+      // Ajout 14.10.2026 : envoi et suivi des actions de l'Occurrence Log.
+      'occSendFWAction','atSetField','atSend','llApplyOccLinks'
     ];
     var GUARD_MSG = (SAF_ROLE === 'authority')
       ? 'Accès autorité — consultation seule, aucune écriture possible.'
@@ -23976,7 +24302,7 @@ function occRestoreHFACS(hfacs,severity){
     /* 10.09.2026 — la ligne de titres de colonnes du Risk Register est exclue
        de la couche bilingue : elle reste en anglais. Le titre de la vue, lui,
        garde ses deux langues (voir la regle sur .dash-title plus bas). */
-    return !!el.closest('script,style,noscript,textarea,input,canvas,svg,code,pre,[contenteditable="true"],.rte,.cs-sig-wrap,.cms-title-fr,.cms-title-en,#view-database thead,#saf-cloud-bar,#saf-mfa-overlay,.occ-dg-block,.occ-own-pick,.saf-rit-picker [role=listbox],.saf-rit-picker [id$="-sel"]');
+    return !!el.closest('script,style,noscript,textarea,input,canvas,svg,code,pre,[contenteditable="true"],.rte,.cs-sig-wrap,.cms-title-fr,.cms-title-en,#view-database thead,#saf-cloud-bar,#saf-mfa-overlay,.occ-dg-block,.occ-own-pick,.at-table,.at-kpis,.saf-rit-picker [role=listbox],.saf-rit-picker [id$="-sel"]');
   }
   function preserveOptionValue(el){
     if(el && el.tagName==='OPTION' && !el.hasAttribute('value')) el.setAttribute('value', el.textContent || '');
