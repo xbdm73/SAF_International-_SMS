@@ -27727,21 +27727,29 @@ host.querySelector('#safp-export-'+kind).addEventListener('click',function(){var
 function init(){Object.keys(sets).forEach(render)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script><script>
-/* Garde-fou : tous les outils SAF sont à la racine du dépôt GitHub. Un préfixe
-   « Archives/ » réintroduit dans un lien est retiré à l'exécution, au chargement
-   et sur tout lien ajouté ensuite. */
+/* Garde-fou : tous les outils SAF sont à la racine du dépôt GitHub.
+   Un éditeur HTML qui « met à jour les liens » quand on déplace ou renomme un
+   dossier local peut réécrire un lien en « Archives/… », « Archives_Ne_pas_utiliser/… »
+   ou tout autre sous-dossier. Ce script ramène à la racine, au chargement et sur
+   tout lien ajouté ensuite, chaque lien relatif vers un fichier de la suite SAF. */
 (function(){
-  if (location.pathname.indexOf('/Archives/') !== -1) return;
-  function fix(root){
-    (root.querySelectorAll ? root.querySelectorAll('a[href^="Archives/"]') : []).forEach(function(a){
-      a.setAttribute('href', a.getAttribute('href').replace(/^Archives\//, ''));
-      if ((a.getAttribute('onclick')||'').indexOf("'/Archives/'") !== -1) a.removeAttribute('onclick');
-    });
+  var RX = /^(?:\.\.?\/)*(?:[^\/:?#]+\/)+((?:SAF_[\w.-]+|index)\.html(?:[?#].*)?)$/i;
+  function fixA(a){
+    var h = a.getAttribute('href'); if (!h) return;
+    var m = h.match(RX); if (!m) return;
+    a.setAttribute('href', m[1]);
+    var oc = a.getAttribute('onclick') || '';
+    if (/pathname\.indexOf\(/.test(oc) && /this\.href\s*=/.test(oc)) a.removeAttribute('onclick');
   }
+  function fix(root){ if (root && root.querySelectorAll) root.querySelectorAll('a[href]').forEach(fixA); }
   fix(document);
   document.addEventListener('DOMContentLoaded', function(){ fix(document); });
-  try { new MutationObserver(function(ms){ ms.forEach(function(m){ m.addedNodes.forEach(function(n){ if(n.nodeType===1){ if(n.matches && n.matches('a[href^="Archives/"]')) fix(n.parentNode||document); else fix(n); } }); }); })
-        .observe(document.documentElement, {childList:true, subtree:true}); } catch(e){}
+  try {
+    new MutationObserver(function(ms){ ms.forEach(function(m){
+      if (m.type === 'attributes' && m.target.tagName === 'A') { fixA(m.target); return; }
+      m.addedNodes.forEach(function(n){ if (n.nodeType === 1) { if (n.tagName === 'A') fixA(n); fix(n); } });
+    }); }).observe(document.documentElement, {childList:true, subtree:true, attributes:true, attributeFilter:['href']});
+  } catch(e){}
 })();
 </script>
 </body>

@@ -426,8 +426,8 @@ button .bi, a .bi{vertical-align:middle;}
     <a href="SAF_Portail.html" class="saf-nav-link" title="Portail SAF International" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">◂ PORTAIL</a>
     <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e8f0fe'" onmouseout="this.style.color='#6a82a5'">⌂ HOME</a>
     <div style="width:1px;height:16px;background:#1a2840;flex-shrink:0;margin:0 2px;"></div>
-    <a href="Archives_Ne_pas_utiliser/SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
-    <a href="Archives_Ne_pas_utiliser/SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
+    <a href="SAF_International_Safety.html"                       class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#e07070'" onmouseout="this.style.color='#6a82a5'"><span style="color:#e07070">■</span> SMS</a>
+    <a href="SAF_International_Compliance_Monitoring_System.html" class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70a8e0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70a8e0">■</span> CMS</a>
     <a href="SAF_International_Appendices_OMM.html"               class="saf-nav-link" style="display:flex;align-items:center;gap:5px;padding:7px 12px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;text-decoration:none;color:#6a82a5;border-bottom:2px solid transparent;white-space:nowrap;" onmouseover="this.style.color='#70d0a0'" onmouseout="this.style.color='#6a82a5'"><span style="color:#70d0a0">■</span> OMM</a>
   </div>
 </div>
@@ -3704,6 +3704,32 @@ h1 {
       if (ov.classList.contains('open') && !canExport()) ov.classList.remove('open');
     }).observe(ov, { attributes: true, attributeFilter: ['class'] });
   }
+})();
+</script>
+<script>
+/* Garde-fou : tous les outils SAF sont à la racine du dépôt GitHub.
+   Un éditeur HTML qui « met à jour les liens » quand on déplace ou renomme un
+   dossier local peut réécrire un lien en « Archives/… », « Archives_Ne_pas_utiliser/… »
+   ou tout autre sous-dossier. Ce script ramène à la racine, au chargement et sur
+   tout lien ajouté ensuite, chaque lien relatif vers un fichier de la suite SAF. */
+(function(){
+  var RX = /^(?:\.\.?\/)*(?:[^\/:?#]+\/)+((?:SAF_[\w.-]+|index)\.html(?:[?#].*)?)$/i;
+  function fixA(a){
+    var h = a.getAttribute('href'); if (!h) return;
+    var m = h.match(RX); if (!m) return;
+    a.setAttribute('href', m[1]);
+    var oc = a.getAttribute('onclick') || '';
+    if (/pathname\.indexOf\(/.test(oc) && /this\.href\s*=/.test(oc)) a.removeAttribute('onclick');
+  }
+  function fix(root){ if (root && root.querySelectorAll) root.querySelectorAll('a[href]').forEach(fixA); }
+  fix(document);
+  document.addEventListener('DOMContentLoaded', function(){ fix(document); });
+  try {
+    new MutationObserver(function(ms){ ms.forEach(function(m){
+      if (m.type === 'attributes' && m.target.tagName === 'A') { fixA(m.target); return; }
+      m.addedNodes.forEach(function(n){ if (n.nodeType === 1) { if (n.tagName === 'A') fixA(n); fix(n); } });
+    }); }).observe(document.documentElement, {childList:true, subtree:true, attributes:true, attributeFilter:['href']});
+  } catch(e){}
 })();
 </script>
 </body></html>
