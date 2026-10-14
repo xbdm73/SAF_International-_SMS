@@ -27726,5 +27726,23 @@ host.querySelectorAll('input[data-ind]').forEach(el=>{var rec=saved[el.dataset.i
 host.querySelector('#safp-export-'+kind).addEventListener('click',function(){var blob=new Blob([JSON.stringify({version:'2026-10-09',type:kind,entries:saved},null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='SAF_'+kind+'_indicators_20261009.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);});}
 function init(){Object.keys(sets).forEach(render)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
-</script></body>
+</script><script>
+/* Garde-fou : tous les outils SAF sont à la racine du dépôt GitHub. Un préfixe
+   « Archives/ » réintroduit dans un lien est retiré à l'exécution, au chargement
+   et sur tout lien ajouté ensuite. */
+(function(){
+  if (location.pathname.indexOf('/Archives/') !== -1) return;
+  function fix(root){
+    (root.querySelectorAll ? root.querySelectorAll('a[href^="Archives/"]') : []).forEach(function(a){
+      a.setAttribute('href', a.getAttribute('href').replace(/^Archives\//, ''));
+      if ((a.getAttribute('onclick')||'').indexOf("'/Archives/'") !== -1) a.removeAttribute('onclick');
+    });
+  }
+  fix(document);
+  document.addEventListener('DOMContentLoaded', function(){ fix(document); });
+  try { new MutationObserver(function(ms){ ms.forEach(function(m){ m.addedNodes.forEach(function(n){ if(n.nodeType===1){ if(n.matches && n.matches('a[href^="Archives/"]')) fix(n.parentNode||document); else fix(n); } }); }); })
+        .observe(document.documentElement, {childList:true, subtree:true}); } catch(e){}
+})();
+</script>
+</body>
 </html>

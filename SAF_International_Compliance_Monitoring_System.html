@@ -1948,9 +1948,9 @@ function safExportPDF() {
 <div class="saf-nav-row" style="display:flex;align-items:center;gap:4px;overflow-x:auto;">
 <a class="saf-nav-link" data-saf-tool="portal" href="SAF_Portail.html" style="--saf-nav-accent:#e8f0fe;" title="Portail SAF International">◂ PORTAIL</a><a class="saf-nav-link" data-saf-tool="home" href="index.html" style="--saf-nav-accent:#e8f0fe;">⌂ HOME</a>
 <div class="saf-nav-sep"></div>
-<a class="saf-nav-link" data-saf-tool="sms" href="Archives/SAF_International_Safety.html" style="--saf-nav-accent:#e07070;"><span style="color:#e07070">■</span> SMS</a>
+<a class="saf-nav-link" data-saf-tool="sms" href="Archives_Ne_pas_utiliser/SAF_International_Safety.html" style="--saf-nav-accent:#e07070;"><span style="color:#e07070">■</span> SMS</a>
 <a class="saf-nav-link" data-saf-tool="cms" href="SAF_International_Compliance_Monitoring_System.html" style="--saf-nav-accent:#70a8e0;"><span style="color:#70a8e0">■</span> CMS</a>
-<a class="saf-nav-link" data-saf-tool="omm" href="Archives/SAF_International_Appendices_OMM.html" style="--saf-nav-accent:#70d0a0;"><span style="color:#70d0a0">■</span> OMM</a>
+<a class="saf-nav-link" data-saf-tool="omm" href="SAF_International_Appendices_OMM.html" style="--saf-nav-accent:#70d0a0;"><span style="color:#70d0a0">■</span> OMM</a>
 <a class="saf-nav-link" data-saf-tool="guide" href="#" onclick="if(window.safGuideOpen){window.safGuideOpen();}else{var o=document.getElementById('safGuideOverlay');if(o){o.classList.add('open');document.body.style.overflow='hidden';}}return false;" style="--saf-nav-accent:#F0C040;"><span style="color:#F0C040">?</span> MODE D'EMPLOI</a>
 </div>
 </div>
@@ -23930,5 +23930,23 @@ host.querySelectorAll('input[data-ind]').forEach(el=>{var rec=saved[el.dataset.i
 host.querySelector('#safp-export-'+kind).addEventListener('click',function(){var blob=new Blob([JSON.stringify({version:'2026-10-09',type:kind,entries:saved},null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='SAF_'+kind+'_indicators_20261009.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);});}
 function init(){Object.keys(sets).forEach(render)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
-</script></body>
+</script><script>
+/* Garde-fou : tous les outils SAF sont à la racine du dépôt GitHub. Un préfixe
+   « Archives/ » réintroduit dans un lien est retiré à l'exécution, au chargement
+   et sur tout lien ajouté ensuite. */
+(function(){
+  if (location.pathname.indexOf('/Archives/') !== -1) return;
+  function fix(root){
+    (root.querySelectorAll ? root.querySelectorAll('a[href^="Archives/"]') : []).forEach(function(a){
+      a.setAttribute('href', a.getAttribute('href').replace(/^Archives\//, ''));
+      if ((a.getAttribute('onclick')||'').indexOf("'/Archives/'") !== -1) a.removeAttribute('onclick');
+    });
+  }
+  fix(document);
+  document.addEventListener('DOMContentLoaded', function(){ fix(document); });
+  try { new MutationObserver(function(ms){ ms.forEach(function(m){ m.addedNodes.forEach(function(n){ if(n.nodeType===1){ if(n.matches && n.matches('a[href^="Archives/"]')) fix(n.parentNode||document); else fix(n); } }); }); })
+        .observe(document.documentElement, {childList:true, subtree:true}); } catch(e){}
+})();
+</script>
+</body>
 </html>

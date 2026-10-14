@@ -405,7 +405,7 @@ body.L-en .pol-fr{display:none;}
     <p class="en">Reporting is the foundation of aviation safety. Every event you report &mdash; even one that seems minor or that ended without consequence &mdash; lets us see a risk before it turns into an accident.</p>
     <p class="en">What you write here is treated in confidence and used to improve our operation, never to assign blame. The few minutes you spend on this report may one day save the life of a colleague.</p>
   </div>
-  <div id="saf-guide-context-link" style="text-align:right;margin:8px 2px 14px;"><a href="Archives/SAF_User_Guide.html#report" onclick="if(location.pathname.indexOf('/Archives/')!==-1)this.href='../SAF_User_Guide.html#report'" style="color:var(--gold-light);font-family:var(--font-m);font-size:12.5px;text-decoration:none;border:1px solid rgba(201,162,39,.25);padding:6px 10px;border-radius:6px;display:inline-block;">? MODE D'EMPLOI DU SIGNALEMENT</a></div>
+  <div id="saf-guide-context-link" style="text-align:right;margin:8px 2px 14px;"><a href="SAF_User_Guide.html#report" style="color:var(--gold-light);font-family:var(--font-m);font-size:12.5px;text-decoration:none;border:1px solid rgba(201,162,39,.25);padding:6px 10px;border-radius:6px;display:inline-block;">? MODE D'EMPLOI DU SIGNALEMENT</a></div>
 
   <!-- REPORT TYPE -->
   <div id="rtype">
@@ -1174,7 +1174,7 @@ function resetForm(){
 }
 </script>
 
-<a class="saf-guide-fab" href="Archives/SAF_User_Guide.html#report" onclick="if(location.pathname.indexOf('/Archives/')!==-1)this.href='../SAF_User_Guide.html#report'" title="Mode d'emploi SAF" aria-label="Mode d'emploi SAF">?</a>
+<a class="saf-guide-fab" href="SAF_User_Guide.html#report" title="Mode d'emploi SAF" aria-label="Mode d'emploi SAF">?</a>
 
 <script id="dg-report-block-v3">
 /* 06.10.2026 — Signalement « Dangerous Goods » : 4e type de rapport, a cote de
@@ -1298,6 +1298,24 @@ function togglePolicy(){
   t.setAttribute('aria-expanded',closed?'false':'true');
   t.innerHTML=closed?'<span class="fr">Lire la politique</span><span class="en">Read the policy</span>':'<span class="fr">R&#233;duire</span><span class="en">Collapse</span>';
 }
+</script>
+<script>
+/* Garde-fou : tous les outils SAF sont à la racine du dépôt GitHub. Un préfixe
+   « Archives/ » réintroduit dans un lien est retiré à l'exécution, au chargement
+   et sur tout lien ajouté ensuite. */
+(function(){
+  if (location.pathname.indexOf('/Archives/') !== -1) return;
+  function fix(root){
+    (root.querySelectorAll ? root.querySelectorAll('a[href^="Archives/"]') : []).forEach(function(a){
+      a.setAttribute('href', a.getAttribute('href').replace(/^Archives\//, ''));
+      if ((a.getAttribute('onclick')||'').indexOf("'/Archives/'") !== -1) a.removeAttribute('onclick');
+    });
+  }
+  fix(document);
+  document.addEventListener('DOMContentLoaded', function(){ fix(document); });
+  try { new MutationObserver(function(ms){ ms.forEach(function(m){ m.addedNodes.forEach(function(n){ if(n.nodeType===1){ if(n.matches && n.matches('a[href^="Archives/"]')) fix(n.parentNode||document); else fix(n); } }); }); })
+        .observe(document.documentElement, {childList:true, subtree:true}); } catch(e){}
+})();
 </script>
 </body>
 </html>

@@ -157,10 +157,10 @@ dialog .err{color:#ff9a9a;font-size:13.5px;min-height:1.2em;margin:8px 0 0}
 <nav class="topnav" aria-label="Outils de la suite">
   <a href="SAF_Portail.html" title="Portail SAF International">◂ Portail</a>
   <a href="index.html">⌂ Accueil</a>
-  <a href="SAF_International_Safety.html">🛡️ Safety</a>
+  <a href="Archives_Ne_pas_utiliser/SAF_International_Safety.html">🛡️ Safety</a>
   <a href="SAF_International_Compliance_Monitoring_System.html">📋 CMS</a>
   <a href="SAF_International_Appendices_OMM.html">📁 OMM</a>
-  <a href="Archives/SAF_User_Guide.html">? Guide</a>
+  <a href="SAF_User_Guide.html">? Guide</a>
 </nav>
 <header>
   <div class="brand">
@@ -1286,6 +1286,24 @@ draw(); evaluate(); paint();
 setRunning(!window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 requestAnimationFrame(frame);
 runAll();
+</script>
+<script>
+/* Garde-fou : tous les outils SAF sont à la racine du dépôt GitHub. Un préfixe
+   « Archives/ » réintroduit dans un lien est retiré à l'exécution, au chargement
+   et sur tout lien ajouté ensuite. */
+(function(){
+  if (location.pathname.indexOf('/Archives/') !== -1) return;
+  function fix(root){
+    (root.querySelectorAll ? root.querySelectorAll('a[href^="Archives/"]') : []).forEach(function(a){
+      a.setAttribute('href', a.getAttribute('href').replace(/^Archives\//, ''));
+      if ((a.getAttribute('onclick')||'').indexOf("'/Archives/'") !== -1) a.removeAttribute('onclick');
+    });
+  }
+  fix(document);
+  document.addEventListener('DOMContentLoaded', function(){ fix(document); });
+  try { new MutationObserver(function(ms){ ms.forEach(function(m){ m.addedNodes.forEach(function(n){ if(n.nodeType===1){ if(n.matches && n.matches('a[href^="Archives/"]')) fix(n.parentNode||document); else fix(n); } }); }); })
+        .observe(document.documentElement, {childList:true, subtree:true}); } catch(e){}
+})();
 </script>
 </body>
 </html>
