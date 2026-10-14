@@ -1468,6 +1468,15 @@ details.occ-own-pick>summary:focus-visible{outline:2px solid #e3b341;outline-off
 .at-ref:hover{text-decoration:underline;}
 .at-sub{font-family:var(--font-mono);font-size:9px;color:var(--grey-600);margin-top:2px;}
 .at-src{font-family:var(--font-mono);font-size:9px;padding:2px 7px;border-radius:3px;white-space:nowrap;}
+.at-src{background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);}
+.at-bysrc{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;}
+.at-srcchip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-left:3px solid var(--c);border-radius:5px;font-family:var(--font-mono);font-size:10px;color:var(--grey-200);cursor:pointer;}
+.at-srcchip b{color:var(--white);}
+.at-srcchip.on{background:color-mix(in srgb,var(--c) 16%,transparent);border-color:var(--c);}
+.at-srcchip-late{color:#f85149;}
+.at-ctx{font-size:10px;color:var(--grey-400);margin-top:3px;white-space:normal;}
+.at-cms-status{font-family:var(--font-mono);font-size:10px;margin:-6px 0 10px;min-height:14px;}
+.at-cms-status a{color:var(--gold-light);cursor:pointer;text-decoration:underline;}
 .at-src-OCC{background:rgba(232,160,32,.12);color:#e3b341;border:1px solid rgba(232,160,32,.35);}
 .at-src-MOC{background:rgba(74,159,224,.12);color:#4A9FE0;border:1px solid rgba(74,159,224,.35);}
 .at-st,.at-due{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:5px;color:var(--white);font-family:var(--font-mono);font-size:10px;padding:5px 6px;color-scheme:dark;}
@@ -1477,7 +1486,8 @@ details.occ-own-pick>summary:focus-visible{outline:2px solid #e3b341;outline-off
 .at-sent{font-family:var(--font-mono);font-size:10px;color:#3fb950;cursor:help;}
 .at-unsent{font-family:var(--font-mono);font-size:10px;color:#e3b341;}
 .at-btn{padding:3px 8px;margin-left:4px;background:rgba(74,159,224,.12);border:1px solid rgba(74,159,224,.4);border-radius:4px;color:#4A9FE0;font-family:var(--font-mono);font-size:11px;cursor:pointer;}
-.at-chk input{width:auto!important;margin:0;accent-color:#e3b341;}
+.filter-bar .at-chk{flex:0 0 auto;}
+.filter-bar .at-chk input,.at-chk input{flex:0 0 auto!important;min-width:0!important;padding:0!important;width:auto!important;margin:0;accent-color:#e3b341;}
 .at-chk{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);white-space:nowrap;}
 .at-empty{color:var(--grey-400);font-family:var(--font-mono);font-size:12px;padding:20px;text-align:center;border:1px dashed rgba(255,255,255,.1);border-radius:8px;}
 @media (max-width:900px){.at-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
@@ -1791,9 +1801,9 @@ nav { top: 118px !important; }
 <a class="saf-nav-link" data-saf-tool="portal" href="SAF_Portail.html" style="--saf-nav-accent:#e8f0fe;" title="Portail SAF International">◂ PORTAIL</a><a class="saf-nav-link" data-saf-tool="home" href="index.html" style="--saf-nav-accent:#e8f0fe;">⌂ HOME</a>
 <div class="saf-nav-sep"></div>
 <a class="saf-nav-link" data-saf-tool="sms" href="SAF_International_Safety.html" style="--saf-nav-accent:#e07070;"><span style="color:#e07070">■</span> SMS</a>
-<a class="saf-nav-link" data-saf-tool="cms" href="Archives/SAF_International_Compliance_Monitoring_System.html" style="--saf-nav-accent:#70a8e0;"><span style="color:#70a8e0">■</span> CMS</a>
-<a class="saf-nav-link" data-saf-tool="omm" href="Archives/SAF_International_Appendices_OMM.html" style="--saf-nav-accent:#70d0a0;"><span style="color:#70d0a0">■</span> OMM</a>
-<a class="saf-nav-link" data-saf-tool="guide" href="Archives/SAF_User_Guide.html#sms" onclick="if(location.pathname.indexOf('/Archives/')!==-1)this.href='../SAF_User_Guide.html#sms'" style="--saf-nav-accent:#F0C040;"><span style="color:#F0C040">?</span> MODE D'EMPLOI</a>
+<a class="saf-nav-link" data-saf-tool="cms" href="SAF_International_Compliance_Monitoring_System.html" style="--saf-nav-accent:#70a8e0;"><span style="color:#70a8e0">■</span> CMS</a>
+<a class="saf-nav-link" data-saf-tool="omm" href="SAF_International_Appendices_OMM.html" style="--saf-nav-accent:#70d0a0;"><span style="color:#70d0a0">■</span> OMM</a>
+<a class="saf-nav-link" data-saf-tool="guide" href="SAF_User_Guide.html#sms" style="--saf-nav-accent:#F0C040;"><span style="color:#F0C040">?</span> MODE D'EMPLOI</a>
 </div>
 </div>
 <script>
@@ -3390,7 +3400,7 @@ function updateOaciDefinitionDropdown(sel) {
 
 <div class="view" id="view-actions">
   <div class="dash-header">
-    <div><div class="dash-title">SUIVI DES ACTIONS</div><div class="dash-subtitle">Actions correctives / préventives de l'Occurrence Log et actions des études de changement (MOC) — ORO.GEN.200(a)(3)</div></div>
+    <div><div class="dash-title">SUIVI DES ACTIONS</div><div class="dash-subtitle">Registre unique des actions à suivre : Occurrence Log, études de changement, SRB, audits SMS, signaux CAMO, exercices ERP et plan d'actions du CMS — ORO.GEN.200(a)(3)</div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn btn-gold" onclick="atExportCSV()">⇩ EXPORT CSV</button>
       <button class="btn btn-ghost" onclick="renderActionTracker()">↺ ACTUALISER</button>
@@ -3398,15 +3408,17 @@ function updateOaciDefinitionDropdown(sel) {
   </div>
   <div style="padding:0 28px 28px;">
     <div id="at-kpis" class="at-kpis"></div>
+    <div id="at-bysrc" class="at-bysrc"></div>
     <div class="filter-bar">
       <span class="filter-label">FILTRE</span>
       <input id="at-search" type="text" placeholder="Référence, action, responsable…" oninput="AT.q=this.value;renderActionTracker()"/>
-      <select id="at-source" onchange="AT.src=this.value;renderActionTracker()"><option value="">Toutes sources</option><option value="OCC">Occurrence Log</option><option value="MOC">Études de changement</option></select>
+      <select id="at-source" onchange="AT.src=this.value;renderActionTracker()"></select>
       <select id="at-status" onchange="AT.st=this.value;renderActionTracker()"><option value="open" selected>Ouvertes</option><option value="unsent">Ouvertes non notifiées</option><option value="closed">Clôturées</option><option value="all">Toutes</option></select>
       <select id="at-owner" onchange="AT.own=this.value;renderActionTracker()"></select>
       <label class="at-chk"><input type="checkbox" id="at-late" onchange="AT.late=this.checked;renderActionTracker()"/> En retard seulement</label>
       <span id="at-count" class="at-sub" style="margin-left:auto;"></span>
     </div>
+    <div id="at-cms-status" class="at-cms-status"></div>
     <div id="at-wrap"></div>
   </div>
 </div>
@@ -12023,7 +12035,7 @@ function showView(name) {
   if(name==='bowtie')    { btPopulateSelect(); renderBowtie(); }
   if(name==='occurrences'){ renderOccurrenceList(); if(typeof updatePendingBadge==='function') updatePendingBadge(); }
   if(name==='eventaccounting') renderEventAccounting();
-  if(name==='actions')     { var _ao=document.getElementById('at-owner'); if(_ao) delete _ao.dataset.filled; renderActionTracker(); }
+  if(name==='actions')     { renderActionTracker(); atLoadCMS(false); }
   if(name==='lessons')     renderLessonsList();
   if(name==='training')    renderSMSTraining();
   if(name==='interfaces')  renderInterfaces();
@@ -16263,98 +16275,197 @@ function occSendFWAction(row){
   });
 }
 
-// ══ Suivi des actions — Occurrence Log + études de changement (MOC) ══
+// ══ Suivi des actions — registre unique de toutes les actions à suivre ══
+// Sources : Occurrence Log, études de changement (MOC), réunions SRB, audits
+// SMS, signaux CAMO, exercices ERP, et plan d'actions du CMS (lecture cloud
+// du module cms_data, sans jamais y écrire).
 var AT={q:'',src:'',st:'open',own:'',late:false};
+var AT_SRC={
+  OCC:{label:'Occurrence Log',short:'Occurrence',color:'#e3b341'},
+  MOC:{label:'Études de changement',short:'MOC',color:'#4A9FE0'},
+  SRB:{label:'Safety Review Board',short:'SRB',color:'#b392f0'},
+  AUD:{label:'Audits SMS',short:'Audit SMS',color:'#3fc1b0'},
+  CAMO:{label:'Signaux CAMO',short:'CAMO',color:'#f0883e'},
+  ERP:{label:'Exercices ERP',short:'ERP',color:'#ff7b72'},
+  CMS:{label:'Plan d\'actions CMS',short:'CMS',color:'#70a8e0'}
+};
+var AT_CMS={list:null,at:'',state:'idle',err:''};
 function atToday(){return new Date().toISOString().slice(0,10);}
+function atJs(t){return atEsc(String(t==null?'':t).replace(/\\/g,'\\\\').replace(/'/g,"\\'"));}
+function atEsc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function atParse(v,d){if(v==null||v==='')return d;if(typeof v!=='string')return v;try{return JSON.parse(v);}catch(e){return d;}}
 function atCollect(){
   var out=[];
+  // 1. Occurrence Log — actions correctives / préventives (5 Whys)
   (typeof getOccurrences==='function'?getOccurrences():[]).forEach(function(o){
     var fw=o&&o.five_whys;if(!fw||!Array.isArray(fw.corrective_actions))return;
     fw.corrective_actions.forEach(function(a,i){
       if(typeof a!=='object'||a===null)a={text:String(a||'')};
       if(!String(a.text||'').trim())return;
-      var st=a.status==='Completed'?'closed':(a.status==='In progress'?'progress':'todo');
-      out.push({src:'OCC',ref:o.id,idx:i,aid:a.id||'',num:i+1,text:a.text,owners:occFWActionOwners(a),ownersLbl:occFWActionOwnerDisplay(a)||'—',
-        due:a.actionDate||'',st:st,closed:a.closed_at||'',log:Array.isArray(a.email_log)?a.email_log:[],origin:o.date||'',ctx:(o.description||'')});
+      out.push({src:'OCC',ref:o.id,id:o.id,idx:i,aid:a.id||'',num:i+1,text:a.text,ctx:o.description||'',
+        owners:occFWActionOwners(a),ownersLbl:occFWActionOwnerDisplay(a)||'—',due:a.actionDate||'',
+        st:a.status==='Completed'?'closed':(a.status==='In progress'?'progress':'todo'),closed:a.closed_at||'',
+        log:Array.isArray(a.email_log)?a.email_log:[],origin:o.date||'',edit:'occ'});
     });
   });
+  // 2. Études de changement (MOC) — actions + suivi
   (typeof CHANGE_STUDIES!=='undefined'&&Array.isArray(CHANGE_STUDIES)?CHANGE_STUDIES:[]).forEach(function(cs){
-    if(!cs)return;var acts=[],fu={};
-    try{acts=cs.c_actions_list?JSON.parse(cs.c_actions_list):(Array.isArray(cs.actions)?cs.actions:[]);}catch(e){acts=[];}
-    try{fu=cs.c_fu_data?JSON.parse(cs.c_fu_data):{};}catch(e){fu={};}
+    if(!cs)return;var acts=atParse(cs.c_actions_list,null)||(Array.isArray(cs.actions)?cs.actions:[]),fu=atParse(cs.c_fu_data,{})||{};
     (acts||[]).forEach(function(a,i){
       if(!a||!String(a.text||'').trim())return;var f=fu[a.id]||{};
-      var st=f.status==='clos'?'closed':(f.status==='en-cours'?'progress':'todo');
-      out.push({src:'MOC',ref:cs.ref||'',idx:i,aid:a.id||'',num:i+1,text:a.text,owners:a.nominatedPerson?[a.nominatedPerson]:[],ownersLbl:a.nominatedPerson||'—',
-        due:f.due||'',st:st,closed:f.closing||'',log:a.emailSent?[{to:a.email||'',at:a.emailSent,via:'emailjs'}]:[],origin:(cs.created_at||cs.version_date||cs.date||'').slice(0,10),ctx:cs.title||''});
+      out.push({src:'MOC',ref:cs.ref||'',id:cs.ref||'',idx:i,num:i+1,text:a.text,ctx:cs.title||'',
+        owners:a.nominatedPerson?[a.nominatedPerson]:[],ownersLbl:a.nominatedPerson||'—',due:f.due||'',
+        st:f.status==='clos'?'closed':(f.status==='en-cours'?'progress':'todo'),closed:f.closing||'',
+        log:a.emailSent?[{to:a.email||'',at:a.emailSent,via:'emailjs'}]:[],origin:(cs.created_at||cs.version_date||cs.date||'').slice(0,10)});
     });
+  });
+  // 3. Safety Review Board — actions décidées en réunion
+  (typeof getSRBMeetings==='function'?getSRBMeetings():[]).forEach(function(m){
+    if(!m||!Array.isArray(m.actions))return;
+    m.actions.forEach(function(a,i){
+      if(!a||!String(a.what||'').trim())return;
+      var st=a.status==='closed'?'closed':(a.status==='cancelled'?'cancelled':(a.status==='in-progress'?'progress':'todo'));
+      out.push({src:'SRB',ref:m.ref||m.id,id:m.id,idx:i,num:i+1,text:a.what,ctx:(m.type||'SRB')+(m.date?' du '+m.date:''),
+        owners:a.who?[a.who]:[],ownersLbl:a.who||'—',due:a.due||'',st:st,closed:a.closed_at||'',log:[],origin:m.date||'',edit:'srb'});
+    });
+  });
+  // 4. Audits SMS (surveillance)
+  (typeof _getLSArray==='function'?_getLSArray('safAudits'):[]).forEach(function(a){
+    if(!a||!String(a.corrective_actions||'').trim())return;
+    var fnd=a.finding||a.overall_finding||'pending',closed=fnd==='satisfactory'||fnd==='closed'||a.closed===true;
+    out.push({src:'AUD',ref:a.ref||a.id||'',id:a.id||'',idx:0,num:1,text:a.corrective_actions,ctx:(a.area?a.area+' — ':'')+(a.findings||a.scope||''),
+      owners:a.auditor?[a.auditor]:[],ownersLbl:a.auditor||'—',due:a.followup_date||'',st:closed?'closed':'todo',closed:'',log:[],origin:a.date||''});
+  });
+  // 5. Signaux CAMO — action SMS
+  (typeof getCAMOSignals==='function'?getCAMOSignals():[]).forEach(function(s){
+    if(!s||!String(s.sms_action||'').trim())return;
+    var st=s.status==='closed'?'closed':(s.status==='open'||!s.status?'todo':'progress');
+    out.push({src:'CAMO',ref:s.ref||s.id,id:s.id,idx:0,num:1,text:s.sms_action,ctx:(s.type?s.type+' — ':'')+(s.description||''),
+      owners:s.author?[s.author]:[],ownersLbl:s.author||'—',due:'',st:st,closed:s.close_date||'',log:[],origin:s.date||''});
+  });
+  // 6. Exercices ERP — actions correctives / d'amélioration
+  (typeof getERPExercises==='function'?getERPExercises():[]).forEach(function(x){
+    if(!x||!String(x.actions||'').trim())return;
+    out.push({src:'ERP',ref:x.id,id:x.id,idx:0,num:1,text:x.actions,ctx:(x.type?x.type+' — ':'')+(x.scenario||''),
+      owners:x.owner?[x.owner]:[],ownersLbl:x.owner||'—',due:x.due_date||'',st:x.effectiveness==='effective'?'closed':'todo',closed:'',log:[],origin:x.date||''});
+  });
+  // 7. CMS — plan d'actions correctives (findings d'audit, internes et FOCA)
+  (AT_CMS.list||[]).forEach(function(f){
+    if(!f)return;var text=f.action||f.correction||f.preventive||'';var desc=f.desc||'';
+    if(!String(text||desc).trim())return;
+    var s=String(f.status||'').toLowerCase();
+    var st=(s==='completed'||s==='closed'||s==='terminée')?'closed':((s==='progress'||s==='in progress'||s==='en cours')?'progress':'todo');
+    var lvl=f.level?String(f.level).replace(/^N/,'Level '):'';
+    out.push({src:'CMS',ref:f.auditNum||f.ref||f.id||'',id:f.id||'',idx:0,num:1,text:text||desc,ctx:(lvl?lvl+' — ':'')+(f.auditTitle?f.auditTitle+' — ':'')+desc,
+      owners:f.np?[f.np]:[],ownersLbl:f.np||'—',due:f.deadline||'',st:st,closed:f.closed||'',
+      log:f.notified?[{to:f.email||'',at:f.notified,via:'emailjs'}]:[],origin:f.detected||'',tag:(String(f.origin||'').toLowerCase().indexOf('foca')>-1||f.focaRef)?'FOCA':''});
   });
   return out;
 }
-function atIsLate(r){return r.st!=='closed'&&r.due&&r.due<atToday();}
-function atJs(t){return atEsc(String(t==null?'':t).replace(/\\/g,'\\\\').replace(/'/g,"\\'"));}
-function atEsc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function atIsOpen(r){return r.st!=='closed'&&r.st!=='cancelled';}
+function atIsLate(r){return atIsOpen(r)&&r.due&&r.due<atToday();}
+// Lecture du plan d'actions CMS (module cms_data) — lecture seule
+function atLoadCMS(force){
+  if(AT_CMS.state==='loading')return;
+  if(!force&&AT_CMS.list&&AT_CMS.at&&(Date.now()-new Date(AT_CMS.at).getTime())<120000)return;
+  if(typeof window.safCloudReadModule!=='function'){AT_CMS.state='error';AT_CMS.err='lecture cloud indisponible';atCmsStatus();return;}
+  AT_CMS.state='loading';atCmsStatus();
+  window.safCloudReadModule('cms_data').then(function(d){
+    if(!d){AT_CMS.state='error';AT_CMS.err='module cms_data non lisible (hors ligne ou droits)';atCmsStatus();return;}
+    var raw=d.cmsx_findings_v1!=null?d.cmsx_findings_v1:d.cmsx_findings;
+    var arr=atParse(raw,[]);
+    AT_CMS.list=Array.isArray(arr)?arr:[];AT_CMS.at=new Date().toISOString();AT_CMS.state='ok';AT_CMS.err='';
+    if(document.getElementById('view-actions')?.classList.contains('active'))renderActionTracker();else atUpdateNavBadge();
+  }).catch(function(e){AT_CMS.state='error';AT_CMS.err=(e&&e.message)||'erreur';atCmsStatus();});
+}
+function atCmsStatus(){
+  var el=document.getElementById('at-cms-status');if(!el)return;
+  if(AT_CMS.state==='loading'){el.innerHTML='⟳ Lecture du plan d\'actions CMS…';el.style.color='var(--grey-400)';return;}
+  if(AT_CMS.state==='ok'){el.innerHTML='CMS : '+AT_CMS.list.length+' fiche(s) lue(s) à '+new Date(AT_CMS.at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+' · <a onclick="atLoadCMS(true)">relire</a>';el.style.color='var(--grey-400)';return;}
+  if(AT_CMS.state==='error'){el.innerHTML='⚠ Actions CMS non chargées — '+atEsc(AT_CMS.err)+' · <a onclick="atLoadCMS(true)">réessayer</a>';el.style.color='#e3b341';return;}
+  el.textContent='';
+}
+function atUpdateNavBadge(){try{var n=atCollect().filter(atIsLate).length;var b=document.getElementById('cnt-actions-late');if(b){b.textContent=n;b.style.display=n?'':'none';b.title=n+' action(s) en retard';}}catch(e){}}
 function renderActionTracker(){
   var wrap=document.getElementById('at-wrap');if(!wrap)return;
   var all=atCollect();
-  atUpdateNavBadge();
-  var k={tot:all.length,open:all.filter(function(r){return r.st!=='closed';}).length,late:all.filter(atIsLate).length,
-    closed:all.filter(function(r){return r.st==='closed';}).length,unsent:all.filter(function(r){return r.st!=='closed'&&!r.log.length;}).length};
+  atUpdateNavBadge();atCmsStatus();
+  var open=all.filter(atIsOpen);
+  var k={tot:all.length,open:open.length,late:all.filter(atIsLate).length,
+    closed:all.length-open.length,unsent:open.filter(function(r){return r.src==='OCC'&&!r.log.length;}).length};
   var kp=document.getElementById('at-kpis');
-  if(kp)kp.innerHTML=[['Actions',k.tot,'var(--white)',''],['Ouvertes',k.open,'#4A9FE0','open'],['En retard',k.late,k.late?'#f85149':'#3fb950','late'],['Non notifiées',k.unsent,k.unsent?'#e3b341':'#3fb950','unsent'],['Clôturées',k.closed,'#3fb950','closed']]
+  if(kp)kp.innerHTML=[['Actions',k.tot,'var(--white)','all'],['Ouvertes',k.open,'#4A9FE0','open'],['En retard',k.late,k.late?'#f85149':'#3fb950','late'],['Non notifiées',k.unsent,k.unsent?'#e3b341':'#3fb950','unsent'],['Clôturées',k.closed,'#3fb950','closed']]
     .map(function(x){return '<button type="button" class="at-kpi" onclick="atQuick(\''+x[3]+'\')"><span class="at-kpi-v" style="color:'+x[2]+';">'+x[1]+'</span><span class="at-kpi-l">'+x[0]+'</span></button>';}).join('');
+  // Répartition par source (ouvertes / en retard), cliquable
+  var bs=document.getElementById('at-bysrc');
+  if(bs)bs.innerHTML=Object.keys(AT_SRC).map(function(s){
+    var rs=all.filter(function(r){return r.src===s;});var o=rs.filter(atIsOpen).length,l=rs.filter(atIsLate).length;
+    if(!rs.length&&s!=='CMS')return '';
+    return '<button type="button" class="at-srcchip'+(AT.src===s?' on':'')+'" style="--c:'+AT_SRC[s].color+';" onclick="atPickSrc(\''+s+'\')">'+AT_SRC[s].label+' <b>'+o+'</b>'+(l?' <span class="at-srcchip-late">'+l+' en retard</span>':'')+'</button>';
+  }).join('');
+  var srcSel=document.getElementById('at-source');
+  if(srcSel){srcSel.innerHTML='<option value="">Toutes sources</option>'+Object.keys(AT_SRC).map(function(s){return '<option value="'+s+'">'+AT_SRC[s].label+' ('+all.filter(function(r){return r.src===s;}).length+')</option>';}).join('');srcSel.value=AT.src;}
   var ownSel=document.getElementById('at-owner');
-  if(ownSel&&!ownSel.dataset.filled){var set={};all.forEach(function(r){r.owners.forEach(function(o){set[o]=1;});});
-    ownSel.innerHTML='<option value="">Tous les responsables</option>'+Object.keys(set).sort().map(function(o){return '<option value="'+atEsc(o)+'">'+atEsc(o==='To be specified'?'Autre':o)+'</option>';}).join('');ownSel.dataset.filled='1';ownSel.value=AT.own;}
+  if(ownSel){var set={};all.forEach(function(r){r.owners.forEach(function(o){if(o)set[o]=1;});});
+    ownSel.innerHTML='<option value="">Tous les responsables</option>'+Object.keys(set).sort().map(function(o){return '<option value="'+atEsc(o)+'">'+atEsc(o==='To be specified'?'Autre':o)+'</option>';}).join('');ownSel.value=AT.own;}
   var q=AT.q.toLowerCase();
   var rows=all.filter(function(r){
     if(AT.src&&r.src!==AT.src)return false;
-    if(AT.st==='open'&&r.st==='closed')return false;
-    if(AT.st==='closed'&&r.st!=='closed')return false;
-    if(AT.st==='unsent'&&(r.st==='closed'||r.log.length))return false;
+    if(AT.st==='open'&&!atIsOpen(r))return false;
+    if(AT.st==='closed'&&atIsOpen(r))return false;
+    if(AT.st==='unsent'&&!(r.src==='OCC'&&atIsOpen(r)&&!r.log.length))return false;
     if(AT.late&&!atIsLate(r))return false;
     if(AT.own&&r.owners.indexOf(AT.own)===-1)return false;
-    if(q&&(r.ref+' '+r.text+' '+r.ownersLbl+' '+r.ctx).toLowerCase().indexOf(q)===-1)return false;
+    if(q&&(r.ref+' '+r.text+' '+r.ownersLbl+' '+r.ctx+' '+AT_SRC[r.src].label).toLowerCase().indexOf(q)===-1)return false;
     return true;
   }).sort(function(a,b){
     var la=atIsLate(a)?0:1,lb=atIsLate(b)?0:1;if(la!==lb)return la-lb;
-    var ca=a.st==='closed'?1:0,cb=b.st==='closed'?1:0;if(ca!==cb)return ca-cb;
+    var ca=atIsOpen(a)?0:1,cb=atIsOpen(b)?0:1;if(ca!==cb)return ca-cb;
     return (a.due||'9999').localeCompare(b.due||'9999');
   });
   var cnt=document.getElementById('at-count');if(cnt)cnt.textContent=rows.length+' / '+all.length;
   if(!rows.length){wrap.innerHTML='<div class="at-empty">Aucune action pour ces filtres.</div>';return;}
-  var stLbl={todo:'Not started',progress:'In progress',closed:'Completed'};
+  var stLbl={todo:'Not started',progress:'In progress',closed:'Completed',cancelled:'Cancelled'};
   wrap.innerHTML='<div class="table-wrap"><table class="at-table"><thead><tr><th>Source</th><th>Référence</th><th>Action</th><th>Responsable(s)</th><th>Échéance</th><th>Statut</th><th>Notification</th><th></th></tr></thead><tbody>'
   +rows.map(function(r){
-    var late=atIsLate(r);
-    var key=atJs(r.ref)+'\',\''+atJs(r.aid)+'\','+r.idx;
+    var late=atIsLate(r),S=AT_SRC[r.src];
     var stCell,dueCell,sendBtn='';
-    if(r.src==='OCC'){
-      stCell='<select class="at-st at-st-'+r.st+'" onchange="atSetField(\''+key+',\'status\',this.value)">'+['Not started','In progress','Completed'].map(function(o){return '<option value="'+o+'"'+(stLbl[r.st]===o?' selected':'')+'>'+o+'</option>';}).join('')+'</select>'+(r.closed&&r.st==='closed'?'<div class="at-sub">clôturée '+atEsc(r.closed)+'</div>':'');
+    var closedNote=(!atIsOpen(r)&&r.closed)?'<div class="at-sub">clôturée '+atEsc(r.closed)+'</div>':'';
+    if(r.edit==='occ'){
+      var key=atJs(r.id)+'\',\''+atJs(r.aid)+'\','+r.idx;
+      stCell='<select class="at-st at-st-'+r.st+'" onchange="atSetField(\''+key+',\'status\',this.value)">'+['Not started','In progress','Completed'].map(function(o){return '<option value="'+o+'"'+(stLbl[r.st]===o?' selected':'')+'>'+o+'</option>';}).join('')+'</select>'+closedNote;
       dueCell='<input type="date" class="at-due" value="'+atEsc(r.due)+'" onchange="atSetField(\''+key+',\'actionDate\',this.value)"/>';
       sendBtn='<button type="button" class="at-btn" title="Envoyer / renvoyer aux responsables" onclick="atSend(\''+key+')">✉</button>';
+    }else if(r.edit==='srb'){
+      var k2=atJs(r.id)+'\','+r.idx;
+      var sv={todo:'open',progress:'in-progress',closed:'closed',cancelled:'cancelled'}[r.st];
+      stCell='<select class="at-st at-st-'+r.st+'" onchange="atSetSRB(\''+k2+',\'status\',this.value)">'+[['open','Open'],['in-progress','In progress'],['closed','Closed'],['cancelled','Cancelled']].map(function(o){return '<option value="'+o[0]+'"'+(sv===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>'+closedNote;
+      dueCell='<input type="date" class="at-due" value="'+atEsc(r.due)+'" onchange="atSetSRB(\''+k2+',\'due\',this.value)"/>';
     }else{
-      stCell='<span class="at-pill at-st-'+r.st+'">'+stLbl[r.st]+'</span>'+(r.closed&&r.st==='closed'?'<div class="at-sub">clôturée '+atEsc(r.closed)+'</div>':'');
+      stCell='<span class="at-pill at-st-'+r.st+'">'+stLbl[r.st]+'</span>'+closedNote;
       dueCell='<span>'+(r.due?atEsc(r.due):'—')+'</span>';
     }
-    var notif=r.log.length?'<span class="at-sent" title="'+atEsc(occActionSentTitle(r.log))+'">'+atEsc(occActionSentSummary(r.log))+(r.log.length>1?' ('+r.log.length+')':'')+'</span>':(r.st==='closed'?'<span class="at-sub">—</span>':'<span class="at-unsent">Non notifiée</span>');
-    return '<tr class="'+(late?'at-late':'')+(r.st==='closed'?' at-closed':'')+'">'
-      +'<td><span class="at-src at-src-'+r.src+'">'+(r.src==='OCC'?'Occurrence':'MOC')+'</span></td>'
-      +'<td><a class="at-ref" onclick="atOpen(\''+r.src+'\',\''+atJs(r.ref)+'\')" title="'+atEsc(r.ctx)+'">'+atEsc(r.ref)+'</a><div class="at-sub">#'+r.num+(r.origin?' · '+atEsc(r.origin):'')+'</div></td>'
-      +'<td class="at-text">'+atEsc(r.text)+'</td>'
+    var notif=r.log.length?'<span class="at-sent" title="'+atEsc(occActionSentTitle(r.log))+'">'+atEsc(occActionSentSummary(r.log))+(r.log.length>1?' ('+r.log.length+')':'')+'</span>'
+      :(r.src!=='OCC'||!atIsOpen(r)?'<span class="at-sub">—</span>':'<span class="at-unsent">Non notifiée</span>');
+    var openCall='atOpen(\''+r.src+'\',\''+atJs(r.id)+'\')';
+    return '<tr class="'+(late?'at-late':'')+(atIsOpen(r)?'':' at-closed')+'">'
+      +'<td><span class="at-src" style="--c:'+S.color+';">'+S.short+'</span>'+(r.tag?'<div class="at-sub" style="color:#f85149;">'+r.tag+'</div>':'')+'</td>'
+      +'<td><a class="at-ref" onclick="'+openCall+'" title="'+atEsc(r.ctx)+'">'+atEsc(r.ref||'—')+'</a><div class="at-sub">'+(r.num>1||r.src==='OCC'||r.src==='MOC'||r.src==='SRB'?'#'+r.num:'')+(r.origin?' · '+atEsc(r.origin):'')+'</div></td>'
+      +'<td class="at-text">'+atEsc(r.text)+(r.ctx?'<div class="at-ctx">'+atEsc(String(r.ctx).slice(0,160))+'</div>':'')+'</td>'
       +'<td>'+atEsc(r.ownersLbl)+'</td>'
       +'<td>'+dueCell+(late?'<div class="at-late-tag">En retard</div>':'')+'</td>'
       +'<td>'+stCell+'</td>'
       +'<td>'+notif+'</td>'
-      +'<td style="white-space:nowrap;">'+sendBtn+'<button type="button" class="at-btn" title="Ouvrir la fiche source" onclick="atOpen(\''+r.src+'\',\''+atJs(r.ref)+'\')">↗</button></td></tr>';
+      +'<td style="white-space:nowrap;">'+sendBtn+'<button type="button" class="at-btn" title="Ouvrir la fiche source" onclick="'+openCall+'">↗</button></td></tr>';
   }).join('')+'</tbody></table></div>';
 }
 function atQuick(k){
   AT.late=false;
-  if(k==='late'){AT.st='open';AT.late=true;}else if(k)AT.st=k;else AT.st='all';
+  if(k==='late'){AT.st='open';AT.late=true;}else AT.st=k||'all';
   var s=document.getElementById('at-status');if(s)s.value=AT.st;var l=document.getElementById('at-late');if(l)l.checked=AT.late;
   renderActionTracker();
 }
+function atPickSrc(s){AT.src=AT.src===s?'':s;renderActionTracker();}
 function atFind(ref,aid,idx){
   var occs=getOccurrences(),o=occs.find(function(x){return x.id===ref;});
   if(!o||!o.five_whys||!Array.isArray(o.five_whys.corrective_actions))return null;
@@ -16368,11 +16479,18 @@ function atSetField(ref,aid,idx,field,val){
   var f=atFind(ref,aid,idx);if(!f){showToast('Action introuvable','error');return;}
   f.a[field]=val;
   if(field==='status')f.a.closed_at=val==='Completed'?(f.a.closed_at||atToday()):'';
-  f.a.updated_at=new Date().toISOString();
-  f.o.updated_at=new Date().toISOString();
-  saveOccurrences(f.occs);
-  renderActionTracker();
+  f.a.updated_at=new Date().toISOString();f.o.updated_at=new Date().toISOString();
+  saveOccurrences(f.occs);renderActionTracker();
   showToast('✓ Action mise à jour — '+ref,'success');
+}
+function atSetSRB(meetingId,idx,field,val){
+  var ms=getSRBMeetings(),m=ms.find(function(x){return x&&x.id===meetingId;});
+  if(!m||!Array.isArray(m.actions)||!m.actions[idx]){showToast('Action SRB introuvable','error');return;}
+  var a=m.actions[idx];a[field]=val;
+  if(field==='status')a.closed_at=val==='closed'?(a.closed_at||atToday()):'';
+  m.updated_at=new Date().toISOString();
+  saveSRBMeetings(ms);renderActionTracker();
+  showToast('✓ Action SRB mise à jour','success');
 }
 function atSend(ref,aid,idx){
   var f=atFind(ref,aid,idx);if(!f){showToast('Action introuvable','error');return;}
@@ -16383,21 +16501,28 @@ function atSend(ref,aid,idx){
     saveOccurrences(g.occs);renderActionTracker();
   });
 }
-function atOpen(src,ref){
-  if(src==='OCC'){llGoToOccurrence(ref);return;}
-  showView('change');setTimeout(function(){if(typeof showChangeStudyForm==='function')showChangeStudyForm(ref);},80);
+function atOpen(src,id){
+  var later=function(fn){setTimeout(function(){try{fn();}catch(e){}},80);};
+  if(src==='OCC'){llGoToOccurrence(id);return;}
+  if(src==='MOC'){showView('change');later(function(){showChangeStudyForm(id);});return;}
+  if(src==='SRB'){showView('srb');later(function(){showSRBForm(id);document.getElementById('srb-form-wrap')?.scrollIntoView({behavior:'smooth',block:'start'});});return;}
+  if(src==='AUD'){showView('surveillance');later(function(){showAuditForm(id);});return;}
+  if(src==='CAMO'){showView('camointerface');later(function(){showCAMOSignalForm(id);});return;}
+  if(src==='ERP'){showView('erp');later(function(){erpShowSection('exercises');});return;}
+  if(src==='CMS'){window.open('SAF_International_Compliance_Monitoring_System.html','_blank');}
 }
 function atExportCSV(){
   var e=function(v){v=String(v==null?'':v);return /[",;\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
-  var stLbl={todo:'Not started',progress:'In progress',closed:'Completed'};
-  var rows=[['Source','Référence','N°','Action','Responsable(s)','Échéance','Statut','Clôture','En retard','Notifications','Dernier envoi']]
+  var stLbl={todo:'Not started',progress:'In progress',closed:'Completed',cancelled:'Cancelled'};
+  var rows=[['Source','Référence','N°','Action','Contexte','Responsable(s)','Échéance','Statut','Clôture','En retard','Notifications','Dernier envoi']]
     .concat(atCollect().map(function(r){var last=r.log.length?r.log[r.log.length-1]:null;
-      return [r.src==='OCC'?'Occurrence':'MOC',r.ref,r.num,r.text,r.ownersLbl,r.due,stLbl[r.st],r.closed,atIsLate(r)?'Oui':'',r.log.map(function(l){return l.to;}).join(' ; '),last?last.at:''];}));
+      return [AT_SRC[r.src].label,r.ref,r.num,r.text,r.ctx,r.ownersLbl,r.due,stLbl[r.st],r.closed,atIsLate(r)?'Oui':'',r.log.map(function(l){return l.to;}).join(' ; '),last?last.at:''];}));
   var a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob(['\ufeff'+rows.map(function(r){return r.map(e).join(',');}).join('\n')],{type:'text/csv;charset=utf-8'}));
   a.download='SAF_Suivi_Actions_'+atToday()+'.csv';document.body.appendChild(a);a.click();
   setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1000);
 }
+
 function occTogglePanel(bodyId, btn){
   var body=document.getElementById(bodyId); if(!body)return;
   var collapsed=body.classList.toggle('collapsed');
@@ -17921,7 +18046,6 @@ function saveOccurrence(_silent){
     }
   }
 }
-function atUpdateNavBadge(){try{var n=atCollect().filter(atIsLate).length;var b=document.getElementById('cnt-actions-late');if(b){b.textContent=n;b.style.display=n?'':'none';b.title=n+' action(s) en retard';}}catch(e){}}
 function renderOccurrenceList() {
   if(typeof occBulkTaxoBadge==='function'){ try{ occBulkTaxoBadge(); }catch(e){} }
   atUpdateNavBadge();
@@ -23439,7 +23563,7 @@ setTimeout(function(){
       // Ajout 02.10.2026 : interfaces externes et Part-IS.
       'ifxSave','ifxDelete','ismsSave','ismsDelete','ismsSetReq',
       // Ajout 14.10.2026 : envoi et suivi des actions de l'Occurrence Log.
-      'occSendFWAction','atSetField','atSend','llApplyOccLinks'
+      'occSendFWAction','atSetField','atSetSRB','atSend','llApplyOccLinks'
     ];
     var GUARD_MSG = (SAF_ROLE === 'authority')
       ? 'Accès autorité — consultation seule, aucune écriture possible.'
@@ -24302,7 +24426,7 @@ function occRestoreHFACS(hfacs,severity){
     /* 10.09.2026 — la ligne de titres de colonnes du Risk Register est exclue
        de la couche bilingue : elle reste en anglais. Le titre de la vue, lui,
        garde ses deux langues (voir la regle sur .dash-title plus bas). */
-    return !!el.closest('script,style,noscript,textarea,input,canvas,svg,code,pre,[contenteditable="true"],.rte,.cs-sig-wrap,.cms-title-fr,.cms-title-en,#view-database thead,#saf-cloud-bar,#saf-mfa-overlay,.occ-dg-block,.occ-own-pick,.at-table,.at-kpis,.saf-rit-picker [role=listbox],.saf-rit-picker [id$="-sel"]');
+    return !!el.closest('script,style,noscript,textarea,input,canvas,svg,code,pre,[contenteditable="true"],.rte,.cs-sig-wrap,.cms-title-fr,.cms-title-en,#view-database thead,#saf-cloud-bar,#saf-mfa-overlay,.occ-dg-block,.occ-own-pick,.at-table,.at-kpis,.at-bysrc,#at-source,.saf-rit-picker [role=listbox],.saf-rit-picker [id$="-sel"]');
   }
   function preserveOptionValue(el){
     if(el && el.tagName==='OPTION' && !el.hasAttribute('value')) el.setAttribute('value', el.textContent || '');
@@ -27011,7 +27135,7 @@ window.cmxBridgeDiag    = function(){
 <!-- ═══ FIN OCCURRENCE → RISQUE ════════════════════════════════════════════ -->
 
 
-<a class="saf-guide-fab" href="Archives/SAF_User_Guide.html#sms" onclick="if(location.pathname.indexOf('/Archives/')!==-1)this.href='../SAF_User_Guide.html#sms'" title="Mode d'emploi SAF" aria-label="Mode d'emploi SAF">?</a>
+<a class="saf-guide-fab" href="SAF_User_Guide.html#sms" title="Mode d'emploi SAF" aria-label="Mode d'emploi SAF">?</a>
 <script>
 /* Bouton « Fermer » : le panneau Sauvegarder/Exporter est réservé à admin et editor.
    Reader, authority ou rôle inconnu : retour direct à l'accueil, sans export. */
