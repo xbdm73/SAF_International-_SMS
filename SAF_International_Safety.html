@@ -19716,6 +19716,7 @@ function printLessonById(id){
     +'.box ul ul,.box ol ol,.box ul ol,.box ol ul{margin:3px 0;}'
     +'.box li{margin:3px 0;padding-left:2px;}'
     +'.box p,.box div{max-width:100%;}'
+    +'.box .llp{margin:0 0 .85em;} .box>:last-child{margin-bottom:0;}'
     +'.uimg{max-width:100%;max-height:200px;object-fit:contain;border-radius:4px;display:block;margin-bottom:12px;}'
     +'.box img{max-width:100%;height:auto;border-radius:3px;page-break-inside:avoid;break-inside:avoid;}'
     +'.box img[data-ll-img]{display:block;}'
@@ -19774,7 +19775,7 @@ function printLessonById(id){
         var changed=false;
         Array.prototype.forEach.call(imgs,function(im){
           var w=parseFloat(im.style.width)||100;
-          if(w>30){ im.style.width=Math.max(30,w-6)+'%'; changed=true; }
+          if(w>60){ im.style.width=Math.max(60,w-6)+'%'; changed=true; }
         });
         if(!changed)break;
         guard++;
@@ -19815,75 +19816,129 @@ function printLessonById(id){
         }
       }
     });
-    // ── Ajustement typographique avant tout report ───────────────────
-    // Une version linguistique plus longue que l'autre (l'anglais, le plus
-    // souvent) remplit la page a elle seule et chasse la signature sur une
-    // page de continuation. On resserre donc d'abord la typographie du corps
-    // par paliers, puis le titre si besoin : mieux vaut un corps a 11 px
-    // qu'une page supplementaire ne portant qu'une signature.
-    document.querySelectorAll('.ct').forEach(function(ct){
+    // ── Pagination sans coupure de paragraphe (14.10.2026) ──────────
+    // Quand le texte dépasse la feuille, les paragraphes qui ne tiennent
+    // plus partent ENTIERS sur une feuille de continuation (même fond,
+    // titre « — suite »). Un paragraphe n'est jamais coupé ; une liste
+    // peut l'être, mais seulement entre deux puces.
+    var LL_BLOCK=/^(P|DIV|UL|OL|H1|H2|H3|H4|H5|H6|TABLE|BLOCKQUOTE|PRE|IMG|FIGURE|HR|SECTION)$/;
+    function llBlank(n){ return n.nodeType===3 && !String(n.textContent||'').trim(); }
+    function llEmptyUnit(el){ return el && el.nodeType===1 && !String(el.textContent||'').trim() && !el.querySelector('img,hr,table') && el.tagName!=='IMG' && el.tagName!=='HR'; }
+    function llFits(ct){ return ct.scrollHeight<=ct.clientHeight+1; }
+    function llNormalize(box){
+      if(box.__llNorm) return; box.__llNorm=true;
+      // Un conteneur unique enveloppant tout le texte est déballé.
+      for(var g=0; g<5; g++){
+        var only=null, other=false;
+        Array.prototype.forEach.call(box.childNodes,function(n){ if(llBlank(n)) return; if(n.nodeType===1 && !only && /^(DIV|SECTION|ARTICLE)$/.test(n.tagName)) only=n; else other=true; });
+        if(!only || other || only.children.length<2) break;
+        while(only.firstChild) box.insertBefore(only.firstChild, only);
+        box.removeChild(only);
+      }
+      // Le texte « en ligne » est regroupé en paragraphes ; une ligne vide
+      // (deux sauts de ligne ou plus) sépare deux paragraphes.
+      var run=[];
+      function flush(){
+        if(!run.length) return;
+        var groups=[[]], pend=[];
+        run.forEach(function(n){
+          if(n.nodeName==='BR' || llBlank(n)){ pend.push(n); return; }
+          var brs=pend.filter(function(x){ return x.nodeName==='BR'; }).length;
+          var cur=groups[groups.length-1];
+          if(brs>=2 && cur.length){ pend.forEach(function(x){ if(x.parentNode) x.parentNode.removeChild(x); }); groups.push([]); }
+          else pend.forEach(function(x){ cur.push(x); });
+          pend=[]; groups[groups.length-1].push(n);
+        });
+        pend.forEach(function(x){ if(x.parentNode) x.parentNode.removeChild(x); });
+        groups.forEach(function(gr){
+          if(!gr.length) return;
+          var d=document.createElement('div'); d.className='llp';
+          box.insertBefore(d, gr[0]);
+          gr.forEach(function(x){ d.appendChild(x); });
+        });
+        run=[];
+      }
+      Array.prototype.slice.call(box.childNodes).forEach(function(n){
+        if(n.nodeType===1 && LL_BLOCK.test(n.tagName)) flush(); else run.push(n);
+      });
+      flush();
+    }
+    function llContinuation(page, ct, box){
+      var sec=document.createElement('section'); sec.className='page';
+      var bgEl=page.querySelector('.bg'); if(bgEl) sec.appendChild(bgEl.cloneNode(true));
+      var cct=document.createElement('div'); cct.className='ct';
+      var ttl=ct.querySelector('.ttl');
+      if(ttl){ var t=ttl.cloneNode(true); t.textContent=String(ttl.textContent||'').replace(/ — suite$/,'')+' — suite'; cct.appendChild(t); }
+      var nb=document.createElement('div'); nb.className='box';
+      if(box.getAttribute('style')) nb.setAttribute('style', box.getAttribute('style'));
+      nb.__llNorm=true;
+      cct.appendChild(nb);
+      sec.appendChild(cct);
+      var pn=document.createElement('div'); pn.className='pnum'; sec.appendChild(pn);
+      page.parentNode.insertBefore(sec, page.nextSibling);
+      return {ct:cct, box:nb};
+    }
+    function llPaginate(ct){
       var box=ct.querySelector('.box');
-      if(!box)return;
-      var fits=function(){return ct.scrollHeight<=ct.clientHeight;};
-      if(fits())return;
-      var steps=[[12,1.6],[11.5,1.55],[11,1.5],[10.5,1.45],[10,1.4]];
-      for(var i=0;i<steps.length&&!fits();i++){
-        box.style.fontSize=steps[i][0]+'px';
-        box.style.lineHeight=String(steps[i][1]);
+      if(!box || llFits(ct)) return;
+      llNormalize(box);
+      if(llFits(ct)) return;
+      // Débordement de quelques lignes : un léger resserrement évite une
+      // feuille presque vide.
+      if(ct.scrollHeight-ct.clientHeight<48){
+        var fs=box.style.fontSize, lh=box.style.lineHeight;
+        box.style.fontSize='12px'; box.style.lineHeight='1.6';
+        if(llFits(ct)) return;
+        box.style.fontSize=fs; box.style.lineHeight=lh;
       }
-      if(fits())return;
-      // Toujours trop long : on resserre l'entete de la page.
-      var ttl=ct.querySelector('.ttl');
-      if(ttl){ ttl.style.fontSize='16px'; ttl.style.marginBottom='10px'; }
-      var meta=ct.querySelector('.meta');
-      if(meta){ meta.style.marginBottom='9px'; meta.style.paddingBottom='7px'; }
-      if(fits())return;
-      box.style.padding='9px 10px';
-      if(fits())return;
-      if(ttl){ ttl.style.fontSize='15px'; ttl.style.marginBottom='8px'; }
-      box.style.fontSize='9.5px';
-      box.style.lineHeight='1.35';
-    });
-
-    // ── La signature ne doit jamais être rognée ──────────────────────
-    // 1) on la réduit progressivement ; 2) si la place manque toujours, elle
-    // part sur une page de continuation. Le texte n'est jamais tronqué
-    // davantage : rogner le contenu d'un Safety Alert serait plus grave
-    // qu'une signature reportée d'une page.
-    document.querySelectorAll('.ct').forEach(function(ct){
+      // Signature : d'abord réduite, ensuite seulement reportée.
       var sig=ct.querySelector('.sig');
-      if(!sig)return;
-      var fits=function(){return ct.scrollHeight<=ct.clientHeight;};
-      if(fits())return;
-
-      var widths=[340,300,260,220,190];
-      for(var i=0;i<widths.length&&!fits();i++){ sig.style.width=widths[i]+'px'; }
-      if(fits())return;
-
-      // Place insuffisante : report sur une page dédiée, taille nominale.
-      sig.style.width='386px';
-      var page=ct.closest('.page');
-      if(!page)return;
-      var contPage=document.createElement('section');
-      contPage.className='page';
-      var bgEl=page.querySelector('.bg');
-      if(bgEl){ contPage.appendChild(bgEl.cloneNode(true)); }
-      var cct=document.createElement('div');
-      cct.className='ct';
-      var ttl=ct.querySelector('.ttl');
-      if(ttl){
-        var t=ttl.cloneNode(true);
-        t.textContent=String(ttl.textContent||'').replace(/ — suite$/,'')+' — suite';
-        cct.appendChild(t);
+      if(sig){
+        var ws=[340,300,260];
+        for(var i=0;i<ws.length;i++){ sig.style.width=ws[i]+'px'; if(llFits(ct)) return; }
+        sig.style.width='386px';
       }
-      sig.parentNode.removeChild(sig);
-      cct.appendChild(sig);
-      contPage.appendChild(cct);
-      var pn=document.createElement('div');
-      pn.className='pnum';
-      contPage.appendChild(pn);
-      page.parentNode.insertBefore(contPage,page.nextSibling);
-    });
+      var page=ct.closest('.page'); if(!page) return;
+      var cont=null;
+      function C(){ if(!cont) cont=llContinuation(page, ct, box); return cont; }
+      for(var guard=0; guard<800 && !llFits(ct); guard++){
+        var tail=ct.lastElementChild;
+        if(tail && tail!==box && tail.classList && (tail.classList.contains('sig')||tail.classList.contains('att'))){
+          var c=C(); c.ct.insertBefore(tail, c.box.nextSibling); continue;
+        }
+        var units=box.children;
+        if(units.length<=1){
+          // Un seul paragraphe plus haut que la feuille : impossible de le
+          // reporter sans le couper — on resserre sa typographie.
+          var steps=[[11.5,1.55],[11,1.5],[10.5,1.45],[10,1.4],[9.5,1.35]];
+          for(var s=0;s<steps.length && !llFits(ct);s++){ box.style.fontSize=steps[s][0]+'px'; box.style.lineHeight=String(steps[s][1]); }
+          break;
+        }
+        var last=units[units.length-1];
+        var first=C().box.firstElementChild;
+        if((last.tagName==='UL'||last.tagName==='OL') && last.children.length>0 && (last.children.length>1 || (first && first.__llContOf===last))){
+          var tgt=(first && first.__llContOf===last) ? first : null;
+          if(!tgt){ tgt=last.cloneNode(false); tgt.__llContOf=last; C().box.insertBefore(tgt, first); }
+          tgt.insertBefore(last.lastElementChild, tgt.firstChild);
+          var st=parseInt(last.getAttribute('start')||'1',10);
+          if(last.tagName==='OL') tgt.setAttribute('start', String(st+last.children.length));
+          if(!last.children.length){ if(last.tagName==='OL') tgt.setAttribute('start', String(st)); box.removeChild(last); }
+          continue;
+        }
+        C().box.insertBefore(last, C().box.firstChild);
+      }
+      if(!cont) return;
+      // La signature n'arrive jamais seule sur une feuille : elle emporte
+      // avec elle le dernier paragraphe.
+      if(!cont.box.children.length && box.children.length>1) cont.box.appendChild(box.lastElementChild);
+      while(cont.box.firstElementChild && llEmptyUnit(cont.box.firstElementChild)) cont.box.removeChild(cont.box.firstElementChild);
+      while(box.lastElementChild && box.children.length>1 && llEmptyUnit(box.lastElementChild)) box.removeChild(box.lastElementChild);
+      if(!cont.box.children.length) cont.box.style.display='none';
+    }
+    for(var pi=0; pi<document.querySelectorAll('.page').length && pi<80; pi++){
+      var pct=document.querySelectorAll('.page')[pi].querySelector('.ct');
+      if(pct) llPaginate(pct);
+    }
 
     // Renumérotation finale, après tous les ajouts de pages.
     var allPages=document.querySelectorAll('.page');
