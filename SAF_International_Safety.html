@@ -27752,5 +27752,181 @@ function init(){Object.keys(sets).forEach(render)}if(document.readyState==='load
   } catch(e){}
 })();
 </script>
+<!-- ═══ RISK REGISTER — FICHE PLEINE PAGE (14.10.2026) ═══════════════════════
+     Ouvrir un scénario (▶) ou l'éditer donne toute la page à la fiche :
+     filtres, barre d'outils et liste des scénarios s'effacent, et reviennent
+     au retour. La modale d'édition passe en plein écran. -->
+<style id="rr-focus-style">
+#view-database.rr-focus-on > :not(#rr-focus) { display: none !important; }
+#rr-focus { display: none; }
+#view-database.rr-focus-on #rr-focus { display: block; }
+#rr-focus .rrf-bar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 14px; margin: 0 0 14px 0;
+  background: var(--navy-mid, #13263a);
+  border: 1px solid rgba(255,255,255,.10); border-radius: 10px;
+  box-shadow: 0 8px 22px rgba(0,0,0,.35);
+}
+#rr-focus .rrf-id { font-family: var(--font-mono); font-size: 15px; font-weight: 800; color: var(--gold-light); white-space: nowrap; }
+#rr-focus .rrf-title { flex: 1 1 320px; min-width: 0; color: var(--white); font-size: 14px; font-weight: 600; line-height: 1.35; }
+#rr-focus .rrf-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+#rr-focus .rrf-pos { font-family: var(--font-mono); font-size: 10px; color: var(--grey-400); white-space: nowrap; }
+#rr-focus .rrf-body {
+  background: rgba(74,159,224,.04); border: 1px solid rgba(74,159,224,.15);
+  border-radius: 10px; padding: 6px 14px 14px;
+}
+#rr-focus .rrf-body .detail-grid { padding: 12px 0 !important; }
+
+/* Modale d'édition en plein écran */
+#edit-modal-overlay { padding: 0 !important; background: var(--navy, #0d1b2a) !important; }
+#edit-modal-overlay > div:first-child {
+  max-width: none !important; min-height: 100%; margin: 0 !important;
+  border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
+}
+#edit-modal-overlay .em-sticky-head {
+  position: sticky; top: 0; z-index: 30;
+  background: var(--navy-mid, #13263a);
+}
+#edit-modal-overlay .em-sticky-foot {
+  position: sticky; bottom: 0; z-index: 30;
+  background: var(--navy-mid, #13263a);
+  border-top: 1px solid rgba(255,255,255,.08);
+  padding-top: 12px !important; padding-bottom: 12px !important;
+  padding-right: 96px !important; /* dégage la bulle d'aide fixe en bas à droite */
+}
+</style>
+<script id="rr-focus-script">
+(function(){
+  var focusId = null;      // scénario affiché en pleine page
+  var savedScroll = null;  // position dans le registre, restaurée au retour
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function db(){ return (typeof DB!=='undefined' && Array.isArray(DB)) ? DB : []; }
+  function list(){ return (typeof filteredDB!=='undefined' && Array.isArray(filteredDB) && filteredDB.length) ? filteredDB : db(); }
+  function find(id){ return db().find(function(x){ return x && x.id===id; }) || null; }
+  function view(){ return document.getElementById('view-database'); }
+
+  function host(){
+    var v = view(); if(!v) return null;
+    var h = document.getElementById('rr-focus');
+    if(!h){ h = document.createElement('div'); h.id = 'rr-focus'; v.insertBefore(h, v.firstChild); }
+    return h;
+  }
+
+  function render(){
+    var h = host(); if(!h) return;
+    var r = find(focusId);
+    if(!r){ close(); return; }
+    var L = list(), i = L.findIndex(function(x){ return x && x.id===r.id; });
+    var prev = i>0 ? L[i-1] : null, next = (i>=0 && i<L.length-1) ? L[i+1] : null;
+    var idq = encodeURIComponent(r.id);
+    var detail = '';
+    try{ detail = (typeof window._rrDetailHTML==='function') ? window._rrDetailHTML(r) : ''; }
+    catch(e){ detail = '<div style="color:#ff8080;padding:12px;">Fiche non affichable : '+esc(e.message)+'</div>'; }
+
+    h.innerHTML =
+      '<div class="rrf-bar">'
+      + '<button class="btn btn-ghost" type="button" onclick="rrFocusClose()" title="Revenir à la liste (Échap)">← Registre</button>'
+      + '<span class="rrf-id">'+esc(r.id)+'</span>'
+      + '<span class="rrf-title">'+esc(r.event||'')+'</span>'
+      + '<span class="rrf-actions">'
+      +   '<button class="btn btn-ghost" type="button" '+(prev?'onclick="rrFocusOpen(decodeURIComponent(\''+encodeURIComponent(prev.id)+'\'))" title="'+esc(prev.id)+'"':'disabled style="opacity:.35"')+'>‹</button>'
+      +   '<span class="rrf-pos">'+(i>=0?(i+1)+' / '+L.length:'')+'</span>'
+      +   '<button class="btn btn-ghost" type="button" '+(next?'onclick="rrFocusOpen(decodeURIComponent(\''+encodeURIComponent(next.id)+'\'))" title="'+esc(next.id)+'"':'disabled style="opacity:.35"')+'>›</button>'
+      +   '<button class="edit-btn" onclick="editEntry(decodeURIComponent(\''+idq+'\'))">Edit</button>'
+      +   '<button class="delete-btn" onclick="deleteEntry(decodeURIComponent(\''+idq+'\'))">Delete</button>'
+      + '</span>'
+      + '</div>'
+      + '<div class="rrf-body">'+detail+'</div>';
+  }
+
+  window.rrFocusOpen = function(id){
+    if(!find(id)){ if(typeof showToast==='function') showToast('Scénario introuvable : '+id,'error'); return; }
+    var v = view(); if(!v) return;
+    if(!v.classList.contains('rr-focus-on')){
+      var w = v.querySelector('.table-wrap');
+      savedScroll = { win: window.scrollY, wrap: w ? w.scrollTop : 0, left: w ? w.scrollLeft : 0 };
+    }
+    focusId = id;
+    v.classList.add('rr-focus-on');
+    render();
+    try{ window.scrollTo(0,0); var m=v.closest('.main, main'); if(m) m.scrollTop=0; v.scrollTop=0; }catch(e){}
+  };
+
+  function close(){
+    var v = view();
+    focusId = null;
+    if(v) v.classList.remove('rr-focus-on');
+    var h = document.getElementById('rr-focus'); if(h) h.innerHTML = '';
+    try{ if(typeof _rrFitTable==='function') setTimeout(_rrFitTable,0); }catch(e){}
+    if(savedScroll && v){
+      var s = savedScroll; savedScroll = null;
+      setTimeout(function(){
+        var w = v.querySelector('.table-wrap');
+        if(w){ w.scrollTop = s.wrap; w.scrollLeft = s.left; }
+        window.scrollTo(0, s.win);
+      }, 0);
+    }
+  }
+  window.rrFocusClose = close;
+  window.rrFocusRefresh = function(){ if(focusId) render(); };
+
+  /* ▶ ouvre désormais la fiche en pleine page au lieu de la déplier sous la ligne */
+  window.toggleRow = function(rowId){
+    var d = document.getElementById(rowId+'-detail');
+    var rid = '';
+    if(d){ try{ rid = decodeURIComponent(d.getAttribute('data-risk')||''); }catch(e){ rid = d.getAttribute('data-risk')||''; } }
+    if(rid) window.rrFocusOpen(rid);
+  };
+
+  function wrap(name, after){
+    var orig = window[name];
+    if(typeof orig!=='function' || orig.__rrFocus) return;
+    var f = function(){
+      var before = { id: focusId, editing: (typeof _emEditingId!=='undefined') ? _emEditingId : null };
+      var res = orig.apply(this, arguments);
+      try{ after(before, arguments); }catch(e){}
+      return res;
+    };
+    f.__rrFocus = true;
+    window[name] = f;
+  }
+
+  function install(){
+    /* Après enregistrement : suivre un éventuel changement d'ID, puis rafraîchir la fiche */
+    wrap('saveEditModal', function(b){
+      if(!b.id || b.editing!==b.id) return;
+      var nid = ((document.getElementById('em-id')||{}).value||'').trim();
+      if(nid && nid!==b.id && find(nid)) focusId = nid;
+      render();
+    });
+    wrap('closeEditModal', function(){ if(focusId) render(); });
+    wrap('deleteEntry', function(b){ if(b.id && !find(b.id)) close(); else if(focusId) render(); });
+    /* Changer de vue referme la fiche : on revient toujours au registre complet */
+    wrap('showView', function(){ if(focusId) close(); });
+
+    /* Modale d'édition : en-tête et pied collants en plein écran */
+    var ov = document.getElementById('edit-modal-overlay');
+    if(ov && ov.firstElementChild){
+      var box = ov.firstElementChild;
+      if(box.firstElementChild) box.firstElementChild.classList.add('em-sticky-head');
+      var sb = box.querySelector('button[onclick="saveEditModal()"]');
+      if(sb && sb.parentElement) sb.parentElement.classList.add('em-sticky-foot');
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(install,0); });
+  else setTimeout(install,0);
+
+  document.addEventListener('keydown', function(e){
+    if(e.key!=='Escape' || !focusId) return;
+    var ov = document.getElementById('edit-modal-overlay');
+    if(ov && ov.style.display!=='none') return;  // Échap ferme d'abord la modale
+    var t = e.target; if(t && /INPUT|TEXTAREA|SELECT/.test(t.tagName)) return;
+    close();
+  });
+})();
+</script>
+
 </body>
 </html>
