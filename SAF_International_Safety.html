@@ -18660,6 +18660,31 @@ function showLessonForm(editId){
     color.addEventListener('input',function(){_exec('foreColor',this.value);});
     bar.appendChild(color);
     var clear=btn('Tx','removeFormat');clear.title='Retirer la mise en forme';bar.appendChild(clear);
+    // Saut de page manuel (14.10.2026) : ce qui suit le repère commence sur
+    // une nouvelle feuille à l'impression. Le repère est posé entre deux
+    // blocs, jamais au milieu d'un paragraphe.
+    var pbBtn=document.createElement('button');
+    pbBtn.type='button';pbBtn.textContent='⤓ Saut de page';
+    pbBtn.title='Insérer un saut de page : la suite du texte commencera sur une nouvelle feuille';
+    pbBtn.style.cssText='padding:4px 9px;border:1px solid rgba(201,162,39,.45);border-radius:4px;background:rgba(201,162,39,.12);color:var(--gold-light);font-family:var(--font-mono);font-size:10px;cursor:pointer;';
+    pbBtn.addEventListener('mousedown',function(e){e.preventDefault();});
+    pbBtn.addEventListener('click',function(e){
+      e.preventDefault();
+      var ed=_restoreRange(); if(!ed) return;
+      var sel=window.getSelection(), node=null, off=0;
+      if(sel&&sel.rangeCount){ var r0=sel.getRangeAt(0); if(ed.contains(r0.startContainer)){ node=r0.startContainer; off=r0.startOffset; } }
+      if(node===ed){ node=ed.childNodes[off-1]||null; if(!node){ node=null; } }
+      if(node&&node.nodeType===3&&node.parentNode===ed&&off>0&&off<node.length){ node.splitText(off); }
+      var blk=node; while(blk&&blk.parentNode!==ed) blk=blk.parentNode;
+      var pb=document.createElement('div');
+      pb.className='ll-pb';pb.setAttribute('data-ll-pb','1');pb.contentEditable='false';
+      if(blk) ed.insertBefore(pb,blk.nextSibling); else ed.appendChild(pb);
+      var nx=pb.nextSibling;
+      if(!nx||(nx.nodeType===1&&nx.classList&&nx.classList.contains('ll-pb'))){ nx=document.createElement('div'); nx.appendChild(document.createElement('br')); ed.insertBefore(nx,pb.nextSibling); }
+      try{ var cr=document.createRange(); cr.setStart(nx,0); cr.collapse(true); sel.removeAllRanges(); sel.addRange(cr); _savedRange=cr.cloneRange(); }catch(err){}
+      try{ ed.dispatchEvent(new Event('input',{bubbles:true})); }catch(err){}
+    });
+    bar.appendChild(pbBtn);
 
     // Bouton d'insertion d'image : l'image se pose SOUS la ligne ou se
     // trouve le curseur, puis se redimensionne avec la barre bleue.
@@ -19127,7 +19152,7 @@ function showLessonForm(editId){
 
   var pagesHelp=document.createElement('div');
   pagesHelp.style.cssText='font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin:-4px 0 14px;line-height:1.5;';
-  pagesHelp.textContent='Structure bilingue : 1) VERSION FRANÇAISE avec son titre et ses pages, 2) ENGLISH VERSION avec son title et ses pages. Ajoutez autant de pages complémentaires que nécessaire avec « ＋ Ajouter une page » ; chacune a son propre éditeur et se réordonne avec ▲ ▼. Le fond choisi est répété sur toutes les pages imprimées/PDF. Images : placez le curseur sur la ligne voulue, cliquez 🖼 (l’image se pose juste en dessous) ou collez une capture d’écran ; cliquez ensuite l’image pour régler sa largeur (− + ou carré bleu du coin) et son placement : ◧ Gauche, ▣ Centré, ◨ Droite, et ¶ Texte autour pour faire courir le texte à côté d’elle.';
+  pagesHelp.textContent='Structure bilingue : 1) VERSION FRANÇAISE avec son titre et ses pages, 2) ENGLISH VERSION avec son title et ses pages. Ajoutez autant de pages complémentaires que nécessaire avec « ＋ Ajouter une page » ; chacune a son propre éditeur et se réordonne avec ▲ ▼. Pour choisir vous-même où une feuille se termine, placez le curseur et cliquez « ⤓ Saut de page » : la suite part sur une nouvelle feuille. Sans saut de page, un texte trop long continue seul sur la feuille suivante, sans couper de paragraphe. Le fond choisi est répété sur toutes les pages imprimées/PDF. Images : placez le curseur sur la ligne voulue, cliquez 🖼 (l’image se pose juste en dessous) ou collez une capture d’écran ; cliquez ensuite l’image pour régler sa largeur (− + ou carré bleu du coin) et son placement : ◧ Gauche, ▣ Centré, ◨ Droite, et ¶ Texte autour pour faire courir le texte à côté d’elle.';
   card.appendChild(pagesHelp);
 
   // Row 2: Distribution / Risk link
@@ -19716,6 +19741,7 @@ function printLessonById(id){
     +'.box ul ul,.box ol ol,.box ul ol,.box ol ul{margin:3px 0;}'
     +'.box li{margin:3px 0;padding-left:2px;}'
     +'.box p,.box div{max-width:100%;}'
+    +'.ll-pb{display:none;}'
     +'.box .llp{margin:0 0 .85em;} .box>:last-child{margin-bottom:0;}'
     +'.uimg{max-width:100%;max-height:200px;object-fit:contain;border-radius:4px;display:block;margin-bottom:12px;}'
     +'.box img{max-width:100%;height:auto;border-radius:3px;page-break-inside:avoid;break-inside:avoid;}'
@@ -19744,6 +19770,19 @@ function printLessonById(id){
     if(!pages.length)pages=[''];
     pages.forEach(function(body,idx){docPages.push({lang:lang,title:title,body:body,first:idx===0,last:idx===pages.length-1});});
   }
+  // Sauts de page manuels posés dans l'éditeur : chaque segment devient une feuille.
+  function llSplitManualBreaks(list){
+    var out=[];
+    list.forEach(function(h){
+      String(h||'').split(/<div[^>]*data-ll-pb[^>]*>\s*<\/div>/i).forEach(function(q){
+        q=String(q||'').trim();
+        if(llStripHtml(q)||/<img/i.test(q)) out.push(q);
+      });
+    });
+    return out;
+  }
+  frPages=llSplitManualBreaks(frPages);
+  enPages=llSplitManualBreaks(enPages);
   addLang('',frTitle,frPages);
   addLang('',enTitle,enPages);
   var total=docPages.length||1;
@@ -27811,6 +27850,10 @@ function init(){Object.keys(sets).forEach(render)}if(document.readyState==='load
      Ouvrir un scénario (▶) ou l'éditer donne toute la page à la fiche :
      filtres, barre d'outils et liste des scénarios s'effacent, et reviennent
      au retour. La modale d'édition passe en plein écran. -->
+<style id="ll-pagebreak-style">
+.ll-rich-wrap .ll-pb{display:block;position:relative;height:0;margin:16px 0;border-top:2px dashed var(--gold-light,#E0A030);cursor:default;user-select:none;}
+.ll-rich-wrap .ll-pb::after{content:"SAUT DE PAGE";position:absolute;left:50%;top:-8px;transform:translateX(-50%);padding:0 8px;background:#16273b;font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--gold-light,#E0A030);}
+</style>
 <style id="rr-focus-style">
 #view-database.rr-focus-on > :not(#rr-focus) { display: none !important; }
 #rr-focus { display: none; }
