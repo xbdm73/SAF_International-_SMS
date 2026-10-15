@@ -4934,7 +4934,7 @@ window.__SAF_E5X_RIT_PATCH='V2_2026-07-03';
     'safRiskDB','safRiskDBVersion','safEventCatalog','safEventCatalogVersion','safChangeStudies','safSPITargets','safFlightHours',
     'safOccurrences','safLessons','safTrainingRecords','safERPExercises','safInterfaces','safISMS','safSRBMeetings','safAudits',
     'safSAR','safALoS','safCAMOSignals','lastModified',
-    'ejsPublicKey','ejsServiceId','ejsTemplateId',
+    'ejsPublicKey','safERPContent','safERPContentHistory','ejsServiceId','ejsTemplateId',
     'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining',
     'safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap',
     'safRemovedRiskIds','safArchivedRisks','safRegisterNumbering','safArchiveSeq',
@@ -9541,6 +9541,7 @@ window.safExportAllData_object = function(){
     safLessons:       _getLS('safLessons'),
     safTrainingRecords:_getLS('safTrainingRecords'),
     safERPExercises:  _getLS('safERPExercises'),
+    safERPContent:    _getLS('safERPContent'),   // 15.10.2026 — contenu édité de l'ERP
     safInterfaces:    _getLS('safInterfaces'),
     safISMS:          _getLS('safISMS'),
     safSRBMeetings:   _getLS('safSRBMeetings'),
@@ -9667,7 +9668,7 @@ function safImportAllData(evt){
 
       var keys = ['safRiskDB','safRiskDBVersion','safEventCatalog','safEventCatalogVersion','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
                   'safLessons','safTrainingRecords','safERPExercises','safInterfaces','safISMS','safSRBMeetings','safAudits','lastModified',
-                  'ejsPublicKey','ejsServiceId','ejsTemplateId',
+                  'ejsPublicKey','safERPContent','ejsServiceId','ejsTemplateId',
                   'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap','safRemovedRiskIds','safArchivedRisks','safRegisterNumbering','safArchiveSeq',
                   ];
       var count = 0;
@@ -12458,7 +12459,7 @@ function importJSON(event) {
       if(data._version || data._app || data.safRiskDB || data.safOccurrences || data.safChangeStudies) {
         const allKeys = ['safRiskDB','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
                          'safLessons','safTrainingRecords','safERPExercises','safInterfaces','safISMS','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','lastModified',
-                         'ejsPublicKey','ejsServiceId','ejsTemplateId',
+                         'ejsPublicKey','safERPContent','ejsServiceId','ejsTemplateId',
                          'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap','safRemovedRiskIds','safArchivedRisks','safRegisterNumbering','safArchiveSeq',
                          ];
         allKeys.forEach(function(k){ if(data[k]!=null){ localStorage.setItem(k,data[k]); imported.push(k); } });
@@ -23189,7 +23190,7 @@ setTimeout(function(){
   // Liste des clés gérées (identique à safExportAllData / importJSON)
   var KEYS = ['safRiskDB','safRiskDBVersion','safEventCatalog','safEventCatalogVersion','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
               'safLessons','safTrainingRecords','safERPExercises','safInterfaces','safISMS','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','lastModified',
-              'ejsPublicKey','ejsServiceId','ejsTemplateId',
+              'ejsPublicKey','safERPContent','ejsServiceId','ejsTemplateId',
               'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap','safRemovedRiskIds','safArchivedRisks','safRegisterNumbering','safArchiveSeq',
               ];
 
@@ -23296,7 +23297,7 @@ setTimeout(function(){
 
   // Relance les rendus disponibles (silencieux si une fonction manque)
   function refreshAll(){
-    var fns = ['updateCounts','renderDashboard','renderTable','renderExportView',
+    var fns = ['updateCounts','erpContentApply','renderDashboard','renderTable','renderExportView',
                'renderOccurrenceList','renderECCAIRSTracker','renderLessonsList','renderSRBList','renderAuditTrail',
                'renderSPIView','renderSafetyIndicators','renderLeadingIndicators','renderTopRisks',
                'renderSARList','renderALoSView','renderSavedCSList','updateLastModified'];
@@ -23657,7 +23658,9 @@ setTimeout(function(){
       // Ajout 02.10.2026 : interfaces externes et Part-IS.
       'ifxSave','ifxDelete','ismsSave','ismsDelete','ismsSetReq',
       // Ajout 14.10.2026 : envoi et suivi des actions de l'Occurrence Log.
-      'occSendFWAction','atSetField','atSetSRB','atSend','llApplyOccLinks'
+      'occSendFWAction','atSetField','atSetSRB','atSend','llApplyOccLinks',
+      // Ajout 15.10.2026 : édition complète de l'ERP et des exercices ERP.
+      'erpEdToggle','erpEdSave','erpEdRestoreVersion','erpEdResetOriginal','erpSaveExercise','erpExEdit','erpExDelete'
     ];
     var GUARD_MSG = (SAF_ROLE === 'authority')
       ? 'Accès autorité — consultation seule, aucune écriture possible.'
@@ -24520,7 +24523,7 @@ function occRestoreHFACS(hfacs,severity){
     /* 10.09.2026 — la ligne de titres de colonnes du Risk Register est exclue
        de la couche bilingue : elle reste en anglais. Le titre de la vue, lui,
        garde ses deux langues (voir la regle sur .dash-title plus bas). */
-    return !!el.closest('script,style,noscript,textarea,input,canvas,svg,code,pre,[contenteditable="true"],.rte,.cs-sig-wrap,.cms-title-fr,.cms-title-en,#view-database thead,#saf-cloud-bar,#saf-mfa-overlay,.occ-dg-block,.occ-own-pick,.at-table,.at-kpis,.at-bysrc,#at-source,.saf-rit-picker [role=listbox],.saf-rit-picker [id$="-sel"]');
+    return !!el.closest('script,style,noscript,textarea,input,canvas,svg,code,pre,[contenteditable="true"],.rte,.cs-sig-wrap,.cms-title-fr,.cms-title-en,#view-database thead,#saf-cloud-bar,#saf-mfa-overlay,.occ-dg-block,.occ-own-pick,.at-table,.at-kpis,.at-bysrc,#at-source,.saf-rit-picker [role=listbox],.saf-rit-picker [id$="-sel"],#erp-ed-bar,#erp-ed-tools,#erp-ed-versions,#erp-ed-meta,#erp-ed-btn,#erp-tab-input,.erp-tab-ed');
   }
   function preserveOptionValue(el){
     if(el && el.tagName==='OPTION' && !el.hasAttribute('value')) el.setAttribute('value', el.textContent || '');
@@ -27269,7 +27272,7 @@ window.cmxBridgeDiag    = function(){
 (function(){
   'use strict';
   var KEY = 'safArchivedRisks', SEQ_KEY = 'safArchiveSeq';
-  var DATA_KEYS = ['safEventCatalog','safChangeStudies','safSPITargets','safOccurrences','safLessons','safTrainingRecords','safERPExercises',
+  var DATA_KEYS = ['safEventCatalog','safChangeStudies','safSPITargets','safOccurrences','safLessons','safTrainingRecords','safERPExercises','safERPContent',
     'safInterfaces','safISMS','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','safSafetyPolicy','safSafetyObjectives',
     'safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders'];
 
@@ -28023,6 +28026,889 @@ function init(){Object.keys(sets).forEach(render)}if(document.readyState==='load
     var t = e.target; if(t && /INPUT|TEXTAREA|SELECT/.test(t.tagName)) return;
     close();
   });
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     ERP — ÉDITION COMPLÈTE DU CONTENU (15.10.2026 — porté depuis Helion-X)
+     Rend modifiable l'intégralité de l'Emergency Response Plan : en-tête,
+     contacts, numéros, checklists, organigramme de crise, rôles, textes,
+     retour à la normale — et, côté SAF, les exercices déjà enregistrés.
+     · Mode édition réservé à admin/editor (fonctions ajoutées à
+       guardWriteFunctions ; RLS inchangée côté serveur).
+     · Texte : édition directe dans la page (collage forcé en texte brut).
+     · Structure : barre flottante sur l'élément survolé — monter, descendre,
+       dupliquer, supprimer, remonter au bloc parent ; ↶ annule l'opération.
+     · Liens tel: recalculés depuis le numéro affiché à l'enregistrement.
+     · Stockage : clé safERPContent (synchronisée avec sms_data), 5 versions
+       précédentes conservées localement (safERPContentHistory, non synchro).
+     · Le contenu enregistré est assaini à l'application (script, iframe,
+       javascript:, gestionnaires on* hors fonctions ERP).
+═══════════════════════════════════════════════════════════════════════ -->
+<style id="erp-ed-style">
+  #view-erp.erp-ed-on [data-erp-host]{ outline:1px dashed rgba(227,179,65,.45); outline-offset:6px; border-radius:4px; }
+  #view-erp.erp-ed-on [data-erp-host]:focus-within{ outline-color:rgba(227,179,65,.8); }
+  #view-erp.erp-ed-on a{ cursor:text; }
+  #erp-ed-bar{ display:none; position:sticky; top:var(--erp-tabs-h,0px); z-index:60; margin:0 28px; padding:8px 12px;
+    background:rgba(60,45,10,.96); border:1px solid rgba(227,179,65,.55); border-top:none; border-radius:0 0 8px 8px;
+    font-family:var(--font-mono); font-size:10px; color:#f0d58a; align-items:center; gap:8px; flex-wrap:wrap; }
+  #view-erp.erp-ed-on #erp-ed-bar{ display:flex; }
+  #erp-ed-bar .erp-ed-help{ flex:1 1 320px; line-height:1.5; color:#e8d7a6; }
+  #erp-ed-bar button, #erp-ed-tools button, .erp-ed-mini{ font-family:var(--font-mono); font-size:10px; cursor:pointer;
+    border-radius:5px; padding:4px 9px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:#fff; }
+  #erp-ed-bar button:hover, #erp-ed-tools button:hover{ background:rgba(255,255,255,.14); }
+  #erp-ed-bar .erp-ed-ok{ background:#2e7d32; border-color:#4caf50; font-weight:700; }
+  #erp-ed-bar .erp-ed-ko{ background:rgba(192,0,0,.35); border-color:rgba(255,90,90,.5); }
+  #erp-ed-bar .erp-fmt{ flex:1 1 100%; display:flex; flex-wrap:wrap; align-items:center; gap:4px; padding-top:7px;
+    margin-top:2px; border-top:1px solid rgba(227,179,65,.3); }
+  #erp-ed-bar .erp-fmt button{ min-width:28px; padding:4px 7px; font-size:12px; line-height:1.2; }
+  #erp-ed-bar .erp-fmt .erp-sep{ width:1px; align-self:stretch; background:rgba(227,179,65,.3); margin:0 4px; }
+  #erp-ed-bar .erp-fmt select{ font-family:var(--font-mono); font-size:11px; padding:4px 6px; border-radius:5px;
+    background:#1b1606; color:#fff; border:1px solid rgba(255,255,255,.25); }
+  #erp-ed-bar .erp-fmt input[type=color]{ width:28px; height:24px; padding:0 2px; border:1px solid rgba(255,255,255,.25);
+    border-radius:5px; background:#1b1606; cursor:pointer; }
+  #erp-ed-bar .erp-fmt .erp-sw{ width:16px; height:16px; min-width:16px; padding:0; border-radius:3px; border:1px solid rgba(255,255,255,.5); }
+  #erp-ed-bar .erp-fmt .erp-lab{ font-size:9px; color:#e8d7a6; letter-spacing:.05em; margin-left:2px; }
+  #erp-ed-hl{ position:fixed; z-index:9990; pointer-events:none; border:2px solid #e3b341; border-radius:4px;
+    background:rgba(227,179,65,.06); display:none; }
+  #erp-ed-tools{ position:fixed; z-index:9991; display:none; gap:3px; padding:3px; background:#2a2108;
+    border:1px solid #e3b341; border-radius:6px; box-shadow:0 4px 14px rgba(0,0,0,.45); }
+  #erp-ed-tools button{ padding:2px 7px; font-size:11px; line-height:1.4; }
+  #erp-ed-tools .erp-ed-tag{ font-family:var(--font-mono); font-size:9px; color:#e3b341; padding:3px 6px 0 4px; }
+  #erp-ed-meta{ font-family:var(--font-mono); font-size:9px; color:var(--grey-400); align-self:center; }
+  #erp-ed-versions{ position:fixed; inset:0; z-index:9995; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; }
+  #erp-ed-versions .erp-ed-box{ background:var(--navy-mid,#13233a); border:1px solid rgba(227,179,65,.5); border-radius:10px;
+    padding:18px; width:min(560px,92vw); max-height:80vh; overflow:auto; color:var(--grey-200,#ccc); font-size:12px; }
+  #erp-ed-versions .erp-ed-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 10px;
+    border-bottom:1px solid rgba(255,255,255,.07); }
+  .erp-tab-ed{ display:none; align-self:center; margin:0 6px 0 -12px; padding:1px 5px; font-size:10px; cursor:pointer;
+    color:#e3b341; border:1px solid rgba(227,179,65,.5); border-radius:4px; background:rgba(227,179,65,.08); }
+  #view-erp.erp-ed-on .erp-tab-ed{ display:inline-block; }
+  #view-erp.erp-ed-on .erp-tab{ outline:1px dashed rgba(227,179,65,.35); outline-offset:-3px; }
+  #erp-tab-input{ position:fixed; z-index:9996; font-family:var(--font-mono); font-size:10px; font-weight:700; letter-spacing:.05em;
+    background:#1b1606; color:#fff; border:2px solid #e3b341; border-radius:5px; padding:6px 8px; resize:none; line-height:1.4; }
+
+  /* ── Titres de l'ERP agrandis et hiérarchisés (15.10.2026) ─────────────
+     Ciblage par le style en ligne d'origine : fonctionne aussi sur le
+     contenu enregistré par l'éditeur, qui conserve ces styles. */
+  /* Onglets : plus grands, état actif net, barre collante */
+  #view-erp .erp-tabbar{ position:sticky; top:0; z-index:55; padding-top:6px !important; }
+  #view-erp .erp-tabbar > div{ flex-wrap:wrap; gap:4px !important; }
+  #view-erp .erp-tab{ font-size:12.5px !important; padding:11px 18px !important; letter-spacing:.04em !important;
+    border-radius:8px 8px 0 0 !important; border-bottom:3px solid transparent !important; line-height:1.35;
+    transition:background .15s, color .15s; }
+  #view-erp .erp-tab:hover{ background:rgba(74,159,224,.14) !important; color:var(--steel-bright) !important; }
+  #view-erp .erp-tab.erp-tab-active{ border-bottom-color:#e3b341 !important; color:var(--steel-bright) !important; }
+  #view-erp .erp-tab:focus-visible{ outline:2px solid #e3b341; outline-offset:-2px; }
+  /* Classes posées par erpClassifyTitles() d'après le style en ligne
+     (robuste aux réécritures de style du thème clair Helion). */
+  #erp-content .erp-h1{ font-size:16px !important; letter-spacing:.05em !important; line-height:1.35 !important;
+    padding:4px 0 4px 12px !important; border-left:4px solid currentColor; margin:8px 0 14px !important; }
+  #erp-content .erp-h2, #erp-content .chart-title{ font-size:15px !important; letter-spacing:.04em !important; line-height:1.4 !important; }
+  #erp-content .erp-h2{ padding-bottom:10px !important; }
+  #erp-content .erp-h3{ font-size:14px !important; letter-spacing:.03em !important; line-height:1.4 !important; }
+  #erp-content .erp-h3b{ font-size:15px !important; line-height:1.35 !important; }
+  #erp-content .erp-h4{ font-size:12.5px !important; letter-spacing:.03em !important; line-height:1.4 !important; }
+  #erp-content .erp-lbl{ font-size:11.5px !important; }
+  #view-erp .dash-header .dash-title + div{ font-size:13px !important; }
+  #view-erp .dash-header .dash-subtitle{ font-size:12.5px !important; }
+  @media print{ #view-erp .erp-tabbar{ position:static; } }
+  @media print{ .erp-tab-ed, #erp-ed-bar,#erp-ed-tools,#erp-ed-hl,#erp-ed-btn,#erp-ed-meta{ display:none !important; } }
+</style>
+<script id="erp-ed-runtime">
+(function(){
+  'use strict';
+  var LANG = 'fr';
+  function T(fr, en){ return LANG === 'fr' ? fr : en; }
+
+  var KEY = 'safERPContent', HKEY = 'safERPContentHistory', HMAX = 5;
+  var SECS = ['contacts','checklist','crisis','roles','general','return'];
+
+  var view = document.getElementById('view-erp');
+  if(!view) return;
+
+  function headerEl(){ return view.querySelector('.dash-header > div'); }
+  function secEl(s){ return document.getElementById('erp-sec-' + s); }
+  function hosts(){
+    var a = [];
+    var h = headerEl(); if(h) a.push(['header', h]);
+    SECS.forEach(function(s){ var e = secEl(s); if(e) a.push([s, e]); });
+    return a;
+  }
+
+  /* Intitulés des onglets (boutons de navigation : édités par une zone de saisie dédiée). */
+  function tabEls(){ return Array.prototype.slice.call(view.querySelectorAll('.erp-tab[id^="erp-tab-"]')); }
+  function tabKey(b){ return b.id.replace('erp-tab-',''); }
+  function tabLabels(){ var o = {}; tabEls().forEach(function(b){ o[tabKey(b)] = b.innerText.replace(/\r/g,'').trim(); }); return o; }
+  function setTab(b, txt){
+    txt = String(txt == null ? '' : txt).replace(/<[^>]*>/g,'').trim();
+    if(!txt) return;
+    b.textContent = txt;
+    b.style.whiteSpace = txt.indexOf('\n') > -1 ? 'pre-line' : '';
+  }
+  function applyTabs(map){ if(!map) return; tabEls().forEach(function(b){ var k = tabKey(b); if(typeof map[k] === 'string') setTab(b, map[k]); }); }
+
+  function role(){ try{ return String(typeof safCurrentRole === 'function' ? safCurrentRole() : '').toLowerCase(); }catch(e){ return ''; } }
+  function canWrite(){ return /^(admin|editor)$/.test(role()); }
+  function who(){ try{ return typeof safCurrentUser === 'function' ? safCurrentUser() : ''; }catch(e){ return ''; } }
+  function toast(m, t){ try{ if(typeof showToast === 'function') showToast(m, t || ''); }catch(e){} }
+  function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmt(iso){ try{ var d = new Date(iso); return d.toLocaleDateString('fr-CH') + ' ' + d.toLocaleTimeString('fr-CH',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return iso || ''; } }
+  function readJSON(k, dflt){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : dflt; }catch(e){ return dflt; } }
+
+  /* ── Contenu d'origine du fichier (avant tout contenu enregistré) ── */
+  var ORIG = {};
+  hosts().forEach(function(p){ ORIG[p[0]] = p[1].innerHTML; });
+  var ORIG_TABS = {}; tabEls().forEach(function(b){ ORIG_TABS[tabKey(b)] = b.textContent; });
+
+  /* ── Assainissement du HTML enregistré ─────────────────────────────── */
+  var SAFE_HANDLER = /^\s*(erp[A-Za-z]*\(|this\.parentElement[\w.]*\.remove\(\)|window\.print\(\)|event\.)/;
+  function sanitize(html){
+    var t = document.createElement('template');
+    t.innerHTML = String(html || '');
+    t.content.querySelectorAll('script,iframe,object,embed,link,meta,style,base,form').forEach(function(n){ n.remove(); });
+    t.content.querySelectorAll('*').forEach(function(n){
+      Array.prototype.slice.call(n.attributes).forEach(function(a){
+        var nm = a.name.toLowerCase();
+        if(nm.indexOf('on') === 0 && !SAFE_HANDLER.test(a.value)) n.removeAttribute(a.name);
+        else if((nm === 'href' || nm === 'src' || nm === 'xlink:href') && /^\s*(javascript|vbscript|data):/i.test(a.value)) n.removeAttribute(a.name);
+        else if(nm === 'contenteditable') n.removeAttribute(a.name);
+      });
+    });
+    var d = document.createElement('div'); d.appendChild(t.content.cloneNode(true));
+    return d.innerHTML;
+  }
+
+  /* HTML propre d'un hôte, prêt à être stocké. */
+  function cleanHTML(el){
+    var c = el.cloneNode(true);
+    c.querySelectorAll('[contenteditable]').forEach(function(n){ n.removeAttribute('contenteditable'); });
+    /* Retire les corrections de contraste du thème clair Helion : on stocke la couleur d'auteur. */
+    c.querySelectorAll('[data-hx-fix]').forEach(function(n){
+      var cur = n.style.getPropertyValue('color'), o = n.getAttribute('data-hx-orig');
+      n.style.removeProperty('color'); n.style.color = o || cur;
+      n.removeAttribute('data-hx-fix'); n.removeAttribute('data-hx-orig');
+    });
+    var log = c.querySelector('#erp-log-entries'); if(log) log.innerHTML = '';
+    c.querySelectorAll('input[type="checkbox"],input[type="radio"]').forEach(function(i){ i.removeAttribute('checked'); });
+    c.querySelectorAll('a[href^="tel:"]').forEach(function(a){
+      var digits = (a.textContent || '').replace(/[^\d+]/g, '');
+      if(digits.replace(/\D/g,'').length >= 3) a.setAttribute('href', 'tel:' + digits);
+    });
+    return sanitize(c.innerHTML);
+  }
+
+  /* ── Application du contenu enregistré ─────────────────────────────── */
+  var editing = false, appliedStamp = null;
+
+  function applyObj(obj){
+    hosts().forEach(function(p){
+      /* Section dont le fichier porte une révision documentaire (data-erp-base) :
+         un contenu enregistré sur une autre révision n'écrase pas la nouvelle. */
+      var base = p[1].getAttribute('data-erp-base');
+      if(base && obj && !obj.reset && ((obj.bases || {})[p[0]] || '') !== base) return;
+      var html = obj && obj.reset ? ORIG[p[0]]
+               : (obj && (p[0] === 'header' ? obj.header : (obj.sections || {})[p[0]]));
+      if(typeof html === 'string' && html.length) p[1].innerHTML = obj.reset ? html : sanitize(html);
+    });
+    if(obj && obj.reset){ tabEls().forEach(function(b){ var k = tabKey(b); if(ORIG_TABS[k] != null){ b.textContent = ORIG_TABS[k]; b.style.whiteSpace = ''; } }); }
+    else if(obj) applyTabs(obj.tabs);
+  }
+
+  window.erpContentApply = function(force){
+    if(editing) return;
+    var obj = readJSON(KEY, null);
+    if(!obj){ updateMeta(); refreshUI(); return; }
+    var stamp = (obj.saved_at || '') + '|' + (obj.reset ? 'R' : '');
+    if(force || stamp !== appliedStamp){
+      applyObj(obj);
+      appliedStamp = stamp;
+      try{ erpClassifyTitles(); }catch(e){}
+    }
+    updateMeta(); refreshUI();
+  };
+
+  /* ── Interface ─────────────────────────────────────────────────────── */
+  function ensureUI(){
+    var head = view.querySelector('.dash-header');
+    if(head && !document.getElementById('erp-ed-btn')){
+      var printBtn = head.querySelector('button');
+      var grp = document.createElement('div');
+      grp.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;';
+      grp.innerHTML = '<span id="erp-ed-meta"></span>'
+        + '<button id="erp-ed-btn" class="btn btn-ghost" style="font-size:11px;display:none;" onclick="erpEdToggle()">✎ ' + T('Modifier l’ERP','Edit ERP') + '</button>';
+      if(printBtn){ head.insertBefore(grp, printBtn); grp.appendChild(printBtn); }
+      else head.appendChild(grp);
+    }
+    var content = document.getElementById('erp-content');
+    if(content && !document.getElementById('erp-ed-bar')){
+      var bar = document.createElement('div');
+      bar.id = 'erp-ed-bar';
+      bar.innerHTML = '<span class="erp-ed-help">✎ ' + T(
+          'MODE ÉDITION — cliquez pour modifier un texte, sélectionnez-le pour le mettre en forme · ✎ renomme un onglet · survol d’un élément : ＋ ajouter un bloc dessous, ▲▼ déplacer, ⧉ dupliquer, ✕ supprimer, ⤒ bloc parent.',
+          'EDIT MODE — click to change text, select it to format it · ✎ renames a tab · hover an element: ＋ add a block below, ▲▼ move, ⧉ duplicate, ✕ delete, ⤒ parent block.')
+        + '</span>'
+        + '<button onclick="erpEdUndo()" title="' + T('Annuler la dernière opération de structure','Undo last structural change') + '">↶ ' + T('Annuler','Undo') + '</button>'
+        + '<button onclick="erpEdVersions()">🕘 ' + T('Versions','Versions') + '</button>'
+        + '<button class="erp-ed-ko" onclick="erpEdCancel()">✕ ' + T('Abandonner','Discard') + '</button>'
+        + '<button class="erp-ed-ok" onclick="erpEdSave()">✓ ' + T('Enregistrer','Save') + '</button>'
+        + fmtRowHTML();
+      content.parentNode.insertBefore(bar, content);
+      bindFmtRow(bar);
+    }
+    if(!document.getElementById('erp-ed-tools')){
+      var hl = document.createElement('div'); hl.id = 'erp-ed-hl'; document.body.appendChild(hl);
+      var tl = document.createElement('div'); tl.id = 'erp-ed-tools';
+      tl.innerHTML = '<span class="erp-ed-tag" id="erp-ed-tag"></span>'
+        + '<button data-op="up" title="' + T('Monter','Move up') + '">▲</button>'
+        + '<button data-op="down" title="' + T('Descendre','Move down') + '">▼</button>'
+        + '<button data-op="add" title="' + T('Ajouter un bloc vide en dessous (même mise en forme)','Add an empty block below (same layout)') + '" style="color:#7ee787;font-weight:900">＋</button>'
+        + '<button data-op="dup" title=""' + T('Dupliquer (ajouter un élément identique)','Duplicate (add a similar item)') + '">⧉</button>'
+        + '<button data-op="del" title="' + T('Supprimer','Delete') + '">✕</button>'
+        + '<button data-op="parent" title="' + T('Sélectionner le bloc parent','Select parent block') + '">⤒</button>';
+      tl.addEventListener('mousedown', function(e){ e.preventDefault(); });
+      tl.addEventListener('click', function(e){
+        var b = e.target.closest('button'); if(b) structOp(b.getAttribute('data-op'));
+      });
+      document.body.appendChild(tl);
+    }
+    if(!document.getElementById('erp-ed-versions')){
+      var vm = document.createElement('div'); vm.id = 'erp-ed-versions';
+      vm.addEventListener('click', function(e){ if(e.target === vm) vm.style.display = 'none'; });
+      document.body.appendChild(vm);
+    }
+  }
+
+  function refreshUI(){
+    var b = document.getElementById('erp-ed-btn');
+    if(b) b.style.display = canWrite() ? '' : 'none';
+  }
+  function updateMeta(){
+    var m = document.getElementById('erp-ed-meta'); if(!m) return;
+    var obj = readJSON(KEY, null);
+    if(!obj){ m.textContent = ''; return; }
+    m.textContent = (obj.reset ? T('Original rétabli le ','Original restored ') : T('Modifié le ','Edited ')) + fmt(obj.saved_at)
+      + (obj.saved_by ? T(' par ',' by ') + obj.saved_by : '');
+  }
+
+  /* ── Mise en forme du texte (gras, taille, police, couleurs…) ────── */
+  var SIZES = [9,10,11,12,13,14,15,16,18,20,22,24,28,32,40];
+  var SWATCH = ['#C00000','#e3b341','#1c5c9f','#4a9fe0','#368132','#3fb950','#567898','#000000','#ffffff'];
+  var FONTS = [['', T('Police…','Font…')], ['var(--font-mono)', 'Mono'], ['Arial, Helvetica, sans-serif', 'Sans'],
+               ['Georgia, "Times New Roman", serif', 'Serif'], ['inherit', T('Par défaut','Default')]];
+  function fmtRowHTML(){
+    var b = function(cmd, lbl, tip, st){ return '<button data-fmt="' + cmd + '" title="' + tip + '"' + (st ? ' style="' + st + '"' : '') + '>' + lbl + '</button>'; };
+    var h = '<div class="erp-fmt">'
+      + b('bold','B',T('Gras (Ctrl+B)','Bold (Ctrl+B)'),'font-weight:900')
+      + b('italic','I',T('Italique (Ctrl+I)','Italic (Ctrl+I)'),'font-style:italic')
+      + b('underline','U',T('Souligné (Ctrl+U)','Underline (Ctrl+U)'),'text-decoration:underline')
+      + b('strikeThrough','S',T('Barré','Strikethrough'),'text-decoration:line-through')
+      + '<span class="erp-sep"></span>'
+      + b('smaller','A−',T('Réduire la taille','Smaller')) + b('bigger','A+',T('Agrandir la taille','Bigger'))
+      + '<select data-fmt-sel="size" title="' + T('Taille de police','Font size') + '"><option value="">' + T('Taille…','Size…') + '</option>'
+      + SIZES.map(function(z){ return '<option value="' + z + '">' + z + ' px</option>'; }).join('') + '</select>'
+      + '<select data-fmt-sel="font" title="' + T('Police','Font') + '">' + FONTS.map(function(f){ return '<option value="' + f[0].replace(/"/g,'&quot;') + '">' + f[1] + '</option>'; }).join('') + '</select>'
+      + '<span class="erp-sep"></span><span class="erp-lab">' + T('TEXTE','TEXT') + '</span>'
+      + '<input type="color" data-fmt-col="foreColor" value="#c00000" title="' + T('Couleur du texte','Text colour') + '"/>'
+      + SWATCH.map(function(c){ return '<button class="erp-sw" data-fmt="foreColor" data-val="' + c + '" title="' + c + '" style="background:' + c + '"></button>'; }).join('')
+      + '<span class="erp-sep"></span><span class="erp-lab">' + T('SURLIGNÉ','HIGHLIGHT') + '</span>'
+      + '<input type="color" data-fmt-col="hiliteColor" value="#fff3a0" title="' + T('Couleur de surlignage','Highlight colour') + '"/>'
+      + b('hiliteNone','⊘',T('Retirer le surlignage','Remove highlight'))
+      + '<span class="erp-sep"></span>'
+      + b('justifyLeft','⯇',T('Aligner à gauche','Align left')) + b('justifyCenter','≡',T('Centrer','Centre')) + b('justifyRight','⯈',T('Aligner à droite','Align right'))
+      + b('upper','Aa',T('MAJUSCULES / minuscules','UPPER / lower case'))
+      + '<span class="erp-sep"></span>'
+      + b('removeFormat','⌫ ' + T('Effacer la mise en forme','Clear formatting'),T('Revenir au style d’origine du texte sélectionné','Reset selected text to its base style'),'font-size:10px')
+      + '</div>';
+    return h;
+  }
+
+  var savedRange = null;
+  function nodeEl(n){ return n ? (n.nodeType === 1 ? n : n.parentElement) : null; }
+  document.addEventListener('selectionchange', function(){
+    if(!editing) return;
+    var sel = window.getSelection();
+    if(sel && sel.rangeCount && hostOf(nodeEl(sel.anchorNode))) savedRange = sel.getRangeAt(0).cloneRange();
+  });
+  function restoreSel(){
+    if(!savedRange) return false;
+    var h = hostOf(nodeEl(savedRange.startContainer)); if(!h) return false;
+    try{ h.focus({preventScroll:true}); }catch(e){ h.focus(); }
+    var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(savedRange);
+    return true;
+  }
+  function selectNodes(list){
+    if(!list.length) return;
+    var r = document.createRange(); r.setStartBefore(list[0]); r.setEndAfter(list[list.length - 1]);
+    var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r); savedRange = r.cloneRange();
+  }
+  /* Enveloppe la sélection dans des <span style="prop:val"> (via un marqueur <font>). */
+  function wrapStyle(prop, val){
+    /* Chrome retire la propriété du bloc parent et la reporte sur des <span> :
+       on mémorise les valeurs en ligne pour les rétablir ensuite. */
+    var keep = [];
+    hosts().forEach(function(p){ p[1].querySelectorAll('[style]').forEach(function(el){ if(el.style[prop]) keep.push([el, el.style[prop]]); }); });
+    document.execCommand('styleWithCSS', false, false);
+    if(prop === 'fontFamily') document.execCommand('fontName', false, 'erp-tmp-font');
+    else document.execCommand('fontSize', false, '7');
+    var made = [];
+    var q = prop === 'fontFamily' ? 'font[face="erp-tmp-font"]' : 'font[size="7"]';
+    hosts().forEach(function(p){
+      p[1].querySelectorAll(q).forEach(function(f){
+        var sp = document.createElement('span'); sp.setAttribute('data-f','1');
+        f.querySelectorAll('[style]').forEach(function(x){ x.style[prop] = ''; if(!x.getAttribute('style')) x.removeAttribute('style'); });
+        if(val) sp.style[prop] = val;
+        while(f.firstChild) sp.appendChild(f.firstChild);
+        f.parentNode.replaceChild(sp, f);
+        made.push(sp);
+      });
+    });
+    keep.forEach(function(k){
+      var el = k[0];
+      if(!el.isConnected || el.style[prop]) return;
+      if(made.some(function(m){ return m.contains(el); })) return;
+      el.style[prop] = k[1];
+    });
+    selectNodes(made);
+    return made;
+  }
+  function selFontSize(){
+    var sel = window.getSelection(); if(!sel.rangeCount) return 12;
+    var r = sel.getRangeAt(0), root = r.commonAncestorContainer;
+    if(root.nodeType === 3) return parseFloat(getComputedStyle(root.parentElement).fontSize) || 12;
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n;
+    while((n = w.nextNode())){ if(n.nodeValue.trim() && r.intersectsNode(n)) return parseFloat(getComputedStyle(n.parentElement).fontSize) || 12; }
+    return parseFloat(getComputedStyle(nodeEl(r.startContainer)).fontSize) || 12;
+  }
+  /* Chrome, en coupant un texte, recopie sur des <span> le style en ligne du bloc
+     parent (ex. font-size:10px d'un titre agrandi par classe) : ces copies
+     figeraient l'ancienne taille. On retire toute propriété identique à celle
+     d'un ancêtre, puis on déballe les <span> devenus vides. */
+  var NPROPS = ['fontFamily','fontSize','fontWeight','color','letterSpacing','fontStyle','textTransform','lineHeight','backgroundColor'];
+  function normalizeSpans(){
+    hosts().forEach(function(p){
+      var host = p[1];
+      /* Taille / police imbriquées : la plus intérieure couvre tout le texte → l'extérieure est inutile. */
+      host.querySelectorAll('span[data-f="1"]').forEach(function(sp){
+        ['fontSize','fontFamily'].forEach(function(prop){
+          if(!sp.style[prop]) return;
+          var a = sp.parentElement;
+          while(a && a !== host){
+            if(a.tagName === 'SPAN' && a.getAttribute('data-f') === '1' && a.style[prop]){
+              if(a.textContent === sp.textContent) a.style[prop] = '';
+              break;
+            }
+            a = a.parentElement;
+          }
+        });
+      });
+      host.querySelectorAll('span[style]').forEach(function(sp){
+        var mine = sp.getAttribute('data-f') === '1';
+        NPROPS.forEach(function(prop){
+          var v = sp.style[prop]; if(!v) return;
+          if(prop === 'backgroundColor' && /^(transparent|rgba\(0, 0, 0, 0\))$/.test(v)){ sp.style[prop] = ''; return; }
+          if(mine && prop === 'fontSize') return;
+          var a = sp.parentElement;
+          while(a && a !== host.parentElement){ if(a.style && a.style[prop]){ if(a.style[prop] === v) sp.style[prop] = ''; return; } a = a.parentElement; }
+        });
+        if(!sp.getAttribute('style') || !sp.style.length){
+          var par = sp.parentNode; while(sp.firstChild) par.insertBefore(sp.firstChild, sp); par.removeChild(sp);
+        }
+      });
+    });
+  }
+
+  function rangeToOffsets(host, r){
+    var pre = document.createRange(); pre.selectNodeContents(host); pre.setEnd(r.startContainer, r.startOffset);
+    var st = pre.toString().length; return { s: st, e: st + r.toString().length };
+  }
+  function offsetsToRange(host, o){
+    var w = document.createTreeWalker(host, NodeFilter.SHOW_TEXT), n, pos = 0, r = document.createRange(), gotS = false;
+    while((n = w.nextNode())){
+      var len = n.nodeValue.length; if(!len) continue;
+      if(!gotS && o.s < pos + len){ r.setStart(n, o.s - pos); gotS = true; }
+      if(gotS && o.e <= pos + len){ r.setEnd(n, o.e - pos); return r; }
+      pos += len;
+    }
+    return gotS ? r : null;
+  }
+
+  window.erpFmt = function(cmd, val){
+    if(!editing) return;
+    if(!restoreSel()){ toast(T('Cliquez d’abord dans le texte à mettre en forme','Click in the text to format first'), 'error'); return; }
+    var sel = window.getSelection();
+    var needSel = !/^justify/.test(cmd);
+    if(needSel && sel.isCollapsed){ toast(T('Sélectionnez le texte à mettre en forme','Select the text to format first'), 'error'); return; }
+    pushUndo();
+    /* Instantané des styles en ligne des blocs : Chrome les déplace parfois vers
+       des <span> (ex. couleur d'un titre) ; on les rétablit après la commande. */
+    var SNAP = ['color','backgroundColor','fontSize','fontFamily','fontWeight','fontStyle','letterSpacing','textTransform'];
+    var snap = [];
+    hosts().forEach(function(p){ p[1].querySelectorAll('[style]').forEach(function(el){
+      if(el.tagName === 'SPAN' || el.tagName === 'B' || el.tagName === 'I' || el.tagName === 'FONT') return;
+      var o = {}; SNAP.forEach(function(k){ if(el.style[k]) o[k] = el.style[k]; }); snap.push([el, o]);
+    }); });
+    switch(cmd){
+      case 'bold': case 'italic': case 'underline': case 'strikeThrough':
+        document.execCommand('styleWithCSS', false, false); document.execCommand(cmd); break;
+      case 'size': wrapStyle('fontSize', val + 'px'); break;
+      case 'bigger': case 'smaller':
+        var cur = selFontSize(), nx = Math.max(8, Math.min(64, Math.round(cur + (cmd === 'bigger' ? 2 : -2))));
+        wrapStyle('fontSize', nx + 'px'); break;
+      case 'font': wrapStyle('fontFamily', val === 'inherit' ? '' : val); break;
+      case 'foreColor': case 'hiliteColor':
+        document.execCommand('styleWithCSS', false, true); document.execCommand(cmd, false, val); break;
+      case 'hiliteNone':
+        document.execCommand('styleWithCSS', false, true); document.execCommand('hiliteColor', false, 'transparent'); break;
+      case 'justifyLeft': case 'justifyCenter': case 'justifyRight':
+        document.execCommand('styleWithCSS', false, true); document.execCommand(cmd); break;
+      case 'upper':
+        var txt = sel.toString();
+        var up = txt !== txt.toUpperCase() ? txt.toUpperCase() : txt.toLowerCase();
+        document.execCommand('insertText', false, up); break;
+      case 'removeFormat':
+        document.execCommand('removeFormat');
+        document.execCommand('styleWithCSS', false, true); document.execCommand('hiliteColor', false, 'transparent');
+        break;
+    }
+    snap.forEach(function(x){
+      var el = x[0]; if(!el.isConnected) return;
+      Object.keys(x[1]).forEach(function(k){ if(!el.style[k]) el.style[k] = x[1][k]; });
+    });
+    /* Nettoyage sans perdre la sélection : mémorisée en positions de caractères. */
+    var s1 = window.getSelection(), hst = s1.rangeCount ? hostOf(nodeEl(s1.getRangeAt(0).startContainer)) : null;
+    var offs = hst ? rangeToOffsets(hst, s1.getRangeAt(0)) : null;
+    try{ normalizeSpans(); }catch(e){}
+    if(hst && offs){ var nr = offsetsToRange(hst, offs); if(nr){ s1.removeAllRanges(); s1.addRange(nr); } }
+    var s2 = window.getSelection(); if(s2.rangeCount) savedRange = s2.getRangeAt(0).cloneRange();
+    place();
+  };
+  function bindFmtRow(bar){
+    var row = bar.querySelector('.erp-fmt'); if(!row) return;
+    row.addEventListener('mousedown', function(e){
+      if(e.target.closest('button')) e.preventDefault();   // garde la sélection
+    });
+    row.addEventListener('click', function(e){
+      var b = e.target.closest('button[data-fmt]'); if(!b) return;
+      window.erpFmt(b.getAttribute('data-fmt'), b.getAttribute('data-val'));
+    });
+    row.querySelectorAll('select[data-fmt-sel]').forEach(function(sl){
+      sl.addEventListener('change', function(){
+        if(sl.value !== '') window.erpFmt(sl.getAttribute('data-fmt-sel'), sl.value);
+        sl.selectedIndex = 0;
+      });
+    });
+    row.querySelectorAll('input[data-fmt-col]').forEach(function(ip){
+      ip.addEventListener('change', function(){ window.erpFmt(ip.getAttribute('data-fmt-col'), ip.value); });
+    });
+  }
+
+  /* ── Sélection d'élément et barre flottante ────────────────────────── */
+  var SKIP = {SPAN:1,STRONG:1,B:1,I:1,EM:1,U:1,A:1,INPUT:1,TEXTAREA:1,SELECT:1,OPTION:1,BR:1,TD:1,TH:1,SMALL:1,SUP:1,SUB:1,FONT:1,LABEL:0};
+  var current = null, pinned = false;
+
+  function hostOf(el){ return el && el.closest ? el.closest('[data-erp-host]') : null; }
+  function itemFrom(el){
+    var host = hostOf(el); if(!host) return null;
+    while(el && el !== host){
+      if(el.nodeType === 1 && !SKIP[el.tagName] && el.parentElement){
+        var p = el.parentElement, same = 0;
+        for(var c = p.firstElementChild; c; c = c.nextElementSibling) if(c.tagName === el.tagName) same++;
+        if(same >= 2) return el;
+      }
+      el = el.parentElement;
+    }
+    return null;
+  }
+  function label(el){
+    var t = el.tagName.toLowerCase();
+    var txt = (el.textContent || '').replace(/\s+/g,' ').trim();
+    return t + (txt ? ' · ' + (txt.length > 26 ? txt.slice(0,26) + '…' : txt) : '');
+  }
+  function place(){
+    var hl = document.getElementById('erp-ed-hl'), tl = document.getElementById('erp-ed-tools');
+    if(!hl || !tl) return;
+    if(!editing || !current || !document.body.contains(current)){ hl.style.display = 'none'; tl.style.display = 'none'; return; }
+    var r = current.getBoundingClientRect();
+    if(r.bottom < 0 || r.top > window.innerHeight){ hl.style.display = 'none'; tl.style.display = 'none'; return; }
+    hl.style.display = 'block';
+    hl.style.top = (r.top - 3) + 'px'; hl.style.left = (r.left - 3) + 'px';
+    hl.style.width = (r.width + 6) + 'px'; hl.style.height = (r.height + 6) + 'px';
+    document.getElementById('erp-ed-tag').textContent = label(current);
+    tl.style.display = 'flex';
+    var tw = tl.offsetWidth || 220;
+    tl.style.top = Math.max(4, r.top - 30) + 'px';
+    tl.style.left = Math.max(4, Math.min(window.innerWidth - tw - 4, r.right - tw)) + 'px';
+  }
+  function onOver(e){
+    if(!editing) return;
+    if(e.target.closest && e.target.closest('#erp-ed-tools')) return;
+    if(pinned && current && current.contains(e.target)) return;
+    var it = itemFrom(e.target);
+    if(it){ pinned = false; current = it; place(); }
+  }
+
+  /* ── Pile d'annulation (structure) ─────────────────────────────────── */
+  var undo = [];
+  function rawSnap(){ var o = {}; hosts().forEach(function(p){ o[p[0]] = p[1].innerHTML; }); o.__tabs = tabLabels(); return o; }
+  function rawRestore(o){ hosts().forEach(function(p){ if(typeof o[p[0]] === 'string') p[1].innerHTML = o[p[0]]; }); if(o.__tabs) applyTabs(o.__tabs); }
+  function pushUndo(){ undo.push(rawSnap()); if(undo.length > 40) undo.shift(); }
+
+  window.erpEdUndo = function(){
+    if(!undo.length){ toast(T('Rien à annuler','Nothing to undo')); return; }
+    rawRestore(undo.pop()); current = null; place();
+  };
+
+  function structOp(op){
+    if(!editing || !current) return;
+    var el = current, p = el.parentElement, host = hostOf(el);
+    if(op === 'parent'){
+      if(p && p !== host && hostOf(p)){ current = p; pinned = true; place(); }
+      else toast(T('Déjà au niveau le plus haut','Already at top level'));
+      return;
+    }
+    pushUndo();
+    if(op === 'up'){
+      var prev = el.previousElementSibling;
+      if(prev) p.insertBefore(el, prev); else { undo.pop(); return; }
+    } else if(op === 'down'){
+      var next = el.nextElementSibling;
+      if(next) p.insertBefore(next, el); else { undo.pop(); return; }
+    } else if(op === 'dup'){
+      var c = el.cloneNode(true);
+      if(c.id) c.removeAttribute('id');
+      c.querySelectorAll('[id]').forEach(function(n){ n.removeAttribute('id'); });
+      c.querySelectorAll('input,textarea').forEach(function(i){ if(i.type !== 'checkbox' && i.type !== 'radio') i.value = ''; else i.checked = false; });
+      p.insertBefore(c, el.nextSibling);
+      current = c; pinned = true;
+    } else if(op === 'add'){
+      /* Bloc vide de même structure et même style, placé juste en dessous. */
+      var nb = el.cloneNode(true);
+      if(nb.id) nb.removeAttribute('id');
+      nb.querySelectorAll('[id]').forEach(function(n){ n.removeAttribute('id'); });
+      nb.querySelectorAll('input,textarea').forEach(function(i){ if(i.type !== 'checkbox' && i.type !== 'radio') i.value = ''; else i.checked = false; });
+      var tw = document.createTreeWalker(nb, NodeFilter.SHOW_TEXT), tn, texts = [];
+      while((tn = tw.nextNode())) if(tn.nodeValue.trim()) texts.push(tn);
+      var PH = T('Nouveau texte','New text'), first = null;
+      texts.forEach(function(t){
+        var m = t.nodeValue.match(/^(\s*(?:[•✦✓▪◦·–\-o]|\d+[.)]?)\s+)/);
+        t.nodeValue = (m ? m[1] : '') + PH;
+        if(!first) first = { node: t, start: m ? m[1].length : 0 };
+      });
+      if(!texts.length){ nb.appendChild(document.createTextNode(PH)); first = { node: nb.lastChild, start: 0 }; }
+      p.insertBefore(nb, el.nextSibling);
+      current = nb; pinned = true;
+      if(first){
+        var host2 = hostOf(nb); if(host2){ try{ host2.focus({preventScroll:true}); }catch(e){} }
+        var rg = document.createRange(); rg.setStart(first.node, first.start); rg.setEnd(first.node, first.node.nodeValue.length);
+        var sl = window.getSelection(); sl.removeAllRanges(); sl.addRange(rg);
+      }
+      toast(T('Bloc ajouté — tapez pour remplacer « Nouveau texte »','Block added — type to replace “New text”'), 'success');
+    } else if(op === 'del'){
+      var nx = el.nextElementSibling || el.previousElementSibling;
+      el.remove();
+      current = (nx && hostOf(nx)) ? nx : null;
+      toast(T('Élément supprimé — ↶ Annuler pour revenir','Item deleted — ↶ Undo to restore'));
+    }
+    place();
+  }
+
+  /* ── Collage en texte brut ─────────────────────────────────────────── */
+  function onPaste(e){
+    if(!editing || !hostOf(e.target)) return;
+    var tag = e.target.tagName;
+    if(tag === 'INPUT' || tag === 'TEXTAREA') return;
+    e.preventDefault();
+    var txt = (e.clipboardData || window.clipboardData).getData('text/plain') || '';
+    document.execCommand('insertText', false, txt);
+  }
+  /* Pas de navigation sur les liens pendant l'édition. */
+  function onClick(e){
+    if(!editing) return;
+    var a = e.target.closest && e.target.closest('[data-erp-host] a');
+    if(a){ e.preventDefault(); }
+  }
+
+  /* ── Entrée / sortie du mode édition ───────────────────────────────── */
+  var snapshot = null;
+  function setEditable(on){
+    hosts().forEach(function(p){
+      if(on){ p[1].setAttribute('contenteditable','true'); p[1].setAttribute('data-erp-host', p[0]); }
+      else { p[1].removeAttribute('contenteditable'); p[1].removeAttribute('data-erp-host'); }
+    });
+    tabEls().forEach(function(b){
+      var nx = b.nextElementSibling;
+      var has = nx && nx.classList && nx.classList.contains('erp-tab-ed');
+      if(on && !has){
+        var pen = document.createElement('span'); pen.className = 'erp-tab-ed'; pen.textContent = '✎';
+        pen.title = T('Renommer cet onglet','Rename this tab');
+        pen.addEventListener('click', function(e){ e.stopPropagation(); editTab(b); });
+        b.parentNode.insertBefore(pen, b.nextSibling);
+      } else if(!on && has) nx.remove();
+    });
+    if(!on){ var ti = document.getElementById('erp-tab-input'); if(ti) ti.remove(); }
+    view.classList.toggle('erp-ed-on', on);
+    var b = document.getElementById('erp-ed-btn');
+    if(b) b.style.visibility = on ? 'hidden' : '';
+  }
+
+  function editTab(b){
+    var old = document.getElementById('erp-tab-input'); if(old) old.remove();
+    var r = b.getBoundingClientRect();
+    var ta = document.createElement('textarea'); ta.id = 'erp-tab-input';
+    ta.value = b.innerText.replace(/\r/g,'').trim();
+    ta.rows = Math.max(1, ta.value.split('\n').length);
+    ta.style.top = r.top + 'px'; ta.style.left = r.left + 'px';
+    ta.style.minWidth = Math.max(160, r.width + 40) + 'px'; ta.style.minHeight = r.height + 'px';
+    ta.title = T('Entrée : valider · Maj+Entrée : nouvelle ligne · Échap : annuler','Enter: confirm · Shift+Enter: new line · Esc: cancel');
+    var done = false;
+    function commit(ok){
+      if(done) return; done = true;
+      if(ok && ta.value.trim() && ta.value.trim() !== b.innerText.trim()){ pushUndo(); setTab(b, ta.value); }
+      ta.remove(); setupTabbar();
+    }
+    ta.addEventListener('keydown', function(e){
+      if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); commit(true); }
+      else if(e.key === 'Escape'){ e.preventDefault(); commit(false); }
+      else setTimeout(function(){ ta.rows = Math.max(1, ta.value.split('\n').length); }, 0);
+    });
+    ta.addEventListener('blur', function(){ commit(true); });
+    document.body.appendChild(ta); ta.focus(); ta.select();
+  }
+
+  window.erpEdToggle = function(){
+    if(!canWrite()){ toast(T('Lecture seule — modification impossible.','Read-only — editing not allowed.'), 'error'); return; }
+    if(editing){ window.erpEdSave(); return; }
+    ensureUI();
+    snapshot = rawSnap(); undo = [];
+    editing = true; setEditable(true);
+    toast(T('Mode édition ERP activé','ERP edit mode on'), 'success');
+  };
+
+  function stopEditing(){
+    editing = false; current = null; pinned = false; place();
+    setEditable(false);
+  }
+
+  window.erpEdCancel = function(){
+    if(!editing) return;
+    if(!confirm(T('Abandonner toutes les modifications non enregistrées de l’ERP ?','Discard all unsaved ERP changes?'))) return;
+    rawRestore(snapshot); stopEditing();
+    toast(T('Modifications abandonnées','Changes discarded'));
+  };
+
+  function pushHistory(prev){
+    if(!prev) return;
+    var h = readJSON(HKEY, []); if(!Array.isArray(h)) h = [];
+    h.unshift(prev); h = h.slice(0, HMAX);
+    try{ localStorage.setItem(HKEY, JSON.stringify(h)); }catch(e){}
+  }
+
+  function persist(obj){
+    pushHistory(readJSON(KEY, null));
+    try{ localStorage.setItem(KEY, JSON.stringify(obj)); }
+    catch(e){ toast(T('Enregistrement local impossible : ','Local save failed: ') + e.message, 'error'); return false; }
+    try{ if(typeof updateLastModified === 'function') updateLastModified(); }catch(e){}
+    try{
+      if(typeof window.safCloudSaveNow === 'function') window.safCloudSaveNow();
+      else if(typeof window.safCloudScheduleSave === 'function') window.safCloudScheduleSave();
+    }catch(e){}
+    return true;
+  }
+
+  window.erpEdSave = function(){
+    if(!canWrite()){ toast(T('Lecture seule — modification impossible.','Read-only — editing not allowed.'), 'error'); return; }
+    var ti = document.getElementById('erp-tab-input'); if(ti) ti.blur();
+    var obj = { v:1, saved_at:new Date().toISOString(), saved_by:who(), header:'', sections:{}, tabs:tabLabels() };
+    obj.bases = {};
+    hosts().forEach(function(p){
+      var base = p[1].getAttribute('data-erp-base'); if(base) obj.bases[p[0]] = base;
+      var html = cleanHTML(p[1]);
+      if(p[0] === 'header') obj.header = html; else obj.sections[p[0]] = html;
+    });
+    if(!persist(obj)) return;
+    if(editing) stopEditing();
+    appliedStamp = null; window.erpContentApply(true);
+    toast(T('✓ ERP enregistré','✓ ERP saved'), 'success');
+  };
+
+  /* ── Versions ──────────────────────────────────────────────────────── */
+  window.erpEdVersions = function(){
+    ensureUI();
+    var vm = document.getElementById('erp-ed-versions');
+    var h = readJSON(HKEY, []), cur = readJSON(KEY, null);
+    var rows = '';
+    if(cur) rows += '<div class="erp-ed-row"><span><b>' + T('Version en vigueur','Current version') + '</b> · ' + esc(fmt(cur.saved_at)) + (cur.saved_by ? ' · ' + esc(cur.saved_by) : '') + (cur.reset ? ' · ' + T('original','original') : '') + '</span></div>';
+    (Array.isArray(h) ? h : []).forEach(function(v, i){
+      rows += '<div class="erp-ed-row"><span>' + esc(fmt(v.saved_at)) + (v.saved_by ? ' · ' + esc(v.saved_by) : '') + (v.reset ? ' · ' + T('original','original') : '') + '</span>'
+           + '<button class="erp-ed-mini" onclick="erpEdRestoreVersion(' + i + ')">' + T('Charger','Load') + '</button></div>';
+    });
+    if(!h.length) rows += '<div style="padding:10px;color:var(--grey-400);font-size:11px;">' + T('Aucune version précédente sur ce poste.','No previous version on this device.') + '</div>';
+    vm.innerHTML = '<div class="erp-ed-box">'
+      + '<div style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:#e3b341;margin-bottom:6px;">🕘 ' + T('VERSIONS DE L’ERP','ERP VERSIONS') + '</div>'
+      + '<div style="font-size:11px;color:var(--grey-400);margin-bottom:10px;line-height:1.5;">' + T(
+          'Les 5 versions précédentes sont conservées sur ce poste. « Charger » place la version dans la page en mode édition : rien n’est remplacé tant que vous n’avez pas cliqué sur Enregistrer.',
+          'The 5 previous versions are kept on this device. “Load” puts the version in the page in edit mode: nothing is replaced until you click Save.') + '</div>'
+      + rows
+      + '<div style="display:flex;justify-content:space-between;gap:8px;margin-top:14px;">'
+      + '<button class="erp-ed-mini" onclick="erpEdResetOriginal()">↺ ' + T('Charger la version d’origine du fichier','Load the file’s original version') + '</button>'
+      + '<button class="erp-ed-mini" onclick="document.getElementById(\'erp-ed-versions\').style.display=\'none\'">' + T('Fermer','Close') + '</button></div></div>';
+    vm.style.display = 'flex';
+  };
+
+  function loadIntoEditor(obj){
+    if(!canWrite()){ toast(T('Lecture seule — modification impossible.','Read-only — editing not allowed.'), 'error'); return; }
+    if(!editing) window.erpEdToggle();
+    pushUndo();
+    applyObj(obj);
+    hosts().forEach(function(p){ p[1].setAttribute('contenteditable','true'); });
+    document.getElementById('erp-ed-versions').style.display = 'none';
+    toast(T('Version chargée — Enregistrer pour la rendre effective','Version loaded — Save to make it effective'), 'success');
+  }
+  window.erpEdRestoreVersion = function(i){
+    var h = readJSON(HKEY, []); if(!h[i]) return;
+    loadIntoEditor(h[i]);
+  };
+  window.erpEdResetOriginal = function(){
+    if(!confirm(T('Charger la version d’origine du fichier ? (effective seulement après Enregistrer)','Load the file’s original version? (effective only after Save)'))) return;
+    loadIntoEditor({ reset:true });
+  };
+
+  /* ── Exercices ERP : modification et suppression (SAF) ─────────────── */
+  var exList = document.getElementById('erp-exercise-list');
+  if(exList && typeof window.getERPExercises === 'function'){
+    var EX_F = { date:'erp-ex-date', type:'erp-ex-type', lead:'erp-ex-lead', scenario:'erp-ex-scenario', participants:'erp-ex-participants',
+                 objectives:'erp-ex-objectives', findings:'erp-ex-findings', actions:'erp-ex-actions', owner:'erp-ex-owner',
+                 due_date:'erp-ex-due', effectiveness:'erp-ex-effect' };
+    var exEditId = null;
+    function g(id){ var e = document.getElementById(id); return e ? e.value : ''; }
+    function saveBtn(){ return document.querySelector('#erp-sec-exercises button[onclick*="erpSaveExercise"]'); }
+    function setFormMode(id){
+      exEditId = id;
+      var b = saveBtn(); if(!b) return;
+      b.textContent = id ? '✓ ' + T('Mettre à jour l’exercice','Update exercise') : '✓ Record exercise';
+      var c = document.getElementById('erp-ex-cancel');
+      if(id && !c){
+        c = document.createElement('button'); c.id = 'erp-ex-cancel'; c.className = 'btn btn-ghost';
+        c.style.cssText = 'margin-top:12px;margin-left:8px;'; c.textContent = T('Annuler la modification','Cancel edit');
+        c.onclick = function(){ clearForm(); setFormMode(null); };
+        b.parentNode.insertBefore(c, b.nextSibling);
+      } else if(!id && c) c.remove();
+    }
+    function clearForm(){
+      Object.keys(EX_F).forEach(function(k){
+        var e = document.getElementById(EX_F[k]); if(!e) return;
+        if(k === 'type') e.selectedIndex = 0; else if(k === 'effectiveness') e.value = 'pending'; else e.value = '';
+      });
+    }
+    window.erpSaveExercise = function(){
+      var date = g('erp-ex-date'), scenario = g('erp-ex-scenario').trim();
+      if(!date || !scenario){ toast('Exercise date and scenario are mandatory','error'); return; }
+      var a = getERPExercises(), rec = exEditId ? a.filter(function(x){ return x.id === exEditId; })[0] : null;
+      var fresh = !rec;
+      if(fresh) rec = { id:'ERP-EX-' + Date.now(), created_at:new Date().toISOString() };
+      Object.keys(EX_F).forEach(function(k){ var v = g(EX_F[k]); rec[k] = (typeof v === 'string' && k !== 'date' && k !== 'due_date') ? v.trim() : v; });
+      if(!rec.effectiveness) rec.effectiveness = 'pending';
+      if(fresh) a.push(rec); else { rec.updated_at = new Date().toISOString(); rec.updated_by = who(); }
+      saveERPExercises(a); clearForm(); setFormMode(null); renderERPExercises();
+      toast(fresh ? 'ERP exercise recorded' : T('Exercice ERP mis à jour','ERP exercise updated'), 'success');
+    };
+    window.erpExEdit = function(id){
+      var x = getERPExercises().filter(function(r){ return r.id === id; })[0]; if(!x) return;
+      Object.keys(EX_F).forEach(function(k){ var e = document.getElementById(EX_F[k]); if(e) e.value = x[k] == null ? '' : x[k]; });
+      setFormMode(id);
+      var f = document.getElementById('erp-ex-date'); if(f){ f.scrollIntoView({behavior:'smooth', block:'center'}); f.focus(); }
+    };
+    window.erpExDelete = function(id){
+      if(!confirm(T('Supprimer cet exercice ERP ?','Delete this ERP exercise?'))) return;
+      saveERPExercises(getERPExercises().filter(function(r){ return r.id !== id; }));
+      if(exEditId === id){ clearForm(); setFormMode(null); }
+      renderERPExercises(); toast(T('Exercice supprimé','Exercise deleted'));
+    };
+    window.renderERPExercises = function(){
+      var el = document.getElementById('erp-exercise-list'); if(!el) return;
+      var a = getERPExercises().sort(function(x,y){ return String(y.date).localeCompare(String(x.date)); });
+      if(!a.length){ el.innerHTML = '<div class="chart-card" style="padding:24px;text-align:center;color:var(--grey-400);font-family:var(--font-mono);font-size:11px;">No ERP exercise recorded yet.</div>'; return; }
+      var w = canWrite();
+      function line(lbl, v, col){ return v ? '<div style="font-size:11px;color:' + (col || 'var(--grey-200)') + ';margin-top:5px;white-space:pre-line;"><b>' + lbl + ':</b> ' + esc(v) + '</div>' : ''; }
+      el.innerHTML = a.map(function(x){
+        var col = x.effectiveness === 'effective' ? '#3fb950' : (x.effectiveness === 'ineffective' ? '#f85149' : '#e3b341');
+        var id = esc(x.id).replace(/'/g,'&#39;');
+        return '<div class="chart-card" style="padding:16px;margin-bottom:10px;border-left:3px solid ' + col + ';">'
+          + '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;"><div><strong>' + esc(x.date + ' · ' + x.type) + '</strong>'
+          + '<div style="font-size:10px;color:var(--grey-400);margin-top:3px;">Lead: ' + esc(x.lead || '—') + ' · Owner: ' + esc(x.owner || '—') + ' · Due: ' + esc(x.due_date || '—')
+          + (x.updated_at ? ' · ' + T('modifié le ','edited ') + esc(fmt(x.updated_at)) : '') + '</div></div>'
+          + '<div style="display:flex;gap:6px;align-items:center;"><span style="font-family:var(--font-mono);font-size:9px;color:' + col + ';">' + esc((x.effectiveness || 'pending').toUpperCase()) + '</span>'
+          + (w ? '<button class="erp-ed-mini" onclick="erpExEdit(\'' + id + '\')">✎</button><button class="erp-ed-mini" style="color:#ff9090" onclick="erpExDelete(\'' + id + '\')">✕</button>' : '')
+          + '</div></div>'
+          + line('Scenario', x.scenario) + line('Participants', x.participants) + line('Objectives', x.objectives)
+          + line('Findings', x.findings) + line('Actions', x.actions, 'var(--gold-light)')
+          + '</div>';
+      }).join('');
+    };
+  }
+
+  /* ── Hiérarchie des titres : classes d'après le style déclaré ─────── */
+  function erpClassifyTitles(){
+    var root = document.getElementById('erp-content'); if(!root) return;
+    var C = ['erp-h1','erp-h2','erp-h3','erp-h3b','erp-h4','erp-lbl'];
+    root.querySelectorAll('div,label,span').forEach(function(el){
+      var st = el.style; if(!st || !st.fontSize) return;
+      var fs = parseFloat(st.fontSize), fw = parseInt(st.fontWeight, 10) || 400;
+      var ls = (st.letterSpacing || '').replace(/^0?\./,'.'), mono = /font-mono/.test(st.fontFamily || '');
+      var tag = el.tagName, cls = null;
+      if(fs === 10 && fw >= 700 && ls === '.1em') cls = 'erp-h1';
+      else if(fs === 10 && fw >= 700 && ls === '.08em') cls = 'erp-h2';
+      else if(tag === 'DIV' && mono && (fs === 11 || fs === 12) && fw >= 700) cls = 'erp-h3';
+      else if(tag === 'DIV' && fs === 13 && fw >= 700) cls = 'erp-h3b';
+      else if(tag === 'DIV' && fs === 10 && fw >= 700 && (!ls || ls === '.06em')) cls = 'erp-h4';
+      else if(fs === 10 && fw < 700 && ls === '.08em' && mono) cls = 'erp-lbl';
+      else if(tag === 'LABEL' && mono && (fs === 9 || fs === 10)) cls = 'erp-lbl';
+      C.forEach(function(c){ if(c !== cls) el.classList.remove(c); });
+      if(cls) el.classList.add(cls);
+      if(!el.className) el.removeAttribute('class');
+    });
+  }
+  window.erpClassifyTitles = erpClassifyTitles;
+
+  /* ── Barre d'onglets : collante, fond opaque, onglet actif marqué ──── */
+  function solidBg(el){
+    while(el && el !== document.documentElement){
+      var c = getComputedStyle(el).backgroundColor;
+      if(c && c !== 'transparent' && !/rgba\([^)]*,\s*0\)$/.test(c)) return c;
+      el = el.parentElement;
+    }
+    return getComputedStyle(document.body).backgroundColor || '#0b1626';
+  }
+  function setupTabbar(){
+    var t = tabEls()[0]; if(!t) return;
+    var bar = t.parentElement && t.parentElement.parentElement; if(!bar || bar === view) return;
+    bar.classList.add('erp-tabbar');
+    bar.style.background = solidBg(view);
+    view.style.setProperty('--erp-tabs-h', bar.offsetHeight + 'px');
+    var cur = typeof _erpCurrentSection !== 'undefined' ? _erpCurrentSection : null;
+    tabEls().forEach(function(b){ b.classList.toggle('erp-tab-active', tabKey(b) === cur); });
+  }
+
+  /* ── Branchements ──────────────────────────────────────────────────── */
+  if(typeof window.erpShowSection === 'function' && !window.erpShowSection.__erpEd){
+    var origShow = window.erpShowSection;
+    var wrapped = function(sec){ var r = origShow.apply(this, arguments); refreshUI(); erpClassifyTitles(); setupTabbar(); place(); return r; };
+    wrapped.__erpEd = true; window.erpShowSection = wrapped;
+  }
+  view.addEventListener('mouseover', onOver);
+  view.addEventListener('paste', onPaste, true);
+  view.addEventListener('click', onClick, true);
+  window.addEventListener('scroll', place, true);
+  window.addEventListener('resize', function(){ setupTabbar(); place(); });
+  window.addEventListener('beforeunload', function(e){ if(editing){ e.preventDefault(); e.returnValue = ''; } });
+
+  ensureUI();
+  window.erpContentApply(true);
+  erpClassifyTitles(); setupTabbar();
+  setTimeout(erpClassifyTitles, 3000);
+  /* Le rôle n'est connu qu'après authentification : rafraîchit le bouton. */
+  var tries = 0, iv = setInterval(function(){ refreshUI(); if(++tries > 40) clearInterval(iv); }, 1500);
 })();
 </script>
 
