@@ -104,6 +104,39 @@ footer .err{color:var(--lost)}
   #maps[data-n="4"]{grid-template-columns:1fr 1fr}
   header{padding:10px 16px 8px} header h1{font-size:22px}
 }
+/* Historique des vols */
+#hist{position:fixed;inset:0;z-index:1500;background:var(--paper);display:grid;grid-template-rows:auto 1fr;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#hist[hidden]{display:none}
+#hist .hbar{display:flex;gap:10px 14px;align-items:end;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+#hist h2{font-family:var(--cond);font-weight:700;font-size:24px;margin:0 12px 2px 0;color:var(--signal);line-height:1}
+#hist .fld{display:grid;gap:3px;font-size:12px;color:var(--ink-2)}
+#hist select,#hist input{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:4px 6px;color-scheme:dark}
+#hist button{background:none;border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer}
+#hist button.go{background:var(--signal);color:#111;border-color:var(--signal);font-weight:600}
+#hist button:disabled{opacity:.45;cursor:default}
+#hist .presets{display:flex;gap:4px}
+#hist .close{margin-left:auto}
+#hist .hbody{display:grid;grid-template-columns:minmax(380px,46%) 1fr;min-height:0}
+#hist .hlist{overflow:auto;border-right:1px solid var(--line);font-size:13px}
+#hist .hsum{padding:10px 20px;border-bottom:1px solid var(--line);color:var(--ink-2);display:grid;gap:3px}
+#hist .hsum b{color:var(--ink);font-weight:600}
+#hist .hsum .warn{color:var(--signal)}
+#hist table{width:100%;border-collapse:collapse}
+#hist th{position:sticky;top:0;background:var(--panel);text-align:left;font-weight:600;font-size:12px;color:var(--ink-2);padding:6px 8px;border-bottom:1px solid var(--line)}
+#hist td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+#hist tr.day td{background:rgba(255,255,255,.03);font-family:var(--cond);font-weight:600;font-size:14px;color:var(--signal);padding-top:10px}
+#hist tr.fl{cursor:pointer} #hist tr.fl:hover td{background:rgba(255,255,255,.04)}
+#hist tr.fl.on td{background:rgba(240,192,64,.12)}
+#hist td .reg{font-family:var(--cond);font-weight:700;font-size:16px}
+#hist td .muted{color:var(--ink-2);font-size:12px}
+#hist .hmap{position:relative;min-height:0} #hist .hmap .map{position:absolute;inset:0}
+#hist .empty{padding:24px 20px;color:var(--ink-2)}
+@media (max-width:760px){
+  #hist .hbody{grid-template-columns:1fr;grid-template-rows:40% 60%}
+  #hist .hmap{grid-row:1} #hist .hlist{grid-row:2;border-right:0;border-top:1px solid var(--line)}
+  #hist .hbar{padding:10px 14px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -131,6 +164,7 @@ footer .err{color:var(--lost)}
         <option value="4">4 cartes</option>
       </select>
       <button id="fit" type="button">Toute la flotte</button>
+      <button id="histbtn" type="button">Historique des vols</button>
       <button id="logout" type="button">Déconnexion</button>
     </div>
     <ul id="list"></ul>
@@ -139,6 +173,24 @@ footer .err{color:var(--lost)}
   <div id="maps" data-n="1"></div>
 </div>
 
+<div id="hist" hidden role="dialog" aria-modal="true" aria-labelledby="h-title">
+  <div class="hbar">
+    <h2 id="h-title">Historique des vols</h2>
+    <label class="fld">Appareil<select id="h-reg"></select></label>
+    <label class="fld">Du<input type="date" id="h-from"></label>
+    <label class="fld">Au<input type="date" id="h-to"></label>
+    <div class="fld">Période<div class="presets">
+      <button type="button" data-d="7">7 j</button><button type="button" data-d="30">30 j</button><button type="button" data-d="60">60 j</button>
+    </div></div>
+    <button type="button" class="go" id="h-load">Afficher</button>
+    <button type="button" id="h-csv" disabled>Exporter CSV</button>
+    <button type="button" class="close" id="h-close">Fermer</button>
+  </div>
+  <div class="hbody">
+    <div class="hlist" id="h-list"><p class="empty">Choisissez un appareil et une période, puis « Afficher ».</p></div>
+    <div class="hmap"><div class="map" id="h-map"></div></div>
+  </div>
+</div>
 <div id="gate" role="alert"><p id="gate-msg">Vérification de la session…</p><a href="SAF_Portail.html">Retour au portail</a></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -595,6 +647,159 @@ document.getElementById("split").onchange=e=>setSplit(e.target.value);
 setSplit(loadView().n);
 document.getElementById("fit").onclick=()=>{selected=null; fitAll(); load();};
 sb.auth.onAuthStateChange(ev=>{ if(ev==="SIGNED_OUT") location.replace("SAF_Portail.html"); });
+/* ---------- Historique des vols ----------
+   Lit fleet_positions par appareil, par pages de 1000 points (plafond PostgREST),
+   puis reconstruit les vols avec analyze(). La base garde 180 jours (tâche fleet-purge-positions). */
+const HIST_MAX_DAYS=180, PAGE=1000;
+const hist={rows:[],map:null,layer:null,busy:false};
+const isoDay=d=>new Date(d).toISOString().slice(0,10);
+const dayLabel=t=>new Date(t).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"UTC"});
+const dmy=t=>new Date(t).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",timeZone:"UTC"});
+const COLS="reg,fix_time,lat,lon,alt_m,heading,speed";
+
+function histPreset(days){
+  document.getElementById("h-to").value=isoDay(Date.now());
+  document.getElementById("h-from").value=isoDay(Date.now()-days*864e5);
+}
+function openHist(){
+  const sel=document.getElementById("h-reg"), cur=sel.value;
+  sel.innerHTML=`<option value="">Toute la flotte</option>`+fleet.map(a=>`<option value="${esc(a.reg)}">${esc(a.reg)}</option>`).join("");
+  sel.value=cur||selected||"";
+  if(!document.getElementById("h-to").value) histPreset(60);
+  document.getElementById("hist").hidden=false;
+  if(!hist.map){
+    hist.map=L.map("h-map",{zoomControl:false}).setView([45.9,6.8],8);
+    L.control.zoom({position:"bottomright"}).addTo(hist.map);
+    const lay=makeLayers(); lay["Topo (OpenTopoMap)"].addTo(hist.map);
+    L.control.layers(lay,null,{position:"topright"}).addTo(hist.map);
+    L.control.scale({imperial:false,position:"bottomleft"}).addTo(hist.map);
+    BASES.forEach(b=>L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null}),keyboard:false}).addTo(hist.map));
+    hist.layer=L.layerGroup().addTo(hist.map);
+  }
+  setTimeout(()=>hist.map.invalidateSize(),60);
+  document.getElementById("h-load").focus();
+}
+function closeHist(){ document.getElementById("hist").hidden=true; document.getElementById("histbtn").focus(); }
+
+async function fetchPositions(reg,fromIso,toIso){
+  // Un point juste avant la période : il donne le lieu de décollage du premier vol
+  const before=await sb.from("fleet_positions").select(COLS).eq("reg",reg).lt("fix_time",fromIso).order("fix_time",{ascending:false}).limit(1);
+  if(before.error) throw before.error;
+  const out=[...(before.data||[])];
+  for(let i=0;;i+=PAGE){
+    const r=await sb.from("fleet_positions").select(COLS).eq("reg",reg).gte("fix_time",fromIso).lt("fix_time",toIso)
+      .order("fix_time",{ascending:true}).range(i,i+PAGE-1);
+    if(r.error) throw r.error;
+    out.push(...r.data);
+    if(r.data.length<PAGE) break;
+  }
+  return out;
+}
+
+async function loadHist(){
+  if(hist.busy) return;
+  const f=document.getElementById("h-from").value, t=document.getElementById("h-to").value;
+  const list=document.getElementById("h-list");
+  if(!f||!t||f>t){ list.innerHTML=`<p class="empty">Indiquez une date de début antérieure à la date de fin.</p>`; return; }
+  const fromIso=new Date(f+"T00:00:00Z").toISOString(), toIso=new Date(new Date(t+"T00:00:00Z").getTime()+864e5).toISOString();
+  if((Date.parse(toIso)-Date.parse(fromIso))/864e5>HIST_MAX_DAYS+1){ list.innerHTML=`<p class="empty">La base ne garde que ${HIST_MAX_DAYS} jours : réduisez la période.</p>`; return; }
+  const regSel=document.getElementById("h-reg").value;
+  const regs=regSel?[regSel]:fleet.map(a=>a.reg);
+  hist.busy=true; document.getElementById("h-load").disabled=true; document.getElementById("h-csv").disabled=true;
+  list.innerHTML=`<p class="empty">Chargement des positions…</p>`; hist.layer.clearLayers();
+  try{
+    const rows=[], info=[];
+    for(const reg of regs){
+      const pts=await fetchPositions(reg,fromIso,toIso);
+      const inPeriod=pts.filter(p=>p.fix_time>=fromIso);
+      const fl=analyze(pts).flights.filter(x=>x.toTo>=fromIso);
+      fl.forEach(x=>rows.push({reg,f:x}));
+      info.push({reg,n:inPeriod.length,first:inPeriod[0]?.fix_time||null,flights:fl});
+    }
+    rows.sort((a,b)=>a.f.toTo<b.f.toTo?1:-1);
+    hist.rows=rows; renderHist(info,fromIso);
+    document.getElementById("h-csv").disabled=!rows.length;
+  }catch(e){
+    list.innerHTML=`<p class="empty">Lecture impossible : ${esc(e.message||e)}</p>`;
+  }finally{ hist.busy=false; document.getElementById("h-load").disabled=false; }
+}
+
+function durTxt(f){
+  if(!f.ldTo) return "vol en cours";
+  if(f.maxMin!=null) return Math.round(f.maxMin-f.minMin)<=2?dur((f.minMin+f.maxMin)/2):`${dur(f.minMin)} à ${dur(f.maxMin)}`;
+  return f.minMin>=5?`≥ ${dur(f.minMin)}`:"inconnue";
+}
+function renderHist(info,fromIso){
+  const list=document.getElementById("h-list");
+  let h=`<div class="hsum">`;
+  for(const i of info){
+    const done=i.flights.filter(f=>f.ldTo);
+    const lo=done.reduce((s,f)=>s+Math.max(0,f.minMin),0), hi=done.reduce((s,f)=>s+(f.maxMin??f.minMin),0);
+    const tt=Math.round(hi-lo)<=Math.max(5,done.length*2)?dur((lo+hi)/2):`${dur(lo)} à ${dur(hi)}`;
+    h+=`<div><b>${esc(i.reg)}</b> : ${i.flights.length} vol${i.flights.length>1?"s":""}${done.length?`, temps de vol estimé ${tt}`:""}</div>`;
+    if(!i.n) h+=`<div class="warn">${esc(i.reg)} : aucune position enregistrée sur la période.</div>`;
+    else if(Date.parse(i.first)-Date.parse(fromIso)>36*3600e3) h+=`<div class="warn">${esc(i.reg)} : pas de données avant le ${dmy(i.first)}.</div>`;
+  }
+  h+=`<div>Heures UTC, encadrées entre deux points du traceur. Cliquez un vol pour afficher sa trace.</div></div>`;
+  if(!hist.rows.length){ list.innerHTML=h+`<p class="empty">Aucun vol sur la période.</p>`; return; }
+  h+=`<table><thead><tr><th>Appareil</th><th>Départ</th><th>Arrivée</th><th>Durée</th><th>Dist.</th></tr></thead><tbody>`;
+  let day="";
+  hist.rows.forEach((r,idx)=>{
+    const f=r.f, d=isoDay(f.toTo);
+    if(d!==day){ day=d; h+=`<tr class="day"><td colspan="5">${esc(dayLabel(f.toTo))}</td></tr>`; }
+    const dep=f.toPlace?placeLabel(f.toPlace):"lieu non enregistré";
+    const arr=f.ldPlace?placeLabel(f.ldPlace):"—";
+    h+=`<tr class="fl" data-i="${idx}" tabindex="0"><td><span class="reg">${esc(r.reg)}</span></td>
+      <td>${esc(dep)}<br><span class="muted">${f.toFrom?hm(f.toFrom)+"–":"avant "}${hm(f.toTo)}</span></td>
+      <td>${esc(arr)}<br><span class="muted">${f.ldTo?hm(f.ldFrom)+"–"+hm(f.ldTo):""}</span></td>
+      <td>${esc(durTxt(f))}</td><td>${Math.round(f.km)} km</td></tr>`;
+  });
+  list.innerHTML=h+`</tbody></table>`;
+  list.querySelectorAll("tr.fl").forEach(tr=>{
+    const go=()=>showHistFlight(+tr.dataset.i);
+    tr.onclick=go; tr.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } };
+  });
+  showHistAll();
+}
+function showHistAll(){
+  hist.layer.clearLayers(); const b=[];
+  hist.rows.forEach(r=>{ const ll=r.f.pts.map(p=>[p.lat,p.lon]); b.push(...ll);
+    L.polyline(ll,{color:COLORS.ground,weight:2,opacity:.6}).addTo(hist.layer); });
+  if(b.length) hist.map.fitBounds(L.latLngBounds(b).pad(.1),{maxZoom:12});
+}
+function showHistFlight(i){
+  const r=hist.rows[i]; if(!r) return;
+  document.querySelectorAll("#h-list tr.fl").forEach(tr=>tr.classList.toggle("on",+tr.dataset.i===i));
+  hist.layer.clearLayers();
+  const ll=r.f.pts.map(p=>[p.lat,p.lon]);
+  L.polyline(ll,{color:COLORS.live,weight:4,opacity:.9}).addTo(hist.layer);
+  L.circleMarker(ll[0],{radius:6,color:"#fff",weight:2,fillColor:COLORS.live,fillOpacity:1}).bindTooltip("Départ").addTo(hist.layer);
+  if(r.f.ldTo) L.circleMarker(ll[ll.length-1],{radius:6,color:"#fff",weight:2,fillColor:COLORS.lost,fillOpacity:1}).bindTooltip("Arrivée").addTo(hist.layer);
+  hist.map.fitBounds(L.latLngBounds(ll).pad(.25),{maxZoom:13});
+}
+function exportHistCsv(){
+  const q=v=>{ v=v==null?"":String(v); return /[;"\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v; };
+  const t=x=>x?new Date(x).toISOString().replace("T"," ").slice(0,16):"";
+  const n=x=>x==null?"":String(Math.round(x));
+  const head=["date_utc","appareil","depart_lieu","decollage_apres","decollage_avant","arrivee_lieu","atterrissage_apres","atterrissage_avant","duree_min_min","duree_max_min","distance_km","depart_lat","depart_lon","arrivee_lat","arrivee_lon"];
+  const lines=[head.join(";")];
+  hist.rows.slice().reverse().forEach(({reg,f})=>{
+    lines.push([isoDay(f.toTo),reg,f.toPlace?placeLabel(f.toPlace):"",t(f.toFrom),t(f.toTo),f.ldPlace?placeLabel(f.ldPlace):"",t(f.ldFrom),t(f.ldTo),
+      f.ldTo?n(f.minMin):"",f.ldTo?n(f.maxMin):"",f.km.toFixed(1).replace(".",","),
+      f.pts[0].lat.toFixed(5),f.pts[0].lon.toFixed(5),f.ldPlace?f.ldPlace.lat.toFixed(5):"",f.ldPlace?f.ldPlace.lon.toFixed(5):""].map(q).join(";"));
+  });
+  const blob=new Blob(["\ufeff"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=`SAF_vols_${document.getElementById("h-reg").value||"flotte"}_${document.getElementById("h-from").value}_${document.getElementById("h-to").value}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+document.getElementById("histbtn").onclick=openHist;
+document.getElementById("h-close").onclick=closeHist;
+document.getElementById("h-load").onclick=loadHist;
+document.getElementById("h-csv").onclick=exportHistCsv;
+document.querySelectorAll("#hist .presets button").forEach(b=>b.onclick=()=>{ histPreset(+b.dataset.d); loadHist(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!document.getElementById("hist").hidden) closeHist(); });
+
 boot();
 </script>
 </body>
