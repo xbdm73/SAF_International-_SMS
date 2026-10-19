@@ -4932,7 +4932,7 @@ window.__SAF_E5X_RIT_PATCH='V2_2026-07-03';
   // Recharge toutes les clés SAF connues dans _cache AVANT le rendu de l'app.
   var SAF_KEYS = [
     'safRiskDB','safRiskDBVersion','safEventCatalog','safEventCatalogVersion','safChangeStudies','safSPITargets','safFlightHours',
-    'safOccurrences','safLessons','safTrainingRecords','safERPExercises','safInterfaces','safISMS','safSRBMeetings','safAudits',
+    'safOccurrences','safLessons','safTrainingRecords','safERPExercises','safERPActivations','safInterfaces','safISMS','safSRBMeetings','safAudits',
     'safSAR','safALoS','safCAMOSignals','lastModified',
     'ejsPublicKey','safERPContent','safERPContentHistory','ejsServiceId','ejsTemplateId',
     'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining',
@@ -9541,6 +9541,7 @@ window.safExportAllData_object = function(){
     safLessons:       _getLS('safLessons'),
     safTrainingRecords:_getLS('safTrainingRecords'),
     safERPExercises:  _getLS('safERPExercises'),
+    safERPActivations:_getLS('safERPActivations'), // 19.10.2026 — registre des ERP déclenchés
     safERPContent:    _getLS('safERPContent'),   // 15.10.2026 — contenu édité de l'ERP
     safInterfaces:    _getLS('safInterfaces'),
     safISMS:          _getLS('safISMS'),
@@ -9667,7 +9668,7 @@ function safImportAllData(evt){
       }
 
       var keys = ['safRiskDB','safRiskDBVersion','safEventCatalog','safEventCatalogVersion','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
-                  'safLessons','safTrainingRecords','safERPExercises','safInterfaces','safISMS','safSRBMeetings','safAudits','lastModified',
+                  'safLessons','safTrainingRecords','safERPExercises','safERPActivations','safInterfaces','safISMS','safSRBMeetings','safAudits','lastModified',
                   'ejsPublicKey','safERPContent','ejsServiceId','ejsTemplateId',
                   'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap','safRemovedRiskIds','safArchivedRisks','safRegisterNumbering','safArchiveSeq',
                   ];
@@ -12022,6 +12023,7 @@ function showView(name) {
   if(!localStorage.getItem('safLessons'))localStorage.setItem('safLessons','[]');
   if(!localStorage.getItem('safTrainingRecords'))localStorage.setItem('safTrainingRecords','[]');
   if(!localStorage.getItem('safERPExercises'))localStorage.setItem('safERPExercises','[]');
+  if(!localStorage.getItem('safERPActivations'))localStorage.setItem('safERPActivations','[]');
   if(!localStorage.getItem('safInterfaces'))localStorage.setItem('safInterfaces','[]');
   if(!localStorage.getItem('safISMS'))localStorage.setItem('safISMS',JSON.stringify({assets:[],risks:[],incidents:[],compliance:{}}));
   if(!localStorage.getItem('safSAR'))localStorage.setItem('safSAR','[]');
@@ -12458,7 +12460,7 @@ function importJSON(event) {
       // ── Format SAF SMS Backup complet (safExportAllData) ──
       if(data._version || data._app || data.safRiskDB || data.safOccurrences || data.safChangeStudies) {
         const allKeys = ['safRiskDB','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
-                         'safLessons','safTrainingRecords','safERPExercises','safInterfaces','safISMS','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','lastModified',
+                         'safLessons','safTrainingRecords','safERPExercises','safERPActivations','safInterfaces','safISMS','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','lastModified',
                          'ejsPublicKey','safERPContent','ejsServiceId','ejsTemplateId',
                          'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap','safRemovedRiskIds','safArchivedRisks','safRegisterNumbering','safArchiveSeq',
                          ];
@@ -23189,7 +23191,7 @@ setTimeout(function(){
 
   // Liste des clés gérées (identique à safExportAllData / importJSON)
   var KEYS = ['safRiskDB','safRiskDBVersion','safEventCatalog','safEventCatalogVersion','safChangeStudies','safSPITargets','safFlightHours','safOccurrences',
-              'safLessons','safTrainingRecords','safERPExercises','safInterfaces','safISMS','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','lastModified',
+              'safLessons','safTrainingRecords','safERPExercises','safERPActivations','safInterfaces','safISMS','safSRBMeetings','safAudits','safSAR','safALoS','safCAMOSignals','lastModified',
               'ejsPublicKey','safERPContent','ejsServiceId','ejsTemplateId',
               'safSafetyPolicy','safSafetyObjectives','safCustomFamilies','safEmployeeCount','safFODInspections','safFODTraining','safHazardMeetings','safIndepChecks','safMaintReports','safTechComms','safWorkOrders','safOccActionEmailMap','safRemovedRiskIds','safArchivedRisks','safRegisterNumbering','safArchiveSeq',
               ];
@@ -23254,6 +23256,10 @@ setTimeout(function(){
         data.safLessons = localLes;
       }
       if(data.safLessons!=null)     data.safLessons     = mergeHeavy(data.safLessons, localLes, 'id', ['image','pdf','fr_body','en_body','description','lesson','fr_title','en_title','title']);
+      // 19.10.2026 — registre des ERP : fusion additive (une fiche créée hors ligne n'est pas perdue)
+      var localErpA = (function(){ try{ return localStorage.getItem('safERPActivations'); }catch(e){ return null; } })();
+      if(data.safERPActivations==null && localErpA && localErpA!=='[]' && localErpA!=='null'){ data.safERPActivations = localErpA; }
+      if(data.safERPActivations!=null) data.safERPActivations = mergeHeavy(data.safERPActivations, localErpA, 'id', []);
 
       // Keep the 53 embedded families as the controlled baseline, while preserving
       // custom SMS entries created through Event Accounting (SMS-54 and above).
@@ -23297,7 +23303,7 @@ setTimeout(function(){
 
   // Relance les rendus disponibles (silencieux si une fonction manque)
   function refreshAll(){
-    var fns = ['updateCounts','erpContentApply','renderDashboard','renderTable','renderExportView',
+    var fns = ['updateCounts','erpContentApply','erpActRender','renderDashboard','renderTable','renderExportView',
                'renderOccurrenceList','renderECCAIRSTracker','renderLessonsList','renderSRBList','renderAuditTrail',
                'renderSPIView','renderSafetyIndicators','renderLeadingIndicators','renderTopRisks',
                'renderSARList','renderALoSView','renderSavedCSList','updateLastModified'];
@@ -23660,7 +23666,9 @@ setTimeout(function(){
       // Ajout 14.10.2026 : envoi et suivi des actions de l'Occurrence Log.
       'occSendFWAction','atSetField','atSetSRB','atSend','llApplyOccLinks',
       // Ajout 15.10.2026 : édition complète de l'ERP et des exercices ERP.
-      'erpEdToggle','erpEdSave','erpEdRestoreVersion','erpEdResetOriginal','erpSaveExercise','erpExEdit','erpExDelete'
+      'erpEdToggle','erpEdSave','erpEdRestoreVersion','erpEdResetOriginal','erpSaveExercise','erpExEdit','erpExDelete',
+      // Ajout 19.10.2026 : registre des ERP déclenchés.
+      'erpActNew','erpActSave','erpActClose','erpActReopen','erpActDelete'
     ];
     var GUARD_MSG = (SAF_ROLE === 'authority')
       ? 'Accès autorité — consultation seule, aucune écriture possible.'
@@ -28911,6 +28919,494 @@ function init(){Object.keys(sets).forEach(render)}if(document.readyState==='load
   var tries = 0, iv = setInterval(function(){ refreshUI(); if(++tries > 40) clearInterval(iv); }, 1500);
 })();
 </script>
+<script id="erp-act-runtime">
+/* ══════════════════════════════════════════════════════════════════════
+   REGISTRE DES ERP — 19.10.2026
+   Chaque déclenchement de l'ERP devient une fiche (comme une occurrence) :
+   « ＋ New ERP » ouvre une fiche vierge, la checklist et le Crisis Log sont
+   enregistrés dans cette fiche (sauvegarde auto + bouton Enregistrer),
+   les fiches passées restent consultables, réouvrables et imprimables.
+   Clé : safERPActivations (synchronisée dans saf_data / sms_data).
+   ══════════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+  var KEY = 'safERPActivations', CUR_KEY = 'safERPActiveId';
+  var view = document.getElementById('view-erp');
+  if(!view) return;
+
+  var FIELD_LABELS = {
+    'erp-date-call':'Date et heure de l’appel', 'erp-location':'Lieu précis', 'erp-aircraft':'Aéronef (immat. / description)',
+    'erp-contact-tel':'Téléphone de contact', 'erp-contact-name':'Personne à contacter', 'erp-other-info':'Autres informations',
+    'erp-weather':'Météo sur le site', 'erp-circumstances':'Circonstances', 'erp-victims-names':'Victimes — noms et état',
+    'erp-observations':'Observations',
+    'erp-log-date':'Date de l’événement', 'erp-log-time':'Heure', 'erp-log-location':'Lieu de l’événement',
+    'erp-log-desc':'Description de l’événement', 'erp-log-activ-date':'Date d’activation du CMC',
+    'erp-log-activ-time':'Heure d’activation du CMC', 'erp-log-cmc-names':'Membres présents au CMC',
+    'erp-log-person':'Rédacteur du Crisis Log'
+  };
+  var RADIO_LABELS = {
+    'erp-fp':'Plan de vol déposé', 'erp-dg':'Marchandises dangereuses à bord', 'erp-ec':'Services d’urgence appelés',
+    'erp-victims':'Victimes', 'erp-nb':'Nombre de victimes', 'erp-fire':'Départ de feu', 'erp-fuel':'Fuite / odeur de carburant',
+    'erp-beacon':'Balise activable manuellement', 'erp-firstaid':'Trousse de secours accessible'
+  };
+  var LEVELS = { '':'—', '1':'Niveau 1 — Alerte', '2':'Niveau 2 — Crise' };
+
+  var curId = null, saveTimer = null, dirty = false, listOpen = true;
+
+  /* ── Utilitaires ───────────────────────────────────────────────────── */
+  function NLS(){ return window._nativeLocalStorage || null; }
+  function load(){ try{ var v = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
+  function store(list){
+    localStorage.setItem(KEY, JSON.stringify(list || []));
+    try{ if(typeof updateLastModified === 'function') updateLastModified(); }catch(e){}
+    try{ if(typeof window.safCloudScheduleSave === 'function') window.safCloudScheduleSave(); }catch(e){}
+  }
+  function find(id){ return load().filter(function(r){ return r && r.id === id; })[0] || null; }
+  function put(rec){ var l = load(), i = -1; l.forEach(function(r, k){ if(r && r.id === rec.id) i = k; }); if(i < 0) l.push(rec); else l[i] = rec; store(l); }
+  function role(){ try{ return String(typeof safCurrentRole === 'function' ? safCurrentRole() : '').toLowerCase(); }catch(e){ return ''; } }
+  function canWrite(){ return /^(admin|editor)$/.test(role()); }
+  function isAdmin(){ return role() === 'admin'; }
+  function who(){ try{ return (typeof safCurrentUser === 'function' ? safCurrentUser() : '') || 'SMS User'; }catch(e){ return 'SMS User'; } }
+  function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function toast(m, t){ try{ showToast(m, t || 'success'); }catch(e){} }
+  function editingDoc(){ return view.classList.contains('erp-ed-on'); }
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+  function fmtDT(iso){ if(!iso) return '—'; try{ var d = new Date(iso); return pad(d.getDate()) + '/' + pad(d.getMonth()+1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }catch(e){ return iso; } }
+  function fmtD(s){ var m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[3] + '/' + m[2] + '/' + m[1] : (s || '—'); }
+  function genId(){
+    var d = new Date(), abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', r = '', ids = {};
+    load().forEach(function(x){ if(x) ids[x.id] = 1; });
+    do{ r = ''; for(var i = 0; i < 4; i++) r += abc[Math.floor(Math.random() * abc.length)]; }
+    while(ids['ERP-' + String(d.getFullYear()).slice(2) + pad(d.getMonth()+1) + pad(d.getDate()) + '-' + r]);
+    return 'ERP-' + String(d.getFullYear()).slice(2) + pad(d.getMonth()+1) + pad(d.getDate()) + '-' + r;
+  }
+  function setCur(id){ curId = id || null; try{ var n = NLS(); if(n){ if(curId) n.setItem(CUR_KEY, curId); else n.removeItem(CUR_KEY); } }catch(e){} }
+  function docVersion(){ var s = view.querySelector('.dash-header .dash-subtitle'); return s ? s.textContent.trim().split('·')[0].trim() : ''; }
+
+  /* ── Lecture / écriture du formulaire (Checklist + Crisis Log) ────── */
+  function secs(){ return ['checklist','crisis'].map(function(s){ return [s, document.getElementById('erp-sec-' + s)]; }).filter(function(p){ return p[1]; }); }
+  function inLog(el){ return !!(el.closest && el.closest('#erp-log-entries')); }
+  function chkLabel(i){ var l = i.closest('label'); return l ? l.textContent.replace(/\s+/g,' ').trim() : ''; }
+
+  function collect(){
+    var out = { fields:{}, radios:{}, checks:[], log:[] };
+    secs().forEach(function(p){
+      var sec = p[0], el = p[1], idx = 0;
+      el.querySelectorAll('input,textarea,select').forEach(function(i){
+        if(inLog(i)) return;
+        var t = (i.type || '').toLowerCase();
+        if(t === 'radio'){ if(i.checked && i.name) out.radios[i.name] = i.value; return; }
+        if(t === 'checkbox'){ out.checks.push({ sec:sec, idx:idx++, label:chkLabel(i), checked:!!i.checked }); return; }
+        if(i.id) out.fields[i.id] = i.value;
+      });
+    });
+    var box = document.getElementById('erp-log-entries');
+    if(box) Array.prototype.forEach.call(box.children, function(row){
+      var ins = row.querySelectorAll('input'), tas = row.querySelectorAll('textarea');
+      out.log.push({ date:(ins[0]||{}).value||'', time:(ins[1]||{}).value||'', event:(ins[2]||{}).value||'',
+        decision:(tas[0]||{}).value||'', actions:(tas[1]||{}).value||'', remarks:(tas[2]||{}).value||'' });
+    });
+    return out;
+  }
+
+  function clearForm(){
+    secs().forEach(function(p){
+      p[1].querySelectorAll('input,textarea,select').forEach(function(i){
+        if(inLog(i)) return;
+        var t = (i.type || '').toLowerCase();
+        if(t === 'radio' || t === 'checkbox') i.checked = false; else if(i.tagName !== 'SELECT') i.value = '';
+      });
+    });
+    var box = document.getElementById('erp-log-entries'); if(box) box.innerHTML = '';
+  }
+
+  function fill(data){
+    clearForm(); data = data || {};
+    var f = data.fields || {};
+    Object.keys(f).forEach(function(id){ var e = document.getElementById(id); if(e) e.value = f[id]; });
+    var r = data.radios || {};
+    Object.keys(r).forEach(function(n){
+      document.querySelectorAll('#erp-sec-checklist input[type="radio"], #erp-sec-crisis input[type="radio"]').forEach(function(i){ if(i.name === n && i.value === r[n]) i.checked = true; });
+    });
+    var bySec = {};
+    secs().forEach(function(p){ bySec[p[0]] = Array.prototype.filter.call(p[1].querySelectorAll('input[type="checkbox"]'), function(i){ return !inLog(i); }); });
+    (data.checks || []).forEach(function(c){
+      var list = bySec[c.sec] || [], hit = null;
+      list.forEach(function(i){ if(!hit && c.label && chkLabel(i) === c.label) hit = i; });
+      if(!hit) hit = list[c.idx];             // repli : position (libellés modifiés ou traduits)
+      if(hit) hit.checked = !!c.checked;
+    });
+    var box = document.getElementById('erp-log-entries');
+    if(box && typeof window.erpAddLogEntry === 'function'){
+      (data.log || []).forEach(function(e){
+        window.erpAddLogEntry();
+        var row = box.lastElementChild; if(!row) return;
+        var ins = row.querySelectorAll('input'), tas = row.querySelectorAll('textarea');
+        if(ins[0]) ins[0].value = e.date || ''; if(ins[1]) ins[1].value = e.time || ''; if(ins[2]) ins[2].value = e.event || '';
+        if(tas[0]) tas[0].value = e.decision || ''; if(tas[1]) tas[1].value = e.actions || ''; if(tas[2]) tas[2].value = e.remarks || '';
+      });
+    }
+  }
+
+  /* Fiche clôturée ou lecture seule : les champs sont verrouillés. */
+  function lockForm(on){
+    secs().forEach(function(p){
+      p[1].querySelectorAll('input,textarea,select,button').forEach(function(i){
+        if(on){ if(!i.disabled){ i.disabled = true; i.setAttribute('data-erp-act-dis','1'); } }
+        else if(i.getAttribute('data-erp-act-dis')){ i.disabled = false; i.removeAttribute('data-erp-act-dis'); }
+      });
+    });
+  }
+  function recEditable(rec){ return !!(rec && rec.status !== 'closed' && canWrite()); }
+
+  function summary(rec){
+    var f = (rec.data || {}).fields || {}, r = (rec.data || {}).radios || {};
+    return {
+      date: f['erp-log-date'] ? fmtD(f['erp-log-date']) + (f['erp-log-time'] ? ' ' + f['erp-log-time'] : '') : (f['erp-date-call'] || fmtDT(rec.created_at)),
+      where: f['erp-location'] || f['erp-log-location'] || '',
+      aircraft: f['erp-aircraft'] || '',
+      desc: rec.title || f['erp-circumstances'] || f['erp-log-desc'] || '',
+      victims: r['erp-victims'] === 'yes' ? (r['erp-nb'] ? r['erp-nb'] : 'oui') : (r['erp-victims'] === 'no' ? 'non' : '—'),
+      entries: ((rec.data || {}).log || []).length
+    };
+  }
+
+  /* ── Actions ───────────────────────────────────────────────────────── */
+  function flush(){ // enregistre immédiatement la saisie en attente
+    if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; }
+    if(dirty){ dirty = false; saveCurrent(true); }
+  }
+  function saveCurrent(silent){
+    if(!curId) return false;
+    var rec = find(curId); if(!rec || !recEditable(rec)) return false;
+    rec.data = collect();
+    var t = document.getElementById('erp-act-title'), lv = document.getElementById('erp-act-level');
+    if(t) rec.title = t.value.trim(); if(lv) rec.level = lv.value;
+    rec.updated_at = new Date().toISOString(); rec.updated_by = who();
+    put(rec);
+    if(!silent) renderList();
+    var st = document.getElementById('erp-act-saved'); if(st) st.textContent = 'Enregistré ' + fmtDT(rec.updated_at).slice(11);
+    return true;
+  }
+  function schedule(){
+    if(!curId) return;
+    dirty = true; var st = document.getElementById('erp-act-saved'); if(st) st.textContent = '● modifications en cours…';
+    clearTimeout(saveTimer); saveTimer = setTimeout(function(){ saveTimer = null; if(dirty){ dirty = false; saveCurrent(true); renderList(); } }, 1200);
+  }
+
+  function create(keepForm){
+    var now = new Date(), iso = now.toISOString();
+    var rec = { id:genId(), title:'', level:'', status:'open', erp_version:docVersion(),
+      created_at:iso, created_by:who(), updated_at:iso, updated_by:who(),
+      data:{ fields:{}, radios:{}, checks:[], log:[] },
+      history:[{ at:iso, by:who(), action:'created' }] };
+    put(rec); setCur(rec.id);
+    if(!keepForm){
+      clearForm();
+      var dc = document.getElementById('erp-date-call');
+      if(dc) dc.value = pad(now.getDate()) + '/' + pad(now.getMonth()+1) + '/' + now.getFullYear() + ' — ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+      var ld = document.getElementById('erp-log-date'); if(ld) ld.value = iso.slice(0,10);
+      var lt = document.getElementById('erp-log-time'); if(lt) lt.value = pad(now.getHours()) + ':' + pad(now.getMinutes());
+    }
+    rec.data = collect(); put(rec);
+    return rec;
+  }
+
+  window.erpActNew = function(){
+    if(!canWrite()){ toast('Lecture seule — création impossible', 'error'); return; }
+    if(editingDoc()){ toast('Terminez d’abord la modification du document ERP', 'error'); return; }
+    flush(); lockForm(false);
+    var rec = create(false);
+    renderAll();
+    if(typeof window.erpShowSection === 'function') window.erpShowSection('checklist');
+    view.scrollIntoView({behavior:'smooth', block:'start'});
+    var t = document.getElementById('erp-act-title'); if(t) setTimeout(function(){ t.focus(); }, 300);
+    toast('ERP ' + rec.id + ' ouvert', 'success');
+  };
+
+  window.erpActOpen = function(id){
+    if(editingDoc()){ toast('Terminez d’abord la modification du document ERP', 'error'); return; }
+    var rec = find(id); if(!rec){ toast('Fiche ERP introuvable', 'error'); return; }
+    flush(); lockForm(false);
+    setCur(id); fill(rec.data); lockForm(!recEditable(rec));
+    renderAll();
+    if(typeof window.erpShowSection === 'function') window.erpShowSection('checklist');
+    view.scrollIntoView({behavior:'smooth', block:'start'});
+  };
+
+  window.erpActSave = async function(){
+    if(!curId) return;
+    if(!saveCurrent(false)){ toast('Fiche non modifiable', 'error'); return; }
+    dirty = false; clearTimeout(saveTimer);
+    if(typeof window.safCloudSaveNow === 'function'){
+      try{
+        var r = await window.safCloudSaveNow();
+        if(r && r.ok){ toast('✓ ERP ' + curId + ' enregistré dans le cloud', 'success'); return; }
+        if(r && r.conflict){ toast('⚠ Conflit de version — voir le bandeau cloud', 'error'); return; }
+        if(r && r.error){ toast('Enregistré localement — cloud : ' + r.error, 'error'); return; }
+      }catch(e){}
+    }
+    toast('✓ ERP ' + curId + ' enregistré', 'success');
+  };
+
+  window.erpActClose = function(){
+    if(!curId) return;
+    var rec = find(curId); if(!rec) return;
+    if(!confirm('Clôturer l’ERP ' + rec.id + ' ?\nLa fiche passera en lecture seule (réouverture possible).')) return;
+    saveCurrent(true); rec = find(curId);
+    var iso = new Date().toISOString();
+    rec.status = 'closed'; rec.closed_at = iso; rec.closed_by = who();
+    (rec.history = rec.history || []).push({ at:iso, by:who(), action:'closed' });
+    put(rec); lockForm(true); renderAll();
+    toast('ERP ' + rec.id + ' clôturé', 'success');
+  };
+
+  window.erpActReopen = function(id){
+    var rec = find(id || curId); if(!rec) return;
+    if(!confirm('Rouvrir l’ERP ' + rec.id + ' ?')) return;
+    var iso = new Date().toISOString();
+    rec.status = 'open'; delete rec.closed_at; delete rec.closed_by;
+    (rec.history = rec.history || []).push({ at:iso, by:who(), action:'reopened' });
+    put(rec); window.erpActOpen(rec.id);
+  };
+
+  window.erpActDetach = function(){
+    flush(); lockForm(false); setCur(null); clearForm(); renderAll();
+  };
+
+  window.erpActDelete = function(id){
+    if(!isAdmin()){ toast('Suppression réservée à l’administrateur', 'error'); return; }
+    var rec = find(id); if(!rec) return;
+    if(!confirm('Supprimer définitivement la fiche ' + rec.id + ' ?')) return;
+    if(curId === id){ setCur(null); lockForm(false); clearForm(); }
+    store(load().filter(function(r){ return r && r.id !== id; }));
+    renderAll(); toast('Fiche ' + id + ' supprimée', 'success');
+  };
+
+  window.erpActToggleList = function(){ listOpen = !listOpen; renderList(); };
+
+  window.erpActPrint = function(id){
+    if(curId === id) flush();
+    var rec = find(id); if(!rec) return;
+    var d = rec.data || {}, f = d.fields || {}, r = d.radios || {}, s = summary(rec);
+    var yn = function(v){ return v === 'yes' ? 'OUI' : (v === 'no' ? 'NON' : (v || '—')); };
+    var row = function(k, v){ return '<tr><th>' + esc(k) + '</th><td>' + esc(v || '—').replace(/\n/g,'<br>') + '</td></tr>'; };
+    var h = '<!doctype html><html><head><meta charset="utf-8"><title>' + esc(rec.id) + '</title><style>'
+      + 'body{font:12px/1.5 Arial,sans-serif;color:#111;margin:28px}h1{font-size:18px;margin:0 0 4px}h2{font-size:13px;margin:22px 0 8px;border-bottom:2px solid #1b3a5c;padding-bottom:3px;color:#1b3a5c}'
+      + '.meta{color:#555;font-size:11px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:5px 8px;text-align:left;vertical-align:top}th{background:#f2f4f7;width:34%;font-weight:600}'
+      + '.log th{width:auto}@media print{button{display:none}}</style></head><body>'
+      + '<button onclick="window.print()" style="float:right;padding:6px 14px">Imprimer / PDF</button>'
+      + '<h1>Emergency Response Plan — ' + esc(rec.id) + '</h1>'
+      + '<div class="meta">SAF International · ' + esc(rec.erp_version || '') + ' · ' + esc(LEVELS[rec.level || ''] || '—') + ' · Statut : ' + (rec.status === 'closed' ? 'clôturé le ' + esc(fmtDT(rec.closed_at)) + ' par ' + esc(rec.closed_by || '') : 'ouvert') + '</div>'
+      + '<div class="meta">Ouvert le ' + esc(fmtDT(rec.created_at)) + ' par ' + esc(rec.created_by || '') + ' · dernière mise à jour ' + esc(fmtDT(rec.updated_at)) + ' par ' + esc(rec.updated_by || '') + '</div>'
+      + (rec.title ? '<p><b>' + esc(rec.title) + '</b></p>' : '')
+      + '<h2>Checklist — informations recueillies (§10)</h2><table>';
+    ['erp-date-call','erp-location','erp-aircraft','erp-contact-tel','erp-contact-name','erp-other-info'].forEach(function(k){ h += row(FIELD_LABELS[k], f[k]); });
+    ['erp-fp','erp-dg','erp-ec','erp-victims','erp-nb','erp-fire','erp-fuel'].forEach(function(k){ h += row(RADIO_LABELS[k], yn(r[k])); });
+    ['erp-victims-names','erp-weather','erp-circumstances'].forEach(function(k){ h += row(FIELD_LABELS[k], f[k]); });
+    ['erp-beacon','erp-firstaid'].forEach(function(k){ h += row(RADIO_LABELS[k], yn(r[k])); });
+    h += row(FIELD_LABELS['erp-observations'], f['erp-observations']) + '</table>';
+    var checks = d.checks || [];
+    if(checks.length){
+      h += '<h2>Mesures immédiates et composition du CMC</h2><table>';
+      checks.forEach(function(c){ h += row(c.label || ('Élément ' + (c.idx + 1)), c.checked ? '☑ fait / présent' : '☐'); });
+      h += '</table>';
+    }
+    h += '<h2>Crisis Log (§12.7)</h2><table>';
+    ['erp-log-date','erp-log-time','erp-log-location','erp-log-desc','erp-log-activ-date','erp-log-activ-time','erp-log-cmc-names','erp-log-person'].forEach(function(k){ h += row(FIELD_LABELS[k], k.indexOf('date') > -1 ? fmtD(f[k]) : f[k]); });
+    h += '</table>';
+    var log = d.log || [];
+    h += '<table class="log" style="margin-top:10px"><tr><th>Date</th><th>Heure</th><th>Événement</th><th>Décision</th><th>Actions</th><th>Remarques</th></tr>';
+    if(!log.length) h += '<tr><td colspan="6">Aucune entrée</td></tr>';
+    log.forEach(function(e){ h += '<tr><td>' + esc(fmtD(e.date)) + '</td><td>' + esc(e.time) + '</td><td>' + esc(e.event) + '</td><td>' + esc(e.decision) + '</td><td>' + esc(e.actions) + '</td><td>' + esc(e.remarks) + '</td></tr>'; });
+    h += '</table>';
+    var hist = rec.history || [];
+    if(hist.length){
+      var A = { created:'ouverture', closed:'clôture', reopened:'réouverture' };
+      h += '<h2>Historique de la fiche</h2><table class="log"><tr><th>Date</th><th>Par</th><th>Action</th></tr>';
+      hist.forEach(function(x){ h += '<tr><td>' + esc(fmtDT(x.at)) + '</td><td>' + esc(x.by) + '</td><td>' + esc(A[x.action] || x.action) + '</td></tr>'; });
+      h += '</table>';
+    }
+    h += '</body></html>';
+    var w = window.open('', '_blank'); if(!w){ toast('Autorisez les fenêtres contextuelles pour imprimer', 'error'); return; }
+    w.document.open(); w.document.write(h); w.document.close();
+  };
+
+  /* ── Rendu ─────────────────────────────────────────────────────────── */
+  function ensureHost(){
+    var host = document.getElementById('erp-act-wrap');
+    if(!host){
+      var firstTab = document.getElementById('erp-tab-contacts');
+      var bar = firstTab && firstTab.parentElement && firstTab.parentElement.parentElement;
+      host = document.createElement('div'); host.id = 'erp-act-wrap'; host.style.cssText = 'padding:0 28px 18px;';
+      if(bar && bar.parentElement === view) view.insertBefore(host, bar); else view.insertBefore(host, view.children[1] || null);
+    }
+    var head = view.querySelector('.dash-header');
+    if(head && !document.getElementById('erp-act-new-btn')){
+      var b = document.createElement('button');
+      b.id = 'erp-act-new-btn'; b.className = 'btn btn-primary'; b.style.fontSize = '11px';
+      b.textContent = '＋ New ERP'; b.setAttribute('onclick', 'erpActNew()');
+      var grp = document.getElementById('erp-ed-btn'); grp = grp ? grp.parentElement : null;
+      if(grp) grp.appendChild(b); else head.appendChild(b);
+    }
+    return host;
+  }
+
+  function bannerHTML(){
+    if(!curId) return '';
+    var rec = find(curId);
+    if(!rec){ setCur(null); return ''; }
+    var closed = rec.status === 'closed', ed = recEditable(rec), col = closed ? '#8fa8c0' : (rec.level === '2' ? '#f85149' : '#e3b341');
+    var inp = 'background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:var(--white);padding:7px 10px;font-size:12px;';
+    var btn = function(lbl, fn, c){ return '<button onclick="' + fn + '" style="padding:6px 14px;background:' + (c ? c + '22' : 'rgba(255,255,255,.06)') + ';border:1px solid ' + (c || 'rgba(255,255,255,.2)') + ';border-radius:6px;color:' + (c || 'var(--grey-200)') + ';font-family:var(--font-mono);font-size:10px;cursor:pointer;white-space:nowrap;">' + lbl + '</button>'; };
+    var h = '<div class="chart-card" style="padding:14px 18px;margin-bottom:14px;border-left:4px solid ' + col + ';">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;">'
+      + '<div><div style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:' + col + ';">' + (closed ? '🗄 ERP clôturé — ' : '🚨 ERP en cours — ') + esc(rec.id) + '</div>'
+      + '<div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-top:3px;">Ouvert le ' + esc(fmtDT(rec.created_at)) + ' par ' + esc(rec.created_by || '—')
+      + (closed ? ' · clôturé le ' + esc(fmtDT(rec.closed_at)) + ' par ' + esc(rec.closed_by || '—') : '')
+      + ' · <span id="erp-act-saved">' + (ed ? 'Enregistré ' + esc(fmtDT(rec.updated_at).slice(11)) : (closed ? 'lecture seule' : 'lecture seule (droits)')) + '</span></div></div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+      + (ed ? btn('✓ Enregistrer', 'erpActSave()', '#3fb950') + btn('🗄 Clôturer l’ERP', 'erpActClose()', '#e3b341') : '')
+      + (closed && canWrite() ? btn('↺ Rouvrir', 'erpActReopen()', '#4a9fe0') : '')
+      + btn('🖨 Fiche PDF', "erpActPrint('" + esc(rec.id) + "')") + btn('✕ Fermer la fiche', 'erpActDetach()')
+      + '</div></div>'
+      + '<div style="display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:10px;">'
+      + '<input id="erp-act-title" ' + (ed ? '' : 'disabled ') + 'placeholder="Intitulé de l’événement (ex. Accident HB-ZKN — Sion)" value="' + esc(rec.title || '') + '" style="' + inp + 'width:100%;"/>'
+      + '<select id="erp-act-level" ' + (ed ? '' : 'disabled ') + 'style="' + inp + '">'
+      + Object.keys(LEVELS).map(function(k){ return '<option value="' + k + '"' + ((rec.level || '') === k ? ' selected' : '') + '>' + (k ? LEVELS[k] : 'Niveau d’activation…') + '</option>'; }).join('')
+      + '</select></div>'
+      + '<div style="font-size:10px;color:var(--grey-400);margin-top:8px;">La Checklist et le Crisis Log ci-dessous sont enregistrés dans cette fiche' + (ed ? ' au fil de la saisie.' : '.') + '</div>'
+      + '</div>';
+    return h;
+  }
+
+  function renderList(){
+    var box = document.getElementById('erp-act-list'); if(!box) return;
+    var list = load().slice().sort(function(a, b){ return String(b.created_at || '').localeCompare(String(a.created_at || '')); });
+    var y = new Date().getFullYear();
+    var nOpen = list.filter(function(r){ return r.status !== 'closed'; }).length;
+    var nYear = list.filter(function(r){ return String(r.created_at || '').slice(0,4) === String(y); }).length;
+    var nCrisis = list.filter(function(r){ return r.level === '2'; }).length;
+    var th = 'padding:9px 12px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);text-align:left;';
+    var tile = function(n, lbl, c){ return '<div style="background:var(--navy-mid);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;text-align:center;"><div style="font-size:20px;font-weight:700;font-family:var(--font-mono);color:' + c + ';">' + n + '</div><div style="font-size:10px;color:var(--grey-400);font-family:var(--font-mono);margin-top:2px;">' + lbl + '</div></div>'; };
+    var h = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:' + (listOpen ? '12px' : '0') + ';">'
+      + '<button onclick="erpActToggleList()" style="background:none;border:none;cursor:pointer;padding:0;font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--steel-bright);letter-spacing:.05em;">' + (listOpen ? '▾' : '▸') + ' REGISTRE DES ERP (' + list.length + ')</button>'
+      + (nOpen ? '<span style="font-family:var(--font-mono);font-size:10px;color:#e3b341;">' + nOpen + ' ouvert' + (nOpen > 1 ? 's' : '') + '</span>' : '')
+      + '</div>';
+    if(listOpen){
+      if(!list.length){
+        h += '<div style="color:var(--grey-400);font-family:var(--font-mono);font-size:11px;padding:16px;text-align:center;border:1px dashed rgba(255,255,255,.1);border-radius:8px;">Aucun ERP enregistré. « ＋ New ERP » ouvre une fiche vierge : la Checklist et le Crisis Log y sont enregistrés.</div>';
+      } else {
+        h += '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px;">'
+          + tile(list.length, 'Total ERP', 'var(--steel-bright)') + tile(nOpen, 'Ouverts', '#e3b341') + tile(nYear, 'Cette année (' + y + ')', 'var(--grey-200)') + tile(nCrisis, 'Niveau 2 — Crise', '#f85149') + '</div>'
+          + '<div class="chart-card" style="padding:0;overflow:auto;max-height:340px;"><table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr style="background:rgba(255,255,255,.04);position:sticky;top:0;">'
+          + '<th style="' + th + '">ID</th><th style="' + th + '">Date</th><th style="' + th + '">Niveau</th><th style="' + th + '">Événement</th><th style="' + th + '">Lieu / aéronef</th><th style="' + th + '">Victimes</th><th style="' + th + '">Log</th><th style="' + th + '">Statut</th><th style="' + th + '"></th>'
+          + '</tr></thead><tbody>';
+        list.forEach(function(rec){
+          var s = summary(rec), cur = rec.id === curId, closed = rec.status === 'closed';
+          var lvc = rec.level === '2' ? '#f85149' : (rec.level === '1' ? '#e3b341' : 'var(--grey-400)');
+          var td = 'padding:9px 12px;border-top:1px solid rgba(255,255,255,.06);vertical-align:top;';
+          var mini = function(lbl, fn, c){ return '<button onclick="event.stopPropagation();' + fn + '" style="padding:3px 9px;margin-left:4px;background:rgba(255,255,255,.05);border:1px solid ' + (c || 'rgba(255,255,255,.18)') + ';border-radius:4px;color:' + (c || 'var(--grey-200)') + ';font-family:var(--font-mono);font-size:10px;cursor:pointer;">' + lbl + '</button>'; };
+          h += '<tr onclick="erpActOpen(\'' + esc(rec.id) + '\')" style="cursor:pointer;' + (cur ? 'background:rgba(74,159,224,.12);' : '') + '">'
+            + '<td style="' + td + 'font-family:var(--font-mono);color:var(--steel-bright);white-space:nowrap;">' + esc(rec.id) + '</td>'
+            + '<td style="' + td + 'white-space:nowrap;">' + esc(s.date) + '</td>'
+            + '<td style="' + td + 'color:' + lvc + ';font-family:var(--font-mono);font-size:10px;white-space:nowrap;">' + esc(rec.level ? 'N' + rec.level + (rec.level === '2' ? ' CRISE' : ' ALERTE') : '—') + '</td>'
+            + '<td style="' + td + 'max-width:320px;">' + esc((s.desc || '—').slice(0, 140)) + '</td>'
+            + '<td style="' + td + '">' + esc([s.where, s.aircraft].filter(Boolean).join(' · ') || '—') + '</td>'
+            + '<td style="' + td + 'text-align:center;">' + esc(s.victims) + '</td>'
+            + '<td style="' + td + 'text-align:center;font-family:var(--font-mono);">' + s.entries + '</td>'
+            + '<td style="' + td + 'font-family:var(--font-mono);font-size:10px;color:' + (closed ? '#3fb950' : '#e3b341') + ';white-space:nowrap;">' + (closed ? 'CLÔTURÉ' : 'OUVERT') + '</td>'
+            + '<td style="' + td + 'white-space:nowrap;text-align:right;">'
+            + mini(closed || !canWrite() ? '👁 Voir' : '✎ Edit', "erpActOpen('" + esc(rec.id) + "')", '#4a9fe0')
+            + mini('🖨', "erpActPrint('" + esc(rec.id) + "')")
+            + (isAdmin() ? mini('✕', "erpActDelete('" + esc(rec.id) + "')", '#f85149') : '')
+            + '</td></tr>';
+        });
+        h += '</tbody></table></div>';
+      }
+    }
+    box.innerHTML = h;
+  }
+
+  function renderAll(){
+    var host = ensureHost();
+    host.innerHTML = '<div id="erp-act-banner">' + bannerHTML() + '</div><div id="erp-act-list"></div>';
+    renderList();
+    var nb = document.getElementById('erp-act-new-btn'); if(nb) nb.style.display = canWrite() ? '' : 'none';
+  }
+  window.erpActRender = function(){
+    flush();
+    renderAll();
+    if(curId){ var rec = find(curId); if(rec){ lockForm(false); fill(rec.data); lockForm(!recEditable(rec)); } }
+  };
+
+  /* ── Saisie : sauvegarde automatique de la fiche ouverte ───────────── */
+  function inForm(el){ return !!(el && el.closest && el.closest('#erp-sec-checklist, #erp-sec-crisis')); }
+  function onEdit(e){
+    var t = e.target;
+    if(t && (t.id === 'erp-act-title' || t.id === 'erp-act-level')){ if(curId) schedule(); return; }
+    if(!inForm(t) || editingDoc()) return;
+    if(!curId){
+      if(!canWrite()) return;
+      var rec = create(true);              // saisie sans fiche : une fiche est créée, rien n'est perdu
+      renderAll();
+      toast('ERP ' + rec.id + ' créé automatiquement — la saisie est enregistrée', 'success');
+      return;
+    }
+    var r = find(curId); if(!recEditable(r)) return;
+    schedule();
+  }
+  view.addEventListener('input', onEdit, true);
+  view.addEventListener('change', onEdit, true);
+  view.addEventListener('click', function(e){
+    var b = e.target && e.target.closest && e.target.closest('button');
+    if(!b || !inForm(b) || editingDoc() || !curId) return;
+    setTimeout(schedule, 30);               // ajout / suppression d'une ligne du Crisis Log
+  }, true);
+
+  /* Le contenu du document ERP peut être réappliqué (chargement cloud, édition,
+     restauration de version) : la saisie en cours est d'abord enregistrée,
+     puis la fiche ouverte est rechargée dans le nouveau DOM. */
+  function rewrap(name, flushBefore){
+    var orig = window[name];
+    if(typeof orig !== 'function' || orig.__erpAct) return;
+    var w = function(){
+      if(flushBefore) flush();
+      var res = orig.apply(this, arguments);
+      var after = function(){ if(curId && !editingDoc()){ var rec = find(curId); if(rec){ lockForm(false); fill(rec.data); lockForm(!recEditable(rec)); } } renderAll(); };
+      if(res && typeof res.then === 'function') res.then(after, after); else setTimeout(after, 0);
+      return res;
+    };
+    w.__erpAct = true; window[name] = w;
+  }
+  ['erpContentApply','erpEdCancel','erpEdSave','erpEdRestoreVersion','erpEdResetOriginal'].forEach(function(n){ rewrap(n, true); });
+  /* Entrée en édition du document : on enregistre et on verrouille la fiche. */
+  (function(){
+    var orig = window.erpEdToggle; if(typeof orig !== 'function' || orig.__erpAct) return;
+    var w = function(){ flush(); lockForm(false); return orig.apply(this, arguments); };
+    w.__erpAct = true; window.erpEdToggle = w;
+  })();
+  /* « ↺ Reset » de la checklist : la fiche ouverte suit. */
+  (function(){
+    var orig = window.erpResetChecklist; if(typeof orig !== 'function' || orig.__erpAct) return;
+    var w = function(){ var r = orig.apply(this, arguments); if(curId) schedule(); return r; };
+    w.__erpAct = true; window.erpResetChecklist = w;
+  })();
+
+  window.addEventListener('beforeunload', function(){ try{ flush(); }catch(e){} });
+
+  /* ── Démarrage : reprend la fiche ouverte sur ce poste ─────────────── */
+  try{ var n = NLS(); var saved = n ? n.getItem(CUR_KEY) : null; if(saved && find(saved)) curId = saved; }catch(e){}
+  window.erpActRender();
+  /* Le rôle n'est connu qu'après authentification : rafraîchit boutons et verrous. */
+  var lastRole = role(), tries = 0, iv = setInterval(function(){
+    var r = role();
+    if(r !== lastRole){ lastRole = r; try{ flush(); window.erpActRender(); }catch(e){} }
+    if(++tries > 24) clearInterval(iv);
+  }, 2500);
+})();
+</script>
+
 
 </body>
 </html>
