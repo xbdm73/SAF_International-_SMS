@@ -356,7 +356,19 @@ window.generateCertPDF = function() {
     
     var certTitle = 'SMS Training Certificate - ' + traineeName + ' - ' + fmtDate(certDate);
 
-    var html_cert = '<html><head><meta charset="UTF-8"><title>' + esc(certTitle) + '</title><style>' + css + '</style></head><body>'
+    var html_cert = '<html><head><meta charset="UTF-8"><title>' + esc(certTitle) + '</title><style>' + css + '</style>
+<!-- SAF layout fix: navigation occupies a dedicated, non-overlapping row -->
+<style id="saf-navigation-layout-fix-v2">
+#app{display:flex!important;flex-direction:column!important;height:100vh!important;min-height:0!important;}
+#app > header{position:relative!important;flex:0 0 auto!important;}
+#app > #saf-subnav{display:block!important;position:relative!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;transform:none!important;flex:0 0 auto!important;width:100%!important;height:auto!important;min-height:38px!important;max-height:none!important;overflow:visible!important;z-index:20!important;}
+#app > #saf-subnav > .saf-nav-row{position:relative!important;display:flex!important;align-items:center!important;min-height:38px!important;overflow-x:auto!important;overflow-y:hidden!important;flex-wrap:nowrap!important;}
+#app > .main-wrap{position:relative!important;min-height:0!important;flex:1 1 0!important;overflow:hidden!important;}
+#app > .main-wrap > main{min-width:0!important;min-height:0!important;overflow-y:auto!important;}
+#view-app08,#view-app09,#view-app10{position:relative;}
+#view-app08 .omm-shared-registry,#view-app09 .omm-shared-registry,#view-app10 .omm-shared-registry{display:block;position:relative;max-width:100%;z-index:0;}
+</style>
+</head><body>'
         + '<section class="page">'
         + '<div class="bg"><img src="' + window._CERT_PNG + '"/></div>'
         + '<div class="ct">'
@@ -378,41 +390,7 @@ window.generateCertPDF = function() {
         + '</div>'
         + '</section>'
         + '<script>window.onload=function(){setTimeout(function(){window.print();},500);}' + String.fromCharCode(60) + '/script>'
-        + '
-<!-- SAF layout correction: navigation bar must occupy its own row, not overlay APP10. -->
-<style id="saf-app10-navigation-layout-fix">
-#app > #saf-subnav{position:relative!important;flex:0 0 auto!important;min-height:38px;max-width:100%;isolation:isolate;}
-#app > #saf-subnav .saf-nav-row{min-height:38px;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;}
-#app > .main-wrap{min-height:0;flex:1 1 auto;}
-#view-app10{position:relative;isolation:isolate;}
-#view-app10 .dash-header{position:relative;z-index:1;}
-#view-app10 .omm-shared-registry{display:block;position:relative;z-index:0;max-width:100%;}
-</style>
-<script id="saf-app10-embedded-navigation-fix">
-(function(){
-  function apply(){
-    var fr=document.querySelector('#view-app10 iframe.omm-shared-registry');
-    if(!fr)return;
-    function update(){
-      try{
-        var d=fr.contentDocument;
-        if(!d||!d.head)return;
-        if(d.getElementById('saf-app10-embedded-nav-style'))return;
-        var css=d.createElement('style');
-        css.id='saf-app10-embedded-nav-style';
-        /* Within OMM the outer navigation already exists: suppress the duplicated CMS navigation. */
-        css.textContent='#saf-subnav{display:none!important}#cmsx_formateurs,#cmsx_trainers{position:relative!important;z-index:1!important}';
-        d.head.appendChild(css);
-      }catch(e){/* If the CMS is hosted on another origin, its own stylesheet must be updated. */}
-    }
-    fr.addEventListener('load',update);
-    update();
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply);
-  else apply();
-})();
-</script>
-</body></html>';
+        + '</body></html>';
     
     var w = window.open('', '_blank');
     if (!w) {
@@ -521,6 +499,29 @@ button .bi, a .bi{vertical-align:middle;}
 })();
 </script>
 <!-- ── END SAF INTER-TOOL NAV ── -->
+
+<script id="saf-embedded-cms-nav-fix-v2">
+(function(){
+ function fixFrame(frame){
+  try{
+   var d=frame.contentDocument;
+   if(!d||!d.head||d.getElementById('saf-embedded-omm-nav-v2'))return;
+   var st=d.createElement('style');
+   st.id='saf-embedded-omm-nav-v2';
+   st.textContent='#saf-subnav{display:none!important}#app>.main-wrap{flex:1 1 0!important;min-height:0!important}';
+   d.head.appendChild(st);
+  }catch(e){}
+ }
+ function init(){
+  document.querySelectorAll('#view-app08 iframe.omm-shared-registry,#view-app09 iframe.omm-shared-registry,#view-app10 iframe.omm-shared-registry').forEach(function(fr){
+   fr.addEventListener('load',function(){fixFrame(fr)});
+   fixFrame(fr);
+  });
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+
 
 <div class="main-wrap">
 <aside>
