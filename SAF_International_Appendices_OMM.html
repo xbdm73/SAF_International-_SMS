@@ -378,7 +378,41 @@ window.generateCertPDF = function() {
         + '</div>'
         + '</section>'
         + '<script>window.onload=function(){setTimeout(function(){window.print();},500);}' + String.fromCharCode(60) + '/script>'
-        + '</body></html>';
+        + '
+<!-- SAF layout correction: navigation bar must occupy its own row, not overlay APP10. -->
+<style id="saf-app10-navigation-layout-fix">
+#app > #saf-subnav{position:relative!important;flex:0 0 auto!important;min-height:38px;max-width:100%;isolation:isolate;}
+#app > #saf-subnav .saf-nav-row{min-height:38px;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;}
+#app > .main-wrap{min-height:0;flex:1 1 auto;}
+#view-app10{position:relative;isolation:isolate;}
+#view-app10 .dash-header{position:relative;z-index:1;}
+#view-app10 .omm-shared-registry{display:block;position:relative;z-index:0;max-width:100%;}
+</style>
+<script id="saf-app10-embedded-navigation-fix">
+(function(){
+  function apply(){
+    var fr=document.querySelector('#view-app10 iframe.omm-shared-registry');
+    if(!fr)return;
+    function update(){
+      try{
+        var d=fr.contentDocument;
+        if(!d||!d.head)return;
+        if(d.getElementById('saf-app10-embedded-nav-style'))return;
+        var css=d.createElement('style');
+        css.id='saf-app10-embedded-nav-style';
+        /* Within OMM the outer navigation already exists: suppress the duplicated CMS navigation. */
+        css.textContent='#saf-subnav{display:none!important}#cmsx_formateurs,#cmsx_trainers{position:relative!important;z-index:1!important}';
+        d.head.appendChild(css);
+      }catch(e){/* If the CMS is hosted on another origin, its own stylesheet must be updated. */}
+    }
+    fr.addEventListener('load',update);
+    update();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply);
+  else apply();
+})();
+</script>
+</body></html>';
     
     var w = window.open('', '_blank');
     if (!w) {
