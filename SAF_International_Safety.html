@@ -2022,7 +2022,7 @@ nav { top: 118px !important; }
 </div>
 <div class="nav-item" onclick="showView('eventaccounting')">
 <span class="icon">∑</span>
-<span class="nav-item-text"><span class="nav-app-code">APP13-OMM</span><span class="nav-app-title">Event Accounting <span class="count" id="event-catalog-count">164</span></span></span>
+<span class="nav-item-text"><span class="nav-app-title">Event Accounting <span class="count" id="event-catalog-count">164</span></span></span>
 </div>
 </div>
 <div class="nav-section saf-guest-hide">
@@ -3424,7 +3424,7 @@ function updateOaciDefinitionDropdown(sel) {
 </div>
 <div class="view" id="view-eventaccounting">
   <div class="dash-header">
-    <div><div class="dash-title">EVENT TAXONOMY & ACCOUNTING</div><div style="font-family:var(--font-mono);font-size:11px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase;margin:4px 0 2px;">APP13-OMM</div><div class="dash-subtitle">Three-level structure: occurrence category → stable SAF family → risk scenario. Counters include only occurrences linked after implementation.</div></div>
+    <div><div class="dash-title">EVENT TAXONOMY & ACCOUNTING</div><div class="dash-subtitle">Three-level structure: occurrence category → stable SAF family → risk scenario. Counters include only occurrences linked after implementation.</div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn btn-primary" onclick="eventAccountingAddNewEvent()">＋ NEW EVENT CANDIDATE</button>
       <button class="btn btn-gold" onclick="eventAccountingExportCSV()">⇩ EXPORT CSV</button>
@@ -5431,7 +5431,7 @@ const ECCAIRS_DESC = {"RAMP": "RAMP — Ground handling / ramp operations: handl
 
 
 // ══════════════════════════════════════════════════════════════════
-// APP13-OMM — INDIVIDUAL EVENT ACCOUNTING
+// INDIVIDUAL EVENT ACCOUNTING
 // Source: Risk Assessment SAF International Ver 2.8 (25.03.2026)
 // 164 Excel events. Counters are derived from occurrences carrying
 // catalog_event_id; pre-existing occurrences are intentionally excluded.
