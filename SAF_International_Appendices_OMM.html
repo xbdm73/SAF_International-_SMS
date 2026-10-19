@@ -3357,6 +3357,7 @@ h1 {
 
   // --- Sauvegarde vers la base ---
   async function cloudSave(){
+    if(SAF_ROLE !== 'admin' && SAF_ROLE !== 'editor'){ setBar('ok','Lecture seule — sauvegarde interdite'); return; }
     if(CC_CONFLICT){ return; }   // bloqué jusqu'à résolution du conflit
     if(saving){ dirty = true; return; }
     if(typeof window.safSerializeAppendices !== 'function'){ return; }
@@ -3374,7 +3375,7 @@ h1 {
 
   // --- Anti-rebond : on attend 1,5 s après la dernière frappe ---
   function scheduleSave(){
-    if(!ready) return;
+    if(!ready || (SAF_ROLE !== 'admin' && SAF_ROLE !== 'editor')) return;
     clearTimeout(saveTimer);
     setBar('saving','Modification détectée…');
     saveTimer = setTimeout(cloudSave, 1500);
@@ -3493,6 +3494,7 @@ h1 {
   }
 
   function applyEditorMode(){
+    if(document.getElementById('saf-editor-banner')) return;
     var banner = document.createElement('div');
     banner.id = 'saf-editor-banner';
     banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(20,80,55,.94);border-bottom:1px solid rgba(60,200,130,.4);padding:5px 16px;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;color:#9ff0c0;text-align:center;pointer-events:none;';
@@ -3535,10 +3537,12 @@ h1 {
     setBar('ok','Connecté : '+session.user.email);
     loginTriggerBtn.style.display = 'none';
     logoutBtn.style.display = '';
-    await loadAndApplyRole(session.user.email);
+    // Charger les donnees AVANT de verrouiller les actions de l'interface.
+    // Sinon la protection editor neutralise safImportAppendicesData et empeche le chargement.
     await cloudLoad();
+    await loadAndApplyRole(session.user.email);
     ready = true;
-    attachAutoSave();
+    if(SAF_ROLE === 'admin' || SAF_ROLE === 'editor') attachAutoSave();
   }
 
   // ── ACCÈS INVITÉ PAR DÉFAUT ──────────────────────────────────────────────
