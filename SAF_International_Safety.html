@@ -29413,20 +29413,22 @@ function init(){Object.keys(sets).forEach(render)}if(document.readyState==='load
     var box = document.getElementById('erp-quickdial'), ct = secEl('contacts');
     if(!box || !ct) return;
     var sos = [], irt = [], seen = {};
-    ct.querySelectorAll('*').forEach(function(el){
-      if(el.closest('table') || el.children.length) return;
-      var t = (el.textContent || '').trim();
-      if(!/^\+?\d[\d ()]{1,22}$/.test(t)) return;
-      var a = el.closest('a[href^="tel:"]');
-      if(a && a.getAttribute('data-qd') === 'irt' || (a && a !== el && a.querySelectorAll('span').length > 1)){
-        var card = a.parentElement, kids = card ? card.children : [];
-        irt.push({ num:t, tel:a.getAttribute('href'), lbl:kids[0] ? txt(kids[0]) : '', name:kids[1] ? txt(kids[1]) : '' });
-        return;
+    var tw = document.createTreeWalker(ct, NodeFilter.SHOW_TEXT), node;
+    while((node = tw.nextNode())){
+      var t = (node.nodeValue || '').replace(/\s+/g, ' ').trim(), el = node.parentElement;
+      if(!el || el.closest('table') || !/^\+?\d[\d ().-]{1,24}$/.test(t)) continue;
+      var key = t.replace(/[^\d+]/g, ''); if(seen[key]) continue; seen[key] = 1;
+      var a = el.closest('a[href^="tel:"]'), tel = a ? a.getAttribute('href') : 'tel:' + key;
+      /* Membre de l'équipe : le lien d'appel est précédé, dans sa carte, de la fonction et du nom. */
+      var host = a || el, prev = [], p = host.previousElementSibling;
+      while(p){ if(txt(p)) prev.unshift(p); p = p.previousElementSibling; }
+      if(a && prev.length){
+        irt.push({ num:t, tel:tel, lbl:txt(prev[0]), name:prev.length > 1 ? txt(prev[prev.length - 1]) : '' });
+      } else {
+        var nx = host.nextElementSibling, lbl = nx ? txt(nx) : '';
+        sos.push({ num:t, tel:tel, lbl:lbl, auth:/FOCA|OFAC|HCAA|AUTHORIT/i.test(lbl) });
       }
-      if(seen[t]) return; seen[t] = 1;
-      var lbl = el.nextElementSibling ? txt(el.nextElementSibling) : '';
-      sos.push({ num:t, tel:'tel:' + t.replace(/[^\d+]/g, ''), lbl:lbl, auth:/FOCA|OFAC|AUTHORIT/i.test(lbl) });
-    });
+    }
     if(!sos.length && !irt.length){ box.innerHTML = ''; return; }
     var h = '';
     if(sos.length) h += '<div class="qd-row">' + sos.map(function(s){ return '<a href="' + esc(s.tel) + '" class="' + (s.auth ? 'qd-auth' : 'qd-sos') + '"><span class="qd-num">' + esc(s.num) + '</span><span class="qd-lbl">' + esc(s.lbl) + '</span></a>'; }).join('') + '</div>';
