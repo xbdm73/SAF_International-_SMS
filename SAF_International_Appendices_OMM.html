@@ -283,7 +283,7 @@ tr.row-red td:first-child strong{color:#fff !important;}
 #t-sms-training tr.sms-warning  td[data-validity="true"]{color:#ffe066;}
 #t-sms-training tr.sms-expired  td[data-validity="true"]{color:#ff6b6b;text-decoration:line-through;}
 #t-sms-training tr.sms-planned  td[data-validity="true"]{color:var(--grey-400);}
-#saf-org-editor{margin-bottom:18px;} @media print {#saf-org-editor{display:none!important;}}
+#saf-org-editor{margin-bottom:18px;} #view-app03 .org-svg-wrap svg text{pointer-events:all;cursor:pointer;} @media print {#saf-org-editor{display:none!important;}}
 </style>
 <script>
 // PNG background
@@ -3452,7 +3452,7 @@ h1 {
       badge.style.display = 'inline-block';
     }
     if(SAF_ROLE === 'reader') applyReadOnly();
-    if(SAF_ROLE === 'editor') applyEditorMode();
+    if(SAF_ROLE === 'editor' || SAF_ROLE === 'admin') applyEditorMode();
     try { localStorage.setItem('saf_role', SAF_ROLE + '|' + email); } catch(e){}
   }
 
@@ -3569,11 +3569,36 @@ h1 {
       var input=document.createElement('input');
       input.type='text'; input.value=node.textContent; input.setAttribute('aria-label','Organigramme, libellé '+(i+1));
       input.style.cssText='width:100%;padding:9px;background:#101f32;border:1px solid #46617c;border-radius:5px;color:white;';
-      input.addEventListener('input',function(){node.setAttribute('data-saf-custom-label','1');node.textContent=input.value;});
+      input.addEventListener('input',function(){node.setAttribute('data-saf-custom-label','1');node.textContent=input.value; if(typeof window.safCloudScheduleSave==='function')window.safCloudScheduleSave();});
       label.appendChild(heading); label.appendChild(input);fields.appendChild(label);
     });
     panel.appendChild(fields);
-    view.querySelector('.org-svg-wrap').parentNode.insertBefore(panel,view.querySelector('.org-svg-wrap'));
+    var ctl=document.createElement('div');
+    ctl.style.cssText='display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center';
+    var saveBtn=document.createElement('button');
+    saveBtn.type='button'; saveBtn.className='btn gold'; saveBtn.textContent='Enregistrer les modifications dans Supabase';
+    saveBtn.onclick=function(){ if(typeof window.safCloudScheduleSave==='function') window.safCloudScheduleSave(); };
+    ctl.appendChild(saveBtn);
+    var explanation=document.createElement('span');
+    explanation.textContent='Cliquez sur une case de l’organigramme ou modifiez un champ ci-dessus.';
+    explanation.style.cssText='font-size:12px;color:#c8d0d8;';ctl.appendChild(explanation);
+    panel.appendChild(ctl);
+    var svgWrap=view.querySelector('.org-svg-wrap');
+    if(!svgWrap) return;
+    svgWrap.parentNode.insertBefore(panel,svgWrap);
+    svgLabels.forEach(function(node,i){
+      node.style.cursor='pointer';
+      node.setAttribute('title','Cliquer pour modifier ce libellé');
+      node.addEventListener('click',function(ev){
+        ev.stopPropagation();
+        var newValue=window.prompt('Modifier le libellé de l’organigramme',node.textContent);
+        if(newValue===null)return;
+        node.setAttribute('data-saf-custom-label','1');
+        node.textContent=newValue;
+        var inp=fields.querySelectorAll('input')[i]; if(inp) inp.value=newValue;
+        if(typeof window.safCloudScheduleSave==='function')window.safCloudScheduleSave();
+      });
+    });
     window.safRefreshOrgEditor=function(){
       panel.querySelectorAll('input').forEach(function(input,i){
         if(svgLabels[i] && document.activeElement!==input) input.value=svgLabels[i].textContent;
