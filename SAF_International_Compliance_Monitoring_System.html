@@ -17928,7 +17928,7 @@ else { cmsxInit(); }
 ══════════════════════════════════════════════════════════ -->
 <section class="panel" id="cmsx_auditeurs">
 <div class="cmsx-panel">
-<div class="cmsx-h2">👤 Auditeurs / Auditors</div>
+<div class="cmsx-h2">List of Auditors</div>
 <div style="font-family:var(--font-mono,monospace);font-size:11px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase;margin:2px 0 8px;">APP09-OMM</div>
 <div class="cmsx-sub">Formal qualification, authorizations and recurrent training of CMS internal auditors. Compliant with AMC1 ORO.GEN.200(a)(6) — the auditor must be competent, trained and independent of the audited domain.</div>
 <div class="cmsx-toolbar">
@@ -17953,7 +17953,7 @@ else { cmsxInit(); }
 <!-- Modal auditeur -->
 <div class="cmsx-modal-bg" id="saf-aud-modal">
 <div class="cmsx-modal" style="max-width:700px;">
-<div class="cmsx-modal-head"><h3>Fiche d’auditeur interne / Internal auditor record</h3><button class="cmsx-x" onclick="safAudCloseModal()">×</button></div>
+<div class="cmsx-modal-head"><h3>List of Auditors — Auditor record</h3><button class="cmsx-x" onclick="safAudCloseModal()">×</button></div>
 <input id="saf-aud-id" type="hidden"/>
 <div class="cmsx-grid2">
 <div class="cmsx-field"><label>Nom et prénom / Last name &amp; First name</label><input id="saf-aud-name" placeholder="ex. : Martin Dupont / e.g.: Martin Dupont"/></div>
@@ -17968,17 +17968,10 @@ else { cmsxInit(); }
 <div class="cmsx-field"><label>Périodicité du recyclage (mois) / Recurrent training frequency (months)</label><input id="saf-aud-period" max="60" min="12" placeholder="24" type="number"/></div>
 </div>
 <div class="cmsx-field"><label>Domaines autorisés / Authorized domains</label>
-<div id="saf-aud-domains-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="ORO.GEN" type="checkbox"/> ORO.GEN — Organisation et SMS / Organization &amp; SMS</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="ORO.AOC" type="checkbox"/> ORO.AOC — AOC et documentation / AOC &amp; Documentation</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="ORO.FC" type="checkbox"/> ORO.FC — Équipage de conduite / Flight crew</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="CAT.OP" type="checkbox"/> CAT.OP — Opérations aériennes CAT / CAT flight operations</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="CAT.IDE" type="checkbox"/> CAT.IDE — Instruments et équipements / Instruments &amp; equipment</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="SPA" type="checkbox"/> SPA — Agréments spécifiques / Special approvals</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="SPO.HESLO" type="checkbox"/> SPO — HESLO et opérations spécialisées / HESLO &amp; Specialized operations</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="NCC" type="checkbox"/> NCC — Opérations non commerciales / Non-commercial operations</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="Part-M" type="checkbox"/> Part-M / Part-CAMO — Airworthiness</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="Sous-traitants" type="checkbox"/> Surveillance des sous-traitants / Contractor monitoring (ORO.GEN.205)</label>
+<div id="saf-aud-domains-grid" style="display:grid;grid-template-columns:repeat(3,minmax(140px,1fr));gap:10px;margin-top:6px;">
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="AIR-OPS" type="checkbox"/> AIR-OPS</label>
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="CAMO" type="checkbox"/> CAMO</label>
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="Part 145" type="checkbox"/> Part 145</label>
 </div>
 </div>
 <div class="cmsx-field"><label>Domaines exclus — principe d’indépendance / Excluded domains — independence principle</label><input id="saf-aud-exclusions" placeholder="ex. : CAT.OP (CDB en ligne), ORO.FC (formation en cours) / e.g.: CAT.OP (active captain), ORO.FC (training in progress)"/></div>
