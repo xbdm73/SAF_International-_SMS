@@ -283,6 +283,7 @@ tr.row-red td:first-child strong{color:#fff !important;}
 #t-sms-training tr.sms-warning  td[data-validity="true"]{color:#ffe066;}
 #t-sms-training tr.sms-expired  td[data-validity="true"]{color:#ff6b6b;text-decoration:line-through;}
 #t-sms-training tr.sms-planned  td[data-validity="true"]{color:var(--grey-400);}
+#saf-org-editor{margin-bottom:18px;} @media print {#saf-org-editor{display:none!important;}}
 </style>
 <script>
 // PNG background
@@ -1731,6 +1732,17 @@ h1{margin:0 0 13mm 0;font-family:Georgia,'Times New Roman',serif;font-size:28pt;
         applyList(view, section, listIndex++);
       } else if (section.type === 'certificates') {
         applyCertificates(view, section);
+      } else if (section.type === 'visualText' && Array.isArray(section.data)) {
+        var selectors = {
+          'view-app02': '.photo .cap, .acro .d, .callout, .card p',
+          'view-app03': '.org-svg-wrap svg text, .acro .d',
+          'view-app13': '.card p',
+          'view-app07': '.card p'
+        };
+        var targets = selectors[viewId] ? Array.prototype.slice.call(view.querySelectorAll(selectors[viewId])) : [];
+        section.data.forEach(function(value, i){
+          if (targets[i] && typeof value === 'string') targets[i].textContent = value;
+        });
       }
     });
     return true;
@@ -2475,6 +2487,15 @@ var SAF_APP_LOGO_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+UAA
       if (certs.length) block.sections.push({ type:'certificates', data: certs });
     }
 
+    // APP03: SVG chart labels and APP02: free text and captions.
+    var selectors = {
+      'view-app02': '.photo .cap, .acro .d, .callout, .card p',
+      'view-app03': '.org-svg-wrap svg text, .acro .d',
+      'view-app13': '.card p',
+      'view-app07': '.card p'
+    };
+    var textTargets = selectors[viewId] ? Array.prototype.slice.call(view.querySelectorAll(selectors[viewId])) : [];
+    if (textTargets.length) block.sections.push({type:'visualText',data:textTargets.map(function(n){return n.textContent;})});
     return block;
   }
 
@@ -3493,6 +3514,54 @@ h1 {
     }
   }
 
+  function activateAppendixEditing(){
+    // Edits stay in the native view. Existing JSON serializer stores all table rows.
+    ['view-app02','view-app03','view-app04','view-app13','view-app14','view-app07'].forEach(function(id){
+      var view = document.getElementById(id);
+      if(!view) return;
+      view.querySelectorAll('table.tbl tbody td:not(.row-actions):not(.cert-actions), dl.kv dd, ul.info-list li, .photo .cap, .acro .d, .callout, .card p').forEach(function(el){
+        if(el.querySelector('select,input,button') || el.closest('#t-sms-training') || el.closest('#saf-org-editor')) return;
+        el.setAttribute('contenteditable','true');
+        el.classList.add('saf-direct-edit');
+      });
+    });
+    var view = document.getElementById('view-app03');
+    if(!view || document.getElementById('saf-org-editor')) return;
+    var svgLabels = Array.prototype.slice.call(view.querySelectorAll('.org-svg-wrap svg text'));
+    var panel = document.createElement('div');
+    panel.id = 'saf-org-editor';
+    panel.className = 'card';
+    panel.style.cssText='border:1px solid #4A9FE0;margin-bottom:18px;';
+    var title = document.createElement('div');
+    title.className='section-title';
+    title.textContent='Modifier l’organigramme / Edit organizational chart';
+    panel.appendChild(title);
+    var help=document.createElement('p');
+    help.textContent='Modifiez les 30 libellés de l’organigramme ci-dessous. La sauvegarde dans Supabase est automatique. Le placement des cases et les liens hiérarchiques restent fixes.';
+    help.style.cssText='font-size:12px;margin-bottom:12px;color:#c8d0d8;';
+    panel.appendChild(help);
+    var fields=document.createElement('div');
+    fields.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;';
+    svgLabels.forEach(function(node,i){
+      var label=document.createElement('label');
+      label.style.cssText='display:flex;flex-direction:column;gap:4px;font-size:11px;color:#c8d0d8;';
+      var heading=document.createElement('span');
+      heading.textContent='Libellé '+(i+1);
+      var input=document.createElement('input');
+      input.type='text'; input.value=node.textContent; input.setAttribute('aria-label','Organigramme, libellé '+(i+1));
+      input.style.cssText='width:100%;padding:9px;background:#101f32;border:1px solid #46617c;border-radius:5px;color:white;';
+      input.addEventListener('input',function(){node.textContent=input.value;});
+      label.appendChild(heading); label.appendChild(input);fields.appendChild(label);
+    });
+    panel.appendChild(fields);
+    view.querySelector('.org-svg-wrap').parentNode.insertBefore(panel,view.querySelector('.org-svg-wrap'));
+    window.safRefreshOrgEditor=function(){
+      panel.querySelectorAll('input').forEach(function(input,i){
+        if(svgLabels[i] && document.activeElement!==input) input.value=svgLabels[i].textContent;
+      });
+    };
+  }
+
   function applyEditorMode(){
     if(document.getElementById('saf-editor-banner')) return;
     var banner = document.createElement('div');
@@ -3541,6 +3610,8 @@ h1 {
     // Sinon la protection editor neutralise safImportAppendicesData et empeche le chargement.
     await cloudLoad();
     await loadAndApplyRole(session.user.email);
+    if(SAF_ROLE === 'admin' || SAF_ROLE === 'editor') activateAppendixEditing();
+    if(window.safRefreshOrgEditor) window.safRefreshOrgEditor();
     ready = true;
     if(SAF_ROLE === 'admin' || SAF_ROLE === 'editor') attachAutoSave();
   }
