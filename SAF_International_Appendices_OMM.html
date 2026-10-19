@@ -1315,11 +1315,7 @@ h1{margin:0 0 13mm 0;font-family:Georgia,'Times New Roman',serif;font-size:28pt;
 </div>
 </div>
 
-<!-- APP08-APP10: shared CMS registries; existing Supabase cms_data remains authoritative. -->
-<style>.omm-shared-registry{width:100%;height:calc(100vh - 210px);min-height:640px;border:1px solid rgba(74,159,224,.3);border-radius:10px;background:#0b1120}.omm-shared-info{font-size:12px;color:#9db8d6;margin:8px 0 16px}</style>
-<div class="view" id="view-app08"><div class="dash-header"><div><div class="dash-title">LIST OF SUBCONTRACTORS</div><div class="dash-subtitle">APP08-OMM · Shared controlled register</div></div></div><p class="omm-shared-info">This register is edited with the existing CMS permissions and stored in the same Supabase database. Changes are automatically shared with the SAF CMS.</p><iframe class="omm-shared-registry" title="APP08-OMM LIST OF SUBCONTRACTORS" loading="lazy" src="SAF_International_Compliance_Monitoring_System.html?saf_omm_registry=subcontractors"></iframe></div>
-<div class="view" id="view-app09"><div class="dash-header"><div><div class="dash-title">AUDITORS</div><div class="dash-subtitle">APP09-OMM · Shared controlled register</div></div></div><p class="omm-shared-info">This register is edited with the existing CMS permissions and stored in the same Supabase database. Changes are automatically shared with the SAF CMS.</p><iframe class="omm-shared-registry" title="APP09-OMM AUDITORS" loading="lazy" src="SAF_International_Compliance_Monitoring_System.html?saf_omm_registry=auditors"></iframe></div>
-<div class="view" id="view-app10"><div class="dash-header"><div><div class="dash-title">LIST OF TRAINERS</div><div class="dash-subtitle">APP10-OMM · Shared controlled register</div></div></div><p class="omm-shared-info">This register is edited with the existing CMS permissions and stored in the same Supabase database. Changes are automatically shared with the SAF CMS.</p><iframe class="omm-shared-registry" title="APP10-OMM LIST OF TRAINERS" loading="lazy" src="SAF_International_Compliance_Monitoring_System.html?saf_omm_registry=trainers"></iframe></div>
+
 </main>
 <footer class="footer">
 <div>Ed 2 09/2023</div>
@@ -1330,6 +1326,13 @@ h1{margin:0 0 13mm 0;font-family:Georgia,'Times New Roman',serif;font-size:28pt;
 </div>
 </div>
 </div><!-- end view-app07 -->
+</div><!-- close APP07 wrapper for independent APP08-APP10 views -->
+<!-- APP08-APP10: shared CMS registries; existing Supabase cms_data remains authoritative. -->
+<style>.omm-shared-registry{width:100%;height:calc(100vh - 210px);min-height:640px;border:1px solid rgba(74,159,224,.3);border-radius:10px;background:#0b1120}.omm-shared-info{font-size:12px;color:#9db8d6;margin:8px 0 16px}</style>
+<div class="view" id="view-app08"><div class="dash-header"><div><div class="dash-title">LIST OF SUBCONTRACTORS</div><div class="dash-subtitle">APP08-OMM · Shared controlled register</div></div></div><p class="omm-shared-info">This register is edited with the existing CMS permissions and stored in the same Supabase database. Changes are automatically shared with the SAF CMS.</p><iframe class="omm-shared-registry" title="APP08-OMM LIST OF SUBCONTRACTORS" loading="lazy" src="SAF_International_Compliance_Monitoring_System.html?saf_omm_registry=subcontractors"></iframe></div>
+<div class="view" id="view-app09"><div class="dash-header"><div><div class="dash-title">AUDITORS</div><div class="dash-subtitle">APP09-OMM · Shared controlled register</div></div></div><p class="omm-shared-info">This register is edited with the existing CMS permissions and stored in the same Supabase database. Changes are automatically shared with the SAF CMS.</p><iframe class="omm-shared-registry" title="APP09-OMM AUDITORS" loading="lazy" src="SAF_International_Compliance_Monitoring_System.html?saf_omm_registry=auditors"></iframe></div>
+<div class="view" id="view-app10"><div class="dash-header"><div><div class="dash-title">LIST OF TRAINERS</div><div class="dash-subtitle">APP10-OMM · Shared controlled register</div></div></div><p class="omm-shared-info">This register is edited with the existing CMS permissions and stored in the same Supabase database. Changes are automatically shared with the SAF CMS.</p><iframe class="omm-shared-registry" title="APP10-OMM LIST OF TRAINERS" loading="lazy" src="SAF_International_Compliance_Monitoring_System.html?saf_omm_registry=trainers"></iframe></div>
+
 </main>
 </div>
 </div>
@@ -1747,7 +1750,13 @@ h1{margin:0 0 13mm 0;font-family:Georgia,'Times New Roman',serif;font-size:28pt;
         };
         var targets = selectors[viewId] ? Array.prototype.slice.call(view.querySelectorAll(selectors[viewId])) : [];
         section.data.forEach(function(value, i){
-          if (targets[i] && typeof value === 'string') targets[i].textContent = value;
+          if (targets[i] && typeof value === 'string') {
+            if (targets[i].namespaceURI === 'http://www.w3.org/2000/svg') targets[i].setAttribute('data-saf-custom-label','1');
+            targets[i].textContent = value;
+          } else if(section.type === 'extraText' && Array.isArray(section.data)) {
+        var extraNodes=Array.prototype.slice.call(view.querySelectorAll('.section-title, .sub-title, .base-tag, .note')).filter(function(el){return !el.closest('#saf-org-editor');});
+        section.data.forEach(function(value,i){if(extraNodes[i] && typeof value==='string') extraNodes[i].textContent=value;});
+      }
         });
       }
     });
@@ -2502,6 +2511,10 @@ var SAF_APP_LOGO_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+UAA
     };
     var textTargets = selectors[viewId] ? Array.prototype.slice.call(view.querySelectorAll(selectors[viewId])) : [];
     if (textTargets.length) block.sections.push({type:'visualText',data:textTargets.map(function(n){return n.textContent;})});
+    // General editable text labels: stable per-view order; non-editable controls excluded.
+    var extraSel='.section-title, .sub-title, .base-tag, .note';
+    var extraNodes=Array.prototype.slice.call(view.querySelectorAll(extraSel)).filter(function(el){return !el.closest('#saf-org-editor');});
+    if(extraNodes.length) block.sections.push({type:'extraText',data:extraNodes.map(function(el){return el.textContent;})});
     return block;
   }
 
@@ -3522,10 +3535,10 @@ h1 {
 
   function activateAppendixEditing(){
     // Edits stay in the native view. Existing JSON serializer stores all table rows.
-    ['view-app02','view-app03','view-app04','view-app13','view-app14','view-app07'].forEach(function(id){
+    ['view-app01','view-app02','view-app03','view-app04','view-app05','view-app06','view-app07','view-app13','view-app14'].forEach(function(id){
       var view = document.getElementById(id);
       if(!view) return;
-      view.querySelectorAll('table.tbl tbody td:not(.row-actions):not(.cert-actions), dl.kv dd, ul.info-list li, .photo .cap, .acro .d, .callout, .card p').forEach(function(el){
+      view.querySelectorAll('table.tbl tbody td:not(.row-actions):not(.cert-actions), dl.kv dd, ul.info-list li, .photo .cap, .acro .d, .callout, .card p, .section-title, .sub-title, .base-tag, .note').forEach(function(el){
         if(el.querySelector('select,input,button') || el.closest('#t-sms-training') || el.closest('#saf-org-editor')) return;
         el.setAttribute('contenteditable','true');
         el.classList.add('saf-direct-edit');
@@ -3556,7 +3569,7 @@ h1 {
       var input=document.createElement('input');
       input.type='text'; input.value=node.textContent; input.setAttribute('aria-label','Organigramme, libellé '+(i+1));
       input.style.cssText='width:100%;padding:9px;background:#101f32;border:1px solid #46617c;border-radius:5px;color:white;';
-      input.addEventListener('input',function(){node.textContent=input.value;});
+      input.addEventListener('input',function(){node.setAttribute('data-saf-custom-label','1');node.textContent=input.value;});
       label.appendChild(heading); label.appendChild(input);fields.appendChild(label);
     });
     panel.appendChild(fields);
@@ -3573,14 +3586,13 @@ h1 {
     var banner = document.createElement('div');
     banner.id = 'saf-editor-banner';
     banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(20,80,55,.94);border-bottom:1px solid rgba(60,200,130,.4);padding:5px 16px;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;color:#9ff0c0;text-align:center;pointer-events:none;';
-    banner.textContent = '✎ MODE ÉDITEUR — saisie et modification des données autorisées · structure documentaire réservée à l’administrateur.';
+    banner.textContent = '✎ MODE ÉDITEUR — modification des données et libellés autorisée · sauvegarde Supabase.';
     document.body.prepend(banner);
-    guardEditorStructureFunctions();
-    setTimeout(function(){ lockEditorStructureIn(document); }, 800);
+    // Admin and editor: full document editing is permitted by Supabase RLS.
     if(!window.__safEditorObserver){
       window.__safEditorObserver = new MutationObserver(function(mutations){
         mutations.forEach(function(m){
-          m.addedNodes && m.addedNodes.forEach(function(node){ if(node.nodeType === 1) lockEditorStructureIn(node); });
+          m.addedNodes && m.addedNodes.forEach(function(node){ if(node.nodeType === 1) activateAppendixEditing(); });
         });
       });
       window.__safEditorObserver.observe(document.body,{childList:true,subtree:true});
@@ -3705,6 +3717,7 @@ h1 {
     if (parent.classList && parent.classList.contains('cms-title-fr')) return;
     if (parent.classList && parent.classList.contains('cms-title-en')) return;
     if (parent.isContentEditable) return;
+    if (parent.closest && parent.closest('[data-saf-custom-label="1"]')) return;
 
     // SVG <text> : les <span> HTML ne s'affichent pas dans un SVG -> tspan sur 2 lignes
     var SVGNS = 'http://www.w3.org/2000/svg';
