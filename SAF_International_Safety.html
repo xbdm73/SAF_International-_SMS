@@ -10645,7 +10645,7 @@ function renderTable() {
       <td class="actions-cell">
         <button class="edit-btn" onclick="editEntry(decodeURIComponent('${encodeURIComponent(r.id)}'))">Edit</button>
         <button class="copy-btn" onclick="copyEntry(decodeURIComponent('${encodeURIComponent(r.id)}'))">Copy</button>
-        <button class="delete-btn" onclick="deleteEntry(decodeURIComponent('${encodeURIComponent(r.id)}'))">Delete</button>
+        <button class="delete-btn" title="Archiver ce risque (motif obligatoire, restauration possible) / Archive this risk (reason required, can be restored)" onclick="deleteEntry(decodeURIComponent('${encodeURIComponent(r.id)}'))">🗄 Archive</button>
       </td>
     </tr>
     <tr id="${rowId}-detail" style="display:none;" class="expanded-row" data-risk="${encodeURIComponent(r.id)}"><td colspan="14"></td></tr>`;
@@ -27833,7 +27833,7 @@ function init(){Object.keys(sets).forEach(render)}if(document.readyState==='load
       +   '<span class="rrf-pos">'+(i>=0?(i+1)+' / '+L.length:'')+'</span>'
       +   '<button class="btn btn-ghost" type="button" '+(next?'onclick="rrFocusOpen(decodeURIComponent(\''+encodeURIComponent(next.id)+'\'))" title="'+esc(next.id)+'"':'disabled style="opacity:.35"')+'>›</button>'
       +   '<button class="edit-btn" onclick="editEntry(decodeURIComponent(\''+idq+'\'))">Edit</button>'
-      +   '<button class="delete-btn" onclick="deleteEntry(decodeURIComponent(\''+idq+'\'))">Delete</button>'
+      +   '<button class="delete-btn" title="Archiver ce risque (motif obligatoire, restauration possible) / Archive this risk (reason required, can be restored)" onclick="deleteEntry(decodeURIComponent(\''+idq+'\'))">🗄 Archive</button>'
       + '</span>'
       + '</div>'
       + '<div class="rrf-body">'+detail+'</div>';
