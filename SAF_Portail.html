@@ -174,7 +174,7 @@ a.sys:hover{border-color:var(--line-strong);background:var(--card-hover)}
     <p id="gate-msg"></p>
     <div class="gate-actions">
       <a class="iconbtn" id="gate-btn" href="index.html?next=SAF_Portail.html"></a>
-      <a class="gate-report" href="Archives_Ne_pas_utiliser/SAF_Report.html" data-i18n="gate_report"></a>
+      <a class="gate-report" href="SAF_Report.html" data-i18n="gate_report"></a>
     </div>
   </div>
 </div>
@@ -185,7 +185,7 @@ a.sys:hover{border-color:var(--line-strong);background:var(--card-hover)}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
       <span data-i18n="nav_systems">Systèmes</span>
     </a>
-    <a href="Archives_Ne_pas_utiliser/SAF_Report.html">
+    <a href="SAF_Report.html">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17.5v.5"/></svg>
       <span data-i18n="nav_report">Faire un signalement</span>
     </a>
@@ -240,7 +240,7 @@ const SAF_SYSTEMS = [
           en:'Risk register, occurrence log, compliance monitoring and OMM appendices.'},
     url:'index.html' },
   { id:'training', color:'#5b9cf0', icon:'cap',
-    name:{fr:'Crew Training', en:'Crew Training'},
+    name:{fr:'OPS', en:'OPS'},
     desc:{fr:'Suivi des formations, contrôles et validités des équipages.',
           en:'Crew training, checks and currency tracking.'},
     url:'https://saf-international-crew-training.netlify.app/' },
@@ -254,6 +254,11 @@ const SAF_SYSTEMS = [
     desc:{fr:'Missions feux de forêt, Cascade Bucket et opérations de nuit NVIS.',
           en:'Wildfire missions, Cascade Bucket and NVIS night operations.'},
     url:'' },
+  { id:'retex', color:'#c9824a', icon:'notes',
+    name:{fr:'RETEX Feux 2026', en:'Fire Season 2026 debrief'},
+    desc:{fr:'Retours d\u2019expérience des équipages après la saison feux 2026 : analyse des rapports et exports CSV / PDF.',
+          en:'Crew lessons learned from the 2026 fire season: report analysis and CSV / PDF exports.'},
+    url:'https://xbdm73.github.io/SAF-Retex/admin.html' },
   { id:'fleet', color:'#3fb5a6', icon:'pin',
     name:{fr:'Suivi flotte', en:'Fleet tracking'},
     desc:{fr:'Position en temps réel de HB-ZIP, HB-ZKN et F-HRTS.',
@@ -272,6 +277,7 @@ const ICONS = {
   cap:'<path d="M2 9l10-5 10 5-10 5L2 9z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/>',
   hook:'<path d="M12 2v9"/><path d="M8 6h8"/><path d="M12 11a4 4 0 1 1-4 4"/>',
   flame:'<path d="M12 22c4 0 7-2.8 7-7 0-4.5-4-7-4-11-3 2-5 5-5 8-1-1-2-2-2-4-2 2-3 4.5-3 7 0 4.2 3 7 7 7z"/>',
+  notes:'<path d="M9 4h6v3H9z"/><path d="M15 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h4"/>',
   pin:'<path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>'
 };
 
@@ -490,6 +496,32 @@ window.addEventListener('pageshow',()=>{ renderWho(); render(); resolveRole(); }
 applyTheme(); applyLang();
 SAF_SYSTEMS.forEach(check);
 resolveRole();
+</script>
+<script>
+/* Garde-fou : tous les outils SAF sont à la racine du dépôt GitHub.
+   Un éditeur HTML qui « met à jour les liens » quand on déplace ou renomme un
+   dossier local peut réécrire un lien en « Archives/… », « Archives_Ne_pas_utiliser/… »
+   ou tout autre sous-dossier. Ce script ramène à la racine, au chargement et sur
+   tout lien ajouté ensuite, chaque lien relatif vers un fichier de la suite SAF. */
+(function(){
+  var RX = /^(?:\.\.?\/)*(?:[^\/:?#]+\/)+((?:SAF_[\w.-]+|index)\.html(?:[?#].*)?)$/i;
+  function fixA(a){
+    var h = a.getAttribute('href'); if (!h) return;
+    var m = h.match(RX); if (!m) return;
+    a.setAttribute('href', m[1]);
+    var oc = a.getAttribute('onclick') || '';
+    if (/pathname\.indexOf\(/.test(oc) && /this\.href\s*=/.test(oc)) a.removeAttribute('onclick');
+  }
+  function fix(root){ if (root && root.querySelectorAll) root.querySelectorAll('a[href]').forEach(fixA); }
+  fix(document);
+  document.addEventListener('DOMContentLoaded', function(){ fix(document); });
+  try {
+    new MutationObserver(function(ms){ ms.forEach(function(m){
+      if (m.type === 'attributes' && m.target.tagName === 'A') { fixA(m.target); return; }
+      m.addedNodes.forEach(function(n){ if (n.nodeType === 1) { if (n.tagName === 'A') fixA(n); fix(n); } });
+    }); }).observe(document.documentElement, {childList:true, subtree:true, attributes:true, attributeFilter:['href']});
+  } catch(e){}
+})();
 </script>
 </body>
 </html>
