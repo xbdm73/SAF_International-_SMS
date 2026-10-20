@@ -147,6 +147,88 @@ a.sys:hover{border-color:var(--line-strong);background:var(--card-hover)}
   .grid.list .sys-desc{white-space:normal}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* ================================================================
+   DOCUMENTS & LECTURES OBLIGATOIRES — 19.10.2026
+   ================================================================ */
+body.is-staff .tools, body.is-staff #grid, body.is-staff .note, body.is-staff .head{display:none}
+body.is-staff .side a[data-nav="systems"]{display:none}
+.docs{margin-bottom:34px}
+.docs-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.docs-head h2{margin:0;font-size:20px;font-weight:600;letter-spacing:-.01em}
+.docs-head p{margin:3px 0 0;color:var(--muted);font-size:13px}
+.docs-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--text);cursor:pointer;font-weight:500;font-size:13px;text-decoration:none;white-space:nowrap}
+.btn:hover{border-color:var(--line-strong)}
+.btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+.btn.primary:hover{opacity:.9}
+.btn.danger{color:var(--err);border-color:color-mix(in srgb,var(--err) 40%,transparent)}
+.btn.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{height:28px;padding:0 10px;font-size:12px}
+.dtabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px;flex-wrap:wrap}
+.dtabs button{height:34px;padding:0 12px;border:0;border-bottom:2px solid transparent;background:none;cursor:pointer;color:var(--muted);font-weight:500;margin-bottom:-1px}
+.dtabs button[aria-selected="true"]{color:var(--text);border-bottom-color:var(--text)}
+.dtabs .count{display:inline-grid;place-items:center;min-width:20px;height:18px;padding:0 6px;margin-left:6px;border-radius:999px;font-size:11px;font-weight:700;background:var(--err);color:#fff}
+.dtabs .count.zero{background:var(--line);color:var(--muted)}
+.dlist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.drow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.drow:last-child{border-bottom:0}
+.drow.clickable{cursor:pointer}
+.drow.clickable:hover{background:var(--card-hover)}
+.dtype{display:inline-flex;align-items:center;justify-content:center;min-width:104px;height:24px;padding:0 8px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--tc);background:color-mix(in srgb,var(--tc) 13%,transparent);border:1px solid color-mix(in srgb,var(--tc) 35%,transparent)}
+.dtitle{margin:0;font-weight:600;font-size:14px;line-height:1.35}
+.dmeta{margin:2px 0 0;font-size:12px;color:var(--faint)}
+.dmeta .late{color:var(--err);font-weight:600}
+.dside{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);white-space:nowrap}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);font-size:12px;font-weight:500}
+.pill i{width:6px;height:6px;border-radius:50%;background:var(--off)}
+.pill.read{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 35%,transparent)} .pill.read i{background:var(--ok)}
+.pill.todo{color:var(--err);border-color:color-mix(in srgb,var(--err) 35%,transparent)} .pill.todo i{background:var(--err)}
+.pill.info{color:var(--muted)}
+.dempty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px}
+.dfilters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.dfilters input,.dfilters select,.dform input,.dform select,.dform textarea{height:34px;padding:0 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--text)}
+.dfilters input{flex:1;min-width:200px;max-width:340px}
+.bar{position:relative;width:120px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar > span{position:absolute;inset:0 auto 0 0;background:var(--ok)}
+/* Fenêtres */
+.dmodal{position:fixed;inset:0;z-index:50;background:rgba(10,14,18,.6);display:none;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto}
+.dmodal.open{display:flex}
+.dbox{width:100%;max-width:720px;background:var(--panel);border:1px solid var(--line-strong);border-radius:12px;padding:20px 22px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.dbox.wide{max-width:1100px}
+.dbox h3{margin:0 0 4px;font-size:17px}
+.dbox .dsub{margin:0 0 14px;color:var(--muted);font-size:12.5px}
+.dbox-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:6px}
+.viewer{width:100%;height:min(60vh,780px);border:1px solid var(--line);border-radius:8px;background:#fff}
+.ack{margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.ack label{display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-weight:500}
+.ack input{width:18px;height:18px;margin-top:1px;accent-color:var(--ok)}
+.ack .done{color:var(--ok);font-weight:600}
+.dform{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dform .full{grid-column:1/-1}
+.dform label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:500}
+.dform input,.dform select{width:100%}
+.dform textarea{width:100%;height:70px;padding:8px 10px;resize:vertical;font:inherit}
+.dform .chk{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--text)}
+.dform .chk input{width:16px;height:16px;height:auto}
+.derr{min-height:18px;color:var(--err);font-size:12.5px;margin:10px 0 0}
+.dfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap}
+.dtable{width:100%;border-collapse:collapse;font-size:13px}
+.dtable th,.dtable td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.dtable th{font-size:11.5px;color:var(--faint);font-weight:600;letter-spacing:.02em}
+.dtable-wrap{max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* Connexion du personnel (écran d'accès) */
+.otp{margin-top:6px;padding-top:18px;border-top:1px solid var(--line);text-align:left}
+.otp h2{margin:0 0 4px;font-size:15px}
+.otp p{margin:0 0 12px;font-size:13px}
+.otp input{width:100%;height:38px;padding:0 12px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--text);margin-bottom:10px}
+.otp input.code{letter-spacing:.4em;font-size:20px;text-align:center;font-variant-numeric:tabular-nums}
+.otp .btn{width:100%;justify-content:center;height:38px}
+.otp .derr{margin:8px 0 0}
+.otp .alt{display:block;margin-top:10px;font-size:12.5px;color:var(--muted);background:none;border:0;cursor:pointer;padding:0;text-decoration:underline}
+.side .badge{margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--err);color:#fff;font-size:11px;font-weight:700;display:inline-grid;place-items:center}
+@media (max-width:820px){ .drow{grid-template-columns:1fr} .dside{white-space:normal;flex-wrap:wrap} .dform,.cols2{grid-template-columns:1fr} .dtype{justify-self:start} }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </head>
@@ -161,6 +243,7 @@ a.sys:hover{border-color:var(--line-strong);background:var(--card-hover)}
   <div class="spacer"></div>
   <div class="who" id="who" title=""><i class="dot"></i><span id="who-txt"></span></div>
   <a class="iconbtn login" id="btn-login" href="index.html?next=SAF_Portail.html" hidden></a>
+  <button class="iconbtn" id="btn-logout" type="button" hidden></button>
   <button class="iconbtn" id="btn-lang" type="button" aria-label="Langue / Language">EN</button>
   <button class="iconbtn" id="btn-theme" type="button" aria-label="Thème">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -176,14 +259,34 @@ a.sys:hover{border-color:var(--line-strong);background:var(--card-hover)}
       <a class="iconbtn" id="gate-btn" href="index.html?next=SAF_Portail.html"></a>
       <a class="gate-report" href="SAF_Report.html" data-i18n="gate_report"></a>
     </div>
+    <!-- Personnel SAF : connexion par code reçu par e-mail (19.10.2026) -->
+    <div class="otp" id="otp" hidden>
+      <h2 data-i18n="otp_title">Personnel SAF</h2>
+      <p class="gate-otp-intro" data-i18n="otp_intro"></p>
+      <div id="otp-step1">
+        <input type="email" id="otp-email" autocomplete="email" data-i18n-ph="otp_email_ph" aria-label="E-mail">
+        <button class="btn primary" type="button" id="otp-send" data-i18n="otp_send"></button>
+      </div>
+      <div id="otp-step2" hidden>
+        <p id="otp-sent" style="margin:0 0 10px"></p>
+        <input class="code" id="otp-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="Code">
+        <button class="btn primary" type="button" id="otp-verify" data-i18n="otp_verify"></button>
+        <button class="alt" type="button" id="otp-back" data-i18n="otp_back"></button>
+      </div>
+      <p class="derr" id="otp-err" role="alert"></p>
+    </div>
   </div>
 </div>
 <div class="shell">
   <nav class="side" aria-label="Navigation">
     <h4 data-i18n="nav_org">Organisation</h4>
-    <a href="#" aria-current="page">
+    <a href="#" aria-current="page" data-nav="systems">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
       <span data-i18n="nav_systems">Systèmes</span>
+    </a>
+    <a href="#docs" data-nav="docs" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>
+      <span data-i18n="nav_docs">Documents</span>
     </a>
     <a href="SAF_Report.html">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17.5v.5"/></svg>
@@ -197,6 +300,7 @@ a.sys:hover{border-color:var(--line-strong);background:var(--card-hover)}
   </nav>
 
   <main>
+    <section class="docs" id="docs" hidden aria-label="Documents"></section>
     <div class="head">
       <div>
         <h1 data-i18n="title">Systèmes</h1>
@@ -233,37 +337,56 @@ a.sys:hover{border-color:var(--line-strong);background:var(--card-hover)}
    roles (facultatif) = carte affichée seulement pour ces rôles de
    user_roles. Confort d'interface : l'accès réel est décidé par la RLS.
    ================================================================ */
+/* ================================================================
+   ADRESSE DU SMS — SEULE LIGNE À ADAPTER (20.10.2026)
+   Le portail est publié depuis son propre dépôt GitHub (SAF-Portail) :
+   le SMS et le suivi flotte sont ailleurs. Indiquez ici l'adresse du
+   dossier du SMS, telle qu'affichée par le navigateur, avec le « / » final.
+   ================================================================ */
+const SAF_SMS_URL = './';   /* portail publié dans le même site que le SMS : liens relatifs, connexion partagée */
+const SAF_SMS_HOME = SAF_SMS_URL + 'index.html';
+
 const SAF_SYSTEMS = [
   { id:'sms', color:'#e3a33b', icon:'shield',
     name:{fr:'Safety Management System', en:'Safety Management System'},
     desc:{fr:'Registre des risques, journal des occurrences, Compliance Monitoring et appendices OMM.',
           en:'Risk register, occurrence log, compliance monitoring and OMM appendices.'},
-    url:'index.html' },
-  { id:'training', color:'#5b9cf0', icon:'cap',
-    name:{fr:'OPS', en:'OPS'},
-    desc:{fr:'Suivi des formations, contrôles et validités des équipages.',
-          en:'Crew training, checks and currency tracking.'},
-    url:'https://saf-international-crew-training.netlify.app/' },
+    url:SAF_SMS_HOME,
+    reader:{ name:{fr:'Registre des risques SMS', en:'SMS risk register'},
+             desc:{fr:'Consultation du registre des risques du Safety Management System.', en:'Read-only access to the Safety Management System risk register.'} } },
+  { id:'ops', color:'#547db8', icon:'plane',
+    name:{fr:'OPS — Opérations aériennes', en:'OPS — Flight Operations'},
+    desc:{fr:'Crew Training : suivi des formations, contrôles et validités des équipages. D’autres modules OPS pourront être ajoutés ultérieurement.',
+          en:'Crew Training: crew training, checks and currency tracking. Additional OPS modules may be added later.'},
+    url:'https://saf-international-crew-training.netlify.app/',
+    roles:['admin','editor'] },
+  { id:'ops-main', color:'#648cc4', icon:'plane',
+    name:{fr:'OPS — Portail opérations', en:'OPS — Operations portal'},
+    desc:{fr:'Accès à l’application SAF International OPS pour la gestion des opérations aériennes.',
+          en:'Access to the SAF International OPS application for flight operations management.'},
+    url:'https://saf-international-ops.netlify.app/',
+    roles:['admin','editor'] },
   { id:'roster', color:'#d9773a', icon:'hook',
     name:{fr:'Roster levage', en:'HESLO roster'},
     desc:{fr:'Planning des équipages et des appareils pour les chantiers héliportés.',
           en:'Crew and aircraft planning for external-load work.'},
-    url:'' },
+    url:'', roles:['admin','editor'] },
   { id:'fire', color:'#e05a4f', icon:'flame',
     name:{fr:'Lutte incendie', en:'Firefighting'},
     desc:{fr:'Missions feux de forêt, Cascade Bucket et opérations de nuit NVIS.',
           en:'Wildfire missions, Cascade Bucket and NVIS night operations.'},
-    url:'' },
+    url:'', roles:['admin','editor'] },
   { id:'retex', color:'#c9824a', icon:'notes',
     name:{fr:'RETEX Feux 2026', en:'Fire Season 2026 debrief'},
     desc:{fr:'Retours d\u2019expérience des équipages après la saison feux 2026 : analyse des rapports et exports CSV / PDF.',
           en:'Crew lessons learned from the 2026 fire season: report analysis and CSV / PDF exports.'},
-    url:'https://xbdm73.github.io/SAF-Retex/admin.html' },
+    url:'https://xbdm73.github.io/SAF-Retex/admin.html',
+    roles:['admin','editor'] },
   { id:'fleet', color:'#3fb5a6', icon:'pin',
     name:{fr:'Suivi flotte', en:'Fleet tracking'},
     desc:{fr:'Position en temps réel de HB-ZIP, HB-ZKN et F-HRTS.',
           en:'Live position of HB-ZIP, HB-ZKN and F-HRTS.'},
-    url:'SAF_Suivi_Flotte.html',
+    url:SAF_SMS_URL + 'SAF_Suivi_Flotte.html',
     roles:['admin','editor','reader'] }
 ];
 
@@ -273,6 +396,7 @@ const SAF_SUPABASE_URL = 'https://'+SAF_SUPABASE_REF+'.supabase.co';
 const SAF_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q';
 
 const ICONS = {
+  plane:'<path d="M17 21v-8l-5-3V3a2 2 0 0 0-4 0v7l-5 3v8l7-2 7 2z"/>',
   shield:'<path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3z"/><path d="m9 12 2 2 4-4"/>',
   cap:'<path d="M2 9l10-5 10 5-10 5L2 9z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/>',
   hook:'<path d="M12 2v9"/><path d="M8 6h8"/><path d="M12 11a4 4 0 1 1-4 4"/>',
@@ -282,7 +406,8 @@ const ICONS = {
 };
 
 const T = {
-  fr:{ nav_org:'Organisation', nav_systems:'Systèmes', nav_report:'Faire un signalement', bases:'Sion · Albertville', gate_title:'Accès réservé', gate_anon:'Le portail SAF est réservé aux comptes SMS administrateur, éditeur et lecteur. Connectez-vous avec votre compte SMS.', gate_denied:'Ce compte n\u2019a pas accès au portail. Vous pouvez ouvrir directement le SMS.', gate_wait:'Vérification de l\u2019accès…', gate_login:'Se connecter', gate_sms:'Ouvrir le SMS', gate_report:'Faire un signalement (ouvert à tous)',
+  fr:{ nav_docs:'Documents', logout:'Déconnexion', otp_title:'Personnel SAF', otp_intro:'Saisissez votre adresse e-mail : vous recevrez un code de connexion à 6 chiffres. Vous aurez accès aux documents de la compagnie, au suivi de la flotte et au registre des risques.', otp_email_ph:'prenom.nom@exemple.com', otp_send:'Recevoir un code', otp_verify:'Se connecter', otp_back:'Changer d\u2019adresse ou renvoyer un code', otp_bad_email:'Adresse e-mail invalide.', otp_sent:'Code envoyé à {e}. Il est valable quelques minutes.', otp_unknown:'Adresse non enregistrée. Contactez le Safety Manager pour obtenir un accès.', otp_rate:'Trop de demandes : patientez une minute avant de redemander un code.', otp_bad_code:'Saisissez les 6 chiffres du code.', otp_wrong:'Code incorrect ou expiré.',
+       nav_org:'Organisation', nav_systems:'Systèmes', nav_report:'Faire un signalement', bases:'Sion · Albertville', gate_title:'Accès réservé', gate_anon:'Portail réservé au personnel SAF. Administrateurs et éditeurs SMS : connexion avec votre compte SMS.', gate_denied:'Ce compte n\u2019a pas accès au portail. Vous pouvez ouvrir directement le SMS.', gate_wait:'Vérification de l\u2019accès…', gate_login:'Connexion compte SMS', gate_sms:'Ouvrir le SMS', gate_report:'Faire un signalement (ouvert à tous)',
        title:'Systèmes', subtitle:'Choisissez le système dans lequel vous voulez travailler.',
        search:'Rechercher un système', note:'Chaque système gère sa propre connexion et ses droits d\u2019accès.',
        s_ok:'En ligne', s_err:'Injoignable', s_pending:'Vérification', s_cfg:'À configurer', s_ext:'Externe',
@@ -290,7 +415,8 @@ const T = {
        empty:'Aucun système ne correspond à « {q} ».',
        anon:'Non connecté', session:'Session SMS', expired:'Session SMS expirée', login:'Se connecter',
        ago_now:'à l\u2019instant', ago_m:'il y a {n} min', ago_h:'il y a {n} h', ago_d:'il y a {n} j' },
-  en:{ nav_org:'Organisation', nav_systems:'Systems', nav_report:'Report an occurrence', bases:'Sion · Albertville', gate_title:'Restricted access', gate_anon:'The SAF portal is restricted to SMS administrator, editor and reader accounts. Sign in with your SMS account.', gate_denied:'This account has no access to the portal. You can open the SMS directly.', gate_wait:'Checking access…', gate_login:'Sign in', gate_sms:'Open the SMS', gate_report:'Report an occurrence (open to all)',
+  en:{ nav_docs:'Documents', logout:'Sign out', otp_title:'SAF staff', otp_intro:'Enter your e-mail address: you will receive a 6-digit sign-in code. You will get access to company documents, fleet tracking and the risk register.', otp_email_ph:'firstname.lastname@example.com', otp_send:'Get a code', otp_verify:'Sign in', otp_back:'Change address or resend a code', otp_bad_email:'Invalid e-mail address.', otp_sent:'Code sent to {e}. It is valid for a few minutes.', otp_unknown:'Address not registered. Contact the Safety Manager to get access.', otp_rate:'Too many requests: wait a minute before asking for a new code.', otp_bad_code:'Enter the 6 digits of the code.', otp_wrong:'Incorrect or expired code.',
+       nav_org:'Organisation', nav_systems:'Systems', nav_report:'Report an occurrence', bases:'Sion · Albertville', gate_title:'Restricted access', gate_anon:'Portal restricted to SAF staff. SMS administrators and editors: sign in with your SMS account.', gate_denied:'This account has no access to the portal. You can open the SMS directly.', gate_wait:'Checking access…', gate_login:'SMS account sign-in', gate_sms:'Open the SMS', gate_report:'Report an occurrence (open to all)',
        title:'Systems', subtitle:'Choose the system you want to work in.',
        search:'Search systems', note:'Each system handles its own sign-in and access rights.',
        s_ok:'Online', s_err:'Unreachable', s_pending:'Checking', s_cfg:'Not configured', s_ext:'External',
@@ -337,6 +463,7 @@ function applyLang(){
   document.querySelectorAll('[data-i18n-ph]').forEach(el=>el.placeholder=t(el.dataset.i18nPh));
   document.getElementById('btn-lang').textContent = lang==='fr'?'EN':'FR';
   renderWho(); render(); applyGate();
+  if(typeof window.safDocsRender==='function') window.safDocsRender();
 }
 
 /* ---------- session Supabase du SMS (lecture locale uniquement) ---------- */
@@ -348,10 +475,12 @@ function renderWho(){
   const exp   = s && (s.expires_at || s.currentSession?.expires_at);
   const login=document.getElementById('btn-login');
   login.textContent=t('login'); login.hidden=true;
+  const lo=document.getElementById('btn-logout'); if(lo){ lo.textContent=t('logout'); lo.hidden=true; }
   box.classList.remove('on');
   if(!email){ txt.textContent=t('anon'); box.title=''; login.hidden=false; return; }
   if(exp && exp*1000 < Date.now()){ txt.textContent=t('expired'); box.title=email; login.hidden=false; return; }
   box.classList.add('on'); txt.textContent=email; box.title=t('session')+' : '+email;
+  if(lo) lo.hidden=false;
 }
 
 /* ---------- rôle SMS (pour les cartes réservées) ---------- */
@@ -393,11 +522,10 @@ async function resolveRole(){
   let role = 'anon';
   if(ses){
     try{
-      const q = SAF_SUPABASE_URL+'/rest/v1/user_roles?select=role&limit=1&user_email=ilike.'
-              + encodeURIComponent(String(ses.email).trim());
-      const r = await fetch(q,{ headers:{ apikey:SAF_SUPABASE_ANON, Authorization:'Bearer '+ses.token }, cache:'no-store' });
-      const rows = r.ok ? await r.json() : [];
-      role = rows && rows[0] && rows[0].role ? String(rows[0].role).toLowerCase() : 'none';
+      // Vérification du rôle en base : droits SMS ou personnel actif.
+      const result = await getClient().rpc('portal_role');
+      if(result.error) throw result.error;
+      role = result.data ? String(result.data).toLowerCase() : 'none';
     }catch(e){ role = 'none'; }
   }
   if(seq !== roleSeq) return;     // une lecture plus récente a pris le relais
@@ -405,22 +533,25 @@ async function resolveRole(){
 }
 /* Portail réservé aux rôles SMS admin, editor et reader. Confort d'interface :
    les données restent protégées par la RLS de chaque système. */
-const SAF_PORTAL_ROLES = ['admin','editor','reader'];
+const SAF_PORTAL_ROLES = ['admin','editor','reader','staff'];   /* staff = personnel : bloc Documents seul (19.10.2026) */
 function applyGate(){
   const b=document.body, title=document.getElementById('gate-title'),
         msg=document.getElementById('gate-msg'), btn=document.getElementById('gate-btn');
   title.textContent=t('gate_title');
+  b.classList.toggle('is-staff', userRole==='staff');
+  const otp=document.getElementById('otp'); if(otp) otp.hidden = userRole!=='anon';
+  if(typeof window.safDocsOnRole==='function') window.safDocsOnRole(userRole);
   if(userRole && SAF_PORTAL_ROLES.includes(userRole)){ b.classList.add('granted'); b.classList.remove('gated'); return; }
   b.classList.remove('granted'); b.classList.add('gated');
   if(userRole===null){ msg.textContent=t('gate_wait'); btn.hidden=true; return; }
   btn.hidden=false;
-  if(userRole==='anon'){ msg.textContent=t('gate_anon'); btn.textContent=t('gate_login'); btn.href='index.html?next=SAF_Portail.html'; }
-  else { msg.textContent=t('gate_denied'); btn.textContent=t('gate_sms'); btn.href='index.html'; }
+  if(userRole==='anon'){ msg.textContent=t('gate_anon'); btn.textContent=t('gate_login'); btn.href=SAF_SMS_HOME+'?next=SAF_Portail.html'; }
+  else { msg.textContent=t('gate_denied'); btn.textContent=t('gate_sms'); btn.href=SAF_SMS_HOME; }
 }
 
 /* Carte sans « roles » : visible par tous. Avec « roles » : masquée tant que
    le rôle n'est pas lu, puis affichée seulement s'il figure dans la liste. */
-const visible = s => !s.roles || (userRole && s.roles.includes(userRole));
+const visible = s => userRole!=='staff' && (!s.roles || (userRole && s.roles.includes(userRole)));
 
 /* ---------- état de chaque système ---------- */
 async function check(sys){
@@ -442,12 +573,13 @@ function card(s){
   const label = {ok:t('s_ok'),err:t('s_err'),pending:t('s_pending'),cfg:t('s_cfg'),ext:t('s_ext')}[st];
   const path = s.url ? s.url.replace(/^https?:\/\//,'') : t('notcfg');
   const last = recent[s.id] ? t('opened')+' '+ago(recent[s.id]) : t('never');
+  const alt = (userRole==='reader' && s.reader) ? s.reader : null, nm = alt ? alt.name : s.name, ds = alt ? alt.desc : s.desc;
   const inner = `
     <div class="sys-top">
       <span class="sys-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[s.icon]||ICONS.shield}</svg></span>
-      <div><p class="sys-name">${esc(s.name[lang]||s.name.fr)}</p><p class="sys-path">${esc(path)}</p></div>
+      <div><p class="sys-name">${esc(nm[lang]||nm.fr)}</p><p class="sys-path">${esc(path)}</p></div>
     </div>
-    <p class="sys-desc">${esc(s.desc[lang]||s.desc.fr)}</p>
+    <p class="sys-desc">${esc(ds[lang]||ds.fr)}</p>
     <div class="sys-foot"><span class="status" data-s="${st}"><i></i>${label}</span><span>${esc(last)}</span></div>`;
   return s.url
     ? `<a class="sys" style="--c:${s.color}" href="${esc(s.url)}" data-id="${s.id}">${inner}</a>`
@@ -485,6 +617,11 @@ document.addEventListener('keydown',e=>{
 document.getElementById('v-grid').onclick=()=>{ view='grid'; store.set('saf_portal_view',view); render(); };
 document.getElementById('v-list').onclick=()=>{ view='list'; store.set('saf_portal_view',view); render(); };
 document.getElementById('btn-lang').onclick=()=>{ lang=lang==='fr'?'en':'fr'; store.set('saf_portal_lang',lang); applyLang(); };
+document.getElementById('btn-logout').onclick=async()=>{
+  try{ const c=getClient(); if(c) await c.auth.signOut(); }catch(e){}
+  try{ localStorage.removeItem('sb-'+SAF_SUPABASE_REF+'-auth-token'); }catch(e){}
+  location.reload();
+};
 document.getElementById('btn-theme').onclick=()=>{
   theme = document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
   store.set('saf_portal_theme',theme); applyTheme();
@@ -493,6 +630,8 @@ window.addEventListener('storage',e=>{ if(e.key && e.key.startsWith('sb-')){ ren
 window.addEventListener('pageshow',()=>{ renderWho(); render(); resolveRole(); });
 
 /* ---------- démarrage ---------- */
+document.getElementById('btn-login').href = SAF_SMS_HOME + '?next=SAF_Portail.html';
+document.getElementById('gate-btn').href = SAF_SMS_HOME + '?next=SAF_Portail.html';
 applyTheme(); applyLang();
 SAF_SYSTEMS.forEach(check);
 resolveRole();
@@ -523,5 +662,597 @@ resolveRole();
   } catch(e){}
 })();
 </script>
+<script id="saf-docs-portal">
+/* ================================================================
+   DOCUMENTS & LECTURES OBLIGATOIRES — 19.10.2026
+   PDF exportés (Web Manuals ou autre) déposés dans Supabase Storage
+   (espace privé « portal-docs ») ; accusés « lu et compris » dans
+   portal_reads, horodatés et figés par la base.
+   Rôles : staff (personnel, connexion par code e-mail) — lecture + accusé ;
+           admin / editor — idem + publication, suivi, relances, export ;
+           reader (compte partagé) — consultation seule, sans accusé.
+   ================================================================ */
+(function(){
+  'use strict';
+  const BUCKET = 'portal-docs', MAX = 50 * 1024 * 1024, FN_STAFF = 'saf-staff-admin';
+  const D = {
+    fr:{
+      i_open:'⤒ Importer une liste', i_close:'Fermer l’import', i_intro:'Collez une liste d’adresses copiée depuis Outlook ("Nom" <adresse>; …) ou des lignes « Nom ; e-mail ; fonction ». Vérifiez l’aperçu, complétez les noms manquants, puis créez les accès.',
+      i_paste:'Liste à importer', i_fn:'Fonction par défaut (facultatif)', i_fn_ph:'ex. Spécialiste de tâches', i_parse:'Analyser la liste',
+      i_ok:'Prêt', i_exists:'Déjà inscrit — ignoré', i_dup:'Doublon — ignoré', i_bad:'Adresse invalide', i_noname:'Nom à compléter', i_guess:'Nom déduit de l’adresse — à vérifier',
+      i_run:'Créer {n} accès', i_running:'Création {i} / {n}…', i_done:'Import terminé : {ok} créé(s), {ko} en erreur, {skip} ignoré(s).', i_created:'Créé', i_existing:'Compte existant — inscrit', i_err:'Erreur',
+      i_none:'Aucune adresse trouvée dans le texte collé.', i_include:'Inclure', i_status:'État',
+      h:'Documents & lectures', sub:'Mémos, Safety Alerts, communications et documents de la compagnie.',
+      tab_todo:'À lire', tab_all:'Documents', tab_track:'Suivi des lectures', tab_people:'Personnel',
+      publish:'＋ Publier un document', loading:'Chargement des documents…', err_load:'Impossible de charger les documents',
+      none_todo:'Aucune lecture en attente. Merci !', none_all:'Aucun document publié.', none_match:'Aucun document ne correspond.',
+      search:'Rechercher un document', all_types:'Tous les types',
+      ref:'Réf.', rev:'Rév.', published:'publié le', due:'à lire avant le', late:'en retard',
+      read_on:'Lu le {d}', to_read:'À lire', consult:'Consultation', open:'Lire', open_tab:'Ouvrir dans un onglet',
+      viewer_loading:'Ouverture du document…', viewer_err:'Le document ne peut pas être affiché',
+      ack_label:'J’ai lu et compris ce document (révision {r}).', ack_btn:'Confirmer la lecture',
+      ack_done:'✓ Lu et compris le {d} — révision {r}', ack_ok:'Lecture enregistrée', ack_err:'Échec de l’enregistrement',
+      ack_shared:'Ce compte n’est pas inscrit au personnel : l’accusé de lecture n’est pas possible.',
+      ack_none:'Document en consultation : pas d’accusé de lecture demandé.', close:'Fermer',
+      f_title:'Titre', f_type:'Type', f_ref:'Référence (ex. SA-005, MEMO-2026-12)', f_rev:'Révision', f_desc:'Résumé (facultatif)',
+      f_mand:'Lecture obligatoire (« lu et compris » demandé)', f_due:'À lire avant le (facultatif)', f_file:'Fichier PDF (50 Mo maximum)',
+      f_supersedes:'Remplace (nouvelle révision d’un document publié)', f_none:'— aucun —', f_submit:'Publier',
+      f_uploading:'Envoi du PDF…', f_saving:'Enregistrement…', f_ok:'Document publié',
+      e_title:'Indiquer un titre.', e_rev:'Indiquer la révision.', e_file:'Choisir un fichier PDF.', e_pdf:'Le fichier doit être un PDF.',
+      e_size:'Le fichier dépasse 50 Mo.', e_mfa:'Publier exige une connexion SMS avec second facteur (ouvrez le SMS, connectez-vous, puis revenez).',
+      t_doc:'Document', t_readers:'Lu par', t_progress:'Avancement', t_detail:'Détail', t_mand:'Obligatoire', t_status:'Statut',
+      withdrawn:'Retiré', active:'Publié', readers:'Ont lu', missing:'N’ont pas encore lu', nobody:'Personne', everybody:'Tout le monde a lu.',
+      csv:'CSV', pdf:'PDF', remind:'Relancer par e-mail', withdraw:'Retirer le document', withdraw_q:'Retirer « {t} » ? Il ne sera plus proposé à la lecture. Les accusés déjà enregistrés sont conservés.',
+      withdraw_ok:'Document retiré', export_all:'Exporter tous les accusés (CSV)',
+      p_name:'Nom', p_email:'E-mail', p_fn:'Fonction', p_state:'Accès', p_add:'＋ Ajouter', p_on:'Actif', p_off:'Désactivé',
+      p_disable:'Désactiver', p_enable:'Réactiver', p_pending:'Lectures en attente', p_intro:'Chaque personne ajoutée ici reçoit un compte lecteur individuel : connexion au portail par code e-mail, puis accès aux documents (avec accusé de lecture), au suivi de la flotte et au registre des risques du SMS en consultation.',
+      p_ok:'Accès créé pour {e}', p_ok_existing:'{e} a déjà un compte : son rôle est conservé, ajouté au personnel attendu.', p_dis:'Accès désactivé pour {e}',
+      p_admin_only:'Seul un administrateur peut créer ou désactiver un accès.',
+      remind_subj:'Lecture obligatoire : {t}', remind_body:'Bonjour,\n\nMerci de lire et de confirmer la lecture du document « {t} » (révision {r}) sur le portail SAF :\n{u}\n\nConnexion : votre adresse e-mail, puis le code reçu.\n\nMerci.',
+      mail_none:'Personne à relancer.', reader_note:'Ce compte n’est pas inscrit au personnel : consultation seule, sans accusé de lecture.' },
+    en:{
+      i_open:'⤒ Import a list', i_close:'Close import', i_intro:'Paste a list of addresses copied from Outlook ("Name" <address>; …) or lines “Name ; e-mail ; function”. Check the preview, fill in missing names, then create the access accounts.',
+      i_paste:'List to import', i_fn:'Default function (optional)', i_fn_ph:'e.g. Task specialist', i_parse:'Analyse the list',
+      i_ok:'Ready', i_exists:'Already registered — skipped', i_dup:'Duplicate — skipped', i_bad:'Invalid address', i_noname:'Name required', i_guess:'Name taken from the address — please check',
+      i_run:'Create {n} accounts', i_running:'Creating {i} / {n}…', i_done:'Import finished: {ok} created, {ko} failed, {skip} skipped.', i_created:'Created', i_existing:'Existing account — registered', i_err:'Error',
+      i_none:'No address found in the pasted text.', i_include:'Include', i_status:'Status',
+      h:'Documents & reading', sub:'Company memos, Safety Alerts, communications and documents.',
+      tab_todo:'To read', tab_all:'Documents', tab_track:'Reading status', tab_people:'Staff',
+      publish:'＋ Publish a document', loading:'Loading documents…', err_load:'Documents could not be loaded',
+      none_todo:'Nothing left to read. Thank you!', none_all:'No document published.', none_match:'No document matches.',
+      search:'Search documents', all_types:'All types',
+      ref:'Ref.', rev:'Rev.', published:'published', due:'read by', late:'overdue',
+      read_on:'Read {d}', to_read:'To read', consult:'For reference', open:'Read', open_tab:'Open in a new tab',
+      viewer_loading:'Opening the document…', viewer_err:'The document cannot be displayed',
+      ack_label:'I have read and understood this document (revision {r}).', ack_btn:'Confirm reading',
+      ack_done:'✓ Read and understood on {d} — revision {r}', ack_ok:'Reading recorded', ack_err:'Could not record the reading',
+      ack_shared:'This account is not registered as staff: acknowledgement is not possible.',
+      ack_none:'Reference document: no reading acknowledgement required.', close:'Close',
+      f_title:'Title', f_type:'Type', f_ref:'Reference (e.g. SA-005, MEMO-2026-12)', f_rev:'Revision', f_desc:'Summary (optional)',
+      f_mand:'Mandatory reading (“read and understood” required)', f_due:'Read by (optional)', f_file:'PDF file (50 MB maximum)',
+      f_supersedes:'Replaces (new revision of a published document)', f_none:'— none —', f_submit:'Publish',
+      f_uploading:'Uploading the PDF…', f_saving:'Saving…', f_ok:'Document published',
+      e_title:'Enter a title.', e_rev:'Enter the revision.', e_file:'Choose a PDF file.', e_pdf:'The file must be a PDF.',
+      e_size:'The file exceeds 50 MB.', e_mfa:'Publishing requires an SMS sign-in with second factor (open the SMS, sign in, then come back).',
+      t_doc:'Document', t_readers:'Read by', t_progress:'Progress', t_detail:'Details', t_mand:'Mandatory', t_status:'Status',
+      withdrawn:'Withdrawn', active:'Published', readers:'Have read', missing:'Have not read yet', nobody:'Nobody', everybody:'Everybody has read it.',
+      csv:'CSV', pdf:'PDF', remind:'Send reminder e-mail', withdraw:'Withdraw document', withdraw_q:'Withdraw “{t}”? It will no longer be offered for reading. Recorded acknowledgements are kept.',
+      withdraw_ok:'Document withdrawn', export_all:'Export all acknowledgements (CSV)',
+      p_name:'Name', p_email:'E-mail', p_fn:'Function', p_state:'Access', p_add:'＋ Add', p_on:'Active', p_off:'Disabled',
+      p_disable:'Disable', p_enable:'Re-enable', p_pending:'Pending readings', p_intro:'Each person added here gets an individual reader account: portal sign-in with an e-mail code, then access to documents (with reading acknowledgement), fleet tracking and the SMS risk register (read-only).',
+      p_ok:'Access created for {e}', p_ok_existing:'{e} already has an account: added to expected staff.', p_dis:'Access disabled for {e}',
+      p_admin_only:'Only an administrator can create or disable access.',
+      remind_subj:'Mandatory reading: {t}', remind_body:'Hello,\n\nPlease read and confirm the document “{t}” (revision {r}) on the SAF portal:\n{u}\n\nSign-in: your e-mail address, then the code you receive.\n\nThank you.',
+      mail_none:'Nobody to remind.', reader_note:'This account is not registered as staff: reading only, no acknowledgement.' }
+  };
+  const TYPES = {
+    safety_alert:{ c:'#e0605a', fr:'Safety Alert',  en:'Safety Alert' },
+    memo:        { c:'#d9a53a', fr:'Mémo',          en:'Memo' },
+    communication:{c:'#547db8', fr:'Communication', en:'Communication' },
+    document:    { c:'#3fb5a6', fr:'Document',      en:'Document' }
+  };
+  const L = () => (typeof lang !== 'undefined' && D[lang]) ? lang : 'fr';
+  const d = (k, v) => { let s = D[L()][k] || D.fr[k] || k; if(v) for(const x in v) s = s.split('{' + x + '}').join(v[x]); return s; };
+  const h = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const pad = n => (n < 10 ? '0' : '') + n;
+  const fd = iso => { if(!iso) return ''; const x = new Date(iso); return isNaN(x) ? String(iso) : pad(x.getDate()) + '/' + pad(x.getMonth()+1) + '/' + x.getFullYear(); };
+  const fdt = iso => { if(!iso) return ''; const x = new Date(iso); return isNaN(x) ? String(iso) : fd(iso) + ' ' + pad(x.getHours()) + ':' + pad(x.getMinutes()); };
+  const today = () => { const x = new Date(); return x.getFullYear() + '-' + pad(x.getMonth()+1) + '-' + pad(x.getDate()); };
+  const typeLbl = k => (TYPES[k] || TYPES.document)[L()];
+  const typeBadge = k => '<span class="dtype" style="--tc:' + (TYPES[k] || TYPES.document).c + '">' + h(typeLbl(k)) + '</span>';
+  const C = () => (typeof getClient === 'function') ? getClient() : null;
+
+  const S = { role:null, uid:null, email:null, aal:null, person:null, docs:[], reads:[], my:{}, people:[], tab:null, q:'', ftype:'', state:'idle', err:'', impOpen:false, imp:[], impMsg:'', impBusy:false };
+  /* Accusé de lecture : toute personne inscrite au personnel (portal_people, actif),
+     quel que soit son rôle. Le lecteur partagé sms@ n'y est pas inscrit : consultation seule. */
+  const canAck = () => !!(S.person && S.person.active);
+  const isMgr = () => ['admin','editor'].includes(S.role);
+  const isAdmin = () => S.role === 'admin';
+  const published = () => S.docs.filter(x => x.status === 'published');
+  const pending = () => canAck() ? published().filter(x => x.mandatory && !S.my[x.id]) : [];
+  const activePeople = () => S.people.filter(p => p.active);
+
+  function toast(msg, bad){
+    let el = document.getElementById('dtoast');
+    if(!el){ el = document.createElement('div'); el.id = 'dtoast'; el.setAttribute('role', 'status');
+      el.style.cssText = 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:90vw;';
+      document.body.appendChild(el); }
+    el.textContent = msg; el.style.background = bad ? 'var(--err)' : 'var(--text)'; el.style.color = bad ? '#fff' : 'var(--bg)'; el.style.display = 'block';
+    clearTimeout(el._t); el._t = setTimeout(() => { el.style.display = 'none'; }, 4200);
+  }
+  function jwtAal(tok){ try{ const p = tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'); return JSON.parse(atob(p + '==='.slice((p.length + 3) % 4))).aal || null; }catch(e){ return null; } }
+
+  /* ── Chargement ───────────────────────────────────────────────── */
+  async function load(){
+    const c = C(); if(!c){ S.state = 'error'; S.err = 'Supabase'; render(); return; }
+    S.state = 'loading'; render();
+    try{
+      const ses = (await c.auth.getSession()).data.session;
+      S.uid = ses && ses.user ? ses.user.id : null; S.email = ses && ses.user ? ses.user.email : null; S.aal = ses ? jwtAal(ses.access_token) : null;
+      const r1 = await c.from('portal_docs').select('*').order('published_at', { ascending:false });
+      if(r1.error) throw r1.error;
+      S.docs = r1.data || [];
+      const r2 = await c.from('portal_reads').select('doc_id,user_id,user_email,full_name,revision,read_at').order('read_at', { ascending:true });
+      if(r2.error) throw r2.error;
+      S.reads = r2.data || []; S.my = {};
+      S.reads.forEach(r => { if(r.user_id === S.uid) S.my[r.doc_id] = r; });
+      if(isMgr()){ const r3 = await c.from('portal_people').select('*').order('full_name'); S.people = r3.error ? [] : (r3.data || []); }
+      else { const r3 = await c.from('portal_people').select('*').eq('email', String(S.email || '').toLowerCase()); S.people = r3.error ? [] : (r3.data || []); }
+      S.person = S.people.find(p => String(p.email).toLowerCase() === String(S.email || '').toLowerCase()) || null;
+      S.state = 'ready';
+      if(!S.tab) S.tab = pending().length ? 'todo' : 'all';
+    }catch(e){ S.state = 'error'; S.err = (e && e.message) || String(e); }
+    render();
+  }
+
+  /* ── Rendu ────────────────────────────────────────────────────── */
+  function docRow(x){
+    const r = S.my[x.id], late = x.mandatory && !r && x.due_date && x.due_date < today();
+    const meta = [x.reference ? h(x.reference) : '', d('rev') + ' ' + h(x.revision), d('published') + ' ' + fd(x.published_at),
+                  x.mandatory && x.due_date ? '<span class="' + (late ? 'late' : '') + '">' + d('due') + ' ' + fd(x.due_date) + (late ? ' — ' + d('late') : '') + '</span>' : '']
+                 .filter(Boolean).join(' · ');
+    const pill = x.status !== 'published' ? '<span class="pill info"><i></i>' + d('withdrawn') + '</span>'
+      : !x.mandatory ? '<span class="pill info"><i></i>' + d('consult') + '</span>'
+      : r ? '<span class="pill read"><i></i>' + d('read_on', { d:fd(r.read_at) }) + '</span>'
+      : canAck() ? '<span class="pill todo"><i></i>' + d('to_read') + '</span>' : '<span class="pill info"><i></i>' + d('to_read') + '</span>';
+    return '<div class="drow clickable" data-open="' + h(x.id) + '" tabindex="0" role="button">' + typeBadge(x.doc_type)
+      + '<div><p class="dtitle">' + h(x.title) + '</p><p class="dmeta">' + meta + '</p></div>'
+      + '<div class="dside">' + pill + '<button class="btn sm" type="button" data-open="' + h(x.id) + '">' + d('open') + '</button></div></div>';
+  }
+  function tabBtn(k, label, n){
+    return '<button type="button" role="tab" data-tab="' + k + '" aria-selected="' + (S.tab === k) + '">' + h(label)
+      + (n != null ? '<span class="count' + (n ? '' : ' zero') + '">' + n + '</span>' : '') + '</button>';
+  }
+  function render(){
+    const box = document.getElementById('docs'); if(!box) return;
+    const allowed = ['admin','editor','reader','staff'].includes(S.role);
+    box.hidden = !allowed;
+    updateBadge();
+    if(!allowed) return;
+    let html = '<div class="docs-head"><div><h2>' + d('h') + '</h2><p>' + d('sub') + '</p></div>'
+      + (isMgr() ? '<div class="docs-actions"><button class="btn primary" type="button" id="d-publish">' + d('publish') + '</button></div>' : '') + '</div>';
+    if(S.state === 'loading' || S.state === 'idle'){ box.innerHTML = html + '<div class="dempty">' + d('loading') + '</div>'; bind(); return; }
+    if(S.state === 'error'){ box.innerHTML = html + '<div class="dempty" style="color:var(--err)">' + d('err_load') + ' — ' + h(S.err) + '</div>'; bind(); return; }
+    if(!canAck() && S.tab === 'todo') S.tab = 'all';
+    if(!isMgr() && (S.tab === 'track' || S.tab === 'people')) S.tab = 'all';
+    html += '<div class="dtabs" role="tablist">'
+      + (canAck() ? tabBtn('todo', d('tab_todo'), pending().length) : '')
+      + tabBtn('all', d('tab_all'))
+      + (isMgr() ? tabBtn('track', d('tab_track')) + tabBtn('people', d('tab_people')) : '') + '</div>';
+    if(!canAck()) html += '<p class="dmeta" style="margin:-4px 0 12px">' + d('reader_note') + '</p>';
+    if(S.tab === 'todo'){
+      const list = pending().sort((a, b) => String(a.due_date || '9999').localeCompare(String(b.due_date || '9999')));
+      html += list.length ? '<div class="dlist">' + list.map(docRow).join('') + '</div>' : '<div class="dempty">' + d('none_todo') + '</div>';
+    } else if(S.tab === 'all'){
+      const q = S.q.trim().toLowerCase();
+      const list = published().filter(x => (!S.ftype || x.doc_type === S.ftype)
+        && (!q || [x.title, x.reference, x.description, x.revision].join(' ').toLowerCase().includes(q)));
+      html += '<div class="dfilters"><input type="search" id="d-q" placeholder="' + h(d('search')) + '" value="' + h(S.q) + '">'
+        + '<select id="d-type"><option value="">' + d('all_types') + '</option>' + Object.keys(TYPES).map(k => '<option value="' + k + '"' + (S.ftype === k ? ' selected' : '') + '>' + h(typeLbl(k)) + '</option>').join('') + '</select></div>';
+      html += !published().length ? '<div class="dempty">' + d('none_all') + '</div>'
+        : list.length ? '<div class="dlist">' + list.map(docRow).join('') + '</div>' : '<div class="dempty">' + d('none_match') + '</div>';
+    } else if(S.tab === 'track'){
+      html += trackHTML();
+    } else if(S.tab === 'people'){
+      html += peopleHTML();
+    }
+    box.innerHTML = html; bind();
+  }
+  function readersOf(id){ return S.reads.filter(r => r.doc_id === id); }
+  function missingOf(id){ const rd = {}; readersOf(id).forEach(r => { rd[String(r.user_email).toLowerCase()] = 1; }); return activePeople().filter(p => !rd[String(p.email).toLowerCase()]); }
+  function trackHTML(){
+    const docs = S.docs.filter(x => x.mandatory);
+    let o = '<div class="dfilters" style="justify-content:flex-end"><button class="btn sm" type="button" id="d-export-all">⤓ ' + d('export_all') + '</button></div>';
+    if(!docs.length) return o + '<div class="dempty">' + d('none_all') + '</div>';
+    const N = activePeople().length;
+    o += '<div class="dtable-wrap"><table class="dtable"><thead><tr><th>' + d('t_doc') + '</th><th>' + d('t_status') + '</th><th>' + d('t_progress') + '</th><th></th></tr></thead><tbody>';
+    docs.forEach(x => {
+      const n = N - missingOf(x.id).length, pct = N ? Math.round(n * 100 / N) : 0;
+      o += '<tr><td>' + typeBadge(x.doc_type) + ' <strong>' + h(x.title) + '</strong><div class="dmeta">' + [x.reference, d('rev') + ' ' + x.revision, x.due_date ? d('due') + ' ' + fd(x.due_date) : ''].filter(Boolean).map(h).join(' · ') + '</div></td>'
+        + '<td>' + (x.status === 'published' ? d('active') : d('withdrawn')) + '</td>'
+        + '<td><div style="display:flex;align-items:center;gap:10px"><div class="bar"><span style="width:' + pct + '%"></span></div><span class="dmeta" style="margin:0">' + n + ' / ' + N + '</span></div></td>'
+        + '<td style="text-align:right"><button class="btn sm" type="button" data-detail="' + h(x.id) + '">' + d('t_detail') + '</button></td></tr>';
+    });
+    return o + '</tbody></table></div>';
+  }
+  function peopleHTML(){
+    let o = '<p class="dmeta" style="margin:0 0 12px">' + d('p_intro') + '</p>';
+    if(isAdmin()) o += '<div class="dform" style="grid-template-columns:1fr 1fr 1fr auto;align-items:end;margin-bottom:14px">'
+      + '<div><label for="p-name">' + d('p_name') + '</label><input id="p-name" autocomplete="off"></div>'
+      + '<div><label for="p-email">' + d('p_email') + '</label><input id="p-email" type="email" autocomplete="off"></div>'
+      + '<div><label for="p-fn">' + d('p_fn') + '</label><input id="p-fn" autocomplete="off"></div>'
+      + '<button class="btn primary" type="button" id="p-add">' + d('p_add') + '</button></div><p class="derr" id="p-err"></p>'
+      + '<div style="margin:-4px 0 14px"><button class="btn sm" type="button" id="imp-toggle">' + (S.impOpen ? d('i_close') : d('i_open')) + '</button></div>' + (S.impOpen ? importHTML() : '');
+    else o += '<p class="dmeta">' + d('p_admin_only') + '</p>';
+    const mand = published().filter(x => x.mandatory);
+    o += '<div class="dtable-wrap"><table class="dtable"><thead><tr><th>' + d('p_name') + '</th><th>' + d('p_email') + '</th><th>' + d('p_fn') + '</th><th>' + d('p_pending') + '</th><th>' + d('p_state') + '</th><th></th></tr></thead><tbody>';
+    S.people.forEach(p => {
+      const em = String(p.email).toLowerCase(), done = {};
+      S.reads.forEach(r => { if(String(r.user_email).toLowerCase() === em) done[r.doc_id] = 1; });
+      const pend = mand.filter(x => !done[x.id]).length;
+      o += '<tr><td><strong>' + h(p.full_name) + '</strong></td><td>' + h(p.email) + '</td><td>' + h(p.fonction || '') + '</td>'
+        + '<td>' + (p.active ? (pend ? '<span class="pill todo"><i></i>' + pend + '</span>' : '<span class="pill read"><i></i>0</span>') : '—') + '</td>'
+        + '<td>' + (p.active ? d('p_on') : d('p_off')) + '</td>'
+        + '<td style="text-align:right">' + (isAdmin() ? (p.active
+            ? '<button class="btn sm danger" type="button" data-pdis="' + h(p.email) + '">' + d('p_disable') + '</button>'
+            : '<button class="btn sm" type="button" data-pen="' + h(p.email) + '" data-pname="' + h(p.full_name) + '" data-pfn="' + h(p.fonction || '') + '">' + d('p_enable') + '</button>') : '') + '</td></tr>';
+    });
+    return o + '</tbody></table></div>';
+  }
+
+  /* ── Import d'une liste de personnes (format Outlook ou lignes Nom ; e-mail ; fonction) ── */
+  const EMAIL_RX = /^[^@\s"<>;,]+@[^@\s"<>;,]+\.[^@\s"<>;,]+$/;
+  function guessName(email){
+    const local = String(email).split('@')[0];
+    const m = local.match(/^([a-zà-ÿ]+(?:-[a-zà-ÿ]+)?)[._]([a-zà-ÿ]+(?:-[a-zà-ÿ]+)?)$/i);
+    if(!m) return '';
+    const cap = s => s.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('-');
+    return cap(m[1]) + ' ' + m[2].toUpperCase();
+  }
+  function parseList(text, defFn){
+    const out = [], rx = /(?:"([^"]*)"|([^;,<>"\n]*?))\s*<([^<>\s]+@[^<>\s]+)>/g;
+    let m, found = false;
+    while((m = rx.exec(text))){ found = true; out.push({ name:String(m[1] != null ? m[1] : m[2] || '').trim(), email:m[3], fonction:'' }); }
+    /* Lignes CSV (Excel) : colonnes avant l'e-mail = nom (Nom complet, ou Prénom + Nom),
+       première colonne non vide après l'e-mail = fonction. Les colonnes vides gardent leur place. */
+    if(!found) String(text).replace(/^\uFEFF/, '').split(/\r?\n/).forEach(line => {
+      const f = line.split(/[;\t]/).length > 1 ? line.split(/[;\t]/) : line.split(',');
+      const c = f.map(x => x.trim().replace(/^"|"$/g, '').trim());
+      const i = c.findIndex(x => x.includes('@')); if(i < 0) return;
+      out.push({ name:c.slice(0, i).filter(Boolean).join(' '), email:c[i], fonction:c.slice(i + 1).find(Boolean) || '' });
+    });
+    const known = {}; S.people.forEach(p => { if(p.active) known[String(p.email).toLowerCase()] = 1; });
+    const seen = {};
+    return out.map(r => {
+      r.email = String(r.email).trim().toLowerCase();
+      if(!r.fonction) r.fonction = defFn || '';
+      if(!r.name || r.name.includes('@')){ r.name = guessName(r.email); r.guess = !!r.name; }
+      if(!EMAIL_RX.test(r.email)) r.st = 'bad';
+      else if(seen[r.email]) r.st = 'dup';
+      else if(known[r.email]) r.st = 'exists';
+      else r.st = 'ok';
+      seen[r.email] = 1;
+      r.inc = r.st === 'ok';
+      return r;
+    });
+  }
+  function impReady(r){ return r.inc && r.st === 'ok' && String(r.name || '').trim().length >= 2; }
+  function importHTML(){
+    let o = '<div style="border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:16px;background:var(--card)">'
+      + '<p class="dmeta" style="margin:0 0 10px">' + d('i_intro') + '</p>'
+      + '<div class="dform"><div class="full"><label for="imp-text">' + d('i_paste') + '</label><textarea id="imp-text" style="height:90px" ' + (S.impBusy ? 'disabled' : '') + '></textarea></div>'
+      + '<div><label for="imp-fn">' + d('i_fn') + '</label><input id="imp-fn" placeholder="' + h(d('i_fn_ph')) + '" ' + (S.impBusy ? 'disabled' : '') + '></div>'
+      + '<div style="align-self:end"><button class="btn" type="button" id="imp-parse" ' + (S.impBusy ? 'disabled' : '') + '>' + d('i_parse') + '</button></div></div>';
+    if(S.imp.length){
+      const n = S.imp.filter(impReady).length;
+      const lbl = { ok:d('i_ok'), exists:d('i_exists'), dup:d('i_dup'), bad:d('i_bad'), created:d('i_created'), existing:d('i_existing'), err:d('i_err') };
+      o += '<div class="dtable-wrap" style="margin-top:12px"><table class="dtable"><thead><tr><th>' + d('i_include') + '</th><th>' + d('p_name') + '</th><th>' + d('p_email') + '</th><th>' + d('p_fn') + '</th><th>' + d('i_status') + '</th></tr></thead><tbody>';
+      S.imp.forEach((r, i) => {
+        const done = ['created','existing','err'].includes(r.st), dis = (r.st !== 'ok' || S.impBusy) ? ' disabled' : '';
+        const st = done ? lbl[r.st] + (r.detail ? ' — ' + r.detail : '')
+          : r.st !== 'ok' ? lbl[r.st]
+          : String(r.name || '').trim().length < 2 ? '<span style="color:var(--err)">' + d('i_noname') + '</span>'
+          : r.guess ? '<span style="color:var(--warn)">' + d('i_guess') + '</span>' : lbl.ok;
+        const col = r.st === 'created' || r.st === 'existing' ? 'var(--ok)' : r.st === 'err' || r.st === 'bad' ? 'var(--err)' : 'inherit';
+        o += '<tr><td><input type="checkbox" data-iinc="' + i + '"' + (r.inc ? ' checked' : '') + dis + '></td>'
+          + '<td><input data-iname="' + i + '" value="' + h(r.name) + '" style="height:30px;width:100%;min-width:150px;padding:0 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text)"' + dis + '></td>'
+          + '<td>' + h(r.email) + '</td>'
+          + '<td><input data-ifn="' + i + '" value="' + h(r.fonction) + '" style="height:30px;width:100%;min-width:120px;padding:0 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text)"' + dis + '></td>'
+          + '<td style="color:' + col + '">' + st + '</td></tr>';
+      });
+      o += '</tbody></table></div><div class="dfoot" style="justify-content:space-between;align-items:center"><span class="dmeta" style="margin:0" id="imp-msg">' + h(S.impMsg) + '</span>'
+        + '<button class="btn primary" type="button" id="imp-run"' + (n && !S.impBusy ? '' : ' disabled') + '>' + d('i_run', { n:n }) + '</button></div>';
+    }
+    return o + '</div>';
+  }
+  async function runImport(){
+    if(S.aal !== 'aal2'){ S.impMsg = d('e_mfa'); render(); return; }
+    const todo = S.imp.filter(impReady); if(!todo.length) return;
+    S.impBusy = true; let ok = 0, ko = 0;
+    for(let k = 0; k < todo.length; k++){
+      const r = todo[k]; S.impMsg = d('i_running', { i:k + 1, n:todo.length }); render();
+      try{
+        const res = await C().functions.invoke(FN_STAFF, { body:{ action:'create', email:r.email, full_name:String(r.name).trim(), fonction:String(r.fonction || '').trim() } });
+        if(res.error) throw res.error;
+        const data = res.data || {}; if(data.error) throw new Error(data.error + (data.detail ? ' — ' + data.detail : ''));
+        r.st = data.account === 'existing' ? 'existing' : 'created'; r.inc = false; ok++;
+      }catch(e){ r.st = 'err'; r.detail = (e && e.message) || String(e); ko++; }
+    }
+    const skip = S.imp.length - todo.length;
+    S.impBusy = false; S.impMsg = d('i_done', { ok:ok, ko:ko, skip:skip });
+    await load();
+  }
+  function bind(){
+    const box = document.getElementById('docs');
+    box.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { S.tab = b.dataset.tab; render(); });
+    box.querySelectorAll('.drow[data-open]').forEach(r => {
+      r.onclick = e => { if(e.target.closest('button') && !e.target.closest('[data-open]')) return; openDoc(r.dataset.open); };
+      r.onkeydown = e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openDoc(r.dataset.open); } };
+    });
+    const q = document.getElementById('d-q'); if(q) q.oninput = () => { S.q = q.value; const p = q.selectionStart; render(); const n = document.getElementById('d-q'); if(n){ n.focus(); try{ n.setSelectionRange(p, p); }catch(e){} } };
+    const ty = document.getElementById('d-type'); if(ty) ty.onchange = () => { S.ftype = ty.value; render(); };
+    const pb = document.getElementById('d-publish'); if(pb) pb.onclick = openPublish;
+    box.querySelectorAll('[data-detail]').forEach(b => b.onclick = () => openDetail(b.dataset.detail));
+    const ea = document.getElementById('d-export-all'); if(ea) ea.onclick = exportAll;
+    const pa = document.getElementById('p-add'); if(pa) pa.onclick = () => staffCall('create', document.getElementById('p-email').value, document.getElementById('p-name').value, document.getElementById('p-fn').value);
+    box.querySelectorAll('[data-pdis]').forEach(b => b.onclick = () => staffCall('disable', b.dataset.pdis));
+    box.querySelectorAll('[data-pen]').forEach(b => b.onclick = () => staffCall('create', b.dataset.pen, b.dataset.pname, b.dataset.pfn));
+    const it = document.getElementById('imp-toggle'); if(it) it.onclick = () => { S.impOpen = !S.impOpen; render(); };
+    const ip = document.getElementById('imp-parse'); if(ip) ip.onclick = () => {
+      const txt = document.getElementById('imp-text').value, fn = document.getElementById('imp-fn').value.trim();
+      S.imp = parseList(txt, fn); S.impMsg = S.imp.length ? '' : d('i_none'); S._impText = txt; S._impFn = fn; render();
+    };
+    const tx = document.getElementById('imp-text'); if(tx && S._impText != null){ tx.value = S._impText; const f = document.getElementById('imp-fn'); if(f) f.value = S._impFn || ''; }
+    box.querySelectorAll('[data-iinc]').forEach(c => c.onchange = () => { S.imp[+c.dataset.iinc].inc = c.checked; render(); });
+    box.querySelectorAll('[data-iname]').forEach(c => c.onchange = () => { const r = S.imp[+c.dataset.iname]; r.name = c.value.trim(); r.guess = false; render(); });
+    box.querySelectorAll('[data-ifn]').forEach(c => c.onchange = () => { S.imp[+c.dataset.ifn].fonction = c.value.trim(); });
+    const ir = document.getElementById('imp-run'); if(ir) ir.onclick = runImport;
+  }
+  function updateBadge(){
+    const a = document.querySelector('.side a[data-nav="docs"]'); if(!a) return;
+    a.hidden = !['admin','editor','reader','staff'].includes(S.role);
+    let b = a.querySelector('.badge'); const n = S.state === 'ready' ? pending().length : 0;
+    if(n){ if(!b){ b = document.createElement('span'); b.className = 'badge'; a.appendChild(b); } b.textContent = n; } else if(b) b.remove();
+  }
+
+  /* ── Fenêtres ─────────────────────────────────────────────────── */
+  function modal(inner, wide){
+    let m = document.getElementById('dmodal');
+    if(!m){ m = document.createElement('div'); m.id = 'dmodal'; m.className = 'dmodal'; document.body.appendChild(m);
+      m.addEventListener('click', e => { if(e.target === m) closeModal(); });
+      document.addEventListener('keydown', e => { if(e.key === 'Escape' && m.classList.contains('open')) closeModal(); }); }
+    m.innerHTML = '<div class="dbox' + (wide ? ' wide' : '') + '" role="dialog" aria-modal="true">' + inner + '</div>';
+    m.classList.add('open'); document.body.style.overflow = 'hidden';
+    m.querySelectorAll('[data-close]').forEach(b => b.onclick = closeModal);
+    return m;
+  }
+  function closeModal(){ const m = document.getElementById('dmodal'); if(m){ m.classList.remove('open'); m.innerHTML = ''; } document.body.style.overflow = ''; }
+
+  async function openDoc(id){
+    const x = S.docs.find(y => y.id === id); if(!x) return;
+    const r = S.my[x.id];
+    let ack;
+    if(!x.mandatory) ack = '<p class="dmeta" style="margin:0">' + d('ack_none') + '</p>';
+    else if(!canAck()) ack = '<p class="dmeta" style="margin:0">' + d('ack_shared') + '</p>';
+    else if(r) ack = '<p class="done" style="margin:0">' + d('ack_done', { d:fdt(r.read_at), r:h(r.revision || x.revision) }) + '</p>';
+    else ack = '<label><input type="checkbox" id="ack-chk" disabled> <span>' + d('ack_label', { r:h(x.revision) }) + '</span></label>'
+      + '<div class="dfoot" style="justify-content:flex-start"><button class="btn primary" type="button" id="ack-btn" disabled>' + d('ack_btn') + '</button></div>';
+    const m = modal('<div class="dbox-head"><div>' + typeBadge(x.doc_type) + '<h3 style="margin-top:8px">' + h(x.title) + '</h3>'
+      + '<p class="dsub">' + [x.reference, d('rev') + ' ' + x.revision, d('published') + ' ' + fd(x.published_at), x.due_date && x.mandatory ? d('due') + ' ' + fd(x.due_date) : ''].filter(Boolean).map(h).join(' · ') + '</p>'
+      + (x.description ? '<p style="margin:0 0 10px;font-size:13px">' + h(x.description) + '</p>' : '') + '</div>'
+      + '<button class="btn sm" type="button" data-close>✕ ' + d('close') + '</button></div>'
+      + '<div id="viewer-wrap"><div class="dempty">' + d('viewer_loading') + '</div></div>'
+      + '<div class="ack">' + ack + '</div>', true);
+    try{
+      const s = await C().storage.from(BUCKET).createSignedUrl(x.storage_path, 900);
+      if(s.error || !s.data || !s.data.signedUrl) throw (s.error || new Error('url'));
+      const u = s.data.signedUrl;
+      const w = m.querySelector('#viewer-wrap'); if(!w) return;
+      w.innerHTML = '<iframe class="viewer" title="' + h(x.title) + '" src="' + h(u) + '#view=FitH"></iframe>'
+        + '<div class="dfoot" style="justify-content:flex-start;margin-top:8px"><a class="btn sm" href="' + h(u) + '" target="_blank" rel="noopener">↗ ' + d('open_tab') + '</a></div>';
+      const chk = m.querySelector('#ack-chk'), btn = m.querySelector('#ack-btn');
+      if(chk){ chk.disabled = false; chk.onchange = () => { btn.disabled = !chk.checked; }; btn.onclick = () => acknowledge(x, btn); }
+    }catch(e){
+      const w = m.querySelector('#viewer-wrap'); if(w) w.innerHTML = '<div class="dempty" style="color:var(--err)">' + d('viewer_err') + ' — ' + h((e && e.message) || e) + '</div>';
+    }
+  }
+  async function acknowledge(x, btn){
+    btn.disabled = true;
+    const r = await C().from('portal_reads').insert({ doc_id:x.id }).select().single();
+    if(r.error && !/duplicate|unique/i.test(r.error.message)){ btn.disabled = false; toast(d('ack_err') + ' — ' + r.error.message, true); return; }
+    toast(d('ack_ok'));
+    await load();
+    const rr = S.my[x.id], a = document.querySelector('#dmodal .ack');
+    if(a && rr) a.innerHTML = '<p class="done" style="margin:0">' + d('ack_done', { d:fdt(rr.read_at), r:h(rr.revision || x.revision) }) + '</p>';
+  }
+
+  /* ── Publication ──────────────────────────────────────────────── */
+  function openPublish(){
+    const opts = published().map(x => '<option value="' + h(x.id) + '">' + h((x.reference ? x.reference + ' — ' : '') + x.title + ' (' + d('rev') + ' ' + x.revision + ')') + '</option>').join('');
+    const m = modal('<div class="dbox-head"><h3>' + d('publish').replace('＋ ', '') + '</h3><button class="btn sm" type="button" data-close>✕</button></div>'
+      + '<div class="dform">'
+      + '<div class="full"><label for="f-title">' + d('f_title') + ' *</label><input id="f-title"></div>'
+      + '<div><label for="f-type">' + d('f_type') + ' *</label><select id="f-type">' + Object.keys(TYPES).map(k => '<option value="' + k + '"' + (k === 'memo' ? ' selected' : '') + '>' + h(typeLbl(k)) + '</option>').join('') + '</select></div>'
+      + '<div><label for="f-ref">' + d('f_ref') + '</label><input id="f-ref"></div>'
+      + '<div><label for="f-rev">' + d('f_rev') + ' *</label><input id="f-rev" value="0"></div>'
+      + '<div><label for="f-due">' + d('f_due') + '</label><input id="f-due" type="date"></div>'
+      + '<div class="full"><label class="chk"><input type="checkbox" id="f-mand" checked> ' + d('f_mand') + '</label></div>'
+      + '<div class="full"><label for="f-desc">' + d('f_desc') + '</label><textarea id="f-desc"></textarea></div>'
+      + '<div class="full"><label for="f-sup">' + d('f_supersedes') + '</label><select id="f-sup"><option value="">' + d('f_none') + '</option>' + opts + '</select></div>'
+      + '<div class="full"><label for="f-file">' + d('f_file') + ' *</label><input id="f-file" type="file" accept="application/pdf,.pdf" style="height:auto;padding:7px"></div>'
+      + '</div><p class="derr" id="f-err"></p>'
+      + '<div class="dfoot"><button class="btn" type="button" data-close>' + d('close') + '</button><button class="btn primary" type="button" id="f-go">' + d('f_submit') + '</button></div>');
+    const ty = m.querySelector('#f-type'), mand = m.querySelector('#f-mand');
+    ty.onchange = () => { mand.checked = ty.value !== 'document'; };
+    m.querySelector('#f-sup').onchange = e => {
+      const o = S.docs.find(x => x.id === e.target.value); if(!o) return;
+      const t = m.querySelector('#f-title'), r = m.querySelector('#f-ref');
+      if(!t.value) t.value = o.title; if(!r.value) r.value = o.reference || ''; ty.value = o.doc_type; mand.checked = o.mandatory;
+    };
+    m.querySelector('#f-go').onclick = () => publish(m);
+  }
+  async function sha256(buf){ const x = await crypto.subtle.digest('SHA-256', buf); return Array.from(new Uint8Array(x)).map(b => b.toString(16).padStart(2, '0')).join(''); }
+  async function publish(m){
+    const err = m.querySelector('#f-err'), go = m.querySelector('#f-go');
+    const v = id => m.querySelector(id).value.trim();
+    const file = m.querySelector('#f-file').files[0];
+    err.textContent = '';
+    if(S.aal !== 'aal2'){ err.textContent = d('e_mfa'); return; }
+    if(!v('#f-title')){ err.textContent = d('e_title'); return; }
+    if(!v('#f-rev')){ err.textContent = d('e_rev'); return; }
+    if(!file){ err.textContent = d('e_file'); return; }
+    if(file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)){ err.textContent = d('e_pdf'); return; }
+    if(file.size > MAX){ err.textContent = d('e_size'); return; }
+    go.disabled = true; go.textContent = d('f_uploading');
+    try{
+      const buf = await file.arrayBuffer(), hash = await sha256(buf);
+      const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+      const path = new Date().getFullYear() + '/' + id + '.pdf';
+      const up = await C().storage.from(BUCKET).upload(path, new Blob([buf], { type:'application/pdf' }), { contentType:'application/pdf', upsert:false });
+      if(up.error) throw up.error;
+      go.textContent = d('f_saving');
+      const sup = v('#f-sup') || null;
+      const row = { title:v('#f-title'), doc_type:v('#f-type'), reference:v('#f-ref') || null, revision:v('#f-rev'),
+        description:v('#f-desc') || null, mandatory:m.querySelector('#f-mand').checked, due_date:v('#f-due') || null,
+        storage_path:path, file_name:file.name, file_size:file.size, sha256:hash, supersedes:sup };
+      const ins = await C().from('portal_docs').insert(row).select().single();
+      if(ins.error) throw ins.error;
+      if(sup){ const w = await C().from('portal_docs').update({ status:'withdrawn' }).eq('id', sup); if(w.error) toast(w.error.message, true); }
+      closeModal(); toast(d('f_ok')); S.tab = 'all'; await load();
+    }catch(e){ go.disabled = false; go.textContent = d('f_submit'); err.textContent = (e && e.message) || String(e); }
+  }
+
+  /* ── Suivi d'un document ──────────────────────────────────────── */
+  function openDetail(id){
+    const x = S.docs.find(y => y.id === id); if(!x) return;
+    const rd = readersOf(id), miss = missingOf(id);
+    const m = modal('<div class="dbox-head"><div>' + typeBadge(x.doc_type) + '<h3 style="margin-top:8px">' + h(x.title) + '</h3><p class="dsub">'
+      + [x.reference, d('rev') + ' ' + x.revision, d('published') + ' ' + fd(x.published_at) + (x.published_by ? ' (' + x.published_by + ')' : ''), x.due_date ? d('due') + ' ' + fd(x.due_date) : '', x.status !== 'published' ? d('withdrawn') + ' ' + fd(x.withdrawn_at) : ''].filter(Boolean).map(h).join(' · ')
+      + '</p></div><button class="btn sm" type="button" data-close>✕</button></div>'
+      + '<div class="cols2"><div><p class="dmeta" style="font-weight:600;color:var(--ok)">' + d('readers') + ' (' + rd.length + ')</p><div class="dtable-wrap"><table class="dtable"><tbody>'
+      + (rd.length ? rd.map(r => '<tr><td><strong>' + h(r.full_name || r.user_email) + '</strong><div class="dmeta">' + h(r.user_email) + '</div></td><td>' + fdt(r.read_at) + '<div class="dmeta">' + d('rev') + ' ' + h(r.revision || '') + '</div></td></tr>').join('') : '<tr><td>' + d('nobody') + '</td></tr>')
+      + '</tbody></table></div></div><div><p class="dmeta" style="font-weight:600;color:var(--err)">' + d('missing') + ' (' + miss.length + ')</p><div class="dtable-wrap"><table class="dtable"><tbody>'
+      + (miss.length ? miss.map(p => '<tr><td><strong>' + h(p.full_name) + '</strong><div class="dmeta">' + h(p.email) + (p.fonction ? ' · ' + h(p.fonction) : '') + '</div></td></tr>').join('') : '<tr><td>' + d('everybody') + '</td></tr>')
+      + '</tbody></table></div></div></div>'
+      + '<div class="dfoot"><button class="btn sm" type="button" id="dt-csv">⤓ ' + d('csv') + '</button><button class="btn sm" type="button" id="dt-pdf">⤓ ' + d('pdf') + '</button>'
+      + (x.status === 'published' ? '<button class="btn sm" type="button" id="dt-mail">✉ ' + d('remind') + ' (' + miss.length + ')</button><button class="btn sm danger" type="button" id="dt-wd">' + d('withdraw') + '</button>' : '')
+      + '</div>', true);
+    m.querySelector('#dt-csv').onclick = () => csvDoc(x);
+    m.querySelector('#dt-pdf').onclick = () => pdfDoc(x);
+    const ml = m.querySelector('#dt-mail'); if(ml) ml.onclick = () => remind(x, miss);
+    const wd = m.querySelector('#dt-wd'); if(wd) wd.onclick = () => withdraw(x);
+  }
+  function portalUrl(){ return location.origin + location.pathname; }
+  function remind(x, miss){
+    if(!miss.length){ toast(d('mail_none')); return; }
+    const to = miss.map(p => p.email).join(',');
+    const href = 'mailto:?bcc=' + encodeURIComponent(to) + '&subject=' + encodeURIComponent(d('remind_subj', { t:x.title }))
+      + '&body=' + encodeURIComponent(d('remind_body', { t:x.title, r:x.revision, u:portalUrl() }));
+    location.href = href;
+  }
+  async function withdraw(x){
+    if(!confirm(d('withdraw_q', { t:x.title }))) return;
+    if(S.aal !== 'aal2'){ toast(d('e_mfa'), true); return; }
+    const r = await C().from('portal_docs').update({ status:'withdrawn' }).eq('id', x.id);
+    if(r.error){ toast(r.error.message, true); return; }
+    closeModal(); toast(d('withdraw_ok')); await load();
+  }
+  function download(name, text, mime){
+    const b = new Blob([text], { type:mime }), u = URL.createObjectURL(b), a = document.createElement('a');
+    a.href = u; a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(u); a.remove(); }, 400);
+  }
+  const csv = rows => '\uFEFF' + rows.map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+  const slug = s => String(s || 'document').replace(/[^\w.-]+/g, '_').slice(0, 60);
+  function csvDoc(x){
+    const rows = [['Document','Référence','Révision','Statut lecture','Nom','E-mail','Fonction','Lu le','Révision lue']];
+    readersOf(x.id).forEach(r => rows.push([x.title, x.reference, x.revision, 'Lu', r.full_name, r.user_email, (S.people.find(p => p.email.toLowerCase() === String(r.user_email).toLowerCase()) || {}).fonction, fdt(r.read_at), r.revision]));
+    missingOf(x.id).forEach(p => rows.push([x.title, x.reference, x.revision, 'Non lu', p.full_name, p.email, p.fonction, '', '']));
+    download('Lectures_' + slug(x.reference || x.title) + '_rev' + slug(x.revision) + '_' + today() + '.csv', csv(rows), 'text/csv;charset=utf-8');
+  }
+  function exportAll(){
+    const rows = [['Document','Type','Référence','Révision','Publié le','Nom','E-mail','Lu le','Révision lue','Empreinte SHA-256']];
+    S.reads.forEach(r => { const x = S.docs.find(y => y.id === r.doc_id) || {}; rows.push([x.title, typeLbl(x.doc_type), x.reference, x.revision, fd(x.published_at), r.full_name, r.user_email, fdt(r.read_at), r.revision, x.sha256]); });
+    download('Accuses_de_lecture_SAF_' + today() + '.csv', csv(rows), 'text/csv;charset=utf-8');
+  }
+  function pdfDoc(x){
+    const rd = readersOf(x.id), miss = missingOf(x.id);
+    const w = window.open('', '_blank'); if(!w){ toast('Pop-up', true); return; }
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Lectures — ' + h(x.title) + '</title><style>body{font:12px/1.5 Arial,sans-serif;margin:28px;color:#111}h1{font-size:17px;margin:0 0 4px}h2{font-size:13px;margin:18px 0 6px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:5px 8px;text-align:left}th{background:#f2f4f7}.m{color:#555;font-size:11px}@media print{button{display:none}}</style></head><body>'
+      + '<button onclick="window.print()" style="float:right;padding:6px 14px">Imprimer / PDF</button>'
+      + '<h1>Suivi de lecture — ' + h(x.title) + '</h1><div class="m">SAF International · ' + h(typeLbl(x.doc_type)) + ' · ' + h(x.reference || '') + ' · Rév. ' + h(x.revision) + ' · publié le ' + fd(x.published_at) + (x.due_date ? ' · à lire avant le ' + fd(x.due_date) : '') + '<br>Empreinte SHA-256 du PDF : ' + h(x.sha256 || '—') + '</div>'
+      + '<h2>Ont lu (' + rd.length + ')</h2><table><tr><th>Nom</th><th>E-mail</th><th>Lu et compris le</th><th>Révision</th></tr>' + (rd.length ? rd.map(r => '<tr><td>' + h(r.full_name || '') + '</td><td>' + h(r.user_email) + '</td><td>' + fdt(r.read_at) + '</td><td>' + h(r.revision || '') + '</td></tr>').join('') : '<tr><td colspan="4">—</td></tr>') + '</table>'
+      + '<h2>N’ont pas encore lu (' + miss.length + ')</h2><table><tr><th>Nom</th><th>E-mail</th><th>Fonction</th></tr>' + (miss.length ? miss.map(p => '<tr><td>' + h(p.full_name) + '</td><td>' + h(p.email) + '</td><td>' + h(p.fonction || '') + '</td></tr>').join('') : '<tr><td colspan="3">—</td></tr>') + '</table>'
+      + '<p class="m" style="margin-top:18px">Édité le ' + fdt(new Date().toISOString()) + ' par ' + h(S.email || '') + '</p></body></html>');
+    w.document.close();
+  }
+
+  /* ── Personnel (fonction serveur saf-staff-admin) ─────────────── */
+  async function staffCall(action, email, name, fn){
+    const err = document.getElementById('p-err'); if(err) err.textContent = '';
+    email = String(email || '').trim().toLowerCase();
+    if(S.aal !== 'aal2'){ (err ? err.textContent = d('e_mfa') : toast(d('e_mfa'), true)); return; }
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ if(err) err.textContent = d('p_email') + ' ?'; return; }
+    if(action === 'create' && String(name || '').trim().length < 2){ if(err) err.textContent = d('p_name') + ' ?'; return; }
+    if(action === 'disable' && !confirm(d('p_disable') + ' — ' + email + ' ?')) return;
+    try{
+      const r = await C().functions.invoke(FN_STAFF, { body:{ action, email, full_name:String(name || '').trim(), fonction:String(fn || '').trim() } });
+      if(r.error) throw r.error;
+      const data = r.data || {}; if(data.error) throw new Error(data.error + (data.detail ? ' — ' + data.detail : ''));
+      toast(action === 'disable' ? d('p_dis', { e:email }) : (data.account === 'existing' ? d('p_ok_existing', { e:email }) : d('p_ok', { e:email })));
+      await load();
+    }catch(e){ const msg = (e && e.message) || String(e); if(err) err.textContent = msg; else toast(msg, true); }
+  }
+
+  /* ── Connexion du personnel par code e-mail (écran d'accès) ───── */
+  function otpBind(){
+    const send = document.getElementById('otp-send'), ver = document.getElementById('otp-verify'), back = document.getElementById('otp-back');
+    if(!send || send._b) return; send._b = true;
+    const em = document.getElementById('otp-email'), code = document.getElementById('otp-code'), err = document.getElementById('otp-err');
+    const s1 = document.getElementById('otp-step1'), s2 = document.getElementById('otp-step2');
+    const T2 = k => (typeof t === 'function' ? t(k) : k);
+    send.onclick = async () => {
+      err.textContent = ''; const e = em.value.trim().toLowerCase();
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){ err.textContent = T2('otp_bad_email'); return; }
+      send.disabled = true;
+      try{
+        const r = await C().auth.signInWithOtp({ email:e, options:{ shouldCreateUser:false } });
+        if(r.error) throw r.error;
+        s1.hidden = true; s2.hidden = false; code.value = ''; code.focus();
+        document.getElementById('otp-sent').textContent = T2('otp_sent').replace('{e}', e);
+      }catch(x){
+        const m = (x && x.message) || String(x);
+        err.textContent = /signup|not allowed|not found|user/i.test(m) ? T2('otp_unknown') : /rate|seconds|too many/i.test(m) ? T2('otp_rate') : m;
+      }
+      send.disabled = false;
+    };
+    em.onkeydown = e => { if(e.key === 'Enter') send.click(); };
+    ver.onclick = async () => {
+      err.textContent = ''; const c = code.value.replace(/\D/g, '');
+      if(c.length < 6){ err.textContent = T2('otp_bad_code'); return; }
+      ver.disabled = true;
+      try{
+        const r = await C().auth.verifyOtp({ email:em.value.trim().toLowerCase(), token:c, type:'email' });
+        if(r.error) throw r.error;
+        if(typeof renderWho === 'function') renderWho();
+        if(typeof resolveRole === 'function') await resolveRole();
+      }catch(x){ err.textContent = T2('otp_wrong'); }
+      ver.disabled = false;
+    };
+    code.oninput = () => { code.value = code.value.replace(/\D/g, '').slice(0, 6); if(code.value.length === 6) ver.click(); };
+    back.onclick = () => { s2.hidden = true; s1.hidden = false; err.textContent = ''; em.focus(); };
+  }
+
+  /* ── Points d'entrée appelés par le portail ───────────────────── */
+  window.safDocsOnRole = function(role){
+    const changed = role !== S.role; S.role = role;
+    otpBind();
+    if(['admin','editor','reader','staff'].includes(role)){ if(changed || S.state === 'idle' || S.state === 'error') load(); else render(); }
+    else { S.docs = []; S.reads = []; S.my = {}; S.state = 'idle'; render(); }
+  };
+  window.safDocsRender = render;
+  otpBind();
+})();
+</script>
+
 </body>
 </html>
