@@ -29165,6 +29165,34 @@ window.ERP_V5 = {"base": "v5-20261021", "events": {"acc": {"g": "avi", "prof": "
     if(t.closest && t.closest('#erp-dec-card') && t.type === 'checkbox') window.erpDecSync();
     if(t.name === 'erp-evt'){ var c = view.querySelector('.erpx-evcard[data-evt="' + card(t.value) + '"]'); if(c) setTimeout(function(){ try{ c.scrollIntoView({ behavior:'smooth', block:'nearest' }); }catch(x){} }, 80); }
   });
+
+  /* ── Liens d'appel (tel:) : sur ordinateur, sans application d'appel, le clic
+     ne fait rien. On copie donc toujours le numéro et on l'affiche en grand,
+     sans bloquer l'appel direct sur téléphone / tablette (ou Teams, FaceTime…). */
+  var TD = FR ? { copied:'copié dans le presse-papiers', hint:'Sur téléphone, l’appel se lance directement. Sur ordinateur, composez-le ou collez-le dans Teams / votre softphone.', close:'Fermer' }
+              : { copied:'copied to the clipboard', hint:'On a phone the call starts directly. On a computer, dial it or paste it into Teams / your softphone.', close:'Close' };
+  function callBox(num, who){
+    var m = document.getElementById('erp-call-pop');
+    if(!m){
+      m = document.createElement('div'); m.id = 'erp-call-pop';
+      m.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9300;max-width:92vw;padding:14px 18px;border-radius:10px;background:#13202E;color:#fff;box-shadow:0 8px 30px rgba(0,0,0,.35);font:13px/1.45 Arial,sans-serif;display:none;';
+      document.body.appendChild(m);
+    }
+    m.innerHTML = '<div style="font-size:11px;opacity:.8;">' + esc(who || '') + '</div>'
+      + '<div style="font:900 26px/1.2 monospace;letter-spacing:.04em;margin:2px 0 4px;">📞 ' + esc(num) + '</div>'
+      + '<div style="font-size:11.5px;opacity:.85;">✓ ' + esc(TD.copied) + ' — ' + esc(TD.hint) + '</div>'
+      + '<button type="button" style="margin-top:8px;padding:4px 12px;border:0;border-radius:4px;background:#fff;color:#13202E;font-weight:700;cursor:pointer;" onclick="this.parentNode.style.display=\'none\'">' + esc(TD.close) + '</button>';
+    m.style.display = 'block';
+    clearTimeout(m._t); m._t = setTimeout(function(){ m.style.display = 'none'; }, 12000);
+  }
+  view.addEventListener('click', function(e){
+    var a = e.target && e.target.closest && e.target.closest('a[href^="tel:"]'); if(!a) return;
+    var num = (a.querySelector('.qd-num') || a).textContent.replace(/📞/g, '').replace(/\s+/g, ' ').trim() || a.getAttribute('href').slice(4);
+    var lbl = a.querySelector('.qd-name') ? a.querySelector('.qd-name').textContent : (a.querySelector('.qd-lbl') || {}).textContent || '';
+    if(!lbl){ var card = a.parentElement; var n = card && card.querySelectorAll('div'); if(n && n.length) lbl = Array.prototype.map.call(n, function(x){ return x.textContent.trim(); }).filter(Boolean).slice(0, 2).join(' — '); }
+    try{ navigator.clipboard && navigator.clipboard.writeText(num.replace(/[^\d+]/g, '')); }catch(x){}
+    callBox(num, lbl);
+  });
   window.erpEvtSync();
 })();
 </script>
@@ -29796,7 +29824,7 @@ window.ERP_V5 = {"base": "v5-20261021", "events": {"acc": {"g": "avi", "prof": "
     if(!sos.length && !irt.length){ box.innerHTML = ''; return; }
     var h = '';
     if(sos.length) h += '<div class="qd-row">' + sos.map(function(s){ return '<a href="' + esc(s.tel) + '" class="' + (s.auth ? 'qd-auth' : 'qd-sos') + '"><span class="qd-num">' + esc(s.num) + '</span><span class="qd-lbl">' + esc(s.lbl) + '</span></a>'; }).join('') + '</div>';
-    if(irt.length) h += '<div class="qd-title">⚡ APPELER DANS L’ORDRE · CALL IN ORDER</div><div class="qd-row">' + irt.map(function(p, i){ return '<a href="' + esc(p.tel) + '" class="qd-irt' + (i < 2 ? ' qd-first' : '') + '"><span class="qd-lbl">' + (i + 1) + ' · ' + esc(p.lbl) + '</span><span class="qd-name">' + esc(p.name) + '</span><span class="qd-num">' + esc(p.num) + '</span></a>'; }).join('') + '</div>';
+    if(irt.length) h += '<div class="qd-title">⚡ APPELER DANS L’ORDRE · CALL IN ORDER</div><div class="qd-row">' + irt.map(function(p, i){ return '<a href="' + esc(p.tel) + '" class="qd-irt' + (i < 2 ? ' qd-first' : '') + '"><span class="qd-lbl">' + (i + 1) + ' · ' + esc(String(p.lbl || '').replace(/^\s*\d+\s*·\s*/, '')) + '</span><span class="qd-name">' + esc(p.name) + '</span><span class="qd-num">' + esc(p.num) + '</span></a>'; }).join('') + '</div>';
     box.innerHTML = h;
   }
 
