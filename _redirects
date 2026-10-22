@@ -1,3 +1,6 @@
-/saf_portail   https://saf-international-portail.netlify.app/   301
-/saf_portail/   https://saf-international-portail.netlify.app/   301
-/*    /index.html    200
+/saf_portail        https://saf-international-portail.netlify.app/   301!
+/saf_portail/       https://saf-international-portail.netlify.app/   301!
+/saf_portail.html   https://saf-international-portail.netlify.app/   301!
+/SAF_Portail.html   https://saf-international-portail.netlify.app/   301!
+/SAF_Portail        https://saf-international-portail.netlify.app/   301!
+/*                  /index.html                                      200
