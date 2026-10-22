@@ -144,7 +144,7 @@ footer .err{color:var(--lost)}
 <div id="app">
   <aside id="side">
     <header>
-      <a class="home" href="SAF_Portail.html">← Portail SAF International</a>
+      <a class="home" href="https://saf-international-portail.netlify.app/">← Portail SAF International</a>
       <h1>Suivi flotte</h1>
       <p id="sub">Chargement…</p>
     </header>
@@ -191,7 +191,7 @@ footer .err{color:var(--lost)}
     <div class="hmap"><div class="map" id="h-map"></div></div>
   </div>
 </div>
-<div id="gate" role="alert"><p id="gate-msg">Vérification de la session…</p><a href="SAF_Portail.html">Retour au portail</a></div>
+<div id="gate" role="alert"><p id="gate-msg">Vérification de la session…</p><a href="https://saf-international-portail.netlify.app/">Retour au portail</a></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -519,7 +519,7 @@ async function load(retried){
       loading=false;
       const r=await sb.auth.refreshSession().catch(()=>({error:true}));
       if(r && !r.error && r.data && r.data.session) return load(true);
-      location.replace("SAF_Portail.html"); return;
+      location.replace("index.html?next=SAF_Suivi_Flotte.html"); return;
     }
     document.getElementById("foot").innerHTML=`<span class="err">Lecture impossible : ${esc(e.message||e)}. Nouvel essai dans ${CONFIG.refreshMs/1000} s.</span>`;
   }finally{ loading=false; }
@@ -631,7 +631,7 @@ function gate(msg){ clearInterval(timer); document.getElementById("gate-msg").te
 async function boot(){
   const {data}=await sb.auth.getSession();
   const session=data.session;
-  if(!session){ location.replace("SAF_Portail.html"); return; }
+  if(!session){ location.replace("index.html?next=SAF_Suivi_Flotte.html"); return; }
   // Rôle lu comme dans index.html ; l'accès réel est décidé par la RLS (admin, editor, reader)
   let role="reader";
   try{
@@ -641,12 +641,12 @@ async function boot(){
   if(!["admin","editor","reader"].includes(role)){ gate("Le suivi flotte n'est pas ouvert à ce compte."); return; }
   restartCycle();
 }
-document.getElementById("logout").onclick=async()=>{await sb.auth.signOut(); location.replace("SAF_Portail.html");};
+document.getElementById("logout").onclick=async()=>{await sb.auth.signOut(); location.replace("https://saf-international-portail.netlify.app/");};
 document.getElementById("win").onchange=()=>load();
 document.getElementById("split").onchange=e=>setSplit(e.target.value);
 setSplit(loadView().n);
 document.getElementById("fit").onclick=()=>{selected=null; fitAll(); load();};
-sb.auth.onAuthStateChange(ev=>{ if(ev==="SIGNED_OUT") location.replace("SAF_Portail.html"); });
+sb.auth.onAuthStateChange(ev=>{ if(ev==="SIGNED_OUT") location.replace("https://saf-international-portail.netlify.app/"); });
 /* ---------- Historique des vols ----------
    Lit fleet_positions par appareil, par pages de 1000 points (plafond PostgREST),
    puis reconstruit les vols avec analyze(). La base garde 180 jours (tâche fleet-purge-positions). */
