@@ -17276,8 +17276,8 @@ function _occMobileReportDetailsHtml(occ){
     +row('Description cybersécurité', occ.cyber_description)
     +row('Commentaires / Suggestions', occ.comments)
     +row('Pièces jointes (nombre)', occ.attachments_count);
-  return '<div style="margin-bottom:14px;padding:12px 14px;background:rgba(74,159,224,.05);border:1px solid rgba(74,159,224,.2);border-radius:6px;">'
-    +'<div style="font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:var(--steel-bright);text-transform:uppercase;margin-bottom:8px;">📱 Détails du signalement mobile</div>'
+  return '<div class="occ-safety-report-box" style="margin-bottom:14px;padding:12px 14px;background:rgba(74,159,224,.05);border:1px solid rgba(74,159,224,.2);border-radius:6px;">'
+    +'<div class="occ-safety-report-title" style="font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;color:var(--steel-bright);text-transform:uppercase;margin-bottom:8px;">📱 Détails du signalement mobile</div>'
     +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px 20px;font-family:var(--font-mono);font-size:11px;">'+body+'</div>'
     +(typeof _occDgDetailsHtml==='function'?_occDgDetailsHtml(occ):'')
     +'</div>';
@@ -21823,13 +21823,13 @@ function _occLoadPrintPhotos(occ){
       if(!urls.length) return;
       var sec=document.createElement('div');
       sec.className='occ-print-photos';
-      sec.style.cssText='display:none;margin-top:18px;padding:16px;border:1px solid rgba(74,159,224,.25);border-radius:10px;background:rgba(74,159,224,.04);break-before:page;page-break-before:always;';
-      sec.innerHTML='<div style="font-family:var(--font-mono);font-size:11px;letter-spacing:1px;color:var(--steel-bright);font-weight:700;text-transform:uppercase;margin-bottom:12px;">📷 Photos jointes ('+urls.length+')</div>'
+      sec.style.cssText='display:none;margin-top:18px;padding:16px;border:1px solid #cfd8e3;border-radius:10px;background:#ffffff;break-before:page;page-break-before:always;';
+      sec.innerHTML='<div style="font-family:var(--font-mono);font-size:11px;letter-spacing:1px;color:#2E75B6;font-weight:700;text-transform:uppercase;margin-bottom:12px;">📷 Photos jointes ('+urls.length+')</div>'
         +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">'
         +urls.map(function(u){
           return '<figure style="margin:0;break-inside:avoid;page-break-inside:avoid;">'
-            +'<img src="'+esc(u.url)+'" alt="'+esc(u.name)+'" style="display:block;width:100%;max-height:9.5cm;object-fit:contain;border-radius:6px;background:rgba(255,255,255,.04);"/>'
-            +'<figcaption style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-top:4px;word-break:break-all;">'+esc(u.name)+'</figcaption></figure>';
+            +'<img src="'+esc(u.url)+'" alt="'+esc(u.name)+'" style="display:block;width:100%;max-height:9.5cm;object-fit:contain;border-radius:6px;background:#f6f8fa;"/>'
+            +'<figcaption style="font-family:var(--font-mono);font-size:9px;color:#475569;margin-top:4px;word-break:break-all;">'+esc(u.name)+'</figcaption></figure>';
         }).join('')
         +'</div>';
       wrap.appendChild(sec);
@@ -21902,7 +21902,14 @@ function _occPreparePrint(id){
   if(!style){ style=document.createElement('style'); style.id='occ-print-style'; document.head.appendChild(style); }
   style.textContent =
     '@media print {'
-    +'  html, body { background:var(--navy) !important; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }'
+    +'  html, body { background:#ffffff !important; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }'
+    +'  #occ-form-wrap { background:#ffffff !important; }'
+    +'  #occ-form-wrap .occ-pw-txt { color:var(--occ-pc) !important; -webkit-text-fill-color:var(--occ-pc) !important; }'
+    +'  #occ-form-wrap .occ-pw-bg { background-color:var(--occ-pbg) !important; background-image:none !important; }'
+    +'  #occ-form-wrap .occ-pw-bd { border-color:var(--occ-pbd) !important; }'
+    +'  #occ-form-wrap * { box-shadow:none !important; text-shadow:none !important; }'
+    +'  #occ-form-wrap .occ-safety-report-box { background:#e3effb !important; border:1px solid #4A9FE0 !important; }'
+    +'  #occ-form-wrap .occ-safety-report-title { color:#1b5e9e !important; -webkit-text-fill-color:#1b5e9e !important; font-weight:700 !important; }'
     +'  body * { visibility:hidden !important; }'
     +'  #occ-form-wrap, #occ-form-wrap * { visibility:visible !important; }'
     +'  #occ-form-wrap { position:absolute; left:0; top:0; width:100%; margin:0 !important; }'
@@ -21911,10 +21918,93 @@ function _occPreparePrint(id){
     +'  #occ-form-wrap .occ-print-hide-original { display:none !important; }'
     +'  #occ-form-wrap .occ-print-text-clone { display:block !important; }'
     +'  #occ-form-wrap .occ-print-photos { display:block !important; }'
-    +'  #occ-form-wrap input, #occ-form-wrap select { color:var(--white) !important; }'
+    +'  #occ-form-wrap input, #occ-form-wrap select { color:#1a2535 !important; }'
     +'  #occ-form-wrap * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }'
     +'}';
+  _occPrintWhiten(wrap);
   window.onafterprint=function(){ _occRestoreAfterPrint(); };
+}
+// Conversion "fond blanc" pour l'impression : chaque élément du formulaire
+// (thème sombre à l'écran) reçoit, pour l'impression uniquement, une couleur
+// de texte, de fond et de bordure adaptée à une page blanche. Les éléments
+// colorés (badges de sévérité, puces de risque…) gardent leur couleur.
+function _occPrintWhiten(root){
+  if(!root) return;
+  function parse(c){
+    var m=String(c||'').match(/rgba?\(([^)]+)\)/); if(!m) return null;
+    var p=m[1].split(/[\s,\/]+/).filter(Boolean).map(parseFloat);
+    return {r:p[0],g:p[1],b:p[2],a:(p.length>3?p[3]:1)};
+  }
+  function lum(c){ return (0.2126*c.r+0.7152*c.g+0.0722*c.b)/255; }
+  function sat(c){ return Math.max(c.r,c.g,c.b)-Math.min(c.r,c.g,c.b); }
+  function rgb(c){ return 'rgb('+Math.round(c.r)+','+Math.round(c.g)+','+Math.round(c.b)+')'; }
+  function darken(c,f){ return {r:c.r*f,g:c.g*f,b:c.b*f,a:1}; }
+  var all=[root].concat(Array.prototype.slice.call(root.querySelectorAll('*')));
+  // Passe 1 : fonds
+  var keptBg=new Map();   // élément -> fond conservé (coloré) ou null si fond clair
+  all.forEach(function(el){
+    if(el.tagName==='IMG'||el.tagName==='svg'||el.closest('svg')) return;
+    var cs=window.getComputedStyle(el);
+    var bg=parse(cs.backgroundColor);
+    // Le bloc « Safety report » (signalement) est le seul à rester bleu : fond et bordure gérés par la feuille d'impression
+    if(el.classList.contains('occ-safety-report-box')) return;
+    if(bg&&bg.a>0&&bg.a<0.6&&sat(bg)>=60){
+      // voile coloré translucide (fonds bleutés des panneaux) -> blanc
+      el.style.setProperty('--occ-pbg','#ffffff');
+      el.classList.add('occ-pw-bg');
+      keptBg.set(el,null);
+      bg=null;
+    }
+    if(bg&&bg.a>=0.25){
+      var L=lum(bg), S=sat(bg);
+      if(S<60 || L<0.12 && S<90){
+        // fond sombre/neutre du thème -> blanc ou gris très clair
+        el.style.setProperty('--occ-pbg', bg.a>=0.85 && el!==root ? '#f6f8fa' : '#ffffff');
+        el.classList.add('occ-pw-bg');
+        keptBg.set(el,null);
+      } else {
+        keptBg.set(el,bg); // fond coloré conservé (badge, chip…)
+      }
+    } else if(bg&&bg.a>0&&bg.a<0.25&&lum(bg)>0.8){
+      // voile blanc translucide -> léger gris pour garder la lecture des blocs
+      el.style.setProperty('--occ-pbg','#f8fafc');
+      el.classList.add('occ-pw-bg');
+      keptBg.set(el,null);
+    }
+    // bordures blanches/translucides invisibles sur fond blanc
+    var bd=parse(cs.borderTopColor)||parse(cs.borderLeftColor);
+    var bw=parseFloat(cs.borderTopWidth)||parseFloat(cs.borderLeftWidth)||parseFloat(cs.borderBottomWidth)||0;
+    if(bd&&bw>0&&(bd.a<0.5||(sat(bd)<60&&lum(bd)>0.45))){
+      el.style.setProperty('--occ-pbd','#cfd8e3');
+      el.classList.add('occ-pw-bd');
+    }
+  });
+  // Passe 2 : textes
+  all.forEach(function(el){
+    if(el.tagName==='IMG'||el.tagName==='svg'||el.closest('svg')) return;
+    // fond effectif : premier ancêtre ayant un fond coloré conservé
+    var a=el, eff=null;
+    while(a&&a!==document.body){ if(keptBg.has(a)){ eff=keptBg.get(a); break; } a=a.parentElement; }
+    if(eff) return; // texte sur badge coloré : on garde tel quel
+    var c=parse(window.getComputedStyle(el).color); if(!c) return;
+    var L=lum(c), S=sat(c), nc=null;
+    if(S<50){
+      if(L>0.75) nc='#1a2535';
+      else if(L>0.45) nc='#475569';
+    } else if(L>0.55){
+      nc=rgb(darken(c, 0.55/L)); // couleur claire saturée (or, bleu clair…) -> assombrie
+    }
+    if(nc){ el.style.setProperty('--occ-pc',nc); el.classList.add('occ-pw-txt'); }
+  });
+}
+function _occPrintUnwhiten(root){
+  if(!root) return;
+  root.querySelectorAll('.occ-pw-txt,.occ-pw-bg,.occ-pw-bd').forEach(function(el){
+    el.classList.remove('occ-pw-txt','occ-pw-bg','occ-pw-bd');
+    el.style.removeProperty('--occ-pc'); el.style.removeProperty('--occ-pbg'); el.style.removeProperty('--occ-pbd');
+  });
+  root.classList.remove('occ-pw-txt','occ-pw-bg','occ-pw-bd');
+  root.style.removeProperty('--occ-pc'); root.style.removeProperty('--occ-pbg'); root.style.removeProperty('--occ-pbd');
 }
 function _occRestoreAfterPrint(){
   var wrap=document.getElementById('occ-form-wrap');
@@ -21923,6 +22013,7 @@ function _occRestoreAfterPrint(){
   if(wrap){
     wrap.querySelectorAll('.occ-print-text-clone').forEach(function(c){ c.remove(); });
     wrap.querySelectorAll('.occ-print-photos').forEach(function(c){ c.remove(); });
+    _occPrintUnwhiten(wrap);
     wrap.querySelectorAll('.occ-print-hide-original').forEach(function(t){ t.classList.remove('occ-print-hide-original'); });
     wrap.querySelectorAll('.occ-print-was-collapsed').forEach(function(b){ b.classList.add('collapsed'); b.classList.remove('occ-print-was-collapsed'); });
     wrap.querySelectorAll('[data-occ-print-forced-visible]').forEach(function(w){ w.style.display='none'; delete w.dataset.occPrintForcedVisible; });
