@@ -232,6 +232,25 @@ select{
 .empty{font-size:12px;color:var(--muted-2);font-style:italic}
 
 .note{font-size:11px;color:var(--muted-2);line-height:1.5;margin:9px 0 0}
+/* cadence de la trace */
+.cadq{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;
+  border:1px solid currentColor;border-radius:2px;padding:1px 6px;margin-left:6px;vertical-align:1px}
+.cadq.ok{color:var(--ok)} .cadq.mid{color:var(--c3)} .cadq.low{color:var(--c4)} .cadq.bad{color:var(--signal)}
+.cadgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--rule-soft);background:var(--panel-2)}
+.cadgrid>div{padding:7px 9px;border-right:1px solid var(--rule-soft);min-width:0}
+.cadgrid>div:last-child{border-right:0}
+.cadgrid .k{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2)}
+.cadgrid .v{font-family:var(--disp);font-size:19px;font-weight:600;line-height:1.15}
+.cadgrid .v small{font-family:var(--mono);font-size:9.5px;font-weight:400;color:var(--muted);margin-left:2px}
+.cadwarn{margin:8px 0 0;padding:8px 10px;border-left:2px solid var(--signal);background:rgba(255,75,62,.07);font-size:11.5px;line-height:1.5;color:var(--paper)}
+.cadwarn.soft{border-left-color:var(--c3);background:rgba(240,180,41,.06)}
+.cadwarn b{color:var(--signal);font-weight:600}
+.cadwarn.soft b{color:var(--c3)}
+.cadgaps{margin:8px 0 0}
+.cadgaps .event .d i{font-style:normal;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;border:1px solid;border-radius:2px;padding:0 4px;margin-right:5px}
+.cadgaps .event .d i.vol{color:var(--signal)} .cadgaps .event .d i.inc{color:var(--c3)} .cadgaps .event .d i.sol{color:var(--muted)}
+.event.inflight{box-shadow:inset 2px 0 0 var(--signal)}
+.cadtz{margin-top:10px}
 .lbl3d.wx{background:rgba(9,22,36,.88);color:#DCEBFA}
 .wxnow:empty,.wxsta:empty{display:none}
 .wxnow{border:1px solid var(--rule-soft);background:var(--panel-2);margin:8px 0 6px}
@@ -521,6 +540,23 @@ select{
          <p class="note">Contexte saisi par l’analyste, non mesuré par le KML. La présence d’une charge, sa masse, les performances et les limitations sont à confirmer dans la documentation du vol.</p>
          <button class="tool" id="asExport" style="width:100%;text-align:center">Exporter fiche d’analyse SAF</button>
        </section>
+      <section id="cadSection" hidden>
+        <h2>Cadence de la trace <span class="cadq" id="cadQ"></span></h2>
+        <div class="cadgrid" id="cadGrid"></div>
+        <div id="cadWarn"></div>
+        <div class="events cadgaps" id="cadGaps"></div>
+        <div class="ctl cadtz" id="cadTzBox" hidden>
+          <label for="cadTz">Fuseau des heures du fichier</label>
+          <select id="cadTz">
+            <option value="auto">Automatique</option>
+            <option value="Europe/Paris">Heure de Paris / Zurich / Rome</option>
+            <option value="UTC">UTC</option>
+            <option value="Europe/Athens">Heure d'Athènes</option>
+            <option value="browser">Heure de cet ordinateur</option>
+          </select>
+        </div>
+        <p class="note" id="cadNote"></p>
+      </section>
       <section id="behSection" hidden>
         <h2>Phases du vol · AS332</h2>
         <div id="behSummary" class="read" style="grid-template-columns:1fr 1fr"></div>
@@ -1058,9 +1094,44 @@ function bearing(a,b){
   return (Math.atan2(y,x)*R2D+360)%360;
 }
 const pad = n => String(n).padStart(2,'0');
-let TZ_OFF=null;   // décalage (minutes) déclaré par les horodatages ISO du fichier, sinon heure du navigateur
+let TZ_OFF=null;   // décalage (minutes) d'affichage : déclaré par les horodatages ISO du fichier, sinon fuseau retenu pour les heures sans indication
+/* Heures sans fuseau (« Date Local » CartoWeb, CSV, dates JJ/MM/AAAA…) : elles sont lues dans un fuseau explicite,
+   indépendant du réglage de l'ordinateur. Choix « auto » : UTC si le fichier annonce des heures UTC, sinon heure de Paris
+   (bases SAF de Sion et d'Albertville). */
+let TZ_CHOICE='auto';             // auto | Europe/Paris | UTC | Europe/Athens | browser
+let FILE_TZ='Europe/Paris';       // fuseau effectivement appliqué aux heures sans indication
+let TZ_INFO={naive:0, iso:0, label:null};   // ce qui a été rencontré pendant la lecture
+const TZ_NAMES={'Europe/Paris':'heure de Paris','UTC':'UTC','Europe/Athens':"heure d'Athènes",'browser':"heure de l'ordinateur"};
+const TZ_FMT=new Map();
+function zoneOffsetMin(utcMs, zone){
+  if(zone==='UTC') return 0;
+  if(zone==='browser') return -new Date(utcMs).getTimezoneOffset();
+  let f=TZ_FMT.get(zone);
+  if(!f){ f=new Intl.DateTimeFormat('en-US',{timeZone:zone,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}); TZ_FMT.set(zone,f); }
+  const o={}; f.formatToParts(new Date(utcMs)).forEach(q=>o[q.type]=q.value);
+  return (Date.UTC(+o.year,+o.month-1,+o.day,+o.hour%24,+o.minute,+o.second)-Math.floor(utcMs/1000)*1000)/60000;
+}
+/* heure murale (sans fuseau) → instant, dans FILE_TZ ; gère les changements d'heure */
+function wallTime(y,mo,d,h,mi,sec){
+  const naive=Date.UTC(y,mo,d,h,mi,sec);
+  if(isNaN(naive)) return null;
+  const o1=zoneOffsetMin(naive,FILE_TZ); let t=naive-o1*60000;
+  const o2=zoneOffsetMin(t,FILE_TZ); if(o2!==o1) t=naive-o2*60000;
+  TZ_INFO.naive++;
+  return new Date(t);
+}
+function detectTzLabel(text){
+  const head=text.slice(0,400000);
+  if(/(?:date|heure|time|horodatage)\s*(?:\(\s*)?(?:utc|gmt|zulu)\b|\b(?:utc|gmt)\s*(?:date|time)\b/i.test(head)) return 'utc';
+  if(/(?:date|heure|time)\s*(?:\(\s*)?(?:local|locale)\b|\blocal\s*(?:date|time)\b|heure\s+locale/i.test(head)) return 'local';
+  return null;
+}
 const disp = d => TZ_OFF===null ? d : new Date(d.getTime()+(TZ_OFF+d.getTimezoneOffset())*60000);
-const tzLabel = () => TZ_OFF===null ? 'heure locale' : 'UTC'+(TZ_OFF>=0?'+':'−')+pad(Math.floor(Math.abs(TZ_OFF)/60))+':'+pad(Math.abs(TZ_OFF)%60);
+const tzLabel = () => {
+  const u = TZ_OFF===null ? null : 'UTC'+(TZ_OFF>=0?'+':'−')+pad(Math.floor(Math.abs(TZ_OFF)/60))+':'+pad(Math.abs(TZ_OFF)%60);
+  if(typeof TZ_INFO!=='undefined' && TZ_INFO.naive && !TZ_INFO.iso) return (FILE_TZ==='UTC' ? 'UTC' : TZ_NAMES[FILE_TZ]+(u?', '+u:''));
+  return u || "heure de l'ordinateur";
+};
 const hms = d => { const e=disp(d); return pad(e.getHours())+':'+pad(e.getMinutes())+':'+pad(e.getSeconds()); };
 function dur(s){ s=Math.max(0,Math.round(s)); const h=Math.floor(s/3600),m=Math.floor(s%3600/60);
   return h? h+'h'+pad(m) : m+'min'+pad(s%60); }
@@ -1123,8 +1194,10 @@ function parseDate(d){
   if(!d) return null;
   let m=d.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{1,2}):(\d{2})(?::(\d{2}))?(?:[.,]\d+)?\s*(Z|[+-]\d{2}:?\d{2})?/);
   if(m){
+    if(!m[7]){ const w=wallTime(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0)); if(w&&!isNaN(w)) return w; }
     const dt=new Date(`${m[1]}-${m[2]}-${m[3]}T${pad(+m[4])}:${m[5]}:${m[6]||'00'}${m[7]?m[7].replace(/([+-]\d{2})(\d{2})$/,'$1:$2'):''}`);
     if(m[7] && TZ_OFF===null){ const z=m[7].replace(':',''); TZ_OFF = z==='Z'?0:(z[0]==='-'?-1:1)*(parseInt(z.slice(1,3),10)*60+parseInt(z.slice(3,5),10)); }
+    if(m[7] && !isNaN(dt)) TZ_INFO.iso++;
     if(!isNaN(dt)) return dt;
   }
   m=d.match(/(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})[\s,T]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
@@ -1134,7 +1207,7 @@ function parseDate(d){
     let day=+m[1], mon=+m[2];
     if(day>12) { /* sans ambiguïté */ }
     else if(mon>12 || DATE_ORDER==='mdy') { const t=day; day=mon; mon=t; }
-    return new Date(+m[3],mon-1,day,hh,+m[5],+(m[6]||0));
+    return wallTime(+m[3],mon-1,day,hh,+m[5],+(m[6]||0));
   }
   return null;
 }
@@ -1169,6 +1242,8 @@ async function unzipKML(buf){
 /* Extraction de toutes les traces candidates du document */
 function parseKML(text){
   scanDateOrder(text); TZ_OFF=null;
+  TZ_INFO={naive:0, iso:0, label:detectTzLabel(text)};
+  FILE_TZ = TZ_CHOICE!=='auto' ? TZ_CHOICE : (TZ_INFO.label==='utc' ? 'UTC' : 'Europe/Paris');
   const doc=new DOMParser().parseFromString(text,'application/xml');
   if(doc.getElementsByTagName('parsererror').length) throw new Error('Fichier KML illisible.');
   const kids=(n,t)=>Array.from(n.children).filter(e=>e.localName===t);
@@ -1364,7 +1439,12 @@ function parseKML(text){
   }
   /* les dossiers de repères (2-3 points) ne sont pas des traces */
   const big=uniq.filter(sg=>sg.samples.length>=5);
-  return big.length?big:uniq;
+  const res=big.length?big:uniq;
+  /* heures sans fuseau : l'affichage suit le fuseau retenu, quel que soit le réglage de l'ordinateur */
+  if(TZ_OFF===null && TZ_INFO.naive && FILE_TZ!=='browser'){
+    const t0=res[0].samples.find(q=>q.t)?.t; if(t0) TZ_OFF=zoneOffsetMin(t0.getTime(),FILE_TZ);
+  }
+  return res;
 }
 
 /* ============================================================
@@ -1397,6 +1477,44 @@ function semOf(d){
 }
 function engOf(d){ const m=(d.label+' '+d.key).match(/(?:moteur|engine|eng|ng|nf|t4|couple|torque|trq|bz|toil|co|\s)\s*([12])\b/i); return m?+m[1]:null; }
 
+/* Cadence de la trace : intervalle médian (en vol si possible), dispersion, doublons,
+   coupures — et pour chacune, l'état de l'appareil avant et après (en vol ou au sol). */
+const CAD_VOL_KT = 20, CAD_SOL_KT = 5;   // > 20 kt : en vol ; 5–20 kt : approche, stationnaire ou roulage possible
+function cadenceOf(s, dts, med, gaps){
+  const n=s.length, fileGs=p=>!!p.gsFile && isFinite(p.gs);
+  /* vitesse de part et d'autre d'une coupure : celle du fichier si elle existe,
+     sinon calculée sur le seul intervalle du même côté (jamais à travers la coupure) */
+  const speedBefore=i=>{ const p=s[i]; if(fileGs(p)) return p.gs; if(i<1) return null;
+    const d=s[i].rt-s[i-1].rt; return d>0 ? haversine(s[i-1],s[i])/d*1.9438445 : null; };
+  const speedAfter=i=>{ const p=s[i]; if(fileGs(p)) return p.gs; if(i>=n-1) return null;
+    const d=s[i+1].rt-s[i].rt; return d>0 ? haversine(s[i],s[i+1])/d*1.9438445 : null; };
+  const pct=(a,q)=>{ if(!a.length) return NaN; const b=a.slice().sort((x,y)=>x-y); return b[Math.min(b.length-1,Math.floor(q*(b.length-1)+0.5))]; };
+  const pos=dts.filter(d=>d>0);
+  const vol=[]; const volGs=[];
+  for(let i=1;i<n;i++){ const d=dts[i-1]; if(d<=0) continue;
+    const g=s[i].gs; if(isFinite(g) && g>CAD_VOL_KT && isFinite(s[i-1].gs) && s[i-1].gs>CAD_VOL_KT){ vol.push(d); volGs.push(g); } }
+  const useVol = vol.length>=10;
+  const base = useVol ? vol : pos;
+  const medC=pct(base,.5), p90=pct(base,.9), mn=base.length?Math.min(...base):NaN;
+  const dup=dts.filter(d=>d===0).length;
+  const gsMed = volGs.length ? pct(volGs,.5) : NaN;
+  const g2 = gaps.map(g=>{
+    const vb=speedBefore(g.i0), va=speedAfter(g.i1);
+    return {...g, vBefore:vb, vAfter:va,
+      startsInFlight: isFinite(vb) && vb>CAD_VOL_KT,
+      startsUncertain: isFinite(vb) && vb>CAD_SOL_KT && vb<=CAD_VOL_KT,
+      endsInFlight:   isFinite(va) && va>CAD_VOL_KT};
+  });
+  let level, label;
+  if(!(medC>0))       { level='bad';  label='indéterminée'; }
+  else if(medC<=2)    { level='ok';   label='haute résolution'; }
+  else if(medC<=10)   { level='mid';  label='résolution moyenne'; }
+  else if(medC<=30)   { level='low';  label='résolution faible'; }
+  else                { level='bad';  label='résolution très faible'; }
+  return {med:medC, p90, min:mn, basis:useVol?'vol':'trace', dup, gsMed,
+          stepNm: isFinite(gsMed)&&medC>0 ? gsMed*medC/3600 : NaN,
+          gaps:g2, inFlight:g2.filter(g=>g.startsInFlight), uncertain:g2.filter(g=>g.startsUncertain), level, label};
+}
 function build(raw){
   const s = raw.samples, n = s.length;
   const noTime = !!raw.noTime;
@@ -1419,7 +1537,8 @@ function build(raw){
     const a=s[Math.max(0,i-w)], b=s[Math.min(n-1,i+w)];
     const dt=(b.rt-a.rt);
     const computed = dt>0 ? haversine(a,b)/dt*1.9438445 : 0;
-    if(s[i].gs===null || s[i].gs===undefined) s[i].gs = noTime ? null : computed;
+    s[i].gsFile = !(s[i].gs===null || s[i].gs===undefined);
+    if(!s[i].gsFile) s[i].gs = noTime ? null : computed;
     s[i].gsCalc = computed;
     s[i].trk = (dt>0 && haversine(a,b)>15) ? bearing(a,b) : (i>0 ? s[i-1].trk : 0);
     if(!hasHdg || !isFinite(s[i].hdg)) s[i].hdg = s[i].trk;
@@ -1440,11 +1559,15 @@ function build(raw){
   /* intervalles et coupures de suivi */
   const dts=[]; for(let i=1;i<n;i++) dts.push(s[i].rt-s[i-1].rt);
   const med = dts.slice().sort((a,b)=>a-b)[Math.floor(dts.length/2)] || 1;
+  /* seuil de coupure : 4 intervalles médians, au moins 20 s (1 Hz) et au plus 150 s pour les cadences fines */
+  const gapThr = Math.max(med*4, Math.min(150, med*10+10), 20);
   const gaps=[];
   for(let i=1;i<n && !noTime;i++){
     const d=s[i].rt-s[i-1].rt;
-    if(d > Math.max(med*4, 150)) gaps.push({i0:i-1,i1:i,from:s[i-1],to:s[i],d});
+    if(d > gapThr) gaps.push({i0:i-1,i1:i,from:s[i-1],to:s[i],d});
   }
+  const cadence = noTime ? null : cadenceOf(s, dts, med, gaps);
+  if(cadence) gaps.splice(0, gaps.length, ...cadence.gaps);
   /* paramètres enregistrés : statistiques et reconnaissance sémantique */
   const defs=raw.paramDefs||[];
   const params=defs.map((d,k)=>{
@@ -1459,10 +1582,10 @@ function build(raw){
   for(const k in sem) if(Array.isArray(sem[k])) sem[k].sort((a,b)=>(a.eng||0)-(b.eng||0));
   const hasAtt = s.some(p=>p.att) || (sem.pitch&&sem.roll);
   const alts = s.map(p=>p.altFt), gss = s.map(p=>p.gs).filter(v=>v!==null);
-  const airborne = noTime ? null : dts.reduce((acc,d,i)=> acc + (s[i+1].gs>20 && d<Math.max(med*4,150) ? d : 0), 0);
+  const airborne = noTime ? null : dts.reduce((acc,d,i)=> acc + (s[i+1].gs>20 && d<=gapThr ? d : 0), 0);
 
   return {
-    samples:s, name:raw.name||'', noTime, altMode:raw.altMode||'absolute', gaps, med,
+    samples:s, name:raw.name||'', noTime, altMode:raw.altMode||'absolute', gaps, med, gapThr, cadence,
     tStart:s[0].t, tEnd:s[n-1].t, span:Math.max(1,s[n-1].rt),
     altMin:Math.min(...alts), altMax:Math.max(...alts),
     gsMax: gss.length?Math.max(...gss):null, distTot:cum, airborne,
@@ -4149,9 +4272,62 @@ function fillBehavior(){
  const items=[['Stationnaire',fmt(buckets.hover)],['Translation',fmt(buckets.translation)],['Au sol probable',fmt(buckets.ground)],['Non classé',fmt(buckets.unknown)],['Séquences stationnaires',hoverRuns],['Points translation < 100 ft AGL',lowCount]];
  $('behSummary').innerHTML=items.map(([k,v])=>'<div><div class="k">'+k+'</div><div class="v">'+v+'</div></div>').join('');
 }
+const fmtIv = d => !isFinite(d) ? '—' : (d<90 ? (d<10&&d%1 ? d.toFixed(1).replace('.',',') : Math.round(d))+' s' : dur(d));
+const ktTxt = v => isFinite(v) ? Math.round(v)+' kt' : '?';
+function fillCadence(){
+  const F=S.F, sec=$('cadSection');
+  if(!F || F.noTime || !F.cadence){ sec.hidden=true; return; }
+  const C=F.cadence; sec.hidden=false;
+  $('cadQ').className='cadq '+C.level; $('cadQ').textContent=C.label;
+  const tot=C.gaps.reduce((a,g)=>a+g.d,0);
+  $('cadGrid').innerHTML=[
+    ['Médiane', fmtIv(C.med), C.basis==='vol'?'en vol':''],
+    ['P90', fmtIv(C.p90), ''],
+    ['Min', fmtIv(C.min), ''],
+    ['Trous', C.gaps.length, C.gaps.length?dur(tot):'']
+  ].map(([k,v,u])=>`<div><div class="k">${k}</div><div class="v">${v}${u?`<small>${u}</small>`:''}</div></div>`).join('');
+
+  const W=[];
+  if(C.inFlight.length){
+    const lst=C.inFlight.map(g=>hms(g.from.t).slice(0,5)+' ('+ktTxt(g.vBefore)+(g.endsInFlight?', reprise en vol':', reprise au sol')+')').join(' ; ');
+    W.push(['', `<b>${C.inFlight.length===1?'Un trou commence':C.inFlight.length+' trous commencent'} en vol</b> — ${lst}. `
+      +`La portion manquante est remplacée par un segment droit : la finale, le poser ou toute manœuvre dans l'intervalle ne sont pas analysables, et un passage bas ou un franchissement de relief peut y être masqué.`]);
+  }
+  if(C.uncertain.length){
+    W.push(['soft', `<b>${C.uncertain.length===1?'Un trou commence':C.uncertain.length+' trous commencent'} à vitesse faible</b> — `
+      +C.uncertain.map(g=>hms(g.from.t).slice(0,5)+' ('+ktTxt(g.vBefore)+')').join(' ; ')
+      +`. Pour un hélicoptère, cela peut être une fin d'approche ou un stationnaire autant qu'un roulage : vérifiez l'état réel avant de conclure au posé.`]);
+  }
+  if(C.level==='bad' || C.level==='low'){
+    const step = isFinite(C.stepNm) ? ` Soit environ <b>${(C.stepNm*1.852).toFixed(1).replace('.',',')} km</b> entre deux points à la vitesse médiane en vol (${Math.round(C.gsMed)} kt).` : '';
+    W.push([C.level==='bad'?'':'soft', `<b>Trace à ${fmtIv(C.med)} entre points.</b>${step} La route et le profil global restent exploitables ; la hauteur sol minimale, le taux de chute, les vitesses sur segment court et les détections de seuils sont <b>indicatifs</b>. Un passage bas réel peut tomber entre deux points.`]);
+  } else if(C.level==='mid'){
+    W.push(['soft', `<b>Cadence de ${fmtIv(C.med)}.</b> Les manœuvres brèves (arrondi, mise en stationnaire, passage bas de quelques secondes) peuvent être lissées ou manquées.`]);
+  }
+  if(C.dup) W.push(['soft', `${C.dup} point${C.dup>1?'s':''} au même horodatage qu'un autre point (reprise après veille du traceur, en général) . Sans incidence sur la trace.`]);
+  $('cadWarn').innerHTML=W.map(([c,t])=>`<p class="cadwarn ${c}">${t}</p>`).join('');
+
+  const G=$('cadGaps');
+  G.innerHTML=C.gaps.map(g=>`<button class="event ${g.startsInFlight?'inflight':''}" data-t="${g.from.rt}"><span class="t">${hms(g.from.t)}</span>`
+    +`<span class="d"><i class="${g.startsInFlight?'vol':(g.startsUncertain?'inc':'sol')}">${g.startsInFlight?'en vol':(g.startsUncertain?'incertain':'au sol')}</i>trou de <b>${dur(g.d)}</b> — dernier point à ${ktTxt(g.vBefore)}, reprise à ${hms(g.to.t)} (${ktTxt(g.vAfter)})</span></button>`).join('');
+  G.style.display=C.gaps.length?'':'none';
+  G.querySelectorAll('.event').forEach(b=>b.onclick=()=>{ S.tCur=+b.dataset.t; setPlaying(false); refresh(); });
+
+  /* fuseau des heures sans indication */
+  const naive = TZ_INFO.naive>0 && !TZ_INFO.iso;
+  $('cadTzBox').hidden = !naive;
+  $('cadTz').value = TZ_CHOICE;
+  const lbl = TZ_INFO.label==='local' ? "Le fichier annonce des heures locales sans préciser le fuseau"
+            : TZ_INFO.label==='utc' ? "Le fichier annonce des heures UTC" : "Les horodatages du fichier ne précisent pas de fuseau";
+  $('cadNote').innerHTML = (naive ? lbl+` : elles sont lues en <b style="color:var(--paper);font-weight:500">${TZ_NAMES[FILE_TZ]}</b>`
+      +(TZ_CHOICE==='auto'?' (choix automatique)':'')+", heure d'été comprise. Changez le fuseau si l'enregistreur était réglé autrement. "
+      : "Horodatages avec fuseau explicite. ")
+    +`Seuil de trou : ${fmtIv(F.gapThr)} sans position. Un trou est dit « en vol » si le dernier point avant lui dépasse ${CAD_VOL_KT} kt, « incertain » entre ${CAD_SOL_KT} et ${CAD_VOL_KT} kt.`;
+}
 function fillMetrics(){
   const F=S.F;
   fillBehavior();
+  fillCadence();
   const items=[];
   if(!F.noTime){
     items.push(['Durée du suivi', dur(F.span), '']);
@@ -4173,14 +4349,14 @@ function fillMetrics(){
     if(F.detections&&F.detections.length) items.push(['Détections', F.detections.length, 'seuils']);
   }
   items.push(['Points', F.samples.length, '']);
-  if(!F.noTime) items.push(['Cadence', Math.round(F.med)+' s', 'médiane']);
+  if(!F.noTime && F.cadence) items.push(['Cadence', fmtIv(F.cadence.med), 'médiane', (F.cadence.level==='bad'||F.cadence.level==='low')]);
   const gsOpt=$('colorBy').querySelector('[value="gs"]');
   gsOpt.disabled = (F.gsMax===null);
   if(gsOpt.disabled && S.colorBy==='gs'){ S.colorBy='alt'; $('colorBy').value='alt'; }
-  $('metrics').innerHTML = items.map(([k,v,u])=>
-    `<div class="metric"><div class="k">${k}</div><div class="v">${v}${u?`<small>${u}</small>`:''}</div></div>`
+  $('metrics').innerHTML = items.map(([k,v,u,al])=>
+    `<div class="metric${al?' alert':''}"><div class="k">${k}</div><div class="v">${v}${u?`<small>${u}</small>`:''}</div></div>`
   ).join('') + (F.gaps.length ?
-    `<div class="metric alert"><div class="k">Coupures</div><div class="v">${F.gaps.length}<small>${dur(F.gaps.reduce((a,g)=>a+g.d,0))}</small></div></div>` : '');
+    `<div class="metric alert"><div class="k">Coupures</div><div class="v">${F.gaps.length}<small>${dur(F.gaps.reduce((a,g)=>a+g.d,0))}${F.cadence&&F.cadence.inFlight.length?' · '+F.cadence.inFlight.length+' en vol':''}</small></div></div>` : '');
 }
 function fillTape(){
   const F=S.F, bar=$('tapeBar');
@@ -4200,7 +4376,9 @@ function fillEvents(){
   const F=S.F, el=$('events'), out=[];
   out.push(evt(0,'Premier point du suivi', hms(F.tStart)));
   F.gaps.forEach(g=>{
-    out.push(evt(g.from.rt, `Coupure de suivi <b>${dur(g.d)}</b> — reprise à ${hms(g.to.t)}`, hms(g.from.t)));
+    out.push(g.startsInFlight
+      ? {rt:g.from.rt, time:hms(g.from.t), cls:'inflight', txt:`Coupure <b>en vol</b> de <b>${dur(g.d)}</b> — dernier point à ${ktTxt(g.vBefore)}, reprise à ${hms(g.to.t)}${g.endsInFlight?' en vol':' au sol'}`}
+      : evt(g.from.rt, `Coupure de suivi <b>${dur(g.d)}</b> — reprise à ${hms(g.to.t)}`, hms(g.from.t)));
   });
   // point le plus haut
   let hi=F.samples[0]; F.samples.forEach(p=>{ if(p.altFt>hi.altFt) hi=p; });
@@ -4250,7 +4428,8 @@ async function openFile(file){
   }catch(e){ toast(e.message||"Fichier illisible."); }
   $('boot').classList.add('off');
 }
-function openText(text, srcName){
+function openText(text, srcName, keepSeg){
+  S.srcText = text;
   let segs;
   try{ segs = parseKML(text); }
   catch(e){ toast(e.message + " Vérifiez qu'il s'agit bien d'un export de trace."); return; }
@@ -4261,9 +4440,9 @@ function openText(text, srcName){
     sel.hidden=false;
     sel.innerHTML = segs.map((s,i)=>
       `<option value="${i}">${escapeHtml(s.name||('Trace '+(i+1)))} — ${s.samples.length} pts${s.noTime?' (sans temps)':''}</option>`).join('');
-    sel.value='0';
+    sel.value=String(keepSeg&&keepSeg<segs.length?keepSeg:0);
   }else sel.hidden=true;
-  useSegment(0);
+  useSegment(keepSeg&&keepSeg<segs.length?keepSeg:0);
 }
 function useSegment(k){
   const raw = SEGS[k]; if(!raw) return;
@@ -4574,6 +4753,7 @@ function readDTED(files){
 
 /* fichier */
 $('segSel').onchange=e=>useSegment(+e.target.value);
+$('cadTz').onchange=e=>{ TZ_CHOICE=e.target.value; if(S.srcText) openText(S.srcText, S.srcName, S.segIdx||0); };
 function showHelp(on){
   $('help').classList.toggle('on', on);
   if(on){ $('help').scrollTop=0; $('helpClose').focus(); }
@@ -4674,9 +4854,18 @@ function detectionReport(){
     });
     L.push('');
   }
+  if(F.cadence){ const C=F.cadence;
+    L.push('CADENCE DE LA TRACE'); L.push(line);
+    L.push('Intervalle médian : '+fmtIv(C.med)+(C.basis==='vol'?' (en vol)':'')+' · P90 '+fmtIv(C.p90)+' · min '+fmtIv(C.min)+' — '+C.label);
+    if(isFinite(C.stepNm)) L.push('Pas moyen en vol  : '+(C.stepNm*1.852).toFixed(1)+' km entre deux points ('+Math.round(C.gsMed)+' kt)');
+    if(C.level==='bad'||C.level==='low') L.push('ATTENTION : hauteur sol, taux de chute et détections de seuils indicatifs à cette cadence.');
+    if(C.inFlight.length) L.push('ATTENTION : '+C.inFlight.length+' trou(s) commençant en vol — portions non analysables.');
+    if(TZ_INFO.naive && !TZ_INFO.iso) L.push('Heures du fichier sans fuseau, lues en '+TZ_NAMES[FILE_TZ]+(TZ_CHOICE==='auto'?' (automatique)':''));
+    L.push('');
+  }
   if(F.gaps.length){
     L.push('COUPURES DE SUIVI ('+F.gaps.length+')'); L.push(line);
-    F.gaps.forEach(g=>L.push(pad2(T(g.from.rt),10)+dur(g.d)+' — reprise à '+T(g.to.rt)));
+    F.gaps.forEach(g=>L.push(pad2(T(g.from.rt),10)+pad2(dur(g.d),9)+pad2(g.startsInFlight?'EN VOL':(g.startsUncertain?'incert.':'au sol'),8)+'dernier point '+ktTxt(g.vBefore)+' — reprise à '+T(g.to.rt)+' ('+ktTxt(g.vAfter)+')'));
     L.push('');
   }
   wxReportLines(T).forEach(x=>L.push(x));
