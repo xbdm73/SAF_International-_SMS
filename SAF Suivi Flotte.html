@@ -158,9 +158,9 @@ footer .err{color:var(--lost)}
   var PANEL = '#FFFFFF';   // panneaux / cartes
   var SUB   = '#F2F8FD';   // sous-panneaux
   var LINE  = '#C3D8EA';   // traits / bordures
-  var TEXT  = '#13202E';   // texte principal
-  var MUTED = '#4A5D70';   // texte secondaire
-  var FAINT = '#62778B';   // texte discret
+  var TEXT  = '#0B1622';   // texte principal (contraste ≈ 16:1 sur le bleu ciel)
+  var MUTED = '#1E2D3D';   // texte secondaire (≈ 12:1)
+  var FAINT = '#2E3F51';   // texte discret / placeholders (≈ 9:1)
 
   /* ---------- outils couleur ---------- */
   function parse(c){
@@ -347,23 +347,22 @@ footer .err{color:var(--lost)}
     for(var i = layers.length - 1; i >= 0; i--) base = over(layers[i], base);
     return base;
   }
+  // Contraste visé : 7:1 minimum (WCAG AAA) pour tout le texte
+  var TARGET = 7;
+  function bestNeutral(bg){ return contrast(cTEXT, bg) >= contrast(cWHITE, bg) ? TEXT : '#FFFFFF'; }
   function fixText(c, bg){
     if(!c || c.a === 0) return null;
-    if(contrast(over(c.a < 1 ? c : c, bg), bg) >= 3.6) return null;
-    var bgLight = L(bg) > 0.4;
-    if(isNeutral(c)){
-      if(!bgLight) return '#FFFFFF';
-      var y = Y(c);
-      return (y > 0.8) ? TEXT : (y > 0.6 ? MUTED : TEXT);
-    }
-    // couleur : on garde la teinte, on assombrit (ou éclaircit) jusqu'au contraste
-    var k = c, i = 0;
-    while(contrast(k, bg) < 3.6 && i < 20){
-      k = bgLight ? { r:k.r * 0.85, g:k.g * 0.85, b:k.b * 0.85, a:1 }
-                  : { r:k.r + (255 - k.r) * 0.2, g:k.g + (255 - k.g) * 0.2, b:k.b + (255 - k.b) * 0.2, a:1 };
+    var cc = c.a < 1 ? over(c, bg) : c;
+    if(contrast(cc, bg) >= TARGET) return null;
+    if(isNeutral(cc)) return bestNeutral(bg);
+    // texte coloré : même teinte, assombrie (ou éclaircie) jusqu'à 7:1
+    var bgLight = contrast(cTEXT, bg) >= contrast(cWHITE, bg), k = { r:cc.r, g:cc.g, b:cc.b, a:1 }, i = 0;
+    while(contrast(k, bg) < TARGET && i < 40){
+      k = bgLight ? { r:k.r * 0.9, g:k.g * 0.9, b:k.b * 0.9, a:1 }
+                  : { r:k.r + (255 - k.r) * 0.15, g:k.g + (255 - k.g) * 0.15, b:k.b + (255 - k.b) * 0.15, a:1 };
       i++;
     }
-    return hex(k);
+    return contrast(k, bg) >= TARGET ? hex(k) : bestNeutral(bg);
   }
   function gradientIsDark(img){
     if(!img || img === 'none' || img.indexOf('gradient') < 0 || img.indexOf('url(') > -1) return false;
@@ -397,7 +396,6 @@ footer .err{color:var(--lost)}
     }catch(e){}
   }
   function processList(els){
-    if(!DARK) return;
     var vw = window.innerWidth || 1200, vh = window.innerHeight || 800;
     ourTags(false);   // lectures sur les couleurs d'origine
     var restore = true;
@@ -405,7 +403,7 @@ footer .err{color:var(--lost)}
     // a) lectures (styles d'origine : nos classes ont été retirées)
     els.forEach(function(el){
       if(!el || el.nodeType !== 1) return;
-      if(el.tagName === 'IMG'){ checkImg(el); return; }
+      if(el.tagName === 'IMG'){ if(DARK) checkImg(el); return; }
       if(skippable(el)) return;
       var cs = getComputedStyle(el);
       work.push({ el:el, svg: el instanceof SVGElement, bg: parse(cs.backgroundColor), img: cs.backgroundImage,
@@ -417,7 +415,7 @@ footer .err{color:var(--lost)}
     work.forEach(function(w){
       if(w.svg) return;
       var b = w.bg;
-      if(b && b.a >= 0.5 && (darkNeutralBg(b) || darkSatBg(b))){ var r = w.el.getBoundingClientRect(); w.big = w.rad < 2 && ((r.width >= vw * 0.6 && r.height >= 48) || r.height >= vh * 0.7); }
+      if(DARK && b && b.a >= 0.5 && (darkNeutralBg(b) || darkSatBg(b))){ var r = w.el.getBoundingClientRect(); w.big = w.rad < 2 && ((r.width >= vw * 0.6 && r.height >= 48) || r.height >= vh * 0.7); }
     });
     ourTags(true);
     // b) décisions de fond
@@ -425,6 +423,7 @@ footer .err{color:var(--lost)}
       var el = w.el, bg = w.bg, nb = null, tag = el.tagName;
       if(w.svg){ return; }
       if(tag === 'HTML' || tag === 'BODY'){ decided.set(el, cSKY); return; }
+      if(!DARK){ decided.set(el, bg); return; }
       if(darkNeutralBg(bg) || darkSatBg(bg)){
         nb = w.big ? SKY : ((Y(bg) < 0.16) ? PANEL : SUB);
       } else if(bg && bg.a > 0 && bg.a < 0.5 && Y(bg) > 0.75 && isNeutral(bg)){
@@ -447,7 +446,7 @@ footer .err{color:var(--lost)}
           if(holder){ var cand = holder.querySelector('rect,path,circle,ellipse,polygon'); if(cand){ var f = parse(getComputedStyle(cand).fill); if(f && f.a > 0.6 && !isNeutral(f) && Y(f) < 0.65) shape = f; } }
           var bgS = shape || cPANEL;
           var nf = fixText(w.fill, bgS); if(nf) w.nfill = nf;
-        } else if(t !== 'svg' && t !== 'g' && t !== 'defs'){
+        } else if(DARK && t !== 'svg' && t !== 'g' && t !== 'defs'){
           if(w.fill && w.fill.a > 0.5 && isNeutral(w.fill) && Y(w.fill) < 0.25) w.nfill = SUB;
           else if(w.fill && w.fill.a > 0.3 && isNeutral(w.fill) && Y(w.fill) > 0.8 && /^(path|circle|polygon|line|polyline|use)$/.test(t)) w.nfill = MUTED;
           if(w.stroke && w.stroke.a > 0.05 && isNeutral(w.stroke) && (Y(w.stroke) > 0.6 || Y(w.stroke) < 0.3)) w.nstroke = (Y(w.stroke) > 0.6) ? '#7F96AA' : LINE;
@@ -459,7 +458,7 @@ footer .err{color:var(--lost)}
       if(w.tf && w.tx && (w.tf.r !== w.tx.r || w.tf.g !== w.tx.g || w.tf.b !== w.tx.b)){ var nf2 = fixText(w.tf, eb); if(nf2) w.ntf = nf2; }
 
       w.nbd = [];
-      for(var i = 0; i < 4; i++){
+      for(var i = 0; i < 4 && DARK; i++){
         var b = w.bd[i];
         if(!b || !(w.bw[i] > 0) || b.a === 0) continue;
         if(isNeutral(b) && (b.a < 0.6 || Y(b) > 0.55 || Y(b) < 0.3)) w.nbd[i] = 1;
@@ -509,6 +508,7 @@ footer .err{color:var(--lost)}
     }catch(e){ console.warn('[thème bleu ciel]', e); }
     if(obs) obs.takeRecords();
     busy = false;
+    scheduleGuard();
   }
   function onMut(list){
     if(busy) return;
@@ -524,20 +524,112 @@ footer .err{color:var(--lost)}
     if(queue.size) schedule();
   }
 
+  /* ---------- 3) contrôle final du contraste ----------
+     Vérifie le rendu réel de chaque texte visible (couleur finale, fond
+     effectif, opacité) et corrige tout ce qui reste sous 7:1. */
+  function hasOwnText(el){
+    if(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return true;
+    for(var n = el.firstChild; n; n = n.nextSibling) if(n.nodeType === 3 && /\S/.test(n.nodeValue)) return true;
+    return false;
+  }
+  function finalBg(el){
+    var layers = [], a = el;
+    while(a && a.nodeType === 1){
+      var c = parse(getComputedStyle(a).backgroundColor);
+      if(c && c.a > 0.02){ layers.push(c); if(c.a >= 0.95) break; }
+      a = a.parentElement;
+    }
+    var base = (a && a.nodeType === 1) ? layers.pop() : cSKY;
+    if(!base || base.a < 0.95) base = cSKY;
+    for(var i = layers.length - 1; i >= 0; i--) base = over(layers[i], base);
+    return base;
+  }
+  function guard(){
+    if(!document.body) return;
+    var todo = [];
+    var els = document.body.getElementsByTagName('*');
+    for(var i = 0; i < els.length; i++){
+      var el = els[i];
+      if(SKIP[el.tagName] || el.tagName === 'OPTION' || el instanceof SVGElement) continue;
+      if(!hasOwnText(el)) continue;
+      if(!el.getClientRects().length) continue;
+      var cs = getComputedStyle(el);
+      if(cs.visibility !== 'visible') continue;
+      var tc = parse(cs.webkitTextFillColor) || parse(cs.color); if(!tc || tc.a === 0) continue;
+      var own = parseFloat(cs.opacity), anc = 1, a = el.parentElement;
+      while(a && a !== document.body){ anc *= parseFloat(getComputedStyle(a).opacity); a = a.parentElement; }
+      if(own * anc < 0.05) continue;
+      var bg = finalBg(el);
+      var seen = over({ r:tc.r, g:tc.g, b:tc.b, a:tc.a * own * anc }, bg);
+      if(contrast(seen, bg) >= TARGET) continue;
+      // couleur requise en tenant compte de l'opacité des parents
+      var target = fixText({ r:tc.r, g:tc.g, b:tc.b, a:1 }, bg) || hex(tc);
+      if(anc < 1){
+        var t = parse(target), shown = over({ r:t.r, g:t.g, b:t.b, a:anc }, bg);
+        if(contrast(shown, bg) < TARGET) target = bestNeutral(bg);
+      }
+      var tgt = parse(target);
+      if(tgt && contrast(tgt, bg) < TARGET && anc >= 0.95){
+        // fond coloré (matrice OACI, boutons…) : on le fonce ou l'éclaircit
+        // juste assez pour atteindre 7:1, en gardant sa teinte
+        var owner = el;
+        while(owner && owner !== document.body){ var ob = parse(getComputedStyle(owner).backgroundColor); if(ob && ob.a >= 0.95) break; owner = owner.parentElement; }
+        if(owner && owner !== document.body && !isNeutral(bg)){
+          var whiteText = L(tgt) > 0.5, k = { r:bg.r, g:bg.g, b:bg.b, a:1 }, n = 0;
+          while(contrast(tgt, k) < TARGET && n < 40){
+            k = whiteText ? { r:k.r * 0.93, g:k.g * 0.93, b:k.b * 0.93, a:1 }
+                          : { r:k.r + (255 - k.r) * 0.08, g:k.g + (255 - k.g) * 0.08, b:k.b + (255 - k.b) * 0.08, a:1 };
+            n++;
+          }
+          todo.push([owner, null, false, hex(k)]);
+        }
+      }
+      todo.push([el, target, own < 1]);
+    }
+    // textes SVG (graphiques, jauges)
+    var svgt = document.body.querySelectorAll('svg text, svg tspan');
+    for(var j = 0; j < svgt.length; j++){
+      var t = svgt[j];
+      if(!t.getClientRects().length || !/\S/.test(t.textContent)) continue;
+      var f = parse(getComputedStyle(t).fill); if(!f || f.a === 0) continue;
+      var holder = t.closest('g') || t.parentNode, sb = null;
+      if(holder && holder.querySelector){ var cand = holder.querySelector('rect,circle,ellipse,polygon'); if(cand){ var cf = parse(getComputedStyle(cand).fill); if(cf && cf.a > 0.6) sb = cf; } }
+      var svgEl = t.ownerSVGElement;
+      var bgS = sb || finalBg(svgEl && svgEl.parentElement ? svgEl.parentElement : document.body);
+      if(contrast(f.a < 1 ? over(f, bgS) : f, bgS) >= TARGET) continue;
+      var nf = fixText(f, bgS); if(nf) todo.push([t, nf, false, null, true]);
+    }
+    if(!todo.length) return;
+    var was = busy; busy = true;
+    todo.forEach(function(x){
+      if(x[3]){ setP(x[0], 'background-color', x[3]); return; }
+      if(x[4]){ setP(x[0], 'fill', x[1]); return; }
+      setP(x[0], 'color', x[1]);
+      setP(x[0], '-webkit-text-fill-color', x[1]);
+      if(x[2]) setP(x[0], 'opacity', '1');
+    });
+    if(obs) obs.takeRecords();
+    busy = was;
+  }
+  var guardTimer = null;
+  function scheduleGuard(){ clearTimeout(guardTimer); guardTimer = setTimeout(function(){ try{ guard(); }catch(e){ console.warn('[contraste]', e); } }, 120); }
+  setInterval(function(){ if(document.visibilityState !== 'hidden') scheduleGuard(); }, 2500);
+
   function fullRefresh(){
     busy = true;
     try{
       Array.prototype.forEach.call(document.querySelectorAll('*'), strip);
-      DARK_LOCK = false; applyVars();
-      if(DARK) processTree(document.body);
+      applyVars();   // le mode sombre d'origine, une fois détecté, reste acquis
+      processTree(document.body);
     }catch(e){ console.warn('[thème bleu ciel]', e); }
     if(obs) obs.takeRecords();
     busy = false;
-    if(DARK) watch();
+    watch();
+    scheduleGuard();
   }
   // Changement de thème au niveau de <html> (ex. bouton clair/sombre du portail)
   new MutationObserver(function(){ requestAnimationFrame(fullRefresh); })
-    .observe(document.documentElement, { attributes:true, attributeFilter:['class','data-theme','data-mode','style'] });
+    .observe(document.documentElement, { attributes:true, attributeFilter:['data-theme','data-mode'] });
   function watch(){
     if(obs || !document.body) return;
     obs = new MutationObserver(onMut);
@@ -546,18 +638,31 @@ footer .err{color:var(--lost)}
   function start(){
     injectBase();
     applyVars();
-    if(!DARK) return;
+
     busy = true;
     try{ processTree(document.body); }catch(e){ console.warn('[thème bleu ciel]', e); }
     busy = false;
     watch();
+    try{ guard(); }catch(e){}
+    uncloak();
   }
-  try{ injectBase(); }catch(e){}
+  // Anti-éclair : tant que la première conversion n'est pas faite, la page est
+  // masquée sur fond bleu ciel (jamais plus de 2,5 s, même en cas de souci).
+  function cloak(){
+    if(document.getElementById('saf-sky-cloak')) return;
+    var c = document.createElement('style'); c.id = 'saf-sky-cloak';
+    c.textContent = 'html{background:' + SKY + ' !important}body{opacity:0 !important}';
+    (document.head || document.documentElement).appendChild(c);
+    setTimeout(uncloak, 2500);
+  }
+  function uncloak(){ var c = document.getElementById('saf-sky-cloak'); if(c) c.remove(); }
+  try{ cloak(); injectBase(); }catch(e){}
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
   window.addEventListener('load', function(){
-    try{ applyVars(); busy = true; processTree(document.body); if(obs) obs.takeRecords(); busy = false; }catch(e){ busy = false; }
+    try{ applyVars(); busy = true; processTree(document.body); if(obs) obs.takeRecords(); busy = false; }catch(e){ busy = false; } scheduleGuard();
   });
   window.safSkyThemeRefresh = fullRefresh;
+  window.safSkyContrastCheck = guard;
 })();
 
 </script>
