@@ -436,9 +436,17 @@ function renderPrediction(pane,reg,last,prev,st){
     {min:30,color:"#FFFFFF"}
   ];
   rings.forEach(({min,color})=>{
-    const radius=predictionRadiusKm(kt,min)*1000;
+    const radiusKm=predictionRadiusKm(kt,min), radius=radiusKm*1000;
     L.circle(center,{radius,color:"#080808",weight:4,opacity:1,fill:false,interactive:false}).addTo(group);
     L.circle(center,{radius,color,weight:3,opacity:1,fill:false,interactive:false}).addTo(group);
+    const tag=destPoint(last.lat,last.lon,45,radiusKm);
+    const html=`<div style="padding:1px 5px;border-radius:10px;background:rgba(8,8,8,.78);border:1px solid rgba(255,255,255,.9);color:#fff;font:600 11px/1.25 var(--font);white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.35)">${min} min</div>`;
+    L.marker([tag.lat,tag.lon],{
+      icon:L.divIcon({className:"",html,iconSize:null,iconAnchor:[0,0]}),
+      interactive:false,
+      keyboard:false,
+      zIndexOffset:1200
+    }).addTo(group);
   });
   const end=destPoint(last.lat,last.lon,hd,predictionRadiusKm(kt,50));
   // Ligne bleu marine avec sous-couche blanche pour l'isoler de la topographie.
