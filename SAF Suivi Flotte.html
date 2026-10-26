@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SAF – Suivi flotte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --ink:#F4F6F8; --ink-2:#9AA7B4; --paper:#0A1420; --panel:#0D1B2A; --line:rgba(255,255,255,.09);
+  --live:#3CC882; --ground:#5B9BE0; --stale:#6C7784; --lost:#E5484D; --signal:#F0C040; --gold:#C9A227;
+  --font:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --cond:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:var(--font);color:var(--ink);background:var(--paper);font-size:15px;line-height:1.4}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+
+#app{display:grid;grid-template-columns:340px 1fr;height:100%}
+#side{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;
+  padding-top:env(safe-area-inset-top,0px)}
+#maps{height:100%;width:100%;display:grid;gap:2px;background:var(--line);grid-template-columns:1fr;grid-template-rows:1fr}
+#maps[data-n="2"]{grid-template-columns:1fr 1fr}
+#maps[data-n="3"]{grid-template-columns:1fr 1fr 1fr}
+#maps[data-n="4"]{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.pane{position:relative;min-width:0;min-height:0;background:var(--paper)}
+.pane .map{position:absolute;inset:0}
+.pane-bar{position:absolute;z-index:800;left:10px;top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;
+  background:rgba(13,27,42,.92);border:1px solid var(--line);border-radius:6px;padding:5px 8px;max-width:calc(100% - 80px);font-size:13px}
+.pane-bar select{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:3px 6px;font-weight:600}
+.pane-bar .pst{color:var(--ink-2);white-space:nowrap}
+.pane-bar .pst b{font-weight:600}
+.pane-bar .pst[data-st=live] b{color:var(--live)} .pane-bar .pst[data-st=ground] b{color:var(--ground)} .pane-bar .pst[data-st=lost] b{color:var(--lost)}
+.pane-bar button{background:var(--signal);color:#111;border:0;border-radius:4px;padding:3px 8px;font-weight:600;cursor:pointer}
+.pane-bar button[hidden]{display:none}
+
+header{padding:18px 20px 12px;border-bottom:1px solid var(--line)}
+header h1{font-family:var(--cond);font-weight:700;font-size:26px;letter-spacing:.01em;margin:0;line-height:1;color:var(--signal)}
+header .home{display:inline-block;margin-bottom:10px;font-size:13px;color:var(--gold);text-decoration:none}
+header .home:hover{color:var(--signal)}
+header p{margin:4px 0 0;color:var(--ink-2);font-size:13px}
+
+#controls{display:flex;gap:8px;padding:10px 20px;border-bottom:1px solid var(--line);align-items:center;flex-wrap:wrap}
+#controls label{font-size:13px;color:var(--ink-2)}
+#controls select{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:4px 6px}
+#controls button{background:none;border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer}
+
+#list{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1}
+.ac{display:grid;grid-template-columns:6px 1fr;cursor:pointer;border-bottom:1px solid var(--line)}
+.ac:hover,.ac.sel{background:rgba(255,255,255,.04)}
+.ac .bar{background:var(--stale)}
+.ac[data-st=live] .bar{background:var(--live)} .ac[data-st=ground] .bar{background:var(--ground)}
+.ac[data-st=lost] .bar{background:var(--lost)}
+.ac .body{padding:12px 16px 12px 14px}
+.ac .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ac .reg{font-family:var(--cond);font-weight:700;font-size:30px;line-height:1}
+.ac .type{color:var(--ink-2);font-size:13px}
+.ac .st{font-weight:600;font-size:14px;margin-top:4px}
+.ac[data-st=live] .st{color:var(--live)} .ac[data-st=ground] .st{color:var(--ground)}
+.ac[data-st=lost] .st{color:var(--lost)} .ac[data-st=none] .st,.ac[data-st=stale] .st{color:var(--stale)}
+.ac dl{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px;margin:10px 0 0}
+.ac dt{font-size:12px;color:var(--ink-2)} .ac dd{margin:0;font-family:var(--cond);font-weight:600;font-size:19px}
+.ac dd small{font-family:var(--font);font-weight:400;font-size:12px;color:var(--ink-2)}
+.ac .when{font-size:12px;color:var(--ink-2);margin-top:8px}
+
+.ac .facts{font-size:13px;margin-top:8px;display:grid;gap:2px}
+.ac .facts b{font-weight:600}
+.ac .more{margin-top:8px;font-size:12px;color:var(--gold)}
+.det{margin-top:12px;border-top:1px solid var(--line);padding-top:4px;font-size:13px;cursor:default}
+.det h3{font-family:var(--cond);font-size:15px;font-weight:600;margin:12px 0 4px;color:var(--signal)}
+.det p{margin:0 0 6px}
+.det .muted{color:var(--ink-2)}
+.det .note{font-size:11.5px;margin-top:6px}
+.det table{width:100%;border-collapse:collapse}
+.det td{padding:3px 0}
+.det tr.sum td{padding-bottom:8px;border-bottom:1px solid var(--line);color:var(--ink-2)}
+.det .metar{font-family:var(--cond);font-size:13.5px;line-height:1.35}
+footer{padding:10px 20px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);font-size:12px;color:var(--ink-2)}
+footer .err{color:var(--lost)}
+
+/* Session absente ou rôle non autorisé */
+#gate{position:fixed;inset:0;display:none;place-items:center;align-content:center;gap:14px;background:var(--paper);z-index:2000;padding:20px;text-align:center}
+#gate p{margin:0;max-width:420px;color:var(--ink-2)}
+#gate a{color:var(--signal)}
+
+/* Marqueurs */
+.acm{position:relative}
+.acm svg{position:absolute;left:-16px;top:-16px;width:32px;height:32px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+.acm .lbl{position:absolute;left:18px;top:-11px;white-space:nowrap;font-family:var(--cond);font-weight:700;font-size:15px;
+  background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:3px;padding:0 5px;line-height:20px}
+.acm.lost .lbl{background:var(--lost);color:#fff;border-color:var(--lost)}
+.base{font-family:var(--cond);font-weight:600;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.leaflet-container{font-family:var(--font)}
+
+@media (max-width:760px){
+  #app{grid-template-columns:1fr;grid-template-rows:55% 45%}
+  #maps{grid-row:1} #side{grid-row:2;border-right:0;border-top:1px solid var(--line);padding-top:0}
+  #maps[data-n="2"],#maps[data-n="3"]{grid-template-columns:1fr;grid-auto-rows:1fr}
+  #maps[data-n="4"]{grid-template-columns:1fr 1fr}
+  header{padding:10px 16px 8px} header h1{font-size:22px}
+}
+/* Historique des vols */
+#hist{position:fixed;inset:0;z-index:1500;background:var(--paper);display:grid;grid-template-rows:auto 1fr;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#hist[hidden]{display:none}
+#hist .hbar{display:flex;gap:10px 14px;align-items:end;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+#hist h2{font-family:var(--cond);font-weight:700;font-size:24px;margin:0 12px 2px 0;color:var(--signal);line-height:1}
+#hist .fld{display:grid;gap:3px;font-size:12px;color:var(--ink-2)}
+#hist select,#hist input{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:4px 6px;color-scheme:dark}
+#hist button{background:none;border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer}
+#hist button.go{background:var(--signal);color:#111;border-color:var(--signal);font-weight:600}
+#hist button:disabled{opacity:.45;cursor:default}
+#hist .presets{display:flex;gap:4px}
+#hist .close{margin-left:auto}
+#hist .hbody{display:grid;grid-template-columns:minmax(380px,46%) 1fr;min-height:0}
+#hist .hlist{overflow:auto;border-right:1px solid var(--line);font-size:13px}
+#hist .hsum{padding:10px 20px;border-bottom:1px solid var(--line);color:var(--ink-2);display:grid;gap:3px}
+#hist .hsum b{color:var(--ink);font-weight:600}
+#hist .hsum .warn{color:var(--signal)}
+#hist table{width:100%;border-collapse:collapse}
+#hist th{position:sticky;top:0;background:var(--panel);text-align:left;font-weight:600;font-size:12px;color:var(--ink-2);padding:6px 8px;border-bottom:1px solid var(--line)}
+#hist td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+#hist tr.day td{background:rgba(255,255,255,.03);font-family:var(--cond);font-weight:600;font-size:14px;color:var(--signal);padding-top:10px}
+#hist tr.fl{cursor:pointer} #hist tr.fl:hover td{background:rgba(255,255,255,.04)}
+#hist tr.fl.on td{background:rgba(240,192,64,.12)}
+#hist td .reg{font-family:var(--cond);font-weight:700;font-size:16px}
+#hist td .muted{color:var(--ink-2);font-size:12px}
+#hist .hmap{position:relative;min-height:0} #hist .hmap .map{position:absolute;inset:0}
+#hist .empty{padding:24px 20px;color:var(--ink-2)}
+@media (max-width:760px){
+  #hist .hbody{grid-template-columns:1fr;grid-template-rows:40% 60%}
+  #hist .hmap{grid-row:1} #hist .hlist{grid-row:2;border-right:0;border-top:1px solid var(--line)}
+  #hist .hbar{padding:10px 14px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<script id="saf-sky-theme">
+/* SAF — THÈME CLAIR « BLEU CIEL »
+   Remplace le thème bleu nuit par un fond bleu ciel clair, des panneaux
+   blancs et du texte foncé. Fonctionne en deux temps :
+   1) les variables de couleur du :root sont converties (fond sombre -> clair,
+      texte clair -> foncé, traits -> gris-bleu) ;
+   2) les couleurs écrites directement dans le HTML/JS (styles en ligne,
+      contenus générés) sont corrigées élément par élément, y compris pour
+      tout ce qui est ajouté ensuite à la page (MutationObserver).
+   Les couleurs « signal » (rouge, orange, vert, or, badges) sont conservées ;
+   le contraste du texte est vérifié sur chaque élément. */
+(function(){
+  'use strict';
+  if(window.__safSkyTheme) return; window.__safSkyTheme = true;
+
+  var SKY   = '#E3F1FB';   // fond de page bleu ciel clair
+  var PANEL = '#FFFFFF';   // panneaux / cartes
+  var SUB   = '#F2F8FD';   // sous-panneaux
+  var LINE  = '#C3D8EA';   // traits / bordures
+  var TEXT  = '#0B1622';   // texte principal (contraste ≈ 16:1 sur le bleu ciel)
+  var MUTED = '#1E2D3D';   // texte secondaire (≈ 12:1)
+  var FAINT = '#2E3F51';   // texte discret / placeholders (≈ 9:1)
+
+  /* ---------- outils couleur ---------- */
+  function parse(c){
+    c = String(c || '').trim();
+    var m = c.match(/^rgba?\(([^)]+)\)$/i);
+    if(m){
+      var p = m[1].split(/[\s,\/]+/).filter(Boolean);
+      return { r:+p[0], g:+p[1], b:+p[2],
+               a: p.length > 3 ? (String(p[3]).indexOf('%') > -1 ? parseFloat(p[3]) / 100 : +p[3]) : 1 };
+    }
+    m = c.match(/^#([0-9a-f]{3,8})$/i);
+    if(m){
+      var h = m[1];
+      if(h.length === 3 || h.length === 4) h = h.split('').map(function(x){ return x + x; }).join('');
+      return { r:parseInt(h.substr(0,2),16), g:parseInt(h.substr(2,2),16), b:parseInt(h.substr(4,2),16),
+               a: h.length === 8 ? parseInt(h.substr(6,2),16) / 255 : 1 };
+    }
+    return null;
+  }
+  function lin(v){ v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+  function L(c){ return 0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b); }   // luminance relative
+  function Y(c){ return (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) / 255; }          // clarté perçue simple
+  function S(c){ return Math.max(c.r, c.g, c.b) - Math.min(c.r, c.g, c.b); }
+  function contrast(a, b){ var x = L(a), y = L(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+  function hex(c){ return '#' + [c.r, c.g, c.b].map(function(v){ v = Math.max(0, Math.min(255, Math.round(v))); return (v < 16 ? '0' : '') + v.toString(16); }).join(''); }
+  function rgba(c){ return 'rgba(' + Math.round(c.r) + ',' + Math.round(c.g) + ',' + Math.round(c.b) + ',' + (+c.a.toFixed(3)) + ')'; }
+  function over(top, bot){ // compose top (alpha) sur bot (opaque)
+    var a = top.a; return { r: top.r * a + bot.r * (1 - a), g: top.g * a + bot.g * (1 - a), b: top.b * a + bot.b * (1 - a), a: 1 };
+  }
+  var cSKY = parse(SKY), cPANEL = parse(PANEL), cTEXT = parse(TEXT), cWHITE = { r:255, g:255, b:255, a:1 };
+  var isNeutral = function(c){ return S(c) < 70; };
+
+  /* ---------- 1) variables du :root ---------- */
+  function rootVarNames(){
+    var names = {};
+    function walk(rules){
+      for(var i = 0; i < rules.length; i++){
+        var r = rules[i];
+        if(r.cssRules && !r.selectorText){ try{ walk(r.cssRules); }catch(e){} continue; }
+        if(!r.selectorText || !r.style) continue;
+        if(!/(^|,)\s*(:root|html)\s*(,|$)/.test(r.selectorText)) continue;
+        for(var j = 0; j < r.style.length; j++){ var n = r.style[j]; if(n.indexOf('--') === 0) names[n] = 1; }
+      }
+    }
+    for(var k = 0; k < document.styleSheets.length; k++){
+      var sh = document.styleSheets[k];
+      if(sh.ownerNode && sh.ownerNode.id === 'saf-sky-vars') continue;
+      try{ walk(sh.cssRules); }catch(e){}
+    }
+    return Object.keys(names);
+  }
+  var origVars = {}, DARK = false, DARK_LOCK = false;
+  function ourTags(on){
+    ['saf-sky-vars','saf-sky-base'].forEach(function(id){ var t = document.getElementById(id); if(t) t.disabled = !on; });
+  }
+  // Thème d'origine sombre ? (texte clair sur fond foncé)
+  // Échantillonne le fond réellement visible en plusieurs points de l'écran
+  function detectDark(){
+    if(!document.body) return DARK;
+    var vw = window.innerWidth || 1200, vh = window.innerHeight || 800, dark = 0, light = 0;
+    [[.5,.5],[.25,.4],[.75,.3],[.5,.8],[.12,.6],[.88,.7]].forEach(function(p){
+      var el = document.elementFromPoint(vw * p[0], vh * p[1]); if(!el) return;
+      var bg = null, a = el;
+      while(a && a.nodeType === 1){ var c = parse(getComputedStyle(a).backgroundColor); if(c && c.a >= 0.5){ bg = c; break; } a = a.parentElement; }
+      if(!bg) return;
+      if(Y(bg) < 0.35) dark++; else light++;
+    });
+    var bodyDark = (function(){
+      var b = parse(getComputedStyle(document.body).backgroundColor), c = parse(getComputedStyle(document.body).color);
+      if(b && b.a > 0.5) return Y(b) < 0.45;
+      return c ? Y(c) > 0.55 : false;
+    })();
+    if(dark + light === 0) return bodyDark;
+    return bodyDark || dark >= light;
+  }
+  function pageBg(){
+    var els = [document.body, document.documentElement];
+    for(var i = 0; i < els.length; i++){ if(!els[i]) continue; var b = parse(getComputedStyle(els[i]).backgroundColor); if(b && b.a > 0.5) return b; }
+    return null;
+  }
+  function applyVars(){
+    var tag = document.getElementById('saf-sky-vars');
+    ourTags(false);                                    // relire les valeurs d'origine
+    if(!DARK_LOCK){ DARK = detectDark(); if(DARK && document.body) DARK_LOCK = true; }
+    var pb = pageBg();
+    var cs = getComputedStyle(document.documentElement);
+    var names = rootVarNames(), list = [];
+    names.forEach(function(n){
+      var v = cs.getPropertyValue(n).trim(); var c = parse(v);
+      if(!c) return; origVars[n] = c; list.push(n);
+    });
+    // la variable neutre la plus sombre = fond de page
+    var darkest = null;
+    list.forEach(function(n){ var c = origVars[n]; if(c.a > 0.9 && isNeutral(c) && Y(c) < 0.2 && (!darkest || Y(c) < Y(origVars[darkest]))) darkest = n; });
+    var out = [];
+    if(!DARK){
+      // page déjà claire : seul le fond de page passe au bleu ciel
+      list.forEach(function(n){ var c = origVars[n]; if(pb && c.a > 0.9 && Math.abs(c.r - pb.r) + Math.abs(c.g - pb.g) + Math.abs(c.b - pb.b) < 6) out.push(n + ':' + SKY + ' !important'); });
+      list = [];
+    }
+    list.forEach(function(n){
+      var c = origVars[n], nv = null, lineName = /(line|rule|border|stroke|divider|sep|grid)/i.test(n);
+      if(c.a < 0.6){
+        if(Y(c) > 0.75) nv = lineName ? LINE : rgba({ r:19, g:32, b:46, a: Math.min(0.5, c.a * 1.2) }); // voile blanc -> voile foncé
+        else if(lineName && isNeutral(c)) nv = LINE;
+      } else if(isNeutral(c)){
+        var y = Y(c);
+        if(lineName && y < 0.45) nv = LINE;
+        else if(y < 0.2) nv = (n === darkest) ? SKY : PANEL;
+        else if(y < 0.32) nv = SUB;
+        else if(y > 0.7) nv = TEXT;
+        else if(y > 0.45) nv = MUTED;
+      } else if(Y(c) < 0.18 && !lineName){
+        nv = (n === darkest) ? SKY : PANEL;          // fond « bleu nuit » légèrement saturé
+      }
+      if(nv) out.push(n + ':' + nv + ' !important');
+    });
+    if(!tag){ tag = document.createElement('style'); tag.id = 'saf-sky-vars'; }
+    tag.textContent = 'html:root{' + out.join(';') + (DARK ? ';color-scheme:light !important' : '') + '}';
+    if(!tag.parentNode) (document.head || document.documentElement).appendChild(tag);
+    ourTags(true);
+  }
+
+  /* ---------- CSS de base ---------- */
+  var BASE =
+      'html,body{background:' + SKY + ' !important;color-scheme:light}'
+    + '::placeholder{color:' + FAINT + ' !important;opacity:1}'
+    + '::-webkit-scrollbar-track{background:#EAF3FA}'
+    + '::-webkit-scrollbar-thumb{background:#B7CCDF;border-radius:6px}'
+    + 'select option{background:#fff;color:' + TEXT + '}';
+  function injectBase(){
+    if(document.getElementById('saf-sky-base')) return;
+    var st = document.createElement('style'); st.id = 'saf-sky-base'; st.textContent = BASE;
+    (document.head || document.documentElement).appendChild(st);
+  }
+
+  /* ---------- 2) correction élément par élément ---------- */
+  // Les corrections sont posées en style en ligne « !important » (priorité
+  // maximale), en mémorisant la valeur d'origine pour pouvoir la restituer.
+  var saved = new WeakMap();
+  function setP(el, prop, val){
+    var st = el.style; if(!st) return;
+    var rec = saved.get(el); if(!rec){ rec = {}; saved.set(el, rec); }
+    if(!rec[prop]) rec[prop] = { v: st.getPropertyValue(prop), p: st.getPropertyPriority(prop) };
+    st.setProperty(prop, val, 'important');
+    rec[prop].ours = st.getPropertyValue(prop);
+  }
+  function strip(el){
+    var rec = saved.get(el); if(!rec || !el.style) return;
+    var st = el.style;
+    for(var prop in rec){
+      var r = rec[prop];
+      if(st.getPropertyValue(prop) === r.ours && st.getPropertyPriority(prop) === 'important'){
+        if(r.v) st.setProperty(prop, r.v, r.p); else st.removeProperty(prop);
+      }
+    }
+    saved.delete(el);
+  }
+  function getBgOverride(el){ var rec = saved.get(el); return rec && rec['background-color'] ? parse(rec['background-color'].ours) : null; }
+  var SKIP = { SCRIPT:1, STYLE:1, LINK:1, META:1, HEAD:1, TITLE:1, NOSCRIPT:1, BR:1, IMG:1, VIDEO:1, CANVAS:1, IFRAME:1, PICTURE:1, SOURCE:1, TEMPLATE:1 };
+  function skippable(el){
+    if(SKIP[el.tagName]) return true;
+    if(el.closest && el.closest('.leaflet-tile-pane,.leaflet-tile-container,[data-saf-sky-skip]')) return true;
+    return false;
+  }
+  function darkNeutralBg(c){ return c && c.a >= 0.5 && isNeutral(c) && Y(c) < 0.3; }
+  function darkSatBg(c){ return c && c.a >= 0.5 && !isNeutral(c) && Y(c) < 0.14 && (c.b >= c.r); } // bleu nuit saturé
+
+  // Fond final d'un élément déjà traité (lecture sans recalcul de nos décisions)
+  function finalBgOf(el, decided){
+    if(decided && decided.has(el)) return decided.get(el);
+    var c = parse(getComputedStyle(el).backgroundColor);
+    return c;
+  }
+  function effectiveBg(el, decided){
+    var layers = [], a = el;
+    while(a && a.nodeType === 1){
+      var c = finalBgOf(a, decided);
+      if(c && c.a > 0.02){ layers.push(c); if(c.a >= 0.95) break; }
+      a = a.parentElement;
+    }
+    var base = (a && a.nodeType === 1) ? layers.pop() : cSKY;
+    if(!base || base.a < 0.95) base = cSKY;
+    for(var i = layers.length - 1; i >= 0; i--) base = over(layers[i], base);
+    return base;
+  }
+  // Contraste visé : 7:1 minimum (WCAG AAA) pour tout le texte
+  var TARGET = 7;
+  function bestNeutral(bg){ return contrast(cTEXT, bg) >= contrast(cWHITE, bg) ? TEXT : '#FFFFFF'; }
+  function fixText(c, bg){
+    if(!c || c.a === 0) return null;
+    var cc = c.a < 1 ? over(c, bg) : c;
+    if(contrast(cc, bg) >= TARGET) return null;
+    if(isNeutral(cc)) return bestNeutral(bg);
+    // texte coloré : même teinte, assombrie (ou éclaircie) jusqu'à 7:1
+    var bgLight = contrast(cTEXT, bg) >= contrast(cWHITE, bg), k = { r:cc.r, g:cc.g, b:cc.b, a:1 }, i = 0;
+    while(contrast(k, bg) < TARGET && i < 40){
+      k = bgLight ? { r:k.r * 0.9, g:k.g * 0.9, b:k.b * 0.9, a:1 }
+                  : { r:k.r + (255 - k.r) * 0.15, g:k.g + (255 - k.g) * 0.15, b:k.b + (255 - k.b) * 0.15, a:1 };
+      i++;
+    }
+    return contrast(k, bg) >= TARGET ? hex(k) : bestNeutral(bg);
+  }
+  function gradientIsDark(img){
+    if(!img || img === 'none' || img.indexOf('gradient') < 0 || img.indexOf('url(') > -1) return false;
+    var cols = img.match(/rgba?\([^)]+\)/g) || []; if(!cols.length) return false;
+    var tot = 0, n = 0;
+    cols.forEach(function(x){ var c = parse(x); if(c && c.a > 0.3){ tot += Y(c); n++; } });
+    return n > 0 && tot / n < 0.3;
+  }
+
+  var imgSeen = new WeakMap();
+  function darkImg(img){
+    var was = busy; busy = true;
+    setP(img, 'filter', 'brightness(0) saturate(100%) invert(10%) sepia(28%) saturate(1400%) hue-rotate(178deg) brightness(92%)');
+    if(obs) obs.takeRecords(); busy = was;
+  }
+  function checkImg(img){
+    if(imgSeen.has(img) && imgSeen.get(img).src === img.currentSrc){ if(imgSeen.get(img).dark) darkImg(img); return; }
+    if(!img.complete || !img.naturalWidth){ img.addEventListener('load', function(){ checkImg(img); }, { once:true }); return; }
+    var rec = { src: img.currentSrc, dark: false }; imgSeen.set(img, rec);
+    try{
+      var w = Math.min(120, img.naturalWidth), h = Math.max(1, Math.round(img.naturalHeight * w / img.naturalWidth));
+      var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      var cx = cv.getContext('2d'); cx.drawImage(img, 0, 0, w, h);
+      var d = cx.getImageData(0, 0, w, h).data, tr = 0, op = 0, wh = 0;
+      for(var i = 0; i < d.length; i += 4){
+        if(d[i+3] < 40){ tr++; continue; }
+        op++; if(d[i] > 225 && d[i+1] > 225 && d[i+2] > 225) wh++;
+      }
+      var tot = tr + op;
+      if(tot && tr / tot > 0.2 && op && wh / op > 0.85){ rec.dark = true; darkImg(img); }
+    }catch(e){}
+  }
+  function processList(els){
+    var vw = window.innerWidth || 1200, vh = window.innerHeight || 800;
+    ourTags(false);   // lectures sur les couleurs d'origine
+    var restore = true;
+    var decided = new Map(), work = [];
+    // a) lectures (styles d'origine : nos classes ont été retirées)
+    els.forEach(function(el){
+      if(!el || el.nodeType !== 1) return;
+      if(el.tagName === 'IMG'){ if(DARK) checkImg(el); return; }
+      if(skippable(el)) return;
+      var cs = getComputedStyle(el);
+      work.push({ el:el, svg: el instanceof SVGElement, bg: parse(cs.backgroundColor), img: cs.backgroundImage,
+        tx: parse(cs.color), tf: parse(cs.webkitTextFillColor),
+        bd: [parse(cs.borderTopColor), parse(cs.borderRightColor), parse(cs.borderBottomColor), parse(cs.borderLeftColor)],
+        bw: [parseFloat(cs.borderTopWidth), parseFloat(cs.borderRightWidth), parseFloat(cs.borderBottomWidth), parseFloat(cs.borderLeftWidth)],
+        fill: parse(cs.fill), stroke: parse(cs.stroke), sh: cs.boxShadow, rad: parseFloat(cs.borderTopLeftRadius) || 0 });
+    });
+    work.forEach(function(w){
+      if(w.svg) return;
+      var b = w.bg;
+      if(DARK && b && b.a >= 0.5 && (darkNeutralBg(b) || darkSatBg(b))){ var r = w.el.getBoundingClientRect(); w.big = w.rad < 2 && ((r.width >= vw * 0.6 && r.height >= 48) || r.height >= vh * 0.7); }
+    });
+    ourTags(true);
+    // b) décisions de fond
+    work.forEach(function(w){
+      var el = w.el, bg = w.bg, nb = null, tag = el.tagName;
+      if(w.svg){ return; }
+      if(tag === 'HTML' || tag === 'BODY'){ decided.set(el, cSKY); return; }
+      if(!DARK){ decided.set(el, bg); return; }
+      if(darkNeutralBg(bg) || darkSatBg(bg)){
+        nb = w.big ? SKY : ((Y(bg) < 0.16) ? PANEL : SUB);
+      } else if(bg && bg.a > 0 && bg.a < 0.5 && Y(bg) > 0.75 && isNeutral(bg)){
+        nb = rgba({ r:19, g:32, b:46, a: Math.min(0.08, bg.a * 1.1) });    // voile blanc -> voile gris-bleu
+      } else if(bg && bg.a > 0 && bg.a < 0.5 && isNeutral(bg) && Y(bg) < 0.25 && el.children.length){
+        nb = null;                                                          // voile sombre (fond de modale) : conservé
+      }
+      if(gradientIsDark(w.img)){ w.dropImg = true; if(!nb && (!bg || bg.a < 0.5)) nb = PANEL; }
+      if(nb){ w.nb = nb; decided.set(el, parse(nb)); }
+      else decided.set(el, bg);
+      if(w.sh && w.sh !== 'none' && /rgba?\(0, 0, 0/.test(w.sh)) w.softShadow = true;
+    });
+    // c) décisions de texte, bordures, SVG
+    work.forEach(function(w){
+      var el = w.el;
+      if(w.svg){
+        var t = el.tagName.toLowerCase();
+        if(t === 'text' || t === 'tspan' || t === 'textpath'){
+          var holder = el.closest('g') || el.parentNode, shape = null;
+          if(holder){ var cand = holder.querySelector('rect,path,circle,ellipse,polygon'); if(cand){ var f = parse(getComputedStyle(cand).fill); if(f && f.a > 0.6 && !isNeutral(f) && Y(f) < 0.65) shape = f; } }
+          var bgS = shape || cPANEL;
+          var nf = fixText(w.fill, bgS); if(nf) w.nfill = nf;
+        } else if(DARK && t !== 'svg' && t !== 'g' && t !== 'defs'){
+          if(w.fill && w.fill.a > 0.5 && isNeutral(w.fill) && Y(w.fill) < 0.25) w.nfill = SUB;
+          else if(w.fill && w.fill.a > 0.3 && isNeutral(w.fill) && Y(w.fill) > 0.8 && /^(path|circle|polygon|line|polyline|use)$/.test(t)) w.nfill = MUTED;
+          if(w.stroke && w.stroke.a > 0.05 && isNeutral(w.stroke) && (Y(w.stroke) > 0.6 || Y(w.stroke) < 0.3)) w.nstroke = (Y(w.stroke) > 0.6) ? '#7F96AA' : LINE;
+        }
+        return;
+      }
+      var eb = effectiveBg(el, decided);
+      var nt = fixText(w.tx, eb); if(nt) w.ntx = nt;
+      if(w.tf && w.tx && (w.tf.r !== w.tx.r || w.tf.g !== w.tx.g || w.tf.b !== w.tx.b)){ var nf2 = fixText(w.tf, eb); if(nf2) w.ntf = nf2; }
+
+      w.nbd = [];
+      for(var i = 0; i < 4 && DARK; i++){
+        var b = w.bd[i];
+        if(!b || !(w.bw[i] > 0) || b.a === 0) continue;
+        if(isNeutral(b) && (b.a < 0.6 || Y(b) > 0.55 || Y(b) < 0.3)) w.nbd[i] = 1;
+        else if(!isNeutral(b) && b.a < 0.35) w.nbd[i] = 0;   // trait coloré translucide : gardé
+      }
+    });
+    // d) écritures
+    work.forEach(function(w){
+      var el = w.el;
+      if(w.nb) setP(el, 'background-color', w.nb);
+      if(w.dropImg) setP(el, 'background-image', 'none');
+      if(w.ntx) setP(el, 'color', w.ntx);
+      if(w.ntf) setP(el, '-webkit-text-fill-color', w.ntf);
+      if(w.nbd) ['border-top-color','border-right-color','border-bottom-color','border-left-color'].forEach(function(pr, i){ if(w.nbd[i] === 1) setP(el, pr, LINE); });
+      if(w.softShadow) setP(el, 'box-shadow', '0 1px 3px rgba(19,32,46,.10)');
+      if(w.nfill) setP(el, 'fill', w.nfill);
+      if(w.nstroke) setP(el, 'stroke', w.nstroke);
+    });
+  }
+  function processTree(root){
+    if(!root || root.nodeType !== 1) return;
+    var els = [root].concat(Array.prototype.slice.call(root.querySelectorAll('*')));
+    els.forEach(strip);
+    processList(els);
+  }
+
+  /* ---------- observation des changements ---------- */
+  var queue = new Set(), scheduled = false, busy = false, obs = null;
+  function schedule(){
+    if(scheduled) return; scheduled = true;
+    requestAnimationFrame(function(){ scheduled = false; flush(); });
+  }
+  function flush(){
+    if(!queue.size) return;
+    var roots = Array.from(queue); queue.clear();
+    roots = roots.filter(function(r){
+      if(!r.isConnected) return false;
+      for(var i = 0; i < roots.length; i++){ if(roots[i] !== r && roots[i].contains(r)) return false; }
+      return true;
+    });
+    busy = true;
+    try{
+      var all = [];
+      roots.forEach(function(r){ all.push(r); Array.prototype.push.apply(all, r.querySelectorAll('*')); });
+      all.forEach(strip);
+      processList(all);
+    }catch(e){ console.warn('[thème bleu ciel]', e); }
+    if(obs) obs.takeRecords();
+    busy = false;
+    scheduleGuard();
+  }
+  function onMut(list){
+    if(busy) return;
+    for(var i = 0; i < list.length; i++){
+      var m = list[i];
+      if(m.type === 'childList'){
+        for(var j = 0; j < m.addedNodes.length; j++){ var n = m.addedNodes[j]; if(n.nodeType === 1) queue.add(n); else if(n.parentElement) queue.add(n.parentElement); }
+      } else if(m.type === 'attributes' && m.target.nodeType === 1){
+        if(String(m.oldValue || '') === String(m.target.getAttribute(m.attributeName) || '')) continue;
+        queue.add(m.target);
+      }
+    }
+    if(queue.size) schedule();
+  }
+
+  /* ---------- 3) contrôle final du contraste ----------
+     Vérifie le rendu réel de chaque texte visible (couleur finale, fond
+     effectif, opacité) et corrige tout ce qui reste sous 7:1. */
+  function hasOwnText(el){
+    if(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return true;
+    for(var n = el.firstChild; n; n = n.nextSibling) if(n.nodeType === 3 && /\S/.test(n.nodeValue)) return true;
+    return false;
+  }
+  function finalBg(el){
+    var layers = [], a = el;
+    while(a && a.nodeType === 1){
+      var c = parse(getComputedStyle(a).backgroundColor);
+      if(c && c.a > 0.02){ layers.push(c); if(c.a >= 0.95) break; }
+      a = a.parentElement;
+    }
+    var base = (a && a.nodeType === 1) ? layers.pop() : cSKY;
+    if(!base || base.a < 0.95) base = cSKY;
+    for(var i = layers.length - 1; i >= 0; i--) base = over(layers[i], base);
+    return base;
+  }
+  function guard(){
+    if(!document.body) return;
+    var todo = [];
+    var els = document.body.getElementsByTagName('*');
+    for(var i = 0; i < els.length; i++){
+      var el = els[i];
+      if(SKIP[el.tagName] || el.tagName === 'OPTION' || el instanceof SVGElement) continue;
+      if(!hasOwnText(el)) continue;
+      if(!el.getClientRects().length) continue;
+      var cs = getComputedStyle(el);
+      if(cs.visibility !== 'visible') continue;
+      var tc = parse(cs.webkitTextFillColor) || parse(cs.color); if(!tc || tc.a === 0) continue;
+      var own = parseFloat(cs.opacity), anc = 1, a = el.parentElement;
+      while(a && a !== document.body){ anc *= parseFloat(getComputedStyle(a).opacity); a = a.parentElement; }
+      if(own * anc < 0.05) continue;
+      var bg = finalBg(el);
+      var seen = over({ r:tc.r, g:tc.g, b:tc.b, a:tc.a * own * anc }, bg);
+      if(contrast(seen, bg) >= TARGET) continue;
+      // couleur requise en tenant compte de l'opacité des parents
+      var target = fixText({ r:tc.r, g:tc.g, b:tc.b, a:1 }, bg) || hex(tc);
+      if(anc < 1){
+        var t = parse(target), shown = over({ r:t.r, g:t.g, b:t.b, a:anc }, bg);
+        if(contrast(shown, bg) < TARGET) target = bestNeutral(bg);
+      }
+      var tgt = parse(target);
+      if(tgt && contrast(tgt, bg) < TARGET && anc >= 0.95){
+        // fond coloré (matrice OACI, boutons…) : on le fonce ou l'éclaircit
+        // juste assez pour atteindre 7:1, en gardant sa teinte
+        var owner = el;
+        while(owner && owner !== document.body){ var ob = parse(getComputedStyle(owner).backgroundColor); if(ob && ob.a >= 0.95) break; owner = owner.parentElement; }
+        if(owner && owner !== document.body && !isNeutral(bg)){
+          var whiteText = L(tgt) > 0.5, k = { r:bg.r, g:bg.g, b:bg.b, a:1 }, n = 0;
+          while(contrast(tgt, k) < TARGET && n < 40){
+            k = whiteText ? { r:k.r * 0.93, g:k.g * 0.93, b:k.b * 0.93, a:1 }
+                          : { r:k.r + (255 - k.r) * 0.08, g:k.g + (255 - k.g) * 0.08, b:k.b + (255 - k.b) * 0.08, a:1 };
+            n++;
+          }
+          todo.push([owner, null, false, hex(k)]);
+        }
+      }
+      todo.push([el, target, own < 1]);
+    }
+    // textes SVG (graphiques, jauges)
+    var svgt = document.body.querySelectorAll('svg text, svg tspan');
+    for(var j = 0; j < svgt.length; j++){
+      var t = svgt[j];
+      if(!t.getClientRects().length || !/\S/.test(t.textContent)) continue;
+      var f = parse(getComputedStyle(t).fill); if(!f || f.a === 0) continue;
+      var holder = t.closest('g') || t.parentNode, sb = null;
+      if(holder && holder.querySelector){ var cand = holder.querySelector('rect,circle,ellipse,polygon'); if(cand){ var cf = parse(getComputedStyle(cand).fill); if(cf && cf.a > 0.6) sb = cf; } }
+      var svgEl = t.ownerSVGElement;
+      var bgS = sb || finalBg(svgEl && svgEl.parentElement ? svgEl.parentElement : document.body);
+      if(contrast(f.a < 1 ? over(f, bgS) : f, bgS) >= TARGET) continue;
+      var nf = fixText(f, bgS); if(nf) todo.push([t, nf, false, null, true]);
+    }
+    if(!todo.length) return;
+    var was = busy; busy = true;
+    todo.forEach(function(x){
+      if(x[3]){ setP(x[0], 'background-color', x[3]); return; }
+      if(x[4]){ setP(x[0], 'fill', x[1]); return; }
+      setP(x[0], 'color', x[1]);
+      setP(x[0], '-webkit-text-fill-color', x[1]);
+      if(x[2]) setP(x[0], 'opacity', '1');
+    });
+    if(obs) obs.takeRecords();
+    busy = was;
+  }
+  var guardTimer = null;
+  function scheduleGuard(){ clearTimeout(guardTimer); guardTimer = setTimeout(function(){ try{ guard(); }catch(e){ console.warn('[contraste]', e); } }, 120); }
+  setInterval(function(){ if(document.visibilityState !== 'hidden') scheduleGuard(); }, 2500);
+
+  function fullRefresh(){
+    busy = true;
+    try{
+      Array.prototype.forEach.call(document.querySelectorAll('*'), strip);
+      applyVars();   // le mode sombre d'origine, une fois détecté, reste acquis
+      processTree(document.body);
+    }catch(e){ console.warn('[thème bleu ciel]', e); }
+    if(obs) obs.takeRecords();
+    busy = false;
+    watch();
+    scheduleGuard();
+  }
+  // Changement de thème au niveau de <html> (ex. bouton clair/sombre du portail)
+  new MutationObserver(function(){ requestAnimationFrame(fullRefresh); })
+    .observe(document.documentElement, { attributes:true, attributeFilter:['data-theme','data-mode'] });
+  function watch(){
+    if(obs || !document.body) return;
+    obs = new MutationObserver(onMut);
+    obs.observe(document.body, { childList:true, subtree:true, attributes:true, attributeOldValue:true, attributeFilter:['style','class','fill','stroke'] });
+  }
+  function start(){
+    injectBase();
+    applyVars();
+
+    busy = true;
+    try{ processTree(document.body); }catch(e){ console.warn('[thème bleu ciel]', e); }
+    busy = false;
+    watch();
+    try{ guard(); }catch(e){}
+    uncloak();
+  }
+  // Anti-éclair : tant que la première conversion n'est pas faite, la page est
+  // masquée sur fond bleu ciel (jamais plus de 2,5 s, même en cas de souci).
+  function cloak(){
+    if(document.getElementById('saf-sky-cloak')) return;
+    var c = document.createElement('style'); c.id = 'saf-sky-cloak';
+    c.textContent = 'html{background:' + SKY + ' !important}body{opacity:0 !important}';
+    (document.head || document.documentElement).appendChild(c);
+    setTimeout(uncloak, 2500);
+  }
+  function uncloak(){ var c = document.getElementById('saf-sky-cloak'); if(c) c.remove(); }
+  try{ cloak(); injectBase(); }catch(e){}
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+  window.addEventListener('load', function(){
+    try{ applyVars(); busy = true; processTree(document.body); if(obs) obs.takeRecords(); busy = false; }catch(e){ busy = false; } scheduleGuard();
+  });
+  window.safSkyThemeRefresh = fullRefresh;
+  window.safSkyContrastCheck = guard;
+})();
+
+</script>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <header>
+      <a class="home" href="https://saf-international-portail.netlify.app/">← Portail SAF International</a>
+      <h1>Suivi flotte</h1>
+      <p id="sub">Chargement…</p>
+    </header>
+    <div id="controls">
+      <label for="win">Trace</label>
+      <select id="win">
+        <option value="1">1 h</option>
+        <option value="3" selected>3 h</option>
+        <option value="12">12 h</option>
+        <option value="24">24 h</option>
+      </select>
+      <label for="split">Vue</label>
+      <select id="split" title="Découper l'écran pour suivre plusieurs appareils">
+        <option value="1">1 carte</option>
+        <option value="2">2 cartes</option>
+        <option value="3">3 cartes</option>
+        <option value="4">4 cartes</option>
+      </select>
+      <button id="fit" type="button">Toute la flotte</button>
+      <button id="histbtn" type="button">Historique des vols</button>
+      <button id="logout" type="button">Déconnexion</button>
+    </div>
+    <ul id="list"></ul>
+    <footer id="foot">—</footer>
+  </aside>
+  <div id="maps" data-n="1"></div>
+</div>
+
+<div id="hist" hidden role="dialog" aria-modal="true" aria-labelledby="h-title">
+  <div class="hbar">
+    <h2 id="h-title">Historique des vols</h2>
+    <label class="fld">Appareil<select id="h-reg"></select></label>
+    <label class="fld">Du<input type="date" id="h-from"></label>
+    <label class="fld">Au<input type="date" id="h-to"></label>
+    <div class="fld">Période<div class="presets">
+      <button type="button" data-d="7">7 j</button><button type="button" data-d="30">30 j</button><button type="button" data-d="60">60 j</button>
+    </div></div>
+    <button type="button" class="go" id="h-load">Afficher</button>
+    <button type="button" id="h-csv" disabled>Exporter CSV</button>
+    <button type="button" class="close" id="h-close">Fermer</button>
+  </div>
+  <div class="hbody">
+    <div class="hlist" id="h-list"><p class="empty">Choisissez un appareil et une période, puis « Afficher ».</p></div>
+    <div class="hmap"><div class="map" id="h-map"></div></div>
+  </div>
+</div>
+<div id="gate" role="alert"><p id="gate-msg">Vérification de la session…</p><a href="https://saf-international-portail.netlify.app/">Retour au portail</a></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const CONFIG = {
+  url: "https://qaqehmxoehcvzcojcqkm.supabase.co",
+  key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q",
+  refreshMs: 30000,     // lecture Supabase (jamais NSE)
+  liveMaxMin: 5,        // point plus récent que 5 min = en direct
+  lostAfterMin: 45,     // en mouvement puis plus de point depuis 45 min = signal perdu
+  movingSpeed: 5,
+};
+const BASES = [
+  {name:"LFKA Albertville", lat:45.6276, lon:6.3297},
+  {name:"LSGS Sion", lat:46.2196, lon:7.3268},
+];
+const COLORS = {live:"#3CC882", ground:"#5B9BE0", stale:"#6C7784", lost:"#E5484D", none:"#6C7784"};
+
+// Même client et même stockage de session que index.html : pas de seconde connexion
+const sb = supabase.createClient(CONFIG.url, CONFIG.key);
+
+/* ---------- Cartes (écran découpable en 1 à 4 cartes) ----------
+   Chaque carte suit soit toute la flotte (vue libre), soit un appareil choisi :
+   elle se recentre sur lui à chaque actualisation, jusqu'à ce qu'on la déplace à la main. */
+function makeLayers(){
+  return {
+    "Topo (OpenTopoMap)": L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"© OpenTopoMap, © OSM"}),
+    "Plan (OSM)": L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}),
+    "swisstopo": L.tileLayer("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg",{maxZoom:18,attribution:"© swisstopo"}),
+    "Satellite (Esri)": L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"© Esri"}),
+  };
+}
+const VIEW_KEY="saf_fleet_view";
+function loadView(){ try{ const v=JSON.parse(localStorage.getItem(VIEW_KEY)||"null"); if(v&&v.n>=1&&v.n<=4&&Array.isArray(v.follow)) return v; }catch(e){} return {n:1,follow:[null,null,null,null]}; }
+function saveView(){ try{ localStorage.setItem(VIEW_KEY,JSON.stringify({n:panes.length,follow:viewFollow})); }catch(e){} }
+let viewFollow=loadView().follow.concat([null,null,null,null]).slice(0,4);
+const panes=[];
+function createPane(i){
+  const el=document.createElement("div"); el.className="pane";
+  el.innerHTML=`<div class="map"></div><div class="pane-bar"><select aria-label="Appareil suivi sur cette carte"></select><span class="pst"></span><button type="button" hidden>Recentrer</button></div>`;
+  document.getElementById("maps").appendChild(el);
+  const m=L.map(el.querySelector(".map"),{zoomControl:false}).setView([45.9,6.8],8);
+  L.control.zoom({position:"bottomright"}).addTo(m);
+  const lay=makeLayers(); lay["Topo (OpenTopoMap)"].addTo(m);
+  L.control.layers(lay,null,{position:"topright"}).addTo(m);
+  L.control.scale({imperial:false,position:"bottomleft"}).addTo(m);
+  BASES.forEach(b => L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null}),keyboard:false}).addTo(m));
+  const pane={i,el,map:m,markers:{},trails:{},follow:viewFollow[i]||null,moved:false,fitted:false,
+    sel:el.querySelector("select"),pst:el.querySelector(".pst"),btn:el.querySelector("button")};
+  // Déplacement à la main : on arrête de suivre jusqu'au clic sur « Recentrer »
+  m.on("dragstart",()=>{ if(pane.follow){ pane.moved=true; pane.btn.hidden=false; } });
+  pane.btn.onclick=()=>{ pane.moved=false; pane.btn.hidden=true; centerPane(pane,true); };
+  pane.sel.onchange=()=>{ pane.follow=pane.sel.value||null; viewFollow[i]=pane.follow; saveView();
+    pane.moved=false; pane.btn.hidden=true; pane.fitted=false; centerPane(pane,true); render(lastPs); };
+  L.DomEvent.disableClickPropagation(el.querySelector(".pane-bar"));
+  L.DomEvent.disableScrollPropagation(el.querySelector(".pane-bar"));
+  return pane;
+}
+function setSplit(n){
+  n=Math.max(1,Math.min(4,+n||1));
+  // Proposer d'office un appareil différent dans chaque nouvelle carte
+  while(panes.length<n){
+    const i=panes.length;
+    if(i>0 && !viewFollow[i] && fleet.length){
+      const used=new Set(viewFollow.slice(0,i).filter(Boolean));
+      const next=fleet.find(a=>a.active && !used.has(a.reg) && state[a.reg]?.last);
+      viewFollow[i]=next?next.reg:null;
+    }
+    panes.push(createPane(i));
+  }
+  while(panes.length>n){ const p=panes.pop(); p.map.remove(); p.el.remove(); }
+  document.getElementById("maps").dataset.n=n;
+  document.getElementById("split").value=String(n);
+  saveView();
+  setTimeout(()=>{ panes.forEach(p=>{ p.map.invalidateSize(); centerPane(p,false); }); if(lastPs) render(lastPs); },60);
+}
+function centerPane(pane,force){
+  if(pane.follow){
+    const last=state[pane.follow]?.last; if(!last) return;
+    if(pane.moved && !force) return;
+    const z=pane.fitted?pane.map.getZoom():Math.max(pane.map.getZoom(),11);
+    pane.map.setView([last.lat,last.lon],z,{animate:false}); pane.fitted=true;
+  } else if(force || !pane.fitted){
+    const ll=Object.values(state).filter(s=>s.last).map(s=>[s.last.lat,s.last.lon]);
+    if(ll.length){ pane.map.fitBounds(L.latLngBounds(ll).pad(.3),{maxZoom:11}); pane.fitted=true; }
+  }
+}
+function paneBars(){
+  for(const p of panes){
+    const opts=[`<option value="">Toute la flotte</option>`].concat(fleet.map(a=>`<option value="${esc(a.reg)}"${!a.active?" disabled":""}>${esc(a.reg)}${!a.active?" (non suivi)":""}</option>`));
+    const html=opts.join("");
+    if(p.sel.dataset.h!==html){ p.sel.innerHTML=html; p.sel.dataset.h=html; }
+    p.sel.value=p.follow||"";
+    if(p.follow){
+      const a=fleet.find(x=>x.reg===p.follow), last=state[p.follow]?.last;
+      const st=a&&a.active?status(last):{k:"none",t:"Suivi non activé"};
+      p.pst.dataset.st=st.k;
+      p.pst.innerHTML=`<b>${esc(st.t)}</b>${last?` · ${esc(ago(last.fix_time))}`:""}`;
+    } else { p.pst.dataset.st=""; p.pst.textContent=""; }
+  }
+}
+let fleet = [], state = {}, selected = null, firstFit = true;
+
+/* ---------- Utilitaires ---------- */
+const normHeading = h => h == null ? null : ((h/100) % 360); // NSE : cap en centièmes de degré
+const minsAgo = t => (Date.now() - new Date(t).getTime())/60000;
+function ago(t){
+  const m = minsAgo(t);
+  if (m < 1) return "à l'instant";
+  if (m < 60) return `il y a ${Math.round(m)} min`;
+  if (m < 48*60) return `il y a ${Math.floor(m/60)} h ${String(Math.round(m%60)).padStart(2,"0")}`;
+  return `il y a ${Math.round(m/1440)} j`;
+}
+const hhmm = t => new Date(t).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"UTC"})+" UTC";
+function haversineKm(a,b){
+  const R=6371, r=x=>x*Math.PI/180, dLat=r(b.lat-a.lat), dLon=r(b.lon-a.lon);
+  const s=Math.sin(dLat/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+// Vitesse sol calculée entre les deux derniers points (si espacés de 20 s à 5 min)
+function computedGs(p1,p0){
+  if(!p1||!p0) return null;
+  const dt=(new Date(p0.fix_time)-new Date(p1.fix_time))/3600000;
+  if(dt<20/3600||dt>5/60) return null;
+  return haversineKm(p1,p0)/dt;
+}
+function status(last){
+  if(!last) return {k:"none",t:"Aucune position reçue"};
+  const m=minsAgo(last.fix_time), moving=(last.speed??0)>CONFIG.movingSpeed;
+  if(moving && m>CONFIG.lostAfterMin) return {k:"lost",t:`Signal perdu en vol – ${ago(last.fix_time)}`};
+  if(moving) return {k:"live",t:m<=CONFIG.liveMaxMin?"En vol":"En vol – dernier point "+ago(last.fix_time)};
+  if(m<=CONFIG.liveMaxMin) return {k:"ground",t:"Au sol, traceur actif"};
+  return {k:"stale",t:"Au sol / traceur éteint"};
+}
+function arrowSvg(color,heading){
+  const rot = heading==null?0:heading;
+  return `<svg viewBox="0 0 32 32" style="transform:rotate(${rot}deg)"><circle cx="16" cy="16" r="13" fill="${color}" stroke="#fff" stroke-width="2"/>
+  <path d="M16 6 L22 22 L16 18.5 L10 22 Z" fill="#fff"/></svg>`;
+}
+const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- Référentiel aérodromes (distance à vol d'oiseau, coordonnées approchées) ---------- */
+// metar:true = aérodrome publiant un METAR
+const AERODROMES = [
+  {icao:"LFKA",name:"Albertville",lat:45.6276,lon:6.3297,base:true},
+  {icao:"LSGS",name:"Sion",lat:46.2196,lon:7.3268,base:true,metar:true},
+  {icao:"LFLB",name:"Chambéry Aix-les-Bains",lat:45.6381,lon:5.8802,metar:true},
+  {icao:"LFLE",name:"Chambéry Challes",lat:45.5611,lon:5.9758},
+  {icao:"LFLP",name:"Annecy",lat:45.9308,lon:6.1064,metar:true},
+  {icao:"LSGG",name:"Genève",lat:46.2381,lon:6.1090,metar:true},
+  {icao:"LFLS",name:"Grenoble Isère",lat:45.3629,lon:5.3294,metar:true},
+  {icao:"LFLG",name:"Grenoble Le Versoud",lat:45.2192,lon:5.8497},
+  {icao:"LFHM",name:"Megève",lat:45.8208,lon:6.6522},
+  {icao:"LFLJ",name:"Courchevel",lat:45.3967,lon:6.6347},
+  {icao:"LFKX",name:"Méribel",lat:45.4070,lon:6.5806},
+  {icao:"LFHU",name:"L'Alpe d'Huez",lat:45.0883,lon:6.0847},
+  {icao:"LSGB",name:"Bex",lat:46.2583,lon:6.9864},
+  {icao:"LSGT",name:"Gruyères",lat:46.5942,lon:7.0944},
+  {icao:"LFLY",name:"Lyon Bron",lat:45.7272,lon:4.9444,metar:true},
+  {icao:"LFLL",name:"Lyon Saint-Exupéry",lat:45.7256,lon:5.0811,metar:true},
+  {icao:"LFLU",name:"Valence Chabeuil",lat:44.9216,lon:4.9699,metar:true},
+  {icao:"LIMW",name:"Aoste",lat:45.7385,lon:7.3687},
+  {icao:"LIMF",name:"Turin Caselle",lat:45.2008,lon:7.6497,metar:true},
+];
+const BASE_RADIUS_KM = 2;
+function bearingDeg(a,b){
+  const r=x=>x*Math.PI/180, y=Math.sin(r(b.lon-a.lon))*Math.cos(r(b.lat));
+  const x=Math.cos(r(a.lat))*Math.sin(r(b.lat))-Math.sin(r(a.lat))*Math.cos(r(b.lat))*Math.cos(r(b.lon-a.lon));
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+const CARD=["N","NE","E","SE","S","SO","O","NO"];
+function nearestAds(p,filter=()=>true,n=1){
+  return AERODROMES.filter(filter).map(ad=>({ad,km:haversineKm(p,ad)})).sort((a,b)=>a.km-b.km).slice(0,n);
+}
+function placeLabel(p){
+  const {ad,km}=nearestAds(p)[0];
+  if(km<BASE_RADIUS_KM) return `${ad.icao} ${ad.name}`;
+  return `${km<10?km.toFixed(1):Math.round(km)} km ${CARD[Math.round(bearingDeg(ad,p)/45)%8]} de ${ad.icao} ${ad.name}`;
+}
+const atBase = p => nearestAds(p,ad=>ad.base)[0].km < BASE_RADIUS_KM;
+const isAir = p => (p.speed??0) > CONFIG.movingSpeed;
+const hm = t => new Date(t).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",timeZone:"UTC"});
+function dur(min){ min=Math.max(0,Math.round(min)); return min<60?`${min} min`:`${Math.floor(min/60)} h ${String(min%60).padStart(2,"0")}`; }
+
+/* ---------- Analyse des positions : vols, dernière pose, temps hors base ---------- */
+// Les points NSE sont espacés (jusqu'à ~40 min) : les heures de décollage et d'atterrissage
+// sont donc encadrées entre deux points, jamais connues exactement.
+function analyze(pts){
+  const flights=[]; let cur=null, lastLanding=null;
+  for(let i=0;i<pts.length;i++){
+    const p=pts[i], prev=pts[i-1]||null;
+    if(isAir(p)){
+      if(!cur){
+        const fromGround = prev && !isAir(prev) && (new Date(p.fix_time)-new Date(prev.fix_time)) < 12*3600e3;
+        cur={toFrom:fromGround?prev.fix_time:null, toTo:p.fix_time, toPlace:fromGround?prev:null, pts:fromGround?[prev,p]:[p]};
+      } else cur.pts.push(p);
+    } else if(cur){
+      cur.ldFrom=cur.pts[cur.pts.length-1].fix_time; cur.ldTo=p.fix_time; cur.ldPlace=p; cur.pts.push(p);
+      flights.push(cur); lastLanding={place:p,from:cur.ldFrom,to:p.fix_time}; cur=null;
+    }
+  }
+  if(cur) flights.push(cur); // vol en cours
+  for(const f of flights){
+    f.km=f.pts.slice(1).reduce((s,p,i)=>s+haversineKm(f.pts[i],p),0);
+    const a0=f.toFrom?new Date(f.toFrom):null, a1=new Date(f.toTo);
+    const b0=f.ldFrom?new Date(f.ldFrom):null, b1=f.ldTo?new Date(f.ldTo):null;
+    if(b1){ f.minMin=(b0-a1)/60000; f.maxMin=a0?(b1-a0)/60000:null; }
+  }
+  // Temps hors base
+  let outside=null;
+  const last=pts[pts.length-1];
+  if(last && !atBase(last)){
+    let i=pts.length-1; while(i>=0 && !atBase(pts[i])) i--;
+    outside = i>=0 ? {since:pts[i+1].fix_time, leftFrom:pts[i]} : {since:null};
+  }
+  return {flights, lastLanding, outside};
+}
+
+/* ---------- Météo (à la demande, pour l'appareil sélectionné) ---------- */
+const wxCache={}, metarCache={};
+const WX_TTL=10*60e3;
+async function ensureDetails(reg){
+  const last=state[reg]?.last; if(!last) return;
+  let changed=false;
+  const w=wxCache[reg];
+  if(!w || Date.now()-w.t>WX_TTL || haversineKm(w,last)>5){
+    wxCache[reg]={t:Date.now(),lat:last.lat,lon:last.lon,loading:true};
+    try{
+      const u=`https://api.open-meteo.com/v1/forecast?latitude=${last.lat.toFixed(4)}&longitude=${last.lon.toFixed(4)}`+
+        `&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,visibility&wind_speed_unit=kn&timezone=UTC`;
+      const r=await fetch(u); wxCache[reg].data=(await r.json()).current;
+    }catch(e){ wxCache[reg].err=String(e.message||e); }
+    wxCache[reg].loading=false; changed=true;
+  }
+  const m=metarCache[reg];
+  if(!m || Date.now()-m.t>WX_TTL || haversineKm(m,last)>5){
+    const ids=nearestAds(last,ad=>ad.metar,2).map(x=>x.ad.icao);
+    metarCache[reg]={t:Date.now(),lat:last.lat,lon:last.lon,ids,loading:true};
+    try{
+      const {data,error}=await sb.functions.invoke("fleet-metar",{body:{ids}});
+      if(error) throw error; metarCache[reg].data=data.metars;
+    }catch(e){ metarCache[reg].err=String(e.message||e); }
+    metarCache[reg].loading=false; changed=true;
+  }
+  if(changed && selected===reg) render(lastPs);
+}
+
+function detailsHTML(reg){
+  const s=state[reg], an=s.an, last=s.last;
+  if(!last) return "";
+  const near=nearestAds(last,()=>true,1)[0];
+  const since24=Date.now()-24*3600e3;
+  const fl=an.flights.filter(f=>new Date(f.ldTo||f.toTo)>=since24).reverse();
+  let h=`<div class="det">`;
+  h+=`<h3>Position</h3><p>${esc(placeLabel(last))}<br><span class="muted">Aérodrome le plus proche : ${esc(near.ad.icao)} ${esc(near.ad.name)}, ${near.km.toFixed(1)} km</span></p>`;
+  h+=`<h3>Vols des dernières 24 h</h3>`;
+  if(!fl.length) h+=`<p class="muted">Aucun vol enregistré sur la période.</p>`;
+  else{
+    h+=`<table><tbody>`;
+    for(const f of fl){
+      const to = f.toFrom ? `entre ${hm(f.toFrom)} et ${hm(f.toTo)}` : `avant ${hm(f.toTo)}`;
+      const toPl = f.toPlace ? placeLabel(f.toPlace) : "lieu non enregistré";
+      const ld = f.ldTo ? `entre ${hm(f.ldFrom)} et ${hm(f.ldTo)}` : "vol en cours";
+      const ldPl = f.ldPlace ? placeLabel(f.ldPlace) : "—";
+      const d = !f.ldTo ? "—" : f.maxMin!=null ? `${dur(f.minMin)} à ${dur(f.maxMin)}` : f.minMin>=5 ? `au moins ${dur(f.minMin)}` : "inconnue (décollage non enregistré)";
+      h+=`<tr><td><b>Départ</b> ${esc(toPl)}<br><span class="muted">${to} UTC</span></td></tr>
+          <tr><td><b>Arrivée</b> ${esc(ldPl)}<br><span class="muted">${ld}${f.ldTo?" UTC":""}</span></td></tr>
+          <tr class="sum"><td>Durée ${d} · distance ≥ ${Math.round(f.km)} km</td></tr>`;
+    }
+    h+=`</tbody></table><p class="muted note">Heures encadrées entre deux points NSE ; la distance suit les seuls points reçus.</p>`;
+  }
+  const w=wxCache[reg];
+  h+=`<h3>Météo au point</h3>`;
+  if(!w||w.loading) h+=`<p class="muted">Chargement…</p>`;
+  else if(w.err||!w.data) h+=`<p class="muted">Météo indisponible.</p>`;
+  else{
+    const c=w.data;
+    const vis=c.visibility!=null?(c.visibility>=10000?"≥ 10 km":(c.visibility/1000).toFixed(1)+" km"):"–";
+    h+=`<p>Vent ${String(Math.round(c.wind_direction_10m)).padStart(3,"0")}° / ${Math.round(c.wind_speed_10m)} kt`+
+       `${c.wind_gusts_10m>c.wind_speed_10m+5?`, rafales ${Math.round(c.wind_gusts_10m)} kt`:""} · ${Math.round(c.temperature_2m)} °C · nébulosité ${c.cloud_cover} % · visibilité ${vis}`+
+       `<br><span class="muted">Modèle Open-Meteo à ${hm(c.time+"Z")} UTC, pas une observation.</span></p>`;
+  }
+  const m=metarCache[reg];
+  h+=`<h3>METAR les plus proches</h3>`;
+  if(!m||m.loading) h+=`<p class="muted">Chargement…</p>`;
+  else if(m.err||!m.data) h+=`<p class="muted">METAR indisponibles.</p>`;
+  else for(const id of m.ids){
+    const x=m.data[id], ad=AERODROMES.find(a=>a.icao===id);
+    h+=`<p class="metar"><b>${id}</b> <span class="muted">${esc(ad.name)}, ${Math.round(haversineKm(last,ad))} km</span><br>${x?esc(x.raw):"<span class='muted'>pas de METAR récent</span>"}</p>`;
+  }
+  return h+`</div>`;
+}
+
+/* ---------- Données ---------- */
+let lastPs=null, loading=false, lastOk=0;
+function isAuthError(e){ const m=String(e&&(e.message||e.code)||e||""); return /jwt|token|401|PGRST30/i.test(m); }
+async function load(retried){
+  if(loading) return; loading=true;
+  const hours=+document.getElementById("win").value;
+  const winStart=Date.now()-hours*3600e3;
+  const since=new Date(Math.min(winStart, Date.now()-36*3600e3)).toISOString(); // 36 h pour le journal
+  try{
+    const [ac,pos,ps]=await Promise.all([
+      sb.from("fleet_aircraft").select("reg,type,imei,provider,active").order("reg"),
+      sb.from("fleet_positions").select("reg,fix_time,lat,lon,alt_m,heading,speed").gte("fix_time",since).order("fix_time",{ascending:false}).limit(1000),
+      sb.from("fleet_poll_state").select("last_poll,last_result").eq("id",1).maybeSingle(),
+    ]);
+    if(ac.error) throw ac.error; if(pos.error) throw pos.error;
+    pos.data.reverse();   // ordre chronologique pour les traces et l'analyse des vols
+    fleet=ac.data;
+    const lasts=await Promise.all(fleet.map(a=>sb.from("fleet_positions").select("reg,fix_time,lat,lon,alt_m,heading,speed").eq("reg",a.reg).order("fix_time",{ascending:false}).limit(2)));
+    state={};
+    fleet.forEach((a,i)=>{
+      const two=lasts[i].data||[];
+      const all=pos.data.filter(p=>p.reg===a.reg);
+      state[a.reg]={ac:a,last:two[0]||null,prev:two[1]||null,
+        trail:all.filter(p=>new Date(p.fix_time)>=winStart), an:analyze(all)};
+    });
+    lastPs=ps.data; lastOk=Date.now();
+    render(lastPs);
+    if(selected) ensureDetails(selected);
+  }catch(e){
+    if(!retried && isAuthError(e)){
+      // Jeton expiré (onglet en veille, PC sorti de veille) : renouvellement puis nouvel essai
+      loading=false;
+      const r=await sb.auth.refreshSession().catch(()=>({error:true}));
+      if(r && !r.error && r.data && r.data.session) return load(true);
+      location.replace("index.html?next=SAF_Suivi_Flotte.html"); return;
+    }
+    document.getElementById("foot").innerHTML=`<span class="err">Lecture impossible : ${esc(e.message||e)}. Nouvel essai dans ${CONFIG.refreshMs/1000} s.</span>`;
+  }finally{ loading=false; }
+}
+/* Les navigateurs ralentissent ou suspendent les minuteries des onglets en arrière-plan
+   et des ordinateurs en veille : on relit immédiatement au retour, puis on relance le cycle. */
+function restartCycle(){ clearInterval(timer); load(); timer=setInterval(load,CONFIG.refreshMs); }
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && Date.now()-lastOk>CONFIG.refreshMs/2) restartCycle(); });
+window.addEventListener("focus",()=>{ if(Date.now()-lastOk>CONFIG.refreshMs) restartCycle(); });
+window.addEventListener("online",restartCycle);
+/* Garde-fou visible : si l'affichage n'a pas pu être actualisé depuis plus de 2 cycles */
+setInterval(()=>{
+  if(!lastOk || document.visibilityState!=="visible") return;
+  const late=Date.now()-lastOk;
+  if(late>2*CONFIG.refreshMs){
+    const f=document.getElementById("foot");
+    if(!f.querySelector(".stale")) f.innerHTML+=` <span class="err stale">Affichage non actualisé depuis ${Math.round(late/60000)||1} min — nouvel essai en cours.</span>`;
+    load();
+  }
+},10000);
+
+function render(ps){
+  const list=document.getElementById("list"); const scroll=list.scrollTop; list.innerHTML="";
+  let nLive=0, nLost=0;
+  const stackCount={}; // appareils posés au même endroit (~100 m) : étiquettes empilées
+
+  for(const a of fleet){
+    const s=state[a.reg], last=s.last, st=a.active?status(last):{k:"none",t:"Suivi non activé ("+a.provider+")"};
+    if(st.k==="live") nLive++; if(st.k==="lost") nLost++;
+    const hd=last?normHeading(last.heading):null;
+    const gs=computedGs(s.prev,last);
+    const an=s.an;
+    let facts="";
+    if(last){
+      if(an.lastLanding) facts+=`<div>Dernière pose : <b>${esc(placeLabel(an.lastLanding.place))}</b>, vers ${hm(an.lastLanding.to)} UTC</div>`;
+      if(atBase(last)) facts+=`<div>En base : <b>${esc(nearestAds(last,ad=>ad.base)[0].ad.icao)}</b></div>`;
+      else if(an.outside?.since) facts+=`<div>Hors base depuis au moins <b>${dur(minsAgo(an.outside.since))}</b> (départ de ${esc(nearestAds(an.outside.leftFrom,ad=>ad.base)[0].ad.icao)})</div>`;
+      else facts+=`<div>Hors base – départ non enregistré</div>`;
+      const n24=an.flights.filter(f=>new Date(f.ldTo||f.toTo)>=Date.now()-24*3600e3).length;
+      if(n24) facts+=`<div>${n24} vol${n24>1?"s":""} sur 24 h</div>`;
+    }
+    const li=document.createElement("li");
+    li.className="ac"+(selected===a.reg?" sel":""); li.dataset.st=st.k; li.tabIndex=0;
+    li.innerHTML=`<div class="bar"></div><div class="body">
+      <div class="top"><span class="reg">${esc(a.reg)}</span><span class="type">${esc(a.type||"")}</span></div>
+      <div class="st">${esc(st.t)}</div>
+      ${last?`<dl>
+        <div><dt>Altitude</dt><dd>${Math.round(last.alt_m*3.28084).toLocaleString("fr-FR")} <small>ft</small></dd></div>
+        <div><dt>Cap</dt><dd>${hd==null?"–":String(Math.round(hd)%360).padStart(3,"0")+"°"}</dd></div>
+        <div><dt>${gs!=null?"Vit. sol calc.":"Vitesse (brute)"}</dt><dd>${gs!=null?Math.round(gs/1.852)+' <small>kt</small>':esc(last.speed)}</dd></div>
+      </dl>
+      <div class="facts">${facts}</div>
+      <div class="when">Dernier point ${hhmm(last.fix_time)} – ${ago(last.fix_time)}</div>
+      ${selected===a.reg?detailsHTML(a.reg):`<div class="more">Afficher vols et météo</div>`}`:""}
+    </div>`;
+    const go=()=>{
+      if(selected===a.reg){ selected=null; render(lastPs); return; }
+      selected=a.reg;
+      // Centrer la carte qui suit cet appareil, sinon la première carte
+      if(last){ const p=panes.find(x=>x.follow===a.reg)||panes[0];
+        if(p.follow===a.reg){ p.moved=false; p.btn.hidden=true; }
+        p.map.setView([last.lat,last.lon],Math.max(p.map.getZoom(),11)); }
+      render(lastPs); ensureDetails(a.reg);
+    };
+    li.onclick=e=>{ if(e.target.closest(".det")) return; go(); };
+    li.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};
+    list.appendChild(li);
+
+    // Marqueur et trace, sur chaque carte
+    const spot=last?last.lat.toFixed(3)+","+last.lon.toFixed(3):null;
+    const idx=last?(stackCount[spot]=(stackCount[spot]??-1)+1):0;
+    const pts=s.trail.map(p=>[p.lat,p.lon]);
+    for(const p of panes){
+      const focus=p.follow||selected;   // appareil mis en avant sur cette carte
+      if(last){
+        const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl" style="top:${-11+idx*23}px">${esc(a.reg)}</span></div>`;
+        const icon=L.divIcon({className:"",html,iconSize:[0,0]});
+        if(p.markers[a.reg]) p.markers[a.reg].setLatLng([last.lat,last.lon]).setIcon(icon);
+        else p.markers[a.reg]=L.marker([last.lat,last.lon],{icon,keyboard:false}).addTo(p.map);
+        p.markers[a.reg].off("click").on("click",go);
+        p.markers[a.reg].setZIndexOffset(p.follow===a.reg?2000:st.k==="lost"?1000:st.k==="live"?500:0);
+      }
+      if(p.trails[a.reg]) p.trails[a.reg].setLatLngs(pts);
+      else p.trails[a.reg]=L.polyline(pts,{weight:3,opacity:.85}).addTo(p.map);
+      p.trails[a.reg].setStyle({color:COLORS[st.k],weight:focus===a.reg?5:3,opacity:focus&&focus!==a.reg?.35:.85});
+    }
+  }
+  list.scrollTop=scroll;
+  document.getElementById("sub").textContent=
+    `${fleet.length} appareils · ${nLive} en vol`+(nLost?` · ${nLost} signal perdu`:"");
+  const f=document.getElementById("foot");
+  f.textContent=`Affichage mis à jour ${new Date().toLocaleTimeString("fr-FR")}`+
+    (ps?.last_poll?` · relais NSE ${ago(ps.last_poll)}`:"");
+  if(ps?.last_poll && minsAgo(ps.last_poll)>5) f.innerHTML+=` <span class="err">Le relais ne tourne plus.</span>`;
+  paneBars();
+  panes.forEach(p=>centerPane(p,false));   // les cartes qui suivent un appareil se recentrent
+  firstFit=false;
+}
+function fitAll(){
+  // « Toute la flotte » : la première carte revient en vue libre sur l'ensemble
+  const p=panes[0]; if(!p) return;
+  p.follow=null; viewFollow[0]=null; saveView(); p.moved=false; p.btn.hidden=true; p.fitted=false;
+  centerPane(p,true);
+}
+
+/* ---------- Session (partagée avec l'accueil) ---------- */
+let timer=null;
+function gate(msg){ clearInterval(timer); document.getElementById("gate-msg").textContent=msg; document.getElementById("gate").style.display="grid"; }
+async function boot(){
+  const {data}=await sb.auth.getSession();
+  const session=data.session;
+  if(!session){ location.replace("index.html?next=SAF_Suivi_Flotte.html"); return; }
+  // Rôle lu comme dans index.html ; l'accès réel est décidé par la RLS (admin, editor, reader)
+  let role="reader";
+  try{
+    const r=await sb.from("user_roles").select("role").ilike("user_email",String(session.user.email||"").trim()).limit(1);
+    if(r.data&&r.data[0]&&r.data[0].role) role=String(r.data[0].role).toLowerCase();
+  }catch(e){}
+  if(!["admin","editor","reader"].includes(role)){ gate("Le suivi flotte n'est pas ouvert à ce compte."); return; }
+  restartCycle();
+}
+document.getElementById("logout").onclick=async()=>{await sb.auth.signOut(); location.replace("https://saf-international-portail.netlify.app/");};
+document.getElementById("win").onchange=()=>load();
+document.getElementById("split").onchange=e=>setSplit(e.target.value);
+setSplit(loadView().n);
+document.getElementById("fit").onclick=()=>{selected=null; fitAll(); load();};
+sb.auth.onAuthStateChange(ev=>{ if(ev==="SIGNED_OUT") location.replace("https://saf-international-portail.netlify.app/"); });
+/* ---------- Historique des vols ----------
+   Lit fleet_positions par appareil, par pages de 1000 points (plafond PostgREST),
+   puis reconstruit les vols avec analyze(). La base garde 180 jours (tâche fleet-purge-positions). */
+const HIST_MAX_DAYS=180, PAGE=1000;
+const hist={rows:[],map:null,layer:null,busy:false};
+const isoDay=d=>new Date(d).toISOString().slice(0,10);
+const dayLabel=t=>new Date(t).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"UTC"});
+const dmy=t=>new Date(t).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",timeZone:"UTC"});
+const COLS="reg,fix_time,lat,lon,alt_m,heading,speed";
+
+function histPreset(days){
+  document.getElementById("h-to").value=isoDay(Date.now());
+  document.getElementById("h-from").value=isoDay(Date.now()-days*864e5);
+}
+function openHist(){
+  const sel=document.getElementById("h-reg"), cur=sel.value;
+  sel.innerHTML=`<option value="">Toute la flotte</option>`+fleet.map(a=>`<option value="${esc(a.reg)}">${esc(a.reg)}</option>`).join("");
+  sel.value=cur||selected||"";
+  if(!document.getElementById("h-to").value) histPreset(60);
+  document.getElementById("hist").hidden=false;
+  if(!hist.map){
+    hist.map=L.map("h-map",{zoomControl:false}).setView([45.9,6.8],8);
+    L.control.zoom({position:"bottomright"}).addTo(hist.map);
+    const lay=makeLayers(); lay["Topo (OpenTopoMap)"].addTo(hist.map);
+    L.control.layers(lay,null,{position:"topright"}).addTo(hist.map);
+    L.control.scale({imperial:false,position:"bottomleft"}).addTo(hist.map);
+    BASES.forEach(b=>L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null}),keyboard:false}).addTo(hist.map));
+    hist.layer=L.layerGroup().addTo(hist.map);
+  }
+  setTimeout(()=>hist.map.invalidateSize(),60);
+  document.getElementById("h-load").focus();
+}
+function closeHist(){ document.getElementById("hist").hidden=true; document.getElementById("histbtn").focus(); }
+
+async function fetchPositions(reg,fromIso,toIso){
+  // Un point juste avant la période : il donne le lieu de décollage du premier vol
+  const before=await sb.from("fleet_positions").select(COLS).eq("reg",reg).lt("fix_time",fromIso).order("fix_time",{ascending:false}).limit(1);
+  if(before.error) throw before.error;
+  const out=[...(before.data||[])];
+  for(let i=0;;i+=PAGE){
+    const r=await sb.from("fleet_positions").select(COLS).eq("reg",reg).gte("fix_time",fromIso).lt("fix_time",toIso)
+      .order("fix_time",{ascending:true}).range(i,i+PAGE-1);
+    if(r.error) throw r.error;
+    out.push(...r.data);
+    if(r.data.length<PAGE) break;
+  }
+  return out;
+}
+
+async function loadHist(){
+  if(hist.busy) return;
+  const f=document.getElementById("h-from").value, t=document.getElementById("h-to").value;
+  const list=document.getElementById("h-list");
+  if(!f||!t||f>t){ list.innerHTML=`<p class="empty">Indiquez une date de début antérieure à la date de fin.</p>`; return; }
+  const fromIso=new Date(f+"T00:00:00Z").toISOString(), toIso=new Date(new Date(t+"T00:00:00Z").getTime()+864e5).toISOString();
+  if((Date.parse(toIso)-Date.parse(fromIso))/864e5>HIST_MAX_DAYS+1){ list.innerHTML=`<p class="empty">La base ne garde que ${HIST_MAX_DAYS} jours : réduisez la période.</p>`; return; }
+  const regSel=document.getElementById("h-reg").value;
+  const regs=regSel?[regSel]:fleet.map(a=>a.reg);
+  hist.busy=true; document.getElementById("h-load").disabled=true; document.getElementById("h-csv").disabled=true;
+  list.innerHTML=`<p class="empty">Chargement des positions…</p>`; hist.layer.clearLayers();
+  try{
+    const rows=[], info=[];
+    for(const reg of regs){
+      const pts=await fetchPositions(reg,fromIso,toIso);
+      const inPeriod=pts.filter(p=>p.fix_time>=fromIso);
+      const fl=analyze(pts).flights.filter(x=>x.toTo>=fromIso);
+      fl.forEach(x=>rows.push({reg,f:x}));
+      info.push({reg,n:inPeriod.length,first:inPeriod[0]?.fix_time||null,flights:fl});
+    }
+    rows.sort((a,b)=>a.f.toTo<b.f.toTo?1:-1);
+    hist.rows=rows; renderHist(info,fromIso);
+    document.getElementById("h-csv").disabled=!rows.length;
+  }catch(e){
+    list.innerHTML=`<p class="empty">Lecture impossible : ${esc(e.message||e)}</p>`;
+  }finally{ hist.busy=false; document.getElementById("h-load").disabled=false; }
+}
+
+function durTxt(f){
+  if(!f.ldTo) return "vol en cours";
+  if(f.maxMin!=null) return Math.round(f.maxMin-f.minMin)<=2?dur((f.minMin+f.maxMin)/2):`${dur(f.minMin)} à ${dur(f.maxMin)}`;
+  return f.minMin>=5?`≥ ${dur(f.minMin)}`:"inconnue";
+}
+function renderHist(info,fromIso){
+  const list=document.getElementById("h-list");
+  let h=`<div class="hsum">`;
+  for(const i of info){
+    const done=i.flights.filter(f=>f.ldTo);
+    const lo=done.reduce((s,f)=>s+Math.max(0,f.minMin),0), hi=done.reduce((s,f)=>s+(f.maxMin??f.minMin),0);
+    const tt=Math.round(hi-lo)<=Math.max(5,done.length*2)?dur((lo+hi)/2):`${dur(lo)} à ${dur(hi)}`;
+    h+=`<div><b>${esc(i.reg)}</b> : ${i.flights.length} vol${i.flights.length>1?"s":""}${done.length?`, temps de vol estimé ${tt}`:""}</div>`;
+    if(!i.n) h+=`<div class="warn">${esc(i.reg)} : aucune position enregistrée sur la période.</div>`;
+    else if(Date.parse(i.first)-Date.parse(fromIso)>36*3600e3) h+=`<div class="warn">${esc(i.reg)} : pas de données avant le ${dmy(i.first)}.</div>`;
+  }
+  h+=`<div>Heures UTC, encadrées entre deux points du traceur. Cliquez un vol pour afficher sa trace.</div></div>`;
+  if(!hist.rows.length){ list.innerHTML=h+`<p class="empty">Aucun vol sur la période.</p>`; return; }
+  h+=`<table><thead><tr><th>Appareil</th><th>Départ</th><th>Arrivée</th><th>Durée</th><th>Dist.</th></tr></thead><tbody>`;
+  let day="";
+  hist.rows.forEach((r,idx)=>{
+    const f=r.f, d=isoDay(f.toTo);
+    if(d!==day){ day=d; h+=`<tr class="day"><td colspan="5">${esc(dayLabel(f.toTo))}</td></tr>`; }
+    const dep=f.toPlace?placeLabel(f.toPlace):"lieu non enregistré";
+    const arr=f.ldPlace?placeLabel(f.ldPlace):"—";
+    h+=`<tr class="fl" data-i="${idx}" tabindex="0"><td><span class="reg">${esc(r.reg)}</span></td>
+      <td>${esc(dep)}<br><span class="muted">${f.toFrom?hm(f.toFrom)+"–":"avant "}${hm(f.toTo)}</span></td>
+      <td>${esc(arr)}<br><span class="muted">${f.ldTo?hm(f.ldFrom)+"–"+hm(f.ldTo):""}</span></td>
+      <td>${esc(durTxt(f))}</td><td>${Math.round(f.km)} km</td></tr>`;
+  });
+  list.innerHTML=h+`</tbody></table>`;
+  list.querySelectorAll("tr.fl").forEach(tr=>{
+    const go=()=>showHistFlight(+tr.dataset.i);
+    tr.onclick=go; tr.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } };
+  });
+  showHistAll();
+}
+function showHistAll(){
+  hist.layer.clearLayers(); const b=[];
+  hist.rows.forEach(r=>{ const ll=r.f.pts.map(p=>[p.lat,p.lon]); b.push(...ll);
+    L.polyline(ll,{color:COLORS.ground,weight:2,opacity:.6}).addTo(hist.layer); });
+  if(b.length) hist.map.fitBounds(L.latLngBounds(b).pad(.1),{maxZoom:12});
+}
+function showHistFlight(i){
+  const r=hist.rows[i]; if(!r) return;
+  document.querySelectorAll("#h-list tr.fl").forEach(tr=>tr.classList.toggle("on",+tr.dataset.i===i));
+  hist.layer.clearLayers();
+  const ll=r.f.pts.map(p=>[p.lat,p.lon]);
+  L.polyline(ll,{color:COLORS.live,weight:4,opacity:.9}).addTo(hist.layer);
+  L.circleMarker(ll[0],{radius:6,color:"#fff",weight:2,fillColor:COLORS.live,fillOpacity:1}).bindTooltip("Départ").addTo(hist.layer);
+  if(r.f.ldTo) L.circleMarker(ll[ll.length-1],{radius:6,color:"#fff",weight:2,fillColor:COLORS.lost,fillOpacity:1}).bindTooltip("Arrivée").addTo(hist.layer);
+  hist.map.fitBounds(L.latLngBounds(ll).pad(.25),{maxZoom:13});
+}
+function exportHistCsv(){
+  const q=v=>{ v=v==null?"":String(v); return /[;"\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v; };
+  const t=x=>x?new Date(x).toISOString().replace("T"," ").slice(0,16):"";
+  const n=x=>x==null?"":String(Math.round(x));
+  const head=["date_utc","appareil","depart_lieu","decollage_apres","decollage_avant","arrivee_lieu","atterrissage_apres","atterrissage_avant","duree_min_min","duree_max_min","distance_km","depart_lat","depart_lon","arrivee_lat","arrivee_lon"];
+  const lines=[head.join(";")];
+  hist.rows.slice().reverse().forEach(({reg,f})=>{
+    lines.push([isoDay(f.toTo),reg,f.toPlace?placeLabel(f.toPlace):"",t(f.toFrom),t(f.toTo),f.ldPlace?placeLabel(f.ldPlace):"",t(f.ldFrom),t(f.ldTo),
+      f.ldTo?n(f.minMin):"",f.ldTo?n(f.maxMin):"",f.km.toFixed(1).replace(".",","),
+      f.pts[0].lat.toFixed(5),f.pts[0].lon.toFixed(5),f.ldPlace?f.ldPlace.lat.toFixed(5):"",f.ldPlace?f.ldPlace.lon.toFixed(5):""].map(q).join(";"));
+  });
+  const blob=new Blob(["\ufeff"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=`SAF_vols_${document.getElementById("h-reg").value||"flotte"}_${document.getElementById("h-from").value}_${document.getElementById("h-to").value}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+document.getElementById("histbtn").onclick=openHist;
+document.getElementById("h-close").onclick=closeHist;
+document.getElementById("h-load").onclick=loadHist;
+document.getElementById("h-csv").onclick=exportHistCsv;
+document.querySelectorAll("#hist .presets button").forEach(b=>b.onclick=()=>{ histPreset(+b.dataset.d); loadHist(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!document.getElementById("hist").hidden) closeHist(); });
+
+boot();
+</script>
+</body>
+</html>
