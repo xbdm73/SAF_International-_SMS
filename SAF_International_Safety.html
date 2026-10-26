@@ -18799,7 +18799,7 @@ function showLessonForm(editId){
   var titleEl=document.createElement('div');
   titleEl.className='chart-title';
   titleEl.style.marginBottom='16px';
-  titleEl.textContent=(isEdit?'✏️ Edit':'📢 Nouveau')+' — Safety Communication';
+  titleEl.textContent=(isEdit?'✏️ Correction':'📢 Nouveau')+' — Safety Communication · V'+(ex?((ex.rev||0)+1):1)+(isEdit?' (sans nouvelle version)':'');
   card.appendChild(titleEl);
 
   var bilingualNote=document.createElement('div');
@@ -19965,7 +19965,7 @@ function saveLesson(_silent){
       document.getElementById('lessons-form-wrap').style.display='none';
       _llEditId=null;_llImageData=null;_llPdfData=null;_llPdfName='';renderLessonsList();
       if(typeof window.safCloudSaveNow==='function'){try{window.safCloudSaveNow();}catch(e){}}
-      showToast('✓ '+ref+' Rév. '+_next+' publiée — Rév. '+(_next-1)+' conservée','success');
+      showToast('✓ '+ref+' V'+(_next+1)+' publiée — V'+_next+' conservée','success');
       return;
     }
   }
@@ -20018,6 +20018,7 @@ function renderLessonsList(){
     var leftDiv=document.createElement('div');
     leftDiv.appendChild(tagSpan);
     if(l.ref){var refSpan=document.createElement('span');refSpan.style.cssText='font-family:var(--font-mono);font-size:10px;color:var(--grey-400);';refSpan.textContent=l.ref;leftDiv.appendChild(refSpan);}
+    var verSpan=document.createElement('span');verSpan.style.cssText='margin-left:8px;background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.45);color:var(--steel-bright);border-radius:3px;padding:1px 7px;font-family:var(--font-mono);font-size:9px;font-weight:700;';verSpan.textContent='V'+((l.rev||0)+1);verSpan.title='Numéro de version en vigueur';leftDiv.appendChild(verSpan);
     hdr.appendChild(leftDiv);
     var rightDiv=document.createElement('div');
     rightDiv.style.cssText='display:flex;gap:6px;align-items:center;';
@@ -20126,12 +20127,11 @@ function llRevVersions(l){
   return out;
 }
 function llRevPrintInfo(l){
-  var hist=!!(l.__hasHist||(l.rev||0)>0||(l.revisions&&l.revisions.length));
-  if(!hist)return {meta:'',note:'',sup:false};
+  // Numéro de version toujours imprimé, original compris (V1).
   var r=l.rev||0;
-  var meta='<span><b>Rév. :</b> '+r+(r===0?' (original)':'')+'</span>';
-  if(l.__superseded)meta+='<span class="sup">VERSION REMPLACÉE / SUPERSEDED — en vigueur : Rév. '+llRevEsc(l.__curRev)+'</span>';
-  var note=(r>0&&l.rev_reason)?'<div class="rvn"><b>Motif de la révision / Reason for revision — Rév. '+r+(l.rev_date?' du '+llRevEsc(l.rev_date):'')+' :</b> '+llRevEsc(l.rev_reason).replace(/\n/g,'<br>')+'</div>':'';
+  var meta='<span><b>Version :</b> V'+(r+1)+'</span>';
+  if(l.__superseded)meta+='<span class="sup">VERSION REMPLACÉE / SUPERSEDED — en vigueur : V'+llRevEsc((l.__curRev||0)+1)+'</span>';
+  var note=(r>0&&l.rev_reason)?'<div class="rvn"><b>Motif de la version V'+(r+1)+' / Reason for version V'+(r+1)+(l.rev_date?' du '+llRevEsc(l.rev_date):'')+' :</b> '+llRevEsc(l.rev_reason).replace(/\n/g,'<br>')+'</div>':'';
   return {meta:meta,note:note,sup:!!l.__superseded};
 }
 function llRevPrint(id,idxs){
@@ -20165,11 +20165,11 @@ function llRevDecorateForm(id){
   if(!l||!card)return;
   var cur=l.rev||0, next=cur+1, d=l.rev_draft||null;
   var t=card.querySelector('.chart-title');
-  if(t)t.textContent='⟳ Révision '+next+' — '+(l.ref||'')+(d?' (brouillon repris)':'');
+  if(t)t.textContent='⟳ Nouvelle version V'+(next+1)+' — '+(l.ref||'')+(d?' (brouillon repris)':'');
   card.style.borderLeft='4px solid #e3a008';
   var ban=document.createElement('div');
   ban.style.cssText='margin:0 0 16px;padding:12px 14px;border:1px solid rgba(227,160,8,.45);background:rgba(227,160,8,.08);border-radius:6px;';
-  ban.innerHTML='<div style="font-family:var(--font-mono);font-size:10px;color:#e3a008;font-weight:700;margin-bottom:6px;">RÉVISION '+next+' — la Rév. '+cur+' en vigueur est conservée à l\'identique dans l\'historique</div>'
+  ban.innerHTML='<div style="font-family:var(--font-mono);font-size:10px;color:#e3a008;font-weight:700;margin-bottom:6px;">NOUVELLE VERSION V'+(next+1)+' — la V'+(cur+1)+' en vigueur est conservée à l\'identique dans l\'historique</div>'
     +'<div style="font-size:11px;color:var(--grey-400);margin-bottom:8px;line-height:1.45;">Modifiez le contenu ci-dessous puis publiez. Tant que la révision n\'est pas publiée, rien ne change dans la version en vigueur : la saisie est gardée en brouillon.</div>'
     +'<label class="field-label" for="ll-rev-reason">Motif de la révision / Reason for revision *</label>';
   var ta=document.createElement('textarea');
@@ -20184,7 +20184,7 @@ function llRevDecorateForm(id){
   if(!d){var de=document.getElementById('ll-date');if(de)de.value=new Date().toISOString().slice(0,10);}
   Array.prototype.forEach.call(card.querySelectorAll('button'),function(b){
     var tx=(b.textContent||'').trim();
-    if(tx==='✓ Save'){b.textContent='✓ Publier la révision '+next;}
+    if(tx==='✓ Save'){b.textContent='✓ Publier la V'+(next+1);}
     else if(tx==='Cancel'){b.textContent='Fermer (brouillon conservé)';b.addEventListener('click',function(){window._llRevCtx=null;setTimeout(renderLessonsList,0);});}
   });
   try{ban.scrollIntoView({block:'center',behavior:'smooth'});ta.focus();}catch(e){}
@@ -20210,7 +20210,7 @@ function llRevDecorateCard(card,l){
   box.style.cssText='margin-top:10px;padding-top:10px;border-top:1px dashed rgba(143,168,192,.3);font-family:var(--font-mono);font-size:10px;color:var(--grey-400);';
   if(r>0||revs.length){
     var info=document.createElement('div');info.style.cssText='display:flex;flex-wrap:wrap;align-items:center;gap:8px;';
-    info.innerHTML='<span style="background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.45);color:var(--steel-bright);border-radius:3px;padding:1px 7px;font-weight:700;">Rév. '+r+' en vigueur</span>'
+    info.innerHTML='<span style="background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.45);color:var(--steel-bright);border-radius:3px;padding:1px 7px;font-weight:700;">V'+(r+1)+' en vigueur</span>'
       +(l.rev_date?'<span>depuis le '+llRevEsc(l.rev_date)+'</span>':'')
       +(l.rev_reason?'<span>— motif : '+llRevEsc(l.rev_reason)+'</span>':'')
       +'<span>· '+revs.length+' version'+(revs.length>1?'s':'')+' antérieure'+(revs.length>1?'s':'')+' conservée'+(revs.length>1?'s':'')+'</span>';
@@ -20237,7 +20237,7 @@ function llRevDecorateCard(card,l){
   if(l.rev_draft){
     var dr=document.createElement('div');
     dr.style.cssText='display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px;color:#e3a008;';
-    dr.innerHTML='<span>✎ Brouillon de révision '+(r+1)+' en cours'+(l.rev_draft.draft_at?' (maj '+llRevEsc(String(l.rev_draft.draft_at).slice(0,16).replace('T',' '))+')':'')+' — non publié</span>';
+    dr.innerHTML='<span>✎ Brouillon de la V'+(r+2)+' en cours'+(l.rev_draft.draft_at?' (maj '+llRevEsc(String(l.rev_draft.draft_at).slice(0,16).replace('T',' '))+')':'')+' — non publié</span>';
     var rb=document.createElement('button');rb.textContent='Reprendre';
     rb.style.cssText='padding:2px 8px;background:rgba(227,160,8,.12);border:1px solid rgba(227,160,8,.5);border-radius:4px;color:#e3a008;font-family:var(--font-mono);font-size:10px;cursor:pointer;';
     rb.addEventListener('click',function(){llStartRevision(l.id);});
@@ -20257,10 +20257,10 @@ function llRevHistoryHTML(l){
     var st=v.__current
       ?'<span style="color:#2ea043;font-weight:700;">● En vigueur</span>'
       :'<span style="color:#CC2200;">Remplacée'+(v.superseded_at?' le '+llRevEsc(String(v.superseded_at).slice(0,10)):'')+'</span>';
-    var motif=(v.rev||0)===0?'<i>Original</i>':llRevEsc(v.rev_reason||'—');
+    var motif=(v.rev||0)===0?'<i>Version initiale</i>':llRevEsc(v.rev_reason||'—');
     var by=v.rev_by||((v.rev||0)===0?'':'');
     return '<tr><td style="'+td+'"><input type="checkbox" class="llrv-ck" value="'+v.__idx+'"'+(v.__current?' checked':'')+'></td>'
-      +'<td style="'+td+'font-weight:700;color:var(--white);white-space:nowrap;">Rév. '+(v.rev||0)+'</td>'
+      +'<td style="'+td+'font-weight:700;color:var(--white);white-space:nowrap;">V'+((v.rev||0)+1)+'</td>'
       +'<td style="'+td+'white-space:nowrap;">'+llRevEsc(v.date||'')+'</td>'
       +'<td style="'+td+'">'+motif+(by?'<div style="opacity:.7;">par '+llRevEsc(by)+'</div>':'')+'</td>'
       +'<td style="'+td+'white-space:nowrap;">'+st+'</td>'
@@ -20272,7 +20272,7 @@ function llRevHistoryHTML(l){
     +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">'
     +'<button data-llrv="all" style="'+bs+'background:none;border:1px solid rgba(143,168,192,.4);color:var(--grey-400);">☑ Tout / rien</button>'
     +'<button data-llrv="sel" style="'+bs+'background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.55);color:var(--gold-light);font-weight:700;">🖨 Extraire la sélection en PDF</button>'
-    +'<span style="align-self:center;opacity:.75;">Les versions remplacées portent le filigrane « REMPLACÉE · SUPERSEDED » et la mention de la Rév. en vigueur.</span>'
+    +'<span style="align-self:center;opacity:.75;">Les versions remplacées portent le filigrane « REMPLACÉE · SUPERSEDED » et la mention de la version en vigueur.</span>'
     +'</div>';
 }
 // ═══ FIN RÉVISIONS ═══════════════════════════════════════════════════════
@@ -20289,7 +20289,7 @@ function printLessonById(id,_versions){
   var _list=(_versions&&_versions.length)?_versions:(_base?[_base]:[]);
   if(!_list.length)return;
   var l=_list[0];
-  var _ttlSfx=(_versions&&_versions.length)?' — '+_list.map(function(v){return 'Rév. '+(v.rev||0);}).join(', '):((l.rev||0)>0?' — Rév. '+l.rev:'');
+  var _ttlSfx=' '+_list.map(function(v){return 'V'+((v.rev||0)+1);}).join('-');
   var bgImg=l.type==='alert'?_SAF_SA_IMG():_SAF_COM_IMG();
   var esc=function(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');};
   var safeHtml=function(s){return String(s||'').replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi,'').replace(/ on\w+=/gi,' data-x=');};
