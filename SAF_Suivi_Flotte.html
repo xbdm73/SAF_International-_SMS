@@ -206,6 +206,9 @@ const CONFIG = {
   // Carte OACI France (IGN SCAN OACI, accès restreint) : clé transitoire IGN par défaut,
   // à remplacer par la clé obtenue auprès de l'IGN (cartes.gouv.fr) si elle cesse de fonctionner.
   ignOaciKey: "ign_scan_ws",
+  // Surcouche openAIP (espaces aériens, aérodromes, obstacles…) : clé « API Client » gratuite
+  // à créer sur openaip.net (profil > API Clients). Vide = surcouche non proposée.
+  openAipKey: "ef688ca41028ff1b71c6a1834026a858",
 };
 const BASES = [
   {name:"LFKA Albertville", lat:45.6276, lon:6.3297},
@@ -229,6 +232,11 @@ function makeLayers(){
     "Satellite (Esri)": L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"© Esri"}),
   };
 }
+function makeOverlays(){
+  const o={};
+  if(CONFIG.openAipKey) o["Espaces aériens (openAIP)"]=L.tileLayer("https://{s}.api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.png?apiKey="+encodeURIComponent(CONFIG.openAipKey),{subdomains:"abc",maxNativeZoom:14,maxZoom:19,zIndex:10,attribution:"© openAIP (données communautaires, non officielles)"});
+  return o;
+}
 const VIEW_KEY="saf_fleet_view";
 function loadView(){ try{ const v=JSON.parse(localStorage.getItem(VIEW_KEY)||"null"); if(v&&v.n>=1&&v.n<=4&&Array.isArray(v.follow)) return v; }catch(e){} return {n:1,follow:[null,null,null,null]}; }
 function saveView(){ try{ localStorage.setItem(VIEW_KEY,JSON.stringify({n:panes.length,follow:viewFollow})); }catch(e){} }
@@ -241,7 +249,7 @@ function createPane(i){
   const m=L.map(el.querySelector(".map"),{zoomControl:false}).setView([45.9,6.8],8);
   L.control.zoom({position:"bottomright"}).addTo(m);
   const lay=makeLayers(); lay["Topo (OpenTopoMap)"].addTo(m);
-  L.control.layers(lay,null,{position:"topright"}).addTo(m);
+  L.control.layers(lay,makeOverlays(),{position:"topright"}).addTo(m);
   L.control.scale({imperial:false,position:"bottomleft"}).addTo(m);
   BASES.forEach(b => L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null}),keyboard:false}).addTo(m));
   const pane={i,el,map:m,markers:{},trails:{},follow:viewFollow[i]||null,moved:false,fitted:false,
@@ -676,7 +684,7 @@ function openHist(){
     hist.map=L.map("h-map",{zoomControl:false}).setView([45.9,6.8],8);
     L.control.zoom({position:"bottomright"}).addTo(hist.map);
     const lay=makeLayers(); lay["Topo (OpenTopoMap)"].addTo(hist.map);
-    L.control.layers(lay,null,{position:"topright"}).addTo(hist.map);
+    L.control.layers(lay,makeOverlays(),{position:"topright"}).addTo(hist.map);
     L.control.scale({imperial:false,position:"bottomleft"}).addTo(hist.map);
     BASES.forEach(b=>L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null}),keyboard:false}).addTo(hist.map));
     hist.layer=L.layerGroup().addTo(hist.map);
