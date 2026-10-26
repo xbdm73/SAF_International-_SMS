@@ -228,7 +228,7 @@ footer .err{color:var(--lost)}
   <div class="terrain-head"><strong id="terrain-name">Profil relief / AGL</strong><span id="terrain-status">—</span><button id="terrain-close" type="button" aria-label="Fermer le profil">Fermer</button></div>
   <div class="terrain-stat" id="terrain-stat">Choisissez un hélicoptère.</div>
   <div class="terrain-plot" id="terrain-plot"></div>
-  <div class="terrain-foot">Altitude hélicoptère (GPS) / terrain (EU-DEM 25 m). AGL indicative : référentiels altimétriques NSE non vérifiés. Points réels reçus uniquement, aucune interpolation du vol. Non utilisable pour la navigation.</div>
+  <div class="terrain-foot">Altitude hélicoptère (GPS) / terrain (EU-DEM 25 m ou Copernicus GLO-90 90 m en secours). AGL indicative : référentiels altimétriques NSE non vérifiés. Points réels reçus uniquement, aucune interpolation du vol. Non utilisable pour la navigation.</div>
 </section>
 <div id="gate" role="alert"><p id="gate-msg">Vérification de la session…</p><a href="https://saf-international-portail.netlify.app/">Retour au portail</a></div>
 
@@ -689,7 +689,7 @@ setInterval(()=>{
 },10000);
 
 /* ---------- Profil relief et hauteur sol (affichage consultatif) ---------- */
-const terrain={visible:false, reg:null, elevations:new Map(), lastFetch:0, fetching:false, pending:false, token:0};
+const terrain={visible:false, reg:null, elevations:new Map(), lastFetch:0, fetching:false, pending:false, token:0, retryTimer:null, source:""};
 const terrainPanel=document.getElementById("terrain-panel");
 const terrainPlot=document.getElementById("terrain-plot");
 const terrainKey=p=>`${(+p.lat).toFixed(5)},${(+p.lon).toFixed(5)}`;
@@ -717,37 +717,57 @@ function closeTerrain(){
 document.getElementById("terrainbtn").onclick=()=>terrain.visible?closeTerrain():openTerrain();
 document.getElementById("terrain-close").onclick=closeTerrain;
 async function fetchTerrain(pts){
-  if(terrain.fetching) {terrain.pending=true;return;}
+  if(terrain.fetching){terrain.pending=true;return;}
   const missing=[...new Map(pts.filter(p=>!terrain.elevations.has(terrainKey(p))).map(p=>[terrainKey(p),p])).values()];
   if(!missing.length)return;
-  if(Date.now()-terrain.lastFetch<1500)return; // limite du service public : 1 req/s
+  if(Date.now()-terrain.lastFetch<1500){
+    if(!terrain.retryTimer)terrain.retryTimer=setTimeout(()=>{terrain.retryTimer=null;if(terrain.visible)updateTerrain();},1600);
+    return;
+  }
   terrain.fetching=true;terrain.lastFetch=Date.now();
-  document.getElementById("terrain-status").textContent="Chargement du relief…";
+  const statusEl=document.getElementById("terrain-status");
+  statusEl.textContent="Chargement du relief…";
+  const batch=missing.slice(0,80);
+  async function readJson(url){
+    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);
+    try{
+      const response=await fetch(url,{signal:ctrl.signal,cache:"no-store"});
+      if(!response.ok)throw Error("HTTP "+response.status);
+      return await response.json();
+    }finally{clearTimeout(timer);}
+  }
   try{
-    // Le service public OpenTopoData accepte 100 positions au maximum par requête.
-    // Une page n'en demande que 80, et les résultats sont mémorisés.
-    const batch=missing.slice(0,80);
-    const loc=batch.map(p=>terrainKey(p)).join("|");
-    const controller=new AbortController();
-    const timeout=setTimeout(()=>controller.abort(),12000);
-    let r;
-    try {r=await fetch("https://api.opentopodata.org/v1/eudem25m?locations="+encodeURIComponent(loc),{signal:controller.signal});}
-    finally {clearTimeout(timeout);}
-    if(!r.ok) throw Error("HTTP "+r.status);
-    const json=await r.json();
-    if(json.status!=="OK"||!Array.isArray(json.results)||json.results.length!==batch.length)throw Error(json.error||"Données de relief indisponibles");
-    batch.forEach((p,i)=>{
-      const v=json.results[i]?.elevation;
-      terrain.elevations.set(terrainKey(p),typeof v==="number"&&Number.isFinite(v)?v:null);
-    });
-    document.getElementById("terrain-status").textContent="Terrain : EU-DEM 25 m";
+    let heights=null,source="";
+    try{
+      const loc=batch.map(p=>terrainKey(p)).join("|");
+      const j=await readJson("https://api.opentopodata.org/v1/eudem25m?locations="+encodeURIComponent(loc));
+      if(j.status!=="OK"||!Array.isArray(j.results)||j.results.length!==batch.length)throw Error(j.error||"Réponse EU-DEM invalide");
+      heights=j.results.map(v=>v.elevation);
+      if(!heights.some(Number.isFinite))throw Error("Aucune altitude EU-DEM");
+      source="EU-DEM 25 m";
+    }catch(firstErr){
+      console.warn("EU-DEM indisponible, tentative Open-Meteo :",firstErr);
+      const lat=batch.map(p=>(+p.lat).toFixed(5)).join(",");
+      const lon=batch.map(p=>(+p.lon).toFixed(5)).join(",");
+      const j=await readJson("https://api.open-meteo.com/v1/elevation?latitude="+encodeURIComponent(lat)+"&longitude="+encodeURIComponent(lon));
+      if(!Array.isArray(j.elevation)||j.elevation.length!==batch.length)throw Error(j.reason||"Réponse Copernicus invalide");
+      heights=j.elevation;
+      source="Copernicus GLO-90 (90 m)";
+    }
+    batch.forEach((p,i)=>terrain.elevations.set(terrainKey(p),Number.isFinite(heights[i])?heights[i]:null));
+    terrain.source=source;
+    statusEl.textContent="Relief : "+source;
   }catch(e){
-    document.getElementById("terrain-status").textContent="Relief indisponible (service externe)";
-    console.warn("Relief :",e);
+    statusEl.textContent="Relief indisponible : "+String(e.message||e);
+    console.warn("Relief : échec des deux services :",e);
+    // Ne pas bloquer les futures tentatives si les services sont momentanément indisponibles.
   }finally{
     terrain.fetching=false;
-    if(terrain.visible) drawTerrain();
-    if(terrain.pending){terrain.pending=false;setTimeout(()=>{if(terrain.visible)updateTerrain();},1700);}
+    if(terrain.visible)drawTerrain();
+    if(terrain.pending||missing.length>batch.length){
+      terrain.pending=false;
+      if(!terrain.retryTimer)terrain.retryTimer=setTimeout(()=>{terrain.retryTimer=null;if(terrain.visible)updateTerrain();},1700);
+    }
   }
 }
 function updateTerrain(){
