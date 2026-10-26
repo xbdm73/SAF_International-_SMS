@@ -203,6 +203,9 @@ const CONFIG = {
   liveMaxMin: 5,        // point plus récent que 5 min = en direct
   lostAfterMin: 45,     // en mouvement puis plus de point depuis 45 min = signal perdu
   movingSpeed: 5,
+  // Carte OACI France (IGN SCAN OACI, accès restreint) : clé transitoire IGN par défaut,
+  // à remplacer par la clé obtenue auprès de l'IGN (cartes.gouv.fr) si elle cesse de fonctionner.
+  ignOaciKey: "ign_scan_ws",
 };
 const BASES = [
   {name:"LFKA Albertville", lat:45.6276, lon:6.3297},
@@ -221,6 +224,8 @@ function makeLayers(){
     "Topo (OpenTopoMap)": L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"© OpenTopoMap, © OSM"}),
     "Plan (OSM)": L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}),
     "swisstopo": L.tileLayer("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg",{maxZoom:18,attribution:"© swisstopo"}),
+    "OACI France (IGN)": L.tileLayer("https://data.geopf.fr/private/wmts?apikey="+encodeURIComponent(CONFIG.ignOaciKey)+"&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN-OACI&STYLE=normal&FORMAT=image/jpeg&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}",{minZoom:6,maxNativeZoom:11,maxZoom:15,attribution:"© IGN / SIA – carte OACI-VFR, ne pas utiliser pour la navigation"}),
+    "OACI Suisse (swisstopo)": L.tileLayer("https://wmts.geo.admin.ch/1.0.0/ch.bazl.luftfahrtkarten-icao/default/current/3857/{z}/{x}/{y}.png",{maxNativeZoom:12,maxZoom:15,attribution:"© OFAC/BAZL, swisstopo – carte OACI, ne pas utiliser pour la navigation"}),
     "Satellite (Esri)": L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"© Esri"}),
   };
 }
