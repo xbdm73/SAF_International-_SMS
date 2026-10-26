@@ -94,11 +94,12 @@ footer .err{color:var(--lost)}
 .acm .lbl{position:absolute;left:18px;top:-11px;white-space:nowrap;font-family:var(--cond);font-weight:700;font-size:15px;
   background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:3px;padding:0 5px;line-height:20px}
 .acm.lost .lbl{background:var(--lost);color:#fff;border-color:var(--lost)}
-/* Chantiers du jour (roster levage) */
+/* Chantiers du jour (agenda Operations) */
 .wsm{position:relative}
 .wsm svg{position:absolute;left:-11px;top:-11px;width:22px;height:22px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
 .wsm .wl{position:absolute;left:14px;top:-9px;white-space:nowrap;font-family:var(--cond);font-weight:600;font-size:12.5px;line-height:17px;
   color:#111;background:var(--signal);border-radius:3px;padding:0 5px}
+.wsm.tent svg{opacity:.75} .wsm.tent .wl{background:transparent;color:var(--signal);border:1px dashed var(--signal)}
 .wsm.done .wl{background:var(--stale);color:var(--ink)} .wsm.off .wl{background:var(--lost);color:#fff;text-decoration:line-through}
 .wsl{font-family:var(--cond);font-weight:600;font-size:11.5px;color:var(--signal);white-space:nowrap}
 .leaflet-tooltip.wst{background:var(--panel);color:var(--ink);border:1px solid var(--signal);border-radius:6px;padding:10px 12px;
@@ -228,7 +229,7 @@ const CONFIG = {
   // à créer sur openaip.net (profil > API Clients). Vide = surcouche non proposée.
   openAipKey: "ef688ca41028ff1b71c6a1834026a858",
 };
-// Chantiers du jour : table fleet_worksites du projet SMS, alimentée par le roster levage
+// Chantiers du jour : table fleet_worksites du projet SMS, copiée depuis l'agenda Operations
 const WORKSITES = { table:"fleet_worksites", nearKm:2, tz:"Europe/Paris" };
 const BASES = [
   {name:"LFKA Albertville", lat:45.6276, lon:6.3297},
@@ -520,9 +521,10 @@ function detailsHTML(reg){
   return h+`</div>`;
 }
 
-/* ---------- Chantiers du jour (roster levage) ----------
+/* ---------- Chantiers du jour (agenda Operations) ----------
    Lecture de fleet_worksites (même session, même RLS que fleet_positions).
-   Un chantier = point de travail (lat/lon), et facultativement aire de chargement (load_lat/load_lon).
+   Données copiées de l'agenda « SAF International — Operations » par la fonction ops-worksites-sync :
+   point principal (1re DZ, sinon LZ, sinon lieu), points DZ/LZ (features) et trajet (route).
    Le survol d'un marqueur affiche le détail ; un appui l'affiche aussi sur écran tactile. */
 let worksites=[], wsOff=false;
 const todayLocal=()=>new Intl.DateTimeFormat("sv-SE",{timeZone:WORKSITES.tz}).format(new Date());
@@ -538,28 +540,36 @@ async function loadWorksites(){
   worksites=(r.data||[]).filter(w=>isFinite(+w.lat)&&isFinite(+w.lon));
 }
 const sitesFor=reg=>worksites.filter(w=>w.reg&&String(w.reg).toUpperCase()===reg.toUpperCase()&&w.status!=="annulé");
-function siteClass(w){ return w.status==="terminé"?"done":w.status==="annulé"?"off":""; }
+function siteClass(w){ return w.status==="terminé"?"done":w.status==="annulé"?"off":["standby","demande","devis"].includes(w.status)?"tent":""; }
+const sitePts=w=>(Array.isArray(w.features)?w.features:[]).filter(p=>isFinite(+p.lat)&&isFinite(+p.lon));
+// Distance de l'appareil au chantier : au plus proche de ses points (DZ, LZ, point principal)
+function siteDist(w,last){ return Math.min(haversineKm(last,{lat:+w.lat,lon:+w.lon}),...sitePts(w).map(p=>haversineKm(last,{lat:+p.lat,lon:+p.lon}))); }
 function siteSvg(){
   return `<svg viewBox="0 0 22 22" aria-hidden="true"><rect x="4" y="4" width="14" height="14" rx="2" transform="rotate(45 11 11)" fill="#F0C040" stroke="#0D1B2A" stroke-width="2"/><circle cx="11" cy="11" r="2.6" fill="#0D1B2A"/></svg>`;
 }
+const elevTxt=m=>m==null||m===""?"":` · ${Math.round(+m).toLocaleString("fr-FR")} m / ${Math.round(+m*3.28084).toLocaleString("fr-FR")} ft`;
 function siteTip(w){
   const rows=[];
-  const row=(k,v)=>{ if(v!=null&&String(v).trim()!=="") rows.push(`<tr><th>${k}</th><td>${esc(v)}</td></tr>`); };
-  const hrs=w.start_time||w.end_time?`${tShort(w.start_time)||"?"} – ${tShort(w.end_time)||"?"} (heure locale)`:null;
-  row("Horaire",hrs);
+  const row=(k,v,raw)=>{ if(v!=null&&String(v).trim()!=="") rows.push(`<tr><th>${k}</th><td>${raw?v:esc(v)}</td></tr>`); };
+  row("Mission",w.mission_no);
+  row("Horaire",w.start_time||w.end_time?`${tShort(w.start_time)||"?"} – ${tShort(w.end_time)||"?"} (heure locale)`:null);
   row("Appareil",w.reg);
   row("Équipage",w.crew);
   row("Client",w.client);
   row("Travaux",w.work_type);
-  row("Charge max",w.max_load_kg!=null&&w.max_load_kg!==""?`${(+w.max_load_kg).toLocaleString("fr-FR")} kg`:null);
-  row("Rotations",w.rotations);
+  const ch=[w.loads!=null?`${w.loads} charge${w.loads>1?"s":""}`:null,
+            w.max_load_kg!=null?`max ${(+w.max_load_kg).toLocaleString("fr-FR")} kg`:null,
+            w.longline_m!=null?`longline ${w.longline_m} m`:null].filter(Boolean).join(" · ");
+  row("Charges",ch);
   row("Contact",w.contact);
   row("Statut",w.status);
+  const pts=sitePts(w);
+  if(pts.length) row("Points",pts.map(p=>`<b>${esc(p.name)}</b>${esc(elevTxt(p.elev_m))}`).join("<br>"),true);
   row("Remarques",w.details);
   let prox="";
-  const last=w.reg?state[String(w.reg).toUpperCase()]?.last||state[w.reg]?.last:null;
+  const last=w.reg?state[String(w.reg).toUpperCase()]?.last:null;
   if(w.reg&&last){
-    const d=haversineKm(last,{lat:+w.lat,lon:+w.lon});
+    const d=siteDist(w,last);
     prox=d<=WORKSITES.nearKm
       ?`<div class="prox on">${esc(w.reg)} sur zone (${d<1?Math.round(d*1000)+" m":d.toFixed(1)+" km"})</div>`
       :`<div class="prox off">${esc(w.reg)} à ${d<10?d.toFixed(1):Math.round(d)} km · dernier point ${esc(ago(last.fix_time))}</div>`;
@@ -575,22 +585,27 @@ function renderWorksites(){
     p.sitesSig=sig;
     p.sites.clearLayers();
     for(const w of worksites){
-      const ll=[+w.lat,+w.lon];
+      const ll=[+w.lat,+w.lon], cls=siteClass(w), off=cls==="off";
+      const line={color:"#F0C040",weight:2,opacity:off?.35:.75,dashArray:"5 6",interactive:false};
+      // Trajet saisi dans l'agenda, sinon liaison LZ → DZ
+      const pts=sitePts(w), routes=Array.isArray(w.route)?w.route.filter(r=>Array.isArray(r)&&r.length>1):[];
+      if(routes.length) routes.forEach(r=>L.polyline(r.map(c=>[+c[0],+c[1]]),line).addTo(p.sites));
+      else { const lz=pts.find(x=>x.kind==="lz"); if(lz) pts.filter(x=>x.kind==="dz").forEach(dz=>L.polyline([[+lz.lat,+lz.lon],[+dz.lat,+dz.lon]],line).addTo(p.sites)); }
+      for(const q of pts){
+        if(Math.abs(q.lat-ll[0])<1e-6&&Math.abs(q.lon-ll[1])<1e-6) continue;   // déjà le marqueur principal
+        const isLz=q.kind==="lz";
+        L.circleMarker([+q.lat,+q.lon],{radius:isLz?6:5,color:"#0D1B2A",weight:2,fillColor:isLz?"#5B9BE0":"#F0C040",fillOpacity:off?.4:1})
+          .bindTooltip(`<b>${esc(q.name)}</b> · ${esc(w.name||"")}${esc(elevTxt(q.elev_m))}`,{direction:"top",offset:[0,-6]})
+          .addTo(p.sites);
+      }
       const icon=L.divIcon({className:"",iconSize:[0,0],
-        html:`<div class="wsm ${siteClass(w)}">${siteSvg()}<span class="wl">${esc(w.name||"Chantier")}${w.reg?" · "+esc(w.reg):""}</span></div>`});
+        html:`<div class="wsm ${cls}">${siteSvg()}<span class="wl">${esc(w.name||"Chantier")}${w.reg?" · "+esc(w.reg):""}</span></div>`});
       const mk=L.marker(ll,{icon,keyboard:true,title:w.name||"Chantier",zIndexOffset:-100}).addTo(p.sites);
       mk.bindTooltip(()=>siteTip(w),{className:"wst",direction:"top",offset:[0,-14],opacity:1});
       mk.on("click",()=>mk.isTooltipOpen()?mk.closeTooltip():mk.openTooltip());   // écran tactile
       // Infobulle sous le marqueur quand il est dans la moitié haute de la carte, pour qu'elle reste visible
       mk.on("tooltipopen",e=>{ const up=p.map.latLngToContainerPoint(ll).y>p.map.getSize().y/2, tt=e.tooltip;
         tt.options.direction=up?"top":"bottom"; tt.options.offset=L.point(0,up?-14:14); tt.update(); });
-      if(isFinite(+w.load_lat)&&isFinite(+w.load_lon)&&w.load_lat!=null&&w.load_lon!=null){
-        const lz=[+w.load_lat,+w.load_lon];
-        L.polyline([lz,ll],{color:"#F0C040",weight:2,opacity:.8,dashArray:"5 6",interactive:false}).addTo(p.sites);
-        L.circleMarker(lz,{radius:5,color:"#0D1B2A",weight:2,fillColor:"#F0C040",fillOpacity:1})
-          .bindTooltip(`Aire de chargement · ${esc(w.name||"")}<br><span style="color:var(--ink-2)">${haversineKm({lat:lz[0],lon:lz[1]},{lat:ll[0],lon:ll[1]}).toFixed(1)} km du chantier</span>`,{direction:"top",offset:[0,-6]})
-          .addTo(p.sites);
-      }
     }
   }
 }
@@ -669,7 +684,7 @@ function render(ps){
       if(atBase(last)) facts+=`<div>En base : <b>${esc(nearestAds(last,ad=>ad.base)[0].ad.icao)}</b></div>`;
       else if(an.outside?.since) facts+=`<div>Hors base depuis au moins <b>${dur(minsAgo(an.outside.since))}</b> (départ de ${esc(nearestAds(an.outside.leftFrom,ad=>ad.base)[0].ad.icao)})</div>`;
       else facts+=`<div>Hors base – départ non enregistré</div>`;
-      for(const w of sitesFor(a.reg)) facts+=`<div class="ws">Chantier du jour : <b>${esc(w.name||"—")}</b>${w.start_time?` · ${esc(tShort(w.start_time))}`:""} · ${Math.round(haversineKm(last,{lat:+w.lat,lon:+w.lon})*10)/10} km</div>`;
+      for(const w of sitesFor(a.reg)) facts+=`<div class="ws">Chantier du jour : <b>${esc(w.name||"—")}</b>${w.start_time?` · ${esc(tShort(w.start_time))}`:""} · ${Math.round(siteDist(w,last)*10)/10} km</div>`;
       const n24=an.flights.filter(f=>new Date(f.ldTo||f.toTo)>=Date.now()-24*3600e3).length;
       if(n24) facts+=`<div>${n24} vol${n24>1?"s":""} sur 24 h</div>`;
     }
