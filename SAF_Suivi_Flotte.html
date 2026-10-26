@@ -296,7 +296,7 @@ function createPane(i){
   L.control.layers(lay,ov,{position:"topright"}).addTo(m);
   L.control.scale({imperial:false,position:"bottomleft"}).addTo(m);
   BASES.forEach(b => L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null}),keyboard:false}).addTo(m));
-  const pane={i,el,map:m,markers:{},trails:{},sites,follow:viewFollow[i]||null,moved:false,fitted:false,
+  const pane={i,el,map:m,markers:{},trails:{},predicts:{},sites,follow:viewFollow[i]||null,moved:false,fitted:false,
     sel:el.querySelector("select"),pst:el.querySelector(".pst"),btn:el.querySelector("button")};
   // Déplacement à la main : on arrête de suivre jusqu'au clic sur « Recentrer »
   m.on("dragstart",()=>{ if(pane.follow){ pane.moved=true; pane.btn.hidden=false; } });
@@ -374,6 +374,54 @@ function computedGs(p1,p0){
   const dt=(new Date(p0.fix_time)-new Date(p1.fix_time))/3600000;
   if(dt<20/3600||dt>5/60) return null;
   return haversineKm(p1,p0)/dt;
+}
+function currentKt(prev,last){
+  const calc=computedGs(prev,last);
+  if(Number.isFinite(calc) && calc>0) return calc/1.852;
+  const raw=Number(last?.speed);
+  return Number.isFinite(raw)&&raw>0?raw:null;
+}
+function destPoint(lat,lon,bearingDeg,km){
+  const R=6371, brg=bearingDeg*Math.PI/180, φ1=lat*Math.PI/180, λ1=lon*Math.PI/180, δ=km/R;
+  const sinφ1=Math.sin(φ1), cosφ1=Math.cos(φ1), sinδ=Math.sin(δ), cosδ=Math.cos(δ);
+  const sinφ2=sinφ1*cosδ + cosφ1*sinδ*Math.cos(brg);
+  const φ2=Math.asin(Math.max(-1,Math.min(1,sinφ2)));
+  const y=Math.sin(brg)*sinδ*cosφ1;
+  const x=cosδ - sinφ1*Math.sin(φ2);
+  const λ2=λ1 + Math.atan2(y,x);
+  return {lat:φ2*180/Math.PI, lon:((λ2*180/Math.PI+540)%360)-180};
+}
+function predictionRadiusKm(kt,min){ return kt*1.852*min/60; }
+function renderPrediction(pane,reg,last,prev,st){
+  let group=pane.predicts[reg];
+  const hd=normHeading(last?.heading), kt=currentKt(prev,last);
+  if(!(last && st.k==="live" && Number.isFinite(hd) && Number.isFinite(kt) && kt>0)){
+    if(group){ group.remove(); delete pane.predicts[reg]; }
+    return;
+  }
+  // Ne recalculer le dessin que lorsque la dernière position, le cap ou la vitesse changent.
+  const signature=[last.fix_time,last.lat,last.lon,hd,kt].join("|");
+  if(group && group.predictionSignature===signature) return;
+  if(!group){ group=L.layerGroup().addTo(pane.map); pane.predicts[reg]=group; }
+  group.predictionSignature=signature;
+  group.clearLayers();
+  const center=[last.lat,last.lon];
+  [10,20,30].forEach(min=>{
+    L.circle(center,{
+      radius:predictionRadiusKm(kt,min)*1000,
+      color:"#F0C040",
+      weight:min===30?2.2:1.8,
+      opacity:.85,
+      fill:false,
+      dashArray:"8 6"
+    }).addTo(group);
+  });
+  const end=destPoint(last.lat,last.lon,hd,predictionRadiusKm(kt,50));
+  L.polyline([center,[end.lat,end.lon]],{
+    color:"#F0C040",
+    weight:3,
+    opacity:.95
+  }).addTo(group);
 }
 function status(last){
   if(!last) return {k:"none",t:"Aucune position reçue"};
@@ -632,7 +680,27 @@ function renderWorksites(){
 }
 
 /* ---------- Données ---------- */
-let lastPs=null, loading=false, lastOk=0;
+let lastPs=null, loading=false, lastOk=0, pendingRealtimeLoad=false;
+let realtimeChannel=null, realtimeLoadTimer=null;
+// À chaque INSERT/UPDATE en base, relire les dernières positions ; le polling 30 s reste un secours.
+function scheduleRealtimeLoad(){
+  if(realtimeLoadTimer) return;
+  realtimeLoadTimer=setTimeout(()=>{
+    realtimeLoadTimer=null;
+    if(loading){ pendingRealtimeLoad=true; return; }
+    load();
+  },350);
+}
+function subscribeFleetPositions(){
+  if(realtimeChannel) return;
+  realtimeChannel=sb.channel("saf-fleet-positions-live")
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"fleet_positions"},scheduleRealtimeLoad)
+    .on("postgres_changes",{event:"UPDATE",schema:"public",table:"fleet_positions"},scheduleRealtimeLoad)
+    .subscribe(status=>{
+      if(status==="CHANNEL_ERROR" || status==="TIMED_OUT")
+        console.warn("Supabase Realtime indisponible : actualisation automatique toutes les 30 s maintenue.");
+    });
+}
 function isAuthError(e){ const m=String(e&&(e.message||e.code)||e||""); return /jwt|token|401|PGRST30/i.test(m); }
 async function load(retried){
   if(loading) return; loading=true;
@@ -659,6 +727,9 @@ async function load(retried){
     lastPs=ps.data; lastOk=Date.now();
     try{ await loadWorksites(); }catch(e){ console.warn("Chantiers du jour :",e); }
     render(lastPs);
+    // Même cycle de données NSE pour les projections sur la carte et le profil AGL.
+    // Les altitudes de terrain manquantes sont demandées, les autres restent en cache.
+    if(terrain.visible) updateTerrain();
     if(selected) ensureDetails(selected);
   }catch(e){
     if(!retried && isAuthError(e)){
@@ -669,7 +740,10 @@ async function load(retried){
       location.replace("index.html?next=SAF_Suivi_Flotte.html"); return;
     }
     document.getElementById("foot").innerHTML=`<span class="err">Lecture impossible : ${esc(e.message||e)}. Nouvel essai dans ${CONFIG.refreshMs/1000} s.</span>`;
-  }finally{ loading=false; }
+  }finally{
+    loading=false;
+    if(pendingRealtimeLoad){ pendingRealtimeLoad=false; scheduleRealtimeLoad(); }
+  }
 }
 /* Les navigateurs ralentissent ou suspendent les minuteries des onglets en arrière-plan
    et des ordinateurs en veille : on relit immédiatement au retour, puis on relance le cycle. */
@@ -884,6 +958,7 @@ function render(ps){
       if(p.trails[a.reg]) p.trails[a.reg].setLatLngs(pts);
       else p.trails[a.reg]=L.polyline(pts,{weight:3,opacity:.85}).addTo(p.map);
       p.trails[a.reg].setStyle({color:COLORS[st.k],weight:focus===a.reg?5:3,opacity:focus&&focus!==a.reg?.35:.85});
+      renderPrediction(p,a.reg,last,s.prev,st);
     }
   }
   list.scrollTop=scroll;
@@ -896,7 +971,10 @@ function render(ps){
     (ps?.last_poll?` · relais NSE ${ago(ps.last_poll)}`:"");
   if(ps?.last_poll && minsAgo(ps.last_poll)>5) f.innerHTML+=` <span class="err">Le relais ne tourne plus.</span>`;
   paneBars();
-  panes.forEach(p=>centerPane(p,false));   // les cartes qui suivent un appareil se recentrent
+  panes.forEach(p=>{
+    for(const reg of Object.keys(p.predicts)) if(!fleet.some(a=>a.reg===reg)) { p.predicts[reg].remove(); delete p.predicts[reg]; }
+    centerPane(p,false);
+  });   // les cartes qui suivent un appareil se recentrent
   firstFit=false;
 }
 function fitAll(){
@@ -920,6 +998,7 @@ async function boot(){
     if(r.data&&r.data[0]&&r.data[0].role) role=String(r.data[0].role).toLowerCase();
   }catch(e){}
   if(!["admin","editor","reader"].includes(role)){ gate("Le suivi flotte n'est pas ouvert à ce compte."); return; }
+  subscribeFleetPositions();
   restartCycle();
 }
 document.getElementById("logout").onclick=async()=>{await sb.auth.signOut(); location.replace("https://saf-international-portail.netlify.app/");};
