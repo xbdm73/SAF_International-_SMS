@@ -271,6 +271,7 @@ function createPane(i){
   L.control.zoom({position:"bottomright"}).addTo(m);
   const lay=makeLayers(); lay["Topo (OpenTopoMap)"].addTo(m);
   const sites=L.layerGroup().addTo(m);
+  m.on("click",()=>sites.eachLayer(l=>l.closeTooltip&&l.closeTooltip()));   // toucher ailleurs = fermer
   const ov=makeOverlays(); ov["Chantiers du jour"]=sites;
   L.control.layers(lay,ov,{position:"topright"}).addTo(m);
   L.control.scale({imperial:false,position:"bottomleft"}).addTo(m);
@@ -602,7 +603,7 @@ function renderWorksites(){
         html:`<div class="wsm ${cls}">${siteSvg()}<span class="wl">${esc(w.name||"Chantier")}${w.reg?" · "+esc(w.reg):""}</span></div>`});
       const mk=L.marker(ll,{icon,keyboard:true,title:w.name||"Chantier",zIndexOffset:-100}).addTo(p.sites);
       mk.bindTooltip(()=>siteTip(w),{className:"wst",direction:"top",offset:[0,-14],opacity:1});
-      mk.on("click",()=>mk.isTooltipOpen()?mk.closeTooltip():mk.openTooltip());   // écran tactile
+      // Écran tactile : Leaflet ouvre déjà l'infobulle au toucher ; un toucher sur la carte la referme
       // Infobulle sous le marqueur quand il est dans la moitié haute de la carte, pour qu'elle reste visible
       mk.on("tooltipopen",e=>{ const up=p.map.latLngToContainerPoint(ll).y>p.map.getSize().y/2, tt=e.tooltip;
         tt.options.direction=up?"top":"bottom"; tt.options.offset=L.point(0,up?-14:14); tt.update(); });
