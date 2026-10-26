@@ -329,12 +329,31 @@ function setSplit(n){
   saveView();
   setTimeout(()=>{ panes.forEach(p=>{ p.map.invalidateSize(); centerPane(p,false); }); if(lastPs) render(lastPs); },60);
 }
+function predictionBounds(reg){
+  const s=state[reg],last=s?.last;
+  if(!last || status(last).k!=="live")return null;
+  const kt=currentKt(s.prev,last);
+  if(!Number.isFinite(kt)||kt<=0)return null;
+  const radius=predictionRadiusKm(kt,30)*1000;
+  if(!(radius>0))return null;
+  return L.circle([last.lat,last.lon],{radius}).getBounds();
+}
 function centerPane(pane,force){
   if(pane.follow){
     const last=state[pane.follow]?.last; if(!last) return;
     if(pane.moved && !force) return;
-    const z=pane.fitted?pane.map.getZoom():Math.max(pane.map.getZoom(),11);
-    pane.map.setView([last.lat,last.lon],z,{animate:false}); pane.fitted=true;
+    const bounds=predictionBounds(pane.follow);
+    if(bounds){
+      // Conserver l'intégralité des trois cercles visibles, même sur les petites cartes.
+      // N'ajuster le zoom que si le cercle externe sortirait du cadre actuel.
+      const desiredZoom=pane.map.getBoundsZoom(bounds,{padding:[28,28]});
+      const z=force||!pane.fitted?Math.min(11,desiredZoom):Math.min(pane.map.getZoom(),desiredZoom);
+      pane.map.setView([last.lat,last.lon],z,{animate:false});
+    }else{
+      const z=pane.fitted?pane.map.getZoom():Math.max(pane.map.getZoom(),11);
+      pane.map.setView([last.lat,last.lon],z,{animate:false});
+    }
+    pane.fitted=true;
   } else if(force || !pane.fitted){
     const ll=Object.values(state).filter(s=>s.last).map(s=>[s.last.lat,s.last.lon]);
     if(ll.length){ pane.map.fitBounds(L.latLngBounds(ll).pad(.3),{maxZoom:11}); pane.fitted=true; }
@@ -410,21 +429,24 @@ function renderPrediction(pane,reg,last,prev,st){
   group.predictionSignature=signature;
   group.clearLayers();
   const center=[last.lat,last.lon];
-  [10,20,30].forEach(min=>{
-    L.circle(center,{
-      radius:predictionRadiusKm(kt,min)*1000,
-      color:"#F0C040",
-      weight:min===30?2.2:1.8,
-      opacity:.85,
-      fill:false,
-      dashArray:"8 6"
-    }).addTo(group);
+  // Style ForeFlight : trait blanc fin (3 px) et liseré noir très discret (0,5 px de chaque côté).
+  const rings=[
+    {min:10,color:"#FFFFFF"},
+    {min:20,color:"#FFFFFF"},
+    {min:30,color:"#FFFFFF"}
+  ];
+  rings.forEach(({min,color})=>{
+    const radius=predictionRadiusKm(kt,min)*1000;
+    L.circle(center,{radius,color:"#080808",weight:4,opacity:1,fill:false,interactive:false}).addTo(group);
+    L.circle(center,{radius,color,weight:3,opacity:1,fill:false,interactive:false}).addTo(group);
   });
   const end=destPoint(last.lat,last.lon,hd,predictionRadiusKm(kt,50));
+  // Ligne bleu marine avec sous-couche blanche pour l'isoler de la topographie.
   L.polyline([center,[end.lat,end.lon]],{
-    color:"#F0C040",
-    weight:3,
-    opacity:.95
+    color:"#FFFFFF",weight:9,opacity:.95,interactive:false
+  }).addTo(group);
+  L.polyline([center,[end.lat,end.lon]],{
+    color:"#001F54",weight:5,opacity:1,interactive:false
   }).addTo(group);
 }
 function status(last){
@@ -948,7 +970,9 @@ function render(ps){
       // Centrer la carte qui suit cet appareil, sinon la première carte
       if(last){ const p=panes.find(x=>x.follow===a.reg)||panes[0];
         if(p.follow===a.reg){ p.moved=false; p.btn.hidden=true; }
-        p.map.setView([last.lat,last.lon],Math.max(p.map.getZoom(),11)); }
+        const b=predictionBounds(a.reg);
+        if(b) p.map.fitBounds(b,{padding:[35,35],maxZoom:11,animate:false});
+        else p.map.setView([last.lat,last.lon],Math.max(p.map.getZoom(),11)); }
       render(lastPs); ensureDetails(a.reg);
     };
     li.onclick=e=>{ if(e.target.closest(".det")) return; go(); };
