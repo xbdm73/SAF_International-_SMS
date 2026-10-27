@@ -1,0 +1,16 @@
+{
+  "name": "SAF International — Compliance Monitoring",
+  "short_name": "SAF CMS",
+  "description": "Surveillance de la conformité et audits terrain SAF International",
+  "lang": "fr",
+  "start_url": "./SAF_International_Compliance_Monitoring_System.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#14233b",
+  "theme_color": "#14233b",
+  "icons": [
+    { "src": "cms-icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "cms-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
