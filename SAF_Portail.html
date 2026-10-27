@@ -114,6 +114,15 @@ a.sys:hover{border-color:var(--line-strong);background:var(--card-hover)}
 .sys-name{margin:0;font-size:15px;font-weight:600;line-height:1.3}
 .sys-path{margin:2px 0 0;font-size:12px;color:var(--faint);word-break:break-all}
 .sys-desc{margin:0;color:var(--muted);font-size:13px;line-height:1.5;flex:1}
+.subs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sub{display:flex;flex-direction:column;gap:1px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--text);
+  background:color-mix(in srgb,var(--c) 7%,transparent);transition:border-color .15s,background .15s}
+.sub:hover{border-color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.sub b{font-size:13.5px;font-weight:600;line-height:1.3}
+.sub span{font-size:12px;color:var(--muted);line-height:1.35}
+.grid.list .sys.has-subs .subs{flex:0 0 auto;grid-template-columns:auto auto}
+.grid.list .sys.has-subs .sys-desc{display:none}
+@media (max-width:420px){.subs{grid-template-columns:1fr}}
 .sys-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--faint)}
 .status{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-weight:500;white-space:nowrap}
 .status i{width:6px;height:6px;border-radius:50%;background:var(--off)}
@@ -909,12 +918,21 @@ const SAF_SYSTEMS = [
           en:'Crew lessons learned from the 2026 fire season: report analysis and CSV / PDF exports.'},
     url:'https://xbdm73.github.io/SAF-Retex/admin.html',
     roles:['admin','editor'] },
-  { id:'fleet', color:'#3fb5a6', icon:'pin',
-    name:{fr:'Suivi flotte', en:'Fleet tracking'},
-    desc:{fr:'Position en temps réel de HB-ZIP, HB-ZKN et F-HRTS.',
-          en:'Live position of HB-ZIP, HB-ZKN and F-HRTS.'},
+  /* Bloc à sous-parties (subs) : chaque sous-partie est un lien ; l'url du bloc sert à l'état « En ligne » */
+  { id:'flights', color:'#3fb5a6', icon:'pin',
+    name:{fr:'Suivi des vols', en:'Flight tracking'},
+    desc:{fr:'Position en temps réel de la flotte, avec une page par type d\u2019appareil.',
+          en:'Live position of the fleet, with one page per aircraft type.'},
     url:SAF_SMS_URL + 'SAF_Suivi_Flotte.html',
-    roles:['admin','editor','reader'] }
+    roles:['admin','editor','reader'],
+    subs:[
+      { id:'fleet', name:{fr:'AS 332 Super Puma', en:'AS 332 Super Puma'},
+        desc:{fr:'HB-ZIP · HB-ZKN · F-HRTS', en:'HB-ZIP · HB-ZKN · F-HRTS'},
+        url:SAF_SMS_URL + 'SAF_Suivi_Flotte.html' },
+      { id:'fleet-b3', name:{fr:'AS 350 B3', en:'AS 350 B3'},
+        desc:{fr:'12 Écureuil B3e et B3+', en:'12 Squirrels B3e and B3+'},
+        url:SAF_SMS_URL + 'SAF_Suivi_B3.html' }
+    ] }
 ];
 
 /* Projet Supabase du SMS : session lue en local, rôle lu dans user_roles */
@@ -1098,16 +1116,19 @@ async function check(sys){
 function card(s){
   const st = health[s.id] || (s.url?'pending':'cfg');
   const label = {ok:t('s_ok'),err:t('s_err'),pending:t('s_pending'),cfg:t('s_cfg'),ext:t('s_ext')}[st];
-  const path = s.url ? s.url.replace(/^https?:\/\//,'') : t('notcfg');
-  const last = recent[s.id] ? t('opened')+' '+ago(recent[s.id]) : t('never');
+  const path = s.subs ? (lang==='fr' ? s.subs.length+' pages de suivi' : s.subs.length+' tracking pages') : s.url ? s.url.replace(/^https?:\/\//,'') : t('notcfg');
+  const seen = s.subs ? Math.max(0,...s.subs.map(x=>recent[x.id]||0)) : recent[s.id];
+  const last = seen ? t('opened')+' '+ago(seen) : t('never');
   const alt = (userRole==='reader' && s.reader) ? s.reader : null, nm = alt ? alt.name : s.name, ds = alt ? alt.desc : s.desc;
   const inner = `
     <div class="sys-top">
       <span class="sys-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[s.icon]||ICONS.shield}</svg></span>
       <div><p class="sys-name">${esc(nm[lang]||nm.fr)}</p><p class="sys-path">${esc(path)}</p></div>
     </div>
-    <p class="sys-desc">${esc(ds[lang]||ds.fr)}</p>
+    <p class="sys-desc">${esc(ds[lang]||ds.fr)}</p>${s.subs?`
+    <div class="subs">${s.subs.map(x=>`<a class="sub" href="${esc(x.url)}" data-id="${esc(x.id)}"><b>${esc(x.name[lang]||x.name.fr)}</b><span>${esc(x.desc[lang]||x.desc.fr)}</span></a>`).join('')}</div>`:''}
     <div class="sys-foot"><span class="status" data-s="${st}"><i></i>${label}</span><span>${esc(last)}</span></div>`;
+  if(s.subs) return `<div class="sys has-subs" style="--c:${s.color}">${inner}</div>`;
   return s.url
     ? `<a class="sys" style="--c:${s.color}" href="${esc(s.url)}" data-id="${s.id}">${inner}</a>`
     : `<div class="sys" style="--c:${s.color}" aria-disabled="true">${inner}</div>`;
@@ -1117,7 +1138,7 @@ function filtered(){
   const q=document.getElementById('q').value.trim().toLowerCase();
   const base=SAF_SYSTEMS.filter(visible);
   if(!q) return base;
-  return base.filter(s=>[s.name.fr,s.name.en,s.desc.fr,s.desc.en,s.id].join(' ').toLowerCase().includes(q));
+  return base.filter(s=>[s.name.fr,s.name.en,s.desc.fr,s.desc.en,s.id].concat((s.subs||[]).flatMap(x=>[x.name.fr,x.name.en,x.desc.fr,x.desc.en])).join(' ').toLowerCase().includes(q));
 }
 
 function render(){
@@ -1130,12 +1151,12 @@ function render(){
 
 /* ---------- événements ---------- */
 document.getElementById('grid').addEventListener('click',e=>{
-  const a=e.target.closest('a.sys'); if(!a) return;
+  const a=e.target.closest('a.sys, a.sub'); if(!a) return;
   recent[a.dataset.id]=Date.now(); store.set('saf_portal_recent',recent);
 });
 document.getElementById('q').addEventListener('input',render);
 document.getElementById('q').addEventListener('keydown',e=>{
-  if(e.key==='Enter'){ const one=filtered().filter(s=>s.url); if(one.length===1){ recent[one[0].id]=Date.now(); store.set('saf_portal_recent',recent); location.href=one[0].url; } }
+  if(e.key==='Enter'){ const one=filtered().filter(s=>s.url && !s.subs); if(one.length===1){ recent[one[0].id]=Date.now(); store.set('saf_portal_recent',recent); location.href=one[0].url; } }
   if(e.key==='Escape'){ e.target.value=''; render(); e.target.blur(); }
 });
 document.addEventListener('keydown',e=>{

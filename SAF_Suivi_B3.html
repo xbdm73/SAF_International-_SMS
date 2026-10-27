@@ -224,7 +224,7 @@ footer .err{color:var(--lost)}
       <button id="logout" type="button">Déconnexion</button>
     </div>
     <div id="filters">
-      <label class="chk" title="Ouvre une carte qui suit l'hélicoptère dès que son traceur se rallume après un arrêt"><input type="checkbox" id="autoopen"> Carte auto à la mise en route</label>
+      <label class="chk" id="autoopen-lbl"><input type="checkbox" id="autoopen"> <span>Carte auto à la mise en route</span></label>
     </div>
     <ul id="list"></ul>
     <footer id="foot">—</footer>
@@ -268,6 +268,8 @@ footer .err{color:var(--lost)}
 const SCOPE = "350";
 const SELF = (location.pathname.split("/").pop() || "SAF_Suivi_Flotte.html");
 const LOGIN = "index.html?next=" + encodeURIComponent(SELF);
+// Mise en route : AS 332 = ouverture d'une carte ; AS 350 B3 (12 appareils) = simple signalement, sans carte
+const AUTO_MAP = SCOPE === "332";
 const CONFIG = {
   url: "https://qaqehmxoehcvzcojcqkm.supabase.co",
   key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q",
@@ -1020,6 +1022,8 @@ function render(ps){
       else if(an.outside?.since) facts+=`<div>Hors base depuis au moins <b>${dur(minsAgo(an.outside.since))}</b> (départ de ${esc(nearestAds(an.outside.leftFrom,ad=>ad.base)[0].ad.icao)})</div>`;
       else facts+=`<div>Hors base – départ non enregistré</div>`;
       for(const w of sitesFor(a.reg)) facts+=`<div class="ws">Chantier du jour : <b>${esc(w.name||"—")}</b>${w.start_time?` · ${esc(tShort(w.start_time))}`:""} · ${Math.round(siteDist(w,last)*10)/10} km</div>`;
+      if(st.k==="live"||st.k==="ground"){ const st0=sessionStart(a.reg);
+        if(st0 && minsAgo(st0)<=60) facts+=`<div class="ws">Mis en route vers <b>${hm(st0)} UTC</b></div>`; }
       const n24=an.flights.filter(f=>new Date(f.ldTo||f.toTo)>=Date.now()-24*3600e3).length;
       if(n24) facts+=`<div>${n24} vol${n24>1?"s":""} sur 24 h</div>`;
     }
@@ -1104,6 +1108,10 @@ const AUTO_KEY="saf_fleet_autoopen_"+SCOPE, SEEN_KEY="saf_fleet_autoseen_"+SCOPE
 let autoOpen=(()=>{ try{ return localStorage.getItem(AUTO_KEY)!=="0"; }catch(e){ return true; } })();
 let autoSeen=(()=>{ try{ return JSON.parse(localStorage.getItem(SEEN_KEY)||"{}")||{}; }catch(e){ return {}; } })();
 const autoBox=document.getElementById("autoopen");
+{ const lbl=document.getElementById("autoopen-lbl");
+  lbl.querySelector("span").textContent=AUTO_MAP?"Carte auto à la mise en route":"Signaler les mises en route";
+  lbl.title=AUTO_MAP?"Ouvre une carte qui suit l'hélicoptère dès que son traceur se rallume après un arrêt"
+    :"Affiche un bandeau quand le traceur d'un hélicoptère se rallume après un arrêt, sans ouvrir de carte"; }
 autoBox.checked=autoOpen;
 autoBox.onchange=()=>{
   autoOpen=autoBox.checked;
@@ -1132,6 +1140,7 @@ function checkStarts(){
   if(dirty){ try{ localStorage.setItem(SEEN_KEY,JSON.stringify(autoSeen)); }catch(e){} }
 }
 function openAuto(a,start){
+  if(!AUTO_MAP){ toast(a,start,""); return; }   // page B3 : signalement seul
   let p=panes.find(x=>x.follow===a.reg), how="";
   if(p){ how="carte déjà ouverte"; }
   else if(panes.length<4){
@@ -1164,7 +1173,7 @@ function openAuto(a,start){
 function toast(a,start,how){
   const box=document.getElementById("toasts"), el=document.createElement("div");
   el.className="toast";
-  el.innerHTML=`<b>${esc(a.reg)}</b> mis en route <span class="muted">(${esc(a.type||"")})</span><div class="muted">Traceur actif depuis ${hm(start)} UTC · ${esc(how)}</div>`;
+  el.innerHTML=`<b>${esc(a.reg)}</b> mis en route <span class="muted">(${esc(a.type||"")})</span><div class="muted">Traceur actif depuis ${hm(start)} UTC${how?` · ${esc(how)}`:""}</div>`;
   el.onclick=()=>el.remove();
   box.prepend(el);
   setTimeout(()=>el.remove(),20000);
