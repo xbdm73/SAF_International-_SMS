@@ -80,6 +80,25 @@ header p{margin:4px 0 0;color:var(--ink-2);font-size:13px}
 .det td{padding:3px 0}
 .det tr.sum td{padding-bottom:8px;border-bottom:1px solid var(--line);color:var(--ink-2)}
 .det .metar{font-family:var(--cond);font-size:13.5px;line-height:1.35}
+/* Filtre par type et ouverture automatique d'une carte à la mise en route */
+#filters{display:flex;gap:8px 12px;padding:8px 20px 10px;border-bottom:1px solid var(--line);align-items:center;flex-wrap:wrap;font-size:13px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.seg button{background:none;border:0;border-right:1px solid var(--line);padding:4px 10px;cursor:pointer;color:var(--ink-2);font-size:13px}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--signal);color:#111;font-weight:600}
+.seg button .n{opacity:.75;font-size:11.5px;margin-left:3px}
+#filters label.chk{display:inline-flex;gap:6px;align-items:center;color:var(--ink-2);cursor:pointer}
+#filters input[type=checkbox]{accent-color:var(--signal);width:15px;height:15px;margin:0}
+.pane.flash{animation:saf-pane-flash 1.2s ease-in-out 4}
+@keyframes saf-pane-flash{0%,100%{box-shadow:inset 0 0 0 0 rgba(240,192,64,0)}50%{box-shadow:inset 0 0 0 4px var(--signal)}}
+.pane.flash .map{z-index:0}
+.pane .pane-bar .auto{color:var(--signal);font-weight:600}
+#toasts{position:fixed;z-index:1200;right:14px;top:14px;display:grid;gap:8px;width:min(340px,calc(100vw - 28px));pointer-events:none;
+  padding-top:env(safe-area-inset-top,0px)}
+.toast{pointer-events:auto;background:var(--panel);border:1px solid var(--signal);border-left:6px solid var(--signal);border-radius:6px;
+  padding:10px 12px;box-shadow:0 6px 20px rgba(0,0,0,.5);font-size:13.5px;cursor:pointer}
+.toast b{font-family:var(--cond);font-size:17px;color:var(--signal);font-weight:700}
+.toast .muted{color:var(--ink-2);font-size:12px;margin-top:2px}
 footer{padding:10px 20px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);font-size:12px;color:var(--ink-2)}
 footer .err{color:var(--lost)}
 
@@ -204,6 +223,14 @@ footer .err{color:var(--lost)}
        <button id="terrainbtn" type="button" aria-expanded="false">Profil relief / AGL</button>
       <button id="logout" type="button">Déconnexion</button>
     </div>
+    <div id="filters">
+      <div class="seg" role="group" aria-label="Types d'appareils affichés">
+        <button type="button" data-f="all" aria-pressed="true">Tous<span class="n"></span></button>
+        <button type="button" data-f="332" aria-pressed="false">AS 332<span class="n"></span></button>
+        <button type="button" data-f="350" aria-pressed="false">AS 350<span class="n"></span></button>
+      </div>
+      <label class="chk" title="Ouvre une carte qui suit l'hélicoptère dès que son traceur se rallume après un arrêt"><input type="checkbox" id="autoopen"> Carte auto à la mise en route</label>
+    </div>
     <ul id="list"></ul>
     <footer id="foot">—</footer>
   </aside>
@@ -234,6 +261,7 @@ footer .err{color:var(--lost)}
   <div class="terrain-plot" id="terrain-plot"></div>
   <div class="terrain-foot">Altitude hélicoptère (GPS) / terrain (EU-DEM 25 m ou Copernicus GLO-90 90 m en secours). AGL indicative : référentiels altimétriques NSE non vérifiés. Points réels reçus uniquement, aucune interpolation du vol. Non utilisable pour la navigation.</div>
 </section>
+<div id="toasts" aria-live="polite"></div>
 <div id="gate" role="alert"><p id="gate-msg">Vérification de la session…</p><a href="https://saf-international-portail.netlify.app/">Retour au portail</a></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -246,6 +274,10 @@ const CONFIG = {
   liveMaxMin: 5,        // point plus récent que 5 min = en direct
   lostAfterMin: 45,     // en mouvement puis plus de point depuis 45 min = signal perdu
   movingSpeed: 5,
+  // Mise en route : le traceur (alimenté par l'appareil) émet de nouveau après au moins gapMin de silence.
+  // Une carte ne s'ouvre que si cette reprise date de moins de recentMin (pas de rattrapage d'anciens vols).
+  startGapMin: 20,
+  startRecentMin: 10,
   // Carte OACI France (IGN SCAN OACI, accès restreint) : clé transitoire IGN par défaut,
   // à remplacer par la clé obtenue auprès de l'IGN (cartes.gouv.fr) si elle cesse de fonctionner.
   ignOaciKey: "ign_scan_ws",
@@ -305,7 +337,7 @@ function createPane(i){
   // Déplacement à la main : on arrête de suivre jusqu'au clic sur « Recentrer »
   m.on("dragstart",()=>{ if(pane.follow){ pane.moved=true; pane.btn.hidden=false; } });
   pane.btn.onclick=()=>{ pane.moved=false; pane.btn.hidden=true; centerPane(pane,true); };
-  pane.sel.onchange=()=>{ pane.follow=pane.sel.value||null; viewFollow[i]=pane.follow; saveView();
+  pane.sel.onchange=()=>{ pane.autoAt=0; pane.follow=pane.sel.value||null; viewFollow[i]=pane.follow; saveView();
     pane.moved=false; pane.btn.hidden=true; pane.fitted=false; centerPane(pane,true); render(lastPs); };
   L.DomEvent.disableClickPropagation(el.querySelector(".pane-bar"));
   L.DomEvent.disableScrollPropagation(el.querySelector(".pane-bar"));
@@ -318,7 +350,7 @@ function setSplit(n){
     const i=panes.length;
     if(i>0 && !viewFollow[i] && fleet.length){
       const used=new Set(viewFollow.slice(0,i).filter(Boolean));
-      const next=fleet.find(a=>a.active && !used.has(a.reg) && state[a.reg]?.last);
+      const next=fleet.find(a=>a.active && passFilter(a) && !used.has(a.reg) && state[a.reg]?.last);
       viewFollow[i]=next?next.reg:null;
     }
     panes.push(createPane(i));
@@ -355,13 +387,13 @@ function centerPane(pane,force){
     }
     pane.fitted=true;
   } else if(force || !pane.fitted){
-    const ll=Object.values(state).filter(s=>s.last).map(s=>[s.last.lat,s.last.lon]);
+    const ll=Object.values(state).filter(s=>s.last && passFilter(s.ac)).map(s=>[s.last.lat,s.last.lon]);
     if(ll.length){ pane.map.fitBounds(L.latLngBounds(ll).pad(.3),{maxZoom:11}); pane.fitted=true; }
   }
 }
 function paneBars(){
   for(const p of panes){
-    const opts=[`<option value="">Toute la flotte</option>`].concat(fleet.map(a=>`<option value="${esc(a.reg)}"${!a.active?" disabled":""}>${esc(a.reg)}${!a.active?" (non suivi)":""}</option>`));
+    const opts=[`<option value="">Toute la flotte</option>`].concat(fleet.filter(a=>visibleIn(a,p)).map(a=>`<option value="${esc(a.reg)}"${!a.active?" disabled":""}>${esc(a.reg)}${!a.active?" (non suivi)":""}</option>`));
     const html=opts.join("");
     if(p.sel.dataset.h!==html){ p.sel.innerHTML=html; p.sel.dataset.h=html; }
     p.sel.value=p.follow||"";
@@ -369,11 +401,36 @@ function paneBars(){
       const a=fleet.find(x=>x.reg===p.follow), last=state[p.follow]?.last;
       const st=a&&a.active?status(last):{k:"none",t:"Suivi non activé"};
       p.pst.dataset.st=st.k;
-      p.pst.innerHTML=`<b>${esc(st.t)}</b>${last?` · ${esc(ago(last.fix_time))}`:""}`;
+      p.pst.innerHTML=`<b>${esc(st.t)}</b>${last?` · ${esc(ago(last.fix_time))}`:""}${p.autoAt?` · <span class="auto">ouverte à la mise en route</span>`:""}`;
     } else { p.pst.dataset.st=""; p.pst.textContent=""; }
   }
 }
 let fleet = [], state = {}, selected = null, firstFit = true;
+
+/* ---------- Filtre par type (AS 332 / AS 350 / tous) ---------- */
+const FILTER_KEY="saf_fleet_filter";
+const FAM_LABEL={all:"Tous",332:"AS 332",350:"AS 350"};
+const famOf=a=>/332|H215|super\s*puma/i.test(a?.type||"")?"332":/350|H125|[eé]cureuil/i.test(a?.type||"")?"350":"autre";
+let typeFilter=(()=>{ try{ const v=localStorage.getItem(FILTER_KEY); return v in FAM_LABEL?v:"all"; }catch(e){ return "all"; } })();
+const passFilter=a=>typeFilter==="all"||famOf(a)===typeFilter;
+// Un appareil filtré reste visible sur une carte qui le suit explicitement
+const visibleIn=(a,p)=>passFilter(a)||p.follow===a.reg;
+function setFilter(f){
+  typeFilter=f in FAM_LABEL?f:"all";
+  try{ localStorage.setItem(FILTER_KEY,typeFilter); }catch(e){}
+  if(selected && !passFilter(fleet.find(a=>a.reg===selected))) selected=null;
+  panes.forEach(p=>{ if(!p.follow){ p.fitted=false; } });
+  if(lastOk) render(lastPs);
+  panes.forEach(p=>{ if(!p.follow) centerPane(p,true); });
+}
+function filterBar(){
+  document.querySelectorAll("#filters .seg button").forEach(b=>{
+    const f=b.dataset.f;
+    b.setAttribute("aria-pressed",String(f===typeFilter));
+    b.querySelector(".n").textContent=fleet.length?"("+fleet.filter(a=>f==="all"||famOf(a)===f).length+")":"";
+  });
+}
+document.querySelectorAll("#filters .seg button").forEach(b=>b.onclick=()=>setFilter(b.dataset.f));
 
 /* ---------- Utilitaires ---------- */
 const normHeading = h => h == null ? null : ((h/100) % 360); // NSE : cap en centièmes de degré
@@ -733,7 +790,7 @@ function scheduleRealtimeLoad(){
     realtimeLoadTimer=null;
     if(loading){ pendingRealtimeLoad=true; return; }
     load();
-  },350);
+  },3000);
 }
 function subscribeFleetPositions(){
   if(realtimeChannel) return;
@@ -752,25 +809,31 @@ async function load(retried){
   const winStart=Date.now()-hours*3600e3;
   const since=new Date(Math.min(winStart, Date.now()-36*3600e3)).toISOString(); // 36 h pour le journal
   try{
-    const [ac,pos,ps]=await Promise.all([
+    const [ac,ps]=await Promise.all([
       sb.from("fleet_aircraft").select("reg,type,imei,provider,active").order("reg"),
-      sb.from("fleet_positions").select("reg,fix_time,lat,lon,alt_m,heading,speed").gte("fix_time",since).order("fix_time",{ascending:false}).limit(1000),
       sb.from("fleet_poll_state").select("last_poll,last_result").eq("id",1).maybeSingle(),
     ]);
-    if(ac.error) throw ac.error; if(pos.error) throw pos.error;
-    pos.data.reverse();   // ordre chronologique pour les traces et l'analyse des vols
+    if(ac.error) throw ac.error;
     fleet=ac.data;
-    const lasts=await Promise.all(fleet.map(a=>sb.from("fleet_positions").select("reg,fix_time,lat,lon,alt_m,heading,speed").eq("reg",a.reg).order("fix_time",{ascending:false}).limit(2)));
+    // Une lecture par appareil : avec 15 appareils, une requête unique plafonnée à 1000 points
+    // tronquerait les traces dès qu'une partie de la flotte vole.
+    const PCOLS="reg,fix_time,lat,lon,alt_m,heading,speed";
+    const [lasts,wins]=await Promise.all([
+      Promise.all(fleet.map(a=>sb.from("fleet_positions").select(PCOLS).eq("reg",a.reg).order("fix_time",{ascending:false}).limit(2))),
+      Promise.all(fleet.map(a=>sb.from("fleet_positions").select(PCOLS).eq("reg",a.reg).gte("fix_time",since).order("fix_time",{ascending:false}).limit(1000))),
+    ]);
+    const bad=[...lasts,...wins].find(r=>r.error); if(bad) throw bad.error;
     state={};
     fleet.forEach((a,i)=>{
       const two=lasts[i].data||[];
-      const all=pos.data.filter(p=>p.reg===a.reg);
-      state[a.reg]={ac:a,last:two[0]||null,prev:two[1]||null,
+      const all=(wins[i].data||[]).slice().reverse();   // ordre chronologique pour les traces et l'analyse des vols
+      state[a.reg]={ac:a,last:two[0]||null,prev:two[1]||null,all,
         trail:all.filter(p=>new Date(p.fix_time)>=winStart), an:analyze(all)};
     });
     lastPs=ps.data; lastOk=Date.now();
     try{ await loadWorksites(); }catch(e){ console.warn("Chantiers du jour :",e); }
     render(lastPs);
+    checkStarts();
     // Même cycle de données NSE pour les projections sur la carte et le profil AGL.
     // Les altitudes de terrain manquantes sont demandées, les autres restent en cache.
     if(terrain.visible) updateTerrain();
@@ -821,7 +884,7 @@ function terrainPoints(){
 }
 function chooseTerrainReg(){
   if(selected && state[selected]?.last) return selected;
-  return fleet.find(a=>a.active && state[a.reg]?.last)?.reg||null;
+  return fleet.find(a=>a.active && passFilter(a) && state[a.reg]?.last)?.reg||null;
 }
 function openTerrain(){
   terrain.visible=true; terrain.reg=chooseTerrainReg(); terrainPanel.hidden=false;
@@ -939,12 +1002,13 @@ function drawTerrain(){
 
 function render(ps){
   const list=document.getElementById("list"); const scroll=list.scrollTop; list.innerHTML="";
-  let nLive=0, nLost=0;
+  let nLive=0, nLost=0, nShown=0;
   const stackCount={}; // appareils posés au même endroit (~100 m) : étiquettes empilées
 
   for(const a of fleet){
     const s=state[a.reg], last=s.last, st=a.active?status(last):{k:"none",t:"Suivi non activé ("+a.provider+")"};
-    if(st.k==="live") nLive++; if(st.k==="lost") nLost++;
+    const shown=passFilter(a);
+    if(shown){ nShown++; if(st.k==="live") nLive++; if(st.k==="lost") nLost++; }
     const hd=last?normHeading(last.heading):null;
     const gs=computedGs(s.prev,last);
     const an=s.an;
@@ -985,13 +1049,20 @@ function render(ps){
     };
     li.onclick=e=>{ if(e.target.closest(".det")) return; go(); };
     li.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};
-    list.appendChild(li);
+    if(shown) list.appendChild(li);
 
     // Marqueur et trace, sur chaque carte
     const spot=last?last.lat.toFixed(3)+","+last.lon.toFixed(3):null;
     const idx=last?(stackCount[spot]=(stackCount[spot]??-1)+1):0;
     const pts=s.trail.map(p=>[p.lat,p.lon]);
     for(const p of panes){
+      if(!visibleIn(a,p)){
+        // Appareil hors filtre : retirer marqueur, trace et projection de cette carte
+        if(p.markers[a.reg]){ p.markers[a.reg].remove(); delete p.markers[a.reg]; }
+        if(p.trails[a.reg]){ p.trails[a.reg].remove(); delete p.trails[a.reg]; }
+        if(p.predicts[a.reg]){ p.predicts[a.reg].remove(); delete p.predicts[a.reg]; }
+        continue;
+      }
       const focus=p.follow||selected;   // appareil mis en avant sur cette carte
       if(last){
         const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl" style="top:${-11+idx*23}px">${esc(a.reg)}</span></div>`;
@@ -1010,23 +1081,100 @@ function render(ps){
   list.scrollTop=scroll;
   renderWorksites();
   document.getElementById("sub").textContent=
-    `${fleet.length} appareils · ${nLive} en vol`+(nLost?` · ${nLost} signal perdu`:"")+
+    `${nShown} appareil${nShown>1?"s":""}${typeFilter!=="all"?" "+FAM_LABEL[typeFilter]:""} · ${nLive} en vol`+(nLost?` · ${nLost} signal perdu`:"")+
     (worksites.length?` · ${worksites.length} chantier${worksites.length>1?"s":""} du jour`:"");
   const f=document.getElementById("foot");
   f.textContent=`Affichage mis à jour ${new Date().toLocaleTimeString("fr-FR")}`+
     (ps?.last_poll?` · relais NSE ${ago(ps.last_poll)}`:"");
   if(ps?.last_poll && minsAgo(ps.last_poll)>5) f.innerHTML+=` <span class="err">Le relais ne tourne plus.</span>`;
-  paneBars();
+  paneBars(); filterBar();
+  if(!list.children.length) list.innerHTML=`<li style="padding:16px 20px;color:var(--ink-2)">Aucun appareil ${esc(FAM_LABEL[typeFilter]||"")} dans la flotte suivie.</li>`;
   panes.forEach(p=>{
     for(const reg of Object.keys(p.predicts)) if(!fleet.some(a=>a.reg===reg)) { p.predicts[reg].remove(); delete p.predicts[reg]; }
     centerPane(p,false);
   });   // les cartes qui suivent un appareil se recentrent
   firstFit=false;
 }
+/* ---------- Carte automatique à la mise en route ----------
+   Les traceurs NSE sont alimentés par l'appareil : une reprise d'émission après au moins
+   CONFIG.startGapMin de silence est traitée comme une mise en route. Chaque mise en route n'ouvre
+   qu'une carte (mémorisée dans ce navigateur), seulement pour les types affichés par le filtre. */
+const AUTO_KEY="saf_fleet_autoopen", SEEN_KEY="saf_fleet_autoseen";
+let autoOpen=(()=>{ try{ return localStorage.getItem(AUTO_KEY)!=="0"; }catch(e){ return true; } })();
+let autoSeen=(()=>{ try{ return JSON.parse(localStorage.getItem(SEEN_KEY)||"{}")||{}; }catch(e){ return {}; } })();
+const autoBox=document.getElementById("autoopen");
+autoBox.checked=autoOpen;
+autoBox.onchange=()=>{
+  autoOpen=autoBox.checked;
+  try{ localStorage.setItem(AUTO_KEY,autoOpen?"1":"0"); }catch(e){}
+  // Notifications du navigateur quand l'onglet est en arrière-plan (autorisation demandée une fois)
+  if(autoOpen && "Notification" in window && Notification.permission==="default") Notification.requestPermission().catch(()=>{});
+};
+function sessionStart(reg){
+  const s=state[reg]; if(!s?.last) return null;
+  const pts=s.all||[]; if(!pts.length) return null;
+  for(let i=pts.length-1;i>0;i--){
+    if((new Date(pts[i].fix_time)-new Date(pts[i-1].fix_time))/60000>=CONFIG.startGapMin) return pts[i].fix_time;
+  }
+  return pts[0].fix_time;   // aucune coupure dans la fenêtre : début de la fenêtre (trop ancien pour déclencher)
+}
+function checkStarts(){
+  let dirty=false;
+  for(const a of fleet){
+    const last=state[a.reg]?.last;
+    if(!a.active || !last || minsAgo(last.fix_time)>CONFIG.liveMaxMin) continue;
+    const start=sessionStart(a.reg);
+    if(!start || minsAgo(start)>CONFIG.startRecentMin || autoSeen[a.reg]===start) continue;
+    autoSeen[a.reg]=start; dirty=true;
+    if(autoOpen && passFilter(a)) openAuto(a, start);
+  }
+  if(dirty){ try{ localStorage.setItem(SEEN_KEY,JSON.stringify(autoSeen)); }catch(e){} }
+}
+function openAuto(a,start){
+  let p=panes.find(x=>x.follow===a.reg), how="";
+  if(p){ how="carte déjà ouverte"; }
+  else if(panes.length<4){
+    viewFollow[panes.length]=a.reg;
+    setSplit(panes.length+1);
+    p=panes[panes.length-1]; how="nouvelle carte";
+  } else {
+    // 4 cartes : remplacer d'abord une carte dont l'appareil est éteint, puis une vue « toute la flotte »
+    // (sauf la première), puis une carte ouverte automatiquement dont l'appareil est au sol.
+    // Une carte qui suit un appareil en vol ou en perte de signal n'est jamais remplacée.
+    const rank=x=>{
+      if(!x.follow) return x.i>0?2:4;
+      const k=status(state[x.follow]?.last).k;
+      if(k==="none"||k==="stale") return 1;
+      if(k==="ground") return x.autoAt?3:5;
+      return 99;
+    };
+    const c=panes.map(x=>({x,r:rank(x)})).filter(o=>o.r<99).sort((u,v)=>u.r-v.r||(u.x.autoAt||0)-(v.x.autoAt||0))[0];
+    if(c){ p=c.x; how="carte "+(p.i+1)+" réaffectée"; }
+  }
+  if(p){
+    p.follow=a.reg; viewFollow[p.i]=a.reg; saveView();
+    p.autoAt=Date.now(); p.moved=false; p.btn.hidden=true; p.fitted=false;
+    centerPane(p,true); render(lastPs);
+    p.el.classList.remove("flash"); void p.el.offsetWidth; p.el.classList.add("flash");
+    setTimeout(()=>p.el.classList.remove("flash"),5200);
+  }
+  toast(a, start, p?how:"4 cartes déjà occupées par des appareils en vol");
+}
+function toast(a,start,how){
+  const box=document.getElementById("toasts"), el=document.createElement("div");
+  el.className="toast";
+  el.innerHTML=`<b>${esc(a.reg)}</b> mis en route <span class="muted">(${esc(a.type||"")})</span><div class="muted">Traceur actif depuis ${hm(start)} UTC · ${esc(how)}</div>`;
+  el.onclick=()=>el.remove();
+  box.prepend(el);
+  setTimeout(()=>el.remove(),20000);
+  if(document.visibilityState!=="visible" && "Notification" in window && Notification.permission==="granted"){
+    try{ new Notification(`${a.reg} mis en route`,{body:`${a.type||""} · traceur actif depuis ${hm(start)} UTC`,tag:"saf-start-"+a.reg}); }catch(e){}
+  }
+}
 function fitAll(){
   // « Toute la flotte » : la première carte revient en vue libre sur l'ensemble
   const p=panes[0]; if(!p) return;
-  p.follow=null; viewFollow[0]=null; saveView(); p.moved=false; p.btn.hidden=true; p.fitted=false;
+  p.follow=null; p.autoAt=0; viewFollow[0]=null; saveView(); p.moved=false; p.btn.hidden=true; p.fitted=false;
   centerPane(p,true);
 }
 
