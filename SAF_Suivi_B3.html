@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SAF – Suivi AS 350 B3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --ink:#F4F6F8; --ink-2:#9AA7B4; --paper:#0A1420; --panel:#0D1B2A; --line:rgba(255,255,255,.09);
+  --live:#3CC882; --ground:#5B9BE0; --stale:#6C7784; --lost:#E5484D; --signal:#F0C040; --gold:#C9A227;
+  --font:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --cond:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:var(--font);color:var(--ink);background:var(--paper);font-size:15px;line-height:1.4}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+
+#app{display:grid;grid-template-columns:340px 1fr;height:100%}
+#side{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;
+  padding-top:env(safe-area-inset-top,0px)}
+#maps{height:100%;width:100%;display:grid;gap:2px;background:var(--line);grid-template-columns:1fr;grid-template-rows:1fr}
+#maps[data-n="2"]{grid-template-columns:1fr 1fr}
+#maps[data-n="3"]{grid-template-columns:1fr 1fr 1fr}
+#maps[data-n="4"]{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.pane{position:relative;min-width:0;min-height:0;background:var(--paper)}
+.pane .map{position:absolute;inset:0}
+.pane-bar{position:absolute;z-index:800;left:10px;top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;
+  background:rgba(13,27,42,.92);border:1px solid var(--line);border-radius:6px;padding:5px 8px;max-width:calc(100% - 80px);font-size:13px}
+.pane-bar select{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:3px 6px;font-weight:600}
+.pane-bar .pst{color:var(--ink-2);white-space:nowrap}
+.pane-bar .pst b{font-weight:600}
+.pane-bar .pst[data-st=live] b{color:var(--live)} .pane-bar .pst[data-st=ground] b{color:var(--ground)} .pane-bar .pst[data-st=lost] b{color:var(--lost)}
+.pane-bar button{background:var(--signal);color:#111;border:0;border-radius:4px;padding:3px 8px;font-weight:600;cursor:pointer}
+.pane-bar button[hidden]{display:none}
+
+header{padding:18px 20px 12px;border-bottom:1px solid var(--line)}
+header h1{font-family:var(--cond);font-weight:700;font-size:26px;letter-spacing:.01em;margin:0;line-height:1;color:var(--signal)}
+header .home{display:inline-block;margin-bottom:10px;font-size:13px;color:var(--gold);text-decoration:none}
+header .home:hover{color:var(--signal)}
+header p{margin:4px 0 0;color:var(--ink-2);font-size:13px}
+
+#controls{display:flex;gap:8px;padding:10px 20px;border-bottom:1px solid var(--line);align-items:center;flex-wrap:wrap}
+#controls label{font-size:13px;color:var(--ink-2)}
+#controls select{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:4px 6px}
+#controls button{background:none;border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer}
+
+#list{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1}
+.ac{display:grid;grid-template-columns:6px 1fr;cursor:pointer;border-bottom:1px solid var(--line)}
+.ac:hover,.ac.sel{background:rgba(255,255,255,.04)}
+.ac .bar{background:var(--stale)}
+.ac[data-st=live] .bar{background:var(--live)} .ac[data-st=ground] .bar{background:var(--ground)}
+.ac[data-st=lost] .bar{background:var(--lost)}
+.ac .body{padding:12px 16px 12px 14px}
+.ac .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ac .reg{font-family:var(--cond);font-weight:700;font-size:30px;line-height:1}
+.ac .type{color:var(--ink-2);font-size:13px}
+.ac .st{font-weight:600;font-size:14px;margin-top:4px}
+.ac[data-st=live] .st{color:var(--live)} .ac[data-st=ground] .st{color:var(--ground)}
+.ac[data-st=lost] .st{color:var(--lost)} .ac[data-st=none] .st,.ac[data-st=stale] .st{color:var(--stale)}
+.ac dl{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px;margin:10px 0 0}
+.ac dt{font-size:12px;color:var(--ink-2)} .ac dd{margin:0;font-family:var(--cond);font-weight:600;font-size:19px}
+.ac dd small{font-family:var(--font);font-weight:400;font-size:12px;color:var(--ink-2)}
+.ac .when{font-size:12px;color:var(--ink-2);margin-top:8px}
+
+.ac .facts{font-size:13px;margin-top:8px;display:grid;gap:2px}
+.ac .facts b{font-weight:600}
+.ac .more{margin-top:8px;font-size:12px;color:var(--gold)}
+.det{margin-top:12px;border-top:1px solid var(--line);padding-top:4px;font-size:13px;cursor:default}
+.det h3{font-family:var(--cond);font-size:15px;font-weight:600;margin:12px 0 4px;color:var(--signal)}
+.det p{margin:0 0 6px}
+.det .muted{color:var(--ink-2)}
+.det .note{font-size:11.5px;margin-top:6px}
+.det table{width:100%;border-collapse:collapse}
+.det td{padding:3px 0}
+.det tr.sum td{padding-bottom:8px;border-bottom:1px solid var(--line);color:var(--ink-2)}
+.det .metar{font-family:var(--cond);font-size:13.5px;line-height:1.35}
+/* Filtre par type et ouverture automatique d'une carte à la mise en route */
+#filters{display:flex;gap:8px 12px;padding:8px 20px 10px;border-bottom:1px solid var(--line);align-items:center;flex-wrap:wrap;font-size:13px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.seg button{background:none;border:0;border-right:1px solid var(--line);padding:4px 10px;cursor:pointer;color:var(--ink-2);font-size:13px}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--signal);color:#111;font-weight:600}
+.seg button .n{opacity:.75;font-size:11.5px;margin-left:3px}
+#filters label.chk{display:inline-flex;gap:6px;align-items:center;color:var(--ink-2);cursor:pointer}
+#filters input[type=checkbox]{accent-color:var(--signal);width:15px;height:15px;margin:0}
+.pane.flash{animation:saf-pane-flash 1.2s ease-in-out 4}
+@keyframes saf-pane-flash{0%,100%{box-shadow:inset 0 0 0 0 rgba(240,192,64,0)}50%{box-shadow:inset 0 0 0 4px var(--signal)}}
+.pane.flash .map{z-index:0}
+.pane .pane-bar .auto{color:var(--signal);font-weight:600}
+#toasts{position:fixed;z-index:1200;right:14px;top:14px;display:grid;gap:8px;width:min(340px,calc(100vw - 28px));pointer-events:none;
+  padding-top:env(safe-area-inset-top,0px)}
+.toast{pointer-events:auto;background:var(--panel);border:1px solid var(--signal);border-left:6px solid var(--signal);border-radius:6px;
+  padding:10px 12px;box-shadow:0 6px 20px rgba(0,0,0,.5);font-size:13.5px;cursor:pointer}
+.toast b{font-family:var(--cond);font-size:17px;color:var(--signal);font-weight:700}
+.toast .muted{color:var(--ink-2);font-size:12px;margin-top:2px}
+footer{padding:10px 20px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);font-size:12px;color:var(--ink-2)}
+footer .err{color:var(--lost)}
+
+/* Session absente ou rôle non autorisé */
+#gate{position:fixed;inset:0;display:none;place-items:center;align-content:center;gap:14px;background:var(--paper);z-index:2000;padding:20px;text-align:center}
+#gate p{margin:0;max-width:420px;color:var(--ink-2)}
+#gate a{color:var(--signal)}
+
+/* Marqueurs */
+.acm{position:relative}
+.acm .heli-icon{position:absolute;left:-22px;top:-22px;width:44px;height:44px;transform-origin:22px 22px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.7))}
+.acm .heli-icon svg{display:block;width:44px;height:44px;overflow:visible}
+.acm .heli-rotor{transform-box:view-box;transform-origin:22px 22px;animation:saf-heli-spin .22s linear infinite}
+.acm:not(.live) .heli-rotor{animation-play-state:paused}
+@keyframes saf-heli-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.acm .lbl{position:absolute;left:25px;top:-11px;white-space:nowrap;font-family:var(--cond);font-weight:700;font-size:15px;
+  background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:3px;padding:0 5px;line-height:20px}
+.acm.lost .lbl{background:var(--lost);color:#fff;border-color:var(--lost)}
+/* Chantiers du jour (agenda Operations) */
+.wsm{position:relative}
+.wsm svg{position:absolute;left:-11px;top:-11px;width:22px;height:22px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.wsm .wl{position:absolute;left:14px;top:-9px;white-space:nowrap;font-family:var(--cond);font-weight:600;font-size:12.5px;line-height:17px;
+  color:#111;background:var(--signal);border-radius:3px;padding:0 5px}
+.wsm.tent svg{opacity:.75} .wsm.tent .wl{background:transparent;color:var(--signal);border:1px dashed var(--signal)}
+.wsm.done .wl{background:var(--stale);color:var(--ink)} .wsm.off .wl{background:var(--lost);color:#fff;text-decoration:line-through}
+.wsl{font-family:var(--cond);font-weight:600;font-size:11.5px;color:var(--signal);white-space:nowrap}
+.leaflet-tooltip.wst{background:var(--panel);color:var(--ink);border:1px solid var(--signal);border-radius:6px;padding:10px 12px;
+  box-shadow:0 4px 16px rgba(0,0,0,.5);white-space:normal;width:280px;font-size:13px;line-height:1.4}
+.leaflet-tooltip.wst::before{display:none}
+.wst h4{margin:0;font-family:var(--cond);font-weight:700;font-size:17px;color:var(--signal);line-height:1.15}
+.wst .sub{color:var(--ink-2);font-size:12px;margin:2px 0 8px}
+.wst table{border-collapse:collapse;width:100%}
+.wst th{text-align:left;font-weight:400;color:var(--ink-2);padding:2px 10px 2px 0;vertical-align:top;white-space:nowrap;width:1%}
+.wst td{padding:2px 0;vertical-align:top}
+.wst .prox{margin-top:8px;padding-top:6px;border-top:1px solid var(--line);font-weight:600}
+.wst .prox.on{color:var(--live)} .wst .prox.off{color:var(--ink-2);font-weight:400}
+.ac .facts .ws{color:var(--signal)}
+.base{font-family:var(--cond);font-weight:600;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.leaflet-container{font-family:var(--font)}
+
+@media (max-width:760px){
+  #app{grid-template-columns:1fr;grid-template-rows:55% 45%}
+  #maps{grid-row:1} #side{grid-row:2;border-right:0;border-top:1px solid var(--line);padding-top:0}
+  #maps[data-n="2"],#maps[data-n="3"]{grid-template-columns:1fr;grid-auto-rows:1fr}
+  #maps[data-n="4"]{grid-template-columns:1fr 1fr}
+  header{padding:10px 16px 8px} header h1{font-size:22px}
+}
+/* Profil du relief, panneau indépendant des cartes Leaflet */
+#terrain-panel{position:fixed;right:14px;bottom:14px;z-index:1100;width:min(730px,calc(100vw - 28px));background:#0D1B2A;border:1px solid rgba(240,192,64,.5);border-radius:8px;box-shadow:0 10px 32px rgba(0,0,0,.5);padding:12px 14px}
+#terrain-panel[hidden]{display:none}
+.terrain-head{display:flex;align-items:center;gap:12px;font-size:14px}
+.terrain-head strong{color:var(--signal);font-family:var(--cond);font-size:19px}
+.terrain-head span{color:var(--ink-2);font-size:12px;margin-left:auto}
+.terrain-head button{background:none;border:1px solid var(--line);padding:3px 9px;border-radius:4px;cursor:pointer}
+.terrain-stat{font-size:13px;margin:8px 0 2px;min-height:20px}
+.terrain-plot{height:240px;width:100%;min-height:100px}
+.terrain-plot svg{height:100%;width:100%;display:block;touch-action:pan-y}
+.terrain-foot{color:var(--ink-2);font-size:11px;line-height:1.35}
+@media(max-width:760px){#terrain-panel{left:8px;right:8px;bottom:8px;width:auto;padding:9px} .terrain-plot{height:175px}}
+
+/* Historique des vols */
+#hist{position:fixed;inset:0;z-index:1500;background:var(--paper);display:grid;grid-template-rows:auto 1fr;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#hist[hidden]{display:none}
+#hist .hbar{display:flex;gap:10px 14px;align-items:end;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+#hist h2{font-family:var(--cond);font-weight:700;font-size:24px;margin:0 12px 2px 0;color:var(--signal);line-height:1}
+#hist .fld{display:grid;gap:3px;font-size:12px;color:var(--ink-2)}
+#hist select,#hist input{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:4px 6px;color-scheme:dark}
+#hist button{background:none;border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer}
+#hist button.go{background:var(--signal);color:#111;border-color:var(--signal);font-weight:600}
+#hist button:disabled{opacity:.45;cursor:default}
+#hist .presets{display:flex;gap:4px}
+#hist .close{margin-left:auto}
+#hist .hbody{display:grid;grid-template-columns:minmax(380px,46%) 1fr;min-height:0}
+#hist .hlist{overflow:auto;border-right:1px solid var(--line);font-size:13px}
+#hist .hsum{padding:10px 20px;border-bottom:1px solid var(--line);color:var(--ink-2);display:grid;gap:3px}
+#hist .hsum b{color:var(--ink);font-weight:600}
+#hist .hsum .warn{color:var(--signal)}
+#hist table{width:100%;border-collapse:collapse}
+#hist th{position:sticky;top:0;background:var(--panel);text-align:left;font-weight:600;font-size:12px;color:var(--ink-2);padding:6px 8px;border-bottom:1px solid var(--line)}
+#hist td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+#hist tr.day td{background:rgba(255,255,255,.03);font-family:var(--cond);font-weight:600;font-size:14px;color:var(--signal);padding-top:10px}
+#hist tr.fl{cursor:pointer} #hist tr.fl:hover td{background:rgba(255,255,255,.04)}
+#hist tr.fl.on td{background:rgba(240,192,64,.12)}
+#hist td .reg{font-family:var(--cond);font-weight:700;font-size:16px}
+#hist td .muted{color:var(--ink-2);font-size:12px}
+#hist .hmap{position:relative;min-height:0} #hist .hmap .map{position:absolute;inset:0}
+#hist .empty{padding:24px 20px;color:var(--ink-2)}
+@media (max-width:760px){
+  #hist .hbody{grid-template-columns:1fr;grid-template-rows:40% 60%}
+  #hist .hmap{grid-row:1} #hist .hlist{grid-row:2;border-right:0;border-top:1px solid var(--line)}
+  #hist .hbar{padding:10px 14px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <header>
+      <a class="home" href="https://saf-international-portail.netlify.app/">← Portail SAF International</a>
+      <h1>Suivi AS 350 B3</h1>
+      <p id="sub">Chargement…</p>
+    </header>
+    <div id="controls">
+      <label for="win">Trace</label>
+      <select id="win">
+        <option value="1">1 h</option>
+        <option value="3" selected>3 h</option>
+        <option value="12">12 h</option>
+        <option value="24">24 h</option>
+      </select>
+      <label for="split">Vue</label>
+      <select id="split" title="Découper l'écran pour suivre plusieurs appareils">
+        <option value="1">1 carte</option>
+        <option value="2">2 cartes</option>
+        <option value="3">3 cartes</option>
+        <option value="4">4 cartes</option>
+      </select>
+      <button id="fit" type="button">Toute la flotte</button>
+      <button id="histbtn" type="button">Historique des vols</button>
+       <button id="terrainbtn" type="button" aria-expanded="false">Profil relief / AGL</button>
+      <button id="logout" type="button">Déconnexion</button>
+    </div>
+    <div id="filters">
+      <label class="chk" title="Ouvre une carte qui suit l'hélicoptère dès que son traceur se rallume après un arrêt"><input type="checkbox" id="autoopen"> Carte auto à la mise en route</label>
+    </div>
+    <ul id="list"></ul>
+    <footer id="foot">—</footer>
+  </aside>
+  <div id="maps" data-n="1"></div>
+</div>
+
+<div id="hist" hidden role="dialog" aria-modal="true" aria-labelledby="h-title">
+  <div class="hbar">
+    <h2 id="h-title">Historique des vols</h2>
+    <label class="fld">Appareil<select id="h-reg"></select></label>
+    <label class="fld">Du<input type="date" id="h-from"></label>
+    <label class="fld">Au<input type="date" id="h-to"></label>
+    <div class="fld">Période<div class="presets">
+      <button type="button" data-d="7">7 j</button><button type="button" data-d="30">30 j</button><button type="button" data-d="60">60 j</button>
+    </div></div>
+    <button type="button" class="go" id="h-load">Afficher</button>
+    <button type="button" id="h-csv" disabled>Exporter CSV</button>
+    <button type="button" class="close" id="h-close">Fermer</button>
+  </div>
+  <div class="hbody">
+    <div class="hlist" id="h-list"><p class="empty">Choisissez un appareil et une période, puis « Afficher ».</p></div>
+    <div class="hmap"><div class="map" id="h-map"></div></div>
+  </div>
+</div>
+<section id="terrain-panel" hidden aria-label="Profil du relief et hauteur sol">
+  <div class="terrain-head"><strong id="terrain-name">Profil relief / AGL</strong><span id="terrain-status">—</span><button id="terrain-close" type="button" aria-label="Fermer le profil">Fermer</button></div>
+  <div class="terrain-stat" id="terrain-stat">Choisissez un hélicoptère.</div>
+  <div class="terrain-plot" id="terrain-plot"></div>
+  <div class="terrain-foot">Altitude hélicoptère (GPS) / terrain (EU-DEM 25 m ou Copernicus GLO-90 90 m en secours). AGL indicative : référentiels altimétriques NSE non vérifiés. Points réels reçus uniquement, aucune interpolation du vol. Non utilisable pour la navigation.</div>
+</section>
+<div id="toasts" aria-live="polite"></div>
+<div id="gate" role="alert"><p id="gate-msg">Vérification de la session…</p><a href="https://saf-international-portail.netlify.app/">Retour au portail</a></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* ---------- Périmètre de la page ----------
+   Même code pour les deux pages, seule cette ligne change :
+   SAF_Suivi_Flotte.html -> "332" (AS 332 Super Puma) · SAF_Suivi_B3.html -> "350" (AS 350 B3) */
+const SCOPE = "350";
+const SELF = (location.pathname.split("/").pop() || "SAF_Suivi_Flotte.html");
+const LOGIN = "index.html?next=" + encodeURIComponent(SELF);
+const CONFIG = {
+  url: "https://qaqehmxoehcvzcojcqkm.supabase.co",
+  key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q",
+  refreshMs: 30000,     // lecture Supabase (jamais NSE)
+  liveMaxMin: 5,        // point plus récent que 5 min = en direct
+  lostAfterMin: 45,     // en mouvement puis plus de point depuis 45 min = signal perdu
+  movingSpeed: 5,
+  // Mise en route : le traceur (alimenté par l'appareil) émet de nouveau après au moins gapMin de silence.
+  // Une carte ne s'ouvre que si cette reprise date de moins de recentMin (pas de rattrapage d'anciens vols).
+  startGapMin: 20,
+  startRecentMin: 10,
+  // Carte OACI France (IGN SCAN OACI, accès restreint) : clé transitoire IGN par défaut,
+  // à remplacer par la clé obtenue auprès de l'IGN (cartes.gouv.fr) si elle cesse de fonctionner.
+  ignOaciKey: "ign_scan_ws",
+  // Surcouche openAIP (espaces aériens, aérodromes, obstacles…) : clé « API Client » gratuite
+  // à créer sur openaip.net (profil > API Clients). Vide = surcouche non proposée.
+  openAipKey: "ef688ca41028ff1b71c6a1834026a858",
+};
+// Chantiers du jour : table fleet_worksites du projet SMS, copiée depuis l'agenda Operations
+const WORKSITES = { table:"fleet_worksites", nearKm:2, tz:"Europe/Paris" };
+const BASES = [
+  {name:"LFKA Albertville", lat:45.6276, lon:6.3297},
+  {name:"LSGS Sion", lat:46.2196, lon:7.3268},
+];
+const COLORS = {live:"#3CC882", ground:"#5B9BE0", stale:"#6C7784", lost:"#E5484D", none:"#6C7784"};
+
+// Même client et même stockage de session que index.html : pas de seconde connexion
+const sb = supabase.createClient(CONFIG.url, CONFIG.key);
+
+/* ---------- Cartes (écran découpable en 1 à 4 cartes) ----------
+   Chaque carte suit soit toute la flotte (vue libre), soit un appareil choisi :
+   elle se recentre sur lui à chaque actualisation, jusqu'à ce qu'on la déplace à la main. */
+function makeLayers(){
+  return {
+    "Topo (OpenTopoMap)": L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"© OpenTopoMap, © OSM"}),
+    "Plan (OSM)": L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}),
+    "swisstopo": L.tileLayer("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg",{maxZoom:18,attribution:"© swisstopo"}),
+    "OACI France (IGN)": L.tileLayer("https://data.geopf.fr/private/wmts?apikey="+encodeURIComponent(CONFIG.ignOaciKey)+"&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN-OACI&STYLE=normal&FORMAT=image/jpeg&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}",{minZoom:6,maxNativeZoom:11,maxZoom:15,attribution:"© IGN / SIA – carte OACI-VFR, ne pas utiliser pour la navigation"}),
+    "OACI Suisse (swisstopo)": L.tileLayer("https://wmts.geo.admin.ch/1.0.0/ch.bazl.luftfahrtkarten-icao/default/current/3857/{z}/{x}/{y}.png",{maxNativeZoom:12,maxZoom:15,attribution:"© OFAC/BAZL, swisstopo – carte OACI, ne pas utiliser pour la navigation"}),
+    "Satellite (Esri)": L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"© Esri"}),
+  };
+}
+function makeOverlays(){
+  const o={};
+  if(CONFIG.openAipKey) o["Espaces aériens (openAIP)"]=L.tileLayer("https://{s}.api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.png?apiKey="+encodeURIComponent(CONFIG.openAipKey),{subdomains:"abc",maxNativeZoom:14,maxZoom:19,zIndex:10,attribution:"© openAIP (données communautaires, non officielles)"});
+  return o;
+}
+const VIEW_KEY="saf_fleet_view"+(SCOPE==="332"?"":"_"+SCOPE);
+function loadView(){ try{ const v=JSON.parse(localStorage.getItem(VIEW_KEY)||"null"); if(v&&v.n>=1&&v.n<=4&&Array.isArray(v.follow)) return v; }catch(e){} return {n:1,follow:[null,null,null,null]}; }
+function saveView(){ try{ localStorage.setItem(VIEW_KEY,JSON.stringify({n:panes.length,follow:viewFollow})); }catch(e){} }
+let viewFollow=loadView().follow.concat([null,null,null,null]).slice(0,4);
+const panes=[];
+function createPane(i){
+  const el=document.createElement("div"); el.className="pane";
+  el.innerHTML=`<div class="map"></div><div class="pane-bar"><select aria-label="Appareil suivi sur cette carte"></select><span class="pst"></span><button type="button" hidden>Recentrer</button></div>`;
+  document.getElementById("maps").appendChild(el);
+  const m=L.map(el.querySelector(".map"),{zoomControl:false}).setView([45.9,6.8],8);
+  L.control.zoom({position:"bottomright"}).addTo(m);
+  const lay=makeLayers(); lay["Topo (OpenTopoMap)"].addTo(m);
+  const sites=L.layerGroup().addTo(m);
+  m.on("click",()=>sites.eachLayer(l=>l.closeTooltip&&l.closeTooltip()));   // toucher ailleurs = fermer
+  const ov=makeOverlays(); ov["Chantiers du jour"]=sites;
+  L.control.layers(lay,ov,{position:"topright"}).addTo(m);
+  L.control.scale({imperial:false,position:"bottomleft"}).addTo(m);
+  BASES.forEach(b => L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null}),keyboard:false}).addTo(m));
+  const pane={i,el,map:m,markers:{},trails:{},predicts:{},sites,follow:viewFollow[i]||null,moved:false,fitted:false,
+    sel:el.querySelector("select"),pst:el.querySelector(".pst"),btn:el.querySelector("button")};
+  // Déplacement à la main : on arrête de suivre jusqu'au clic sur « Recentrer »
+  m.on("dragstart",()=>{ if(pane.follow){ pane.moved=true; pane.btn.hidden=false; } });
+  pane.btn.onclick=()=>{ pane.moved=false; pane.btn.hidden=true; centerPane(pane,true); };
+  pane.sel.onchange=()=>{ pane.autoAt=0; pane.follow=pane.sel.value||null; viewFollow[i]=pane.follow; saveView();
+    pane.moved=false; pane.btn.hidden=true; pane.fitted=false; centerPane(pane,true); render(lastPs); };
+  L.DomEvent.disableClickPropagation(el.querySelector(".pane-bar"));
+  L.DomEvent.disableScrollPropagation(el.querySelector(".pane-bar"));
+  return pane;
+}
+function setSplit(n){
+  n=Math.max(1,Math.min(4,+n||1));
+  // Proposer d'office un appareil différent dans chaque nouvelle carte
+  while(panes.length<n){
+    const i=panes.length;
+    if(i>0 && !viewFollow[i] && fleet.length){
+      const used=new Set(viewFollow.slice(0,i).filter(Boolean));
+      const next=fleet.find(a=>a.active && passFilter(a) && !used.has(a.reg) && state[a.reg]?.last);
+      viewFollow[i]=next?next.reg:null;
+    }
+    panes.push(createPane(i));
+  }
+  while(panes.length>n){ const p=panes.pop(); p.map.remove(); p.el.remove(); }
+  document.getElementById("maps").dataset.n=n;
+  document.getElementById("split").value=String(n);
+  saveView();
+  setTimeout(()=>{ panes.forEach(p=>{ p.map.invalidateSize(); centerPane(p,false); }); if(lastPs) render(lastPs); },60);
+}
+function predictionBounds(reg){
+  const s=state[reg],last=s?.last;
+  if(!last || status(last).k!=="live")return null;
+  const kt=currentKt(s.prev,last);
+  if(!Number.isFinite(kt)||kt<=0)return null;
+  const radius=predictionRadiusKm(kt,30)*1000;
+  if(!(radius>0))return null;
+  return L.circle([last.lat,last.lon],{radius}).getBounds();
+}
+function centerPane(pane,force){
+  if(pane.follow){
+    const last=state[pane.follow]?.last; if(!last) return;
+    if(pane.moved && !force) return;
+    const bounds=predictionBounds(pane.follow);
+    if(bounds){
+      // Conserver l'intégralité des trois cercles visibles, même sur les petites cartes.
+      // N'ajuster le zoom que si le cercle externe sortirait du cadre actuel.
+      const desiredZoom=pane.map.getBoundsZoom(bounds,{padding:[28,28]});
+      const z=force||!pane.fitted?Math.min(11,desiredZoom):Math.min(pane.map.getZoom(),desiredZoom);
+      pane.map.setView([last.lat,last.lon],z,{animate:false});
+    }else{
+      const z=pane.fitted?pane.map.getZoom():Math.max(pane.map.getZoom(),11);
+      pane.map.setView([last.lat,last.lon],z,{animate:false});
+    }
+    pane.fitted=true;
+  } else if(force || !pane.fitted){
+    const ll=Object.values(state).filter(s=>s.last && passFilter(s.ac)).map(s=>[s.last.lat,s.last.lon]);
+    if(ll.length){ pane.map.fitBounds(L.latLngBounds(ll).pad(.3),{maxZoom:11}); pane.fitted=true; }
+  }
+}
+function paneBars(){
+  for(const p of panes){
+    const opts=[`<option value="">Toute la flotte</option>`].concat(fleet.filter(a=>visibleIn(a,p)).map(a=>`<option value="${esc(a.reg)}"${!a.active?" disabled":""}>${esc(a.reg)}${!a.active?" (non suivi)":""}</option>`));
+    const html=opts.join("");
+    if(p.sel.dataset.h!==html){ p.sel.innerHTML=html; p.sel.dataset.h=html; }
+    p.sel.value=p.follow||"";
+    if(p.follow){
+      const a=fleet.find(x=>x.reg===p.follow), last=state[p.follow]?.last;
+      const st=a&&a.active?status(last):{k:"none",t:"Suivi non activé"};
+      p.pst.dataset.st=st.k;
+      p.pst.innerHTML=`<b>${esc(st.t)}</b>${last?` · ${esc(ago(last.fix_time))}`:""}${p.autoAt?` · <span class="auto">ouverte à la mise en route</span>`:""}`;
+    } else { p.pst.dataset.st=""; p.pst.textContent=""; }
+  }
+}
+let fleet = [], state = {}, selected = null, firstFit = true;
+
+/* ---------- Filtre par type (AS 332 / AS 350 / tous) ---------- */
+const FILTER_KEY="saf_fleet_filter";
+const FAM_LABEL={all:"Tous",332:"AS 332",350:"AS 350"};
+const famOf=a=>/332|H215|super\s*puma/i.test(a?.type||"")?"332":/350|H125|[eé]cureuil/i.test(a?.type||"")?"350":"autre";
+let typeFilter="all";   // la flotte est déjà restreinte au périmètre de la page (SCOPE)
+const passFilter=a=>typeFilter==="all"||famOf(a)===typeFilter;
+// Un appareil filtré reste visible sur une carte qui le suit explicitement
+const visibleIn=(a,p)=>passFilter(a)||p.follow===a.reg;
+function setFilter(f){
+  typeFilter=f in FAM_LABEL?f:"all";
+  try{ localStorage.setItem(FILTER_KEY,typeFilter); }catch(e){}
+  if(selected && !passFilter(fleet.find(a=>a.reg===selected))) selected=null;
+  panes.forEach(p=>{ if(!p.follow){ p.fitted=false; } });
+  if(lastOk) render(lastPs);
+  panes.forEach(p=>{ if(!p.follow) centerPane(p,true); });
+}
+function filterBar(){
+  document.querySelectorAll("#filters .seg button").forEach(b=>{
+    const f=b.dataset.f;
+    b.setAttribute("aria-pressed",String(f===typeFilter));
+    b.querySelector(".n").textContent=fleet.length?"("+fleet.filter(a=>f==="all"||famOf(a)===f).length+")":"";
+  });
+}
+document.querySelectorAll("#filters .seg button").forEach(b=>b.onclick=()=>setFilter(b.dataset.f));
+
+/* ---------- Utilitaires ---------- */
+const normHeading = h => h == null ? null : ((h/100) % 360); // NSE : cap en centièmes de degré
+const minsAgo = t => (Date.now() - new Date(t).getTime())/60000;
+function ago(t){
+  const m = minsAgo(t);
+  if (m < 1) return "à l'instant";
+  if (m < 60) return `il y a ${Math.round(m)} min`;
+  if (m < 48*60) return `il y a ${Math.floor(m/60)} h ${String(Math.round(m%60)).padStart(2,"0")}`;
+  return `il y a ${Math.round(m/1440)} j`;
+}
+const hhmm = t => new Date(t).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"UTC"})+" UTC";
+function haversineKm(a,b){
+  const R=6371, r=x=>x*Math.PI/180, dLat=r(b.lat-a.lat), dLon=r(b.lon-a.lon);
+  const s=Math.sin(dLat/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+// Vitesse sol calculée entre les deux derniers points (si espacés de 20 s à 5 min)
+function computedGs(p1,p0){
+  if(!p1||!p0) return null;
+  const dt=(new Date(p0.fix_time)-new Date(p1.fix_time))/3600000;
+  if(dt<20/3600||dt>5/60) return null;
+  return haversineKm(p1,p0)/dt;
+}
+function currentKt(prev,last){
+  const calc=computedGs(prev,last);
+  if(Number.isFinite(calc) && calc>0) return calc/1.852;
+  const raw=Number(last?.speed);
+  return Number.isFinite(raw)&&raw>0?raw:null;
+}
+function destPoint(lat,lon,bearingDeg,km){
+  const R=6371, brg=bearingDeg*Math.PI/180, φ1=lat*Math.PI/180, λ1=lon*Math.PI/180, δ=km/R;
+  const sinφ1=Math.sin(φ1), cosφ1=Math.cos(φ1), sinδ=Math.sin(δ), cosδ=Math.cos(δ);
+  const sinφ2=sinφ1*cosδ + cosφ1*sinδ*Math.cos(brg);
+  const φ2=Math.asin(Math.max(-1,Math.min(1,sinφ2)));
+  const y=Math.sin(brg)*sinδ*cosφ1;
+  const x=cosδ - sinφ1*Math.sin(φ2);
+  const λ2=λ1 + Math.atan2(y,x);
+  return {lat:φ2*180/Math.PI, lon:((λ2*180/Math.PI+540)%360)-180};
+}
+function predictionRadiusKm(kt,min){ return kt*1.852*min/60; }
+function renderPrediction(pane,reg,last,prev,st){
+  let group=pane.predicts[reg];
+  const hd=normHeading(last?.heading), kt=currentKt(prev,last);
+  if(!(last && st.k==="live" && Number.isFinite(hd) && Number.isFinite(kt) && kt>0)){
+    if(group){ group.remove(); delete pane.predicts[reg]; }
+    return;
+  }
+  // Ne recalculer le dessin que lorsque la dernière position, le cap ou la vitesse changent.
+  const signature=[last.fix_time,last.lat,last.lon,hd,kt].join("|");
+  if(group && group.predictionSignature===signature) return;
+  if(!group){ group=L.layerGroup().addTo(pane.map); pane.predicts[reg]=group; }
+  group.predictionSignature=signature;
+  group.clearLayers();
+  const center=[last.lat,last.lon];
+  // Style ForeFlight : trait blanc fin (3 px) et liseré noir très discret (0,5 px de chaque côté).
+  const rings=[
+    {min:10,color:"#FFFFFF"},
+    {min:20,color:"#FFFFFF"},
+    {min:30,color:"#FFFFFF"}
+  ];
+  rings.forEach(({min,color})=>{
+    const radiusKm=predictionRadiusKm(kt,min), radius=radiusKm*1000;
+    L.circle(center,{radius,color:"#080808",weight:4,opacity:1,fill:false,interactive:false}).addTo(group);
+    L.circle(center,{radius,color,weight:3,opacity:1,fill:false,interactive:false}).addTo(group);
+    const tag=destPoint(last.lat,last.lon,45,radiusKm);
+    const html=`<div style="padding:1px 5px;border-radius:10px;background:rgba(8,8,8,.78);border:1px solid rgba(255,255,255,.9);color:#fff;font:600 11px/1.25 var(--font);white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.35)">${min} min</div>`;
+    L.marker([tag.lat,tag.lon],{
+      icon:L.divIcon({className:"",html,iconSize:null,iconAnchor:[0,0]}),
+      interactive:false,
+      keyboard:false,
+      zIndexOffset:1200
+    }).addTo(group);
+  });
+  const end=destPoint(last.lat,last.lon,hd,predictionRadiusKm(kt,50));
+  // Ligne bleu marine avec sous-couche blanche pour l'isoler de la topographie.
+  L.polyline([center,[end.lat,end.lon]],{
+    color:"#FFFFFF",weight:9,opacity:.95,interactive:false
+  }).addTo(group);
+  L.polyline([center,[end.lat,end.lon]],{
+    color:"#001F54",weight:5,opacity:1,interactive:false
+  }).addTo(group);
+}
+function status(last){
+  if(!last) return {k:"none",t:"Aucune position reçue"};
+  const m=minsAgo(last.fix_time), moving=(last.speed??0)>CONFIG.movingSpeed;
+  if(moving && m>CONFIG.lostAfterMin) return {k:"lost",t:`Signal perdu en vol – ${ago(last.fix_time)}`};
+  if(moving) return {k:"live",t:m<=CONFIG.liveMaxMin?"En vol":"En vol – dernier point "+ago(last.fix_time)};
+  if(m<=CONFIG.liveMaxMin) return {k:"ground",t:"Au sol, traceur actif"};
+  return {k:"stale",t:"Au sol / traceur éteint"};
+}
+function arrowSvg(color,heading){
+  // Vue de dessus : nez vers le nord avant rotation selon le cap NSE.
+  // Le rotor anime uniquement ses pales, sans modifier l'orientation de l'appareil.
+  const rot=Number.isFinite(heading)?heading:0;
+  return `<span class="heli-icon" style="transform:rotate(${rot}deg)"><svg viewBox="0 0 44 44" aria-hidden="true">
+    <path d="M22 3 L25.5 12 L26.5 26 L24 31 L23.8 40 L20.2 40 L20 31 L17.5 26 L18.5 12 Z" fill="${color}" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M18 28 L11 33 L11 35 L20.3 32 M26 28 L33 33 L33 35 L23.7 32" fill="${color}" stroke="#fff" stroke-width="1.1"/>
+    <path d="M17.5 11 Q22 7 26.5 11 L26 17 L18 17Z" fill="#d4f4ff" stroke="#fff" stroke-width=".7"/>
+    <path d="M17 37 H27" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>
+    <g class="heli-rotor" stroke="#fff" stroke-width="2.4" stroke-linecap="round">
+      <path d="M4 22 H40 M22 4 V40"/>
+      <circle cx="22" cy="22" r="2.7" fill="${color}" stroke="#0A1420" stroke-width="1.1"/>
+    </g>
+  </svg></span>`;
+}
+const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- Référentiel aérodromes (distance à vol d'oiseau, coordonnées approchées) ---------- */
+// metar:true = aérodrome publiant un METAR
+const AERODROMES = [
+  {icao:"LFKA",name:"Albertville",lat:45.6276,lon:6.3297,base:true},
+  {icao:"LSGS",name:"Sion",lat:46.2196,lon:7.3268,base:true,metar:true},
+  {icao:"LFLB",name:"Chambéry Aix-les-Bains",lat:45.6381,lon:5.8802,metar:true},
+  {icao:"LFLE",name:"Chambéry Challes",lat:45.5611,lon:5.9758},
+  {icao:"LFLP",name:"Annecy",lat:45.9308,lon:6.1064,metar:true},
+  {icao:"LSGG",name:"Genève",lat:46.2381,lon:6.1090,metar:true},
+  {icao:"LFLS",name:"Grenoble Isère",lat:45.3629,lon:5.3294,metar:true},
+  {icao:"LFLG",name:"Grenoble Le Versoud",lat:45.2192,lon:5.8497},
+  {icao:"LFHM",name:"Megève",lat:45.8208,lon:6.6522},
+  {icao:"LFLJ",name:"Courchevel",lat:45.3967,lon:6.6347},
+  {icao:"LFKX",name:"Méribel",lat:45.4070,lon:6.5806},
+  {icao:"LFHU",name:"L'Alpe d'Huez",lat:45.0883,lon:6.0847},
+  {icao:"LSGB",name:"Bex",lat:46.2583,lon:6.9864},
+  {icao:"LSGT",name:"Gruyères",lat:46.5942,lon:7.0944},
+  {icao:"LFLY",name:"Lyon Bron",lat:45.7272,lon:4.9444,metar:true},
+  {icao:"LFLL",name:"Lyon Saint-Exupéry",lat:45.7256,lon:5.0811,metar:true},
+  {icao:"LFLU",name:"Valence Chabeuil",lat:44.9216,lon:4.9699,metar:true},
+  {icao:"LIMW",name:"Aoste",lat:45.7385,lon:7.3687},
+  {icao:"LIMF",name:"Turin Caselle",lat:45.2008,lon:7.6497,metar:true},
+];
+const BASE_RADIUS_KM = 2;
+function bearingDeg(a,b){
+  const r=x=>x*Math.PI/180, y=Math.sin(r(b.lon-a.lon))*Math.cos(r(b.lat));
+  const x=Math.cos(r(a.lat))*Math.sin(r(b.lat))-Math.sin(r(a.lat))*Math.cos(r(b.lat))*Math.cos(r(b.lon-a.lon));
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+const CARD=["N","NE","E","SE","S","SO","O","NO"];
+function nearestAds(p,filter=()=>true,n=1){
+  return AERODROMES.filter(filter).map(ad=>({ad,km:haversineKm(p,ad)})).sort((a,b)=>a.km-b.km).slice(0,n);
+}
+function placeLabel(p){
+  const {ad,km}=nearestAds(p)[0];
+  if(km<BASE_RADIUS_KM) return `${ad.icao} ${ad.name}`;
+  return `${km<10?km.toFixed(1):Math.round(km)} km ${CARD[Math.round(bearingDeg(ad,p)/45)%8]} de ${ad.icao} ${ad.name}`;
+}
+const atBase = p => nearestAds(p,ad=>ad.base)[0].km < BASE_RADIUS_KM;
+const isAir = p => (p.speed??0) > CONFIG.movingSpeed;
+const hm = t => new Date(t).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",timeZone:"UTC"});
+function dur(min){ min=Math.max(0,Math.round(min)); return min<60?`${min} min`:`${Math.floor(min/60)} h ${String(min%60).padStart(2,"0")}`; }
+
+/* ---------- Analyse des positions : vols, dernière pose, temps hors base ---------- */
+// Les points NSE sont espacés (jusqu'à ~40 min) : les heures de décollage et d'atterrissage
+// sont donc encadrées entre deux points, jamais connues exactement.
+function analyze(pts){
+  const flights=[]; let cur=null, lastLanding=null;
+  for(let i=0;i<pts.length;i++){
+    const p=pts[i], prev=pts[i-1]||null;
+    if(isAir(p)){
+      if(!cur){
+        const fromGround = prev && !isAir(prev) && (new Date(p.fix_time)-new Date(prev.fix_time)) < 12*3600e3;
+        cur={toFrom:fromGround?prev.fix_time:null, toTo:p.fix_time, toPlace:fromGround?prev:null, pts:fromGround?[prev,p]:[p]};
+      } else cur.pts.push(p);
+    } else if(cur){
+      cur.ldFrom=cur.pts[cur.pts.length-1].fix_time; cur.ldTo=p.fix_time; cur.ldPlace=p; cur.pts.push(p);
+      flights.push(cur); lastLanding={place:p,from:cur.ldFrom,to:p.fix_time}; cur=null;
+    }
+  }
+  if(cur) flights.push(cur); // vol en cours
+  for(const f of flights){
+    f.km=f.pts.slice(1).reduce((s,p,i)=>s+haversineKm(f.pts[i],p),0);
+    const a0=f.toFrom?new Date(f.toFrom):null, a1=new Date(f.toTo);
+    const b0=f.ldFrom?new Date(f.ldFrom):null, b1=f.ldTo?new Date(f.ldTo):null;
+    if(b1){ f.minMin=(b0-a1)/60000; f.maxMin=a0?(b1-a0)/60000:null; }
+  }
+  // Temps hors base
+  let outside=null;
+  const last=pts[pts.length-1];
+  if(last && !atBase(last)){
+    let i=pts.length-1; while(i>=0 && !atBase(pts[i])) i--;
+    outside = i>=0 ? {since:pts[i+1].fix_time, leftFrom:pts[i]} : {since:null};
+  }
+  return {flights, lastLanding, outside};
+}
+
+/* ---------- Météo (à la demande, pour l'appareil sélectionné) ---------- */
+const wxCache={}, metarCache={};
+const WX_TTL=10*60e3;
+async function ensureDetails(reg){
+  const last=state[reg]?.last; if(!last) return;
+  let changed=false;
+  const w=wxCache[reg];
+  if(!w || Date.now()-w.t>WX_TTL || haversineKm(w,last)>5){
+    wxCache[reg]={t:Date.now(),lat:last.lat,lon:last.lon,loading:true};
+    try{
+      const u=`https://api.open-meteo.com/v1/forecast?latitude=${last.lat.toFixed(4)}&longitude=${last.lon.toFixed(4)}`+
+        `&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,visibility&wind_speed_unit=kn&timezone=UTC`;
+      const r=await fetch(u); wxCache[reg].data=(await r.json()).current;
+    }catch(e){ wxCache[reg].err=String(e.message||e); }
+    wxCache[reg].loading=false; changed=true;
+  }
+  const m=metarCache[reg];
+  if(!m || Date.now()-m.t>WX_TTL || haversineKm(m,last)>5){
+    const ids=nearestAds(last,ad=>ad.metar,2).map(x=>x.ad.icao);
+    metarCache[reg]={t:Date.now(),lat:last.lat,lon:last.lon,ids,loading:true};
+    try{
+      const {data,error}=await sb.functions.invoke("fleet-metar",{body:{ids}});
+      if(error) throw error; metarCache[reg].data=data.metars;
+    }catch(e){ metarCache[reg].err=String(e.message||e); }
+    metarCache[reg].loading=false; changed=true;
+  }
+  if(changed && selected===reg) render(lastPs);
+}
+
+function detailsHTML(reg){
+  const s=state[reg], an=s.an, last=s.last;
+  if(!last) return "";
+  const near=nearestAds(last,()=>true,1)[0];
+  const since24=Date.now()-24*3600e3;
+  const fl=an.flights.filter(f=>new Date(f.ldTo||f.toTo)>=since24).reverse();
+  let h=`<div class="det">`;
+  h+=`<h3>Position</h3><p>${esc(placeLabel(last))}<br><span class="muted">Aérodrome le plus proche : ${esc(near.ad.icao)} ${esc(near.ad.name)}, ${near.km.toFixed(1)} km</span></p>`;
+  h+=`<h3>Vols des dernières 24 h</h3>`;
+  if(!fl.length) h+=`<p class="muted">Aucun vol enregistré sur la période.</p>`;
+  else{
+    h+=`<table><tbody>`;
+    for(const f of fl){
+      const to = f.toFrom ? `entre ${hm(f.toFrom)} et ${hm(f.toTo)}` : `avant ${hm(f.toTo)}`;
+      const toPl = f.toPlace ? placeLabel(f.toPlace) : "lieu non enregistré";
+      const ld = f.ldTo ? `entre ${hm(f.ldFrom)} et ${hm(f.ldTo)}` : "vol en cours";
+      const ldPl = f.ldPlace ? placeLabel(f.ldPlace) : "—";
+      const d = !f.ldTo ? "—" : f.maxMin!=null ? `${dur(f.minMin)} à ${dur(f.maxMin)}` : f.minMin>=5 ? `au moins ${dur(f.minMin)}` : "inconnue (décollage non enregistré)";
+      h+=`<tr><td><b>Départ</b> ${esc(toPl)}<br><span class="muted">${to} UTC</span></td></tr>
+          <tr><td><b>Arrivée</b> ${esc(ldPl)}<br><span class="muted">${ld}${f.ldTo?" UTC":""}</span></td></tr>
+          <tr class="sum"><td>Durée ${d} · distance ≥ ${Math.round(f.km)} km</td></tr>`;
+    }
+    h+=`</tbody></table><p class="muted note">Heures encadrées entre deux points NSE ; la distance suit les seuls points reçus.</p>`;
+  }
+  const w=wxCache[reg];
+  h+=`<h3>Météo au point</h3>`;
+  if(!w||w.loading) h+=`<p class="muted">Chargement…</p>`;
+  else if(w.err||!w.data) h+=`<p class="muted">Météo indisponible.</p>`;
+  else{
+    const c=w.data;
+    const vis=c.visibility!=null?(c.visibility>=10000?"≥ 10 km":(c.visibility/1000).toFixed(1)+" km"):"–";
+    h+=`<p>Vent ${String(Math.round(c.wind_direction_10m)).padStart(3,"0")}° / ${Math.round(c.wind_speed_10m)} kt`+
+       `${c.wind_gusts_10m>c.wind_speed_10m+5?`, rafales ${Math.round(c.wind_gusts_10m)} kt`:""} · ${Math.round(c.temperature_2m)} °C · nébulosité ${c.cloud_cover} % · visibilité ${vis}`+
+       `<br><span class="muted">Modèle Open-Meteo à ${hm(c.time+"Z")} UTC, pas une observation.</span></p>`;
+  }
+  const m=metarCache[reg];
+  h+=`<h3>METAR les plus proches</h3>`;
+  if(!m||m.loading) h+=`<p class="muted">Chargement…</p>`;
+  else if(m.err||!m.data) h+=`<p class="muted">METAR indisponibles.</p>`;
+  else for(const id of m.ids){
+    const x=m.data[id], ad=AERODROMES.find(a=>a.icao===id);
+    h+=`<p class="metar"><b>${id}</b> <span class="muted">${esc(ad.name)}, ${Math.round(haversineKm(last,ad))} km</span><br>${x?esc(x.raw):"<span class='muted'>pas de METAR récent</span>"}</p>`;
+  }
+  return h+`</div>`;
+}
+
+/* ---------- Chantiers du jour (agenda Operations) ----------
+   Lecture de fleet_worksites (même session, même RLS que fleet_positions).
+   Données copiées de l'agenda « SAF International — Operations » par la fonction ops-worksites-sync :
+   point principal (1re DZ, sinon LZ, sinon lieu), points DZ/LZ (features) et trajet (route).
+   Le survol d'un marqueur affiche le détail ; un appui l'affiche aussi sur écran tactile. */
+let worksites=[], wsOff=false;
+const todayLocal=()=>new Intl.DateTimeFormat("sv-SE",{timeZone:WORKSITES.tz}).format(new Date());
+const tShort=t=>t?String(t).slice(0,5):"";
+async function loadWorksites(){
+  if(wsOff) return;
+  const r=await sb.from(WORKSITES.table).select("*").eq("work_date",todayLocal()).order("start_time",{ascending:true,nullsFirst:false});
+  if(r.error){
+    // Table pas encore créée : la couche reste vide, sans message d'erreur
+    if(/PGRST205|42P01|does not exist|Could not find the table/i.test(String(r.error.code)+" "+r.error.message)){ wsOff=true; worksites=[]; return; }
+    throw r.error;
+  }
+  worksites=(r.data||[]).filter(w=>isFinite(+w.lat)&&isFinite(+w.lon));
+}
+const sitesFor=reg=>worksites.filter(w=>w.reg&&String(w.reg).toUpperCase()===reg.toUpperCase()&&w.status!=="annulé");
+function siteClass(w){ return w.status==="terminé"?"done":w.status==="annulé"?"off":["standby","demande","devis"].includes(w.status)?"tent":""; }
+const sitePts=w=>(Array.isArray(w.features)?w.features:[]).filter(p=>isFinite(+p.lat)&&isFinite(+p.lon));
+// Distance de l'appareil au chantier : au plus proche de ses points (DZ, LZ, point principal)
+function siteDist(w,last){ return Math.min(haversineKm(last,{lat:+w.lat,lon:+w.lon}),...sitePts(w).map(p=>haversineKm(last,{lat:+p.lat,lon:+p.lon}))); }
+function siteSvg(){
+  return `<svg viewBox="0 0 22 22" aria-hidden="true"><rect x="4" y="4" width="14" height="14" rx="2" transform="rotate(45 11 11)" fill="#F0C040" stroke="#0D1B2A" stroke-width="2"/><circle cx="11" cy="11" r="2.6" fill="#0D1B2A"/></svg>`;
+}
+const elevTxt=m=>m==null||m===""?"":` · ${Math.round(+m).toLocaleString("fr-FR")} m / ${Math.round(+m*3.28084).toLocaleString("fr-FR")} ft`;
+function siteTip(w){
+  const rows=[];
+  const row=(k,v,raw)=>{ if(v!=null&&String(v).trim()!=="") rows.push(`<tr><th>${k}</th><td>${raw?v:esc(v)}</td></tr>`); };
+  row("Mission",w.mission_no);
+  row("Horaire",w.start_time||w.end_time?`${tShort(w.start_time)||"?"} – ${tShort(w.end_time)||"?"} (heure locale)`:null);
+  row("Appareil",w.reg);
+  row("Équipage",w.crew);
+  row("Client",w.client);
+  row("Travaux",w.work_type);
+  const ch=[w.loads!=null?`${w.loads} charge${w.loads>1?"s":""}`:null,
+            w.max_load_kg!=null?`max ${(+w.max_load_kg).toLocaleString("fr-FR")} kg`:null,
+            w.longline_m!=null?`longline ${w.longline_m} m`:null].filter(Boolean).join(" · ");
+  row("Charges",ch);
+  row("Contact",w.contact);
+  row("Statut",w.status);
+  const pts=sitePts(w);
+  if(pts.length) row("Points",pts.map(p=>`<b>${esc(p.name)}</b>${esc(elevTxt(p.elev_m))}`).join("<br>"),true);
+  row("Remarques",w.details);
+  let prox="";
+  const last=w.reg?state[String(w.reg).toUpperCase()]?.last:null;
+  if(w.reg&&last){
+    const d=siteDist(w,last);
+    prox=d<=WORKSITES.nearKm
+      ?`<div class="prox on">${esc(w.reg)} sur zone (${d<1?Math.round(d*1000)+" m":d.toFixed(1)+" km"})</div>`
+      :`<div class="prox off">${esc(w.reg)} à ${d<10?d.toFixed(1):Math.round(d)} km · dernier point ${esc(ago(last.fix_time))}</div>`;
+  }
+  return `<h4>${esc(w.name||"Chantier")}</h4><div class="sub">${esc(w.location||"")}${w.location?" · ":""}${(+w.lat).toFixed(5)}, ${(+w.lon).toFixed(5)}</div>
+    <table>${rows.join("")}</table>${prox}`;
+}
+function renderWorksites(){
+  // Reconstruction seulement si les chantiers ont changé (sinon une infobulle ouverte se fermerait à chaque cycle)
+  const sig=JSON.stringify(worksites);
+  for(const p of panes){
+    if(p.sitesSig===sig) continue;
+    p.sitesSig=sig;
+    p.sites.clearLayers();
+    for(const w of worksites){
+      const ll=[+w.lat,+w.lon], cls=siteClass(w), off=cls==="off";
+      const line={color:"#F0C040",weight:2,opacity:off?.35:.75,dashArray:"5 6",interactive:false};
+      // Trajet saisi dans l'agenda, sinon liaison LZ → DZ
+      const pts=sitePts(w), routes=Array.isArray(w.route)?w.route.filter(r=>Array.isArray(r)&&r.length>1):[];
+      if(routes.length) routes.forEach(r=>L.polyline(r.map(c=>[+c[0],+c[1]]),line).addTo(p.sites));
+      else { const lz=pts.find(x=>x.kind==="lz"); if(lz) pts.filter(x=>x.kind==="dz").forEach(dz=>L.polyline([[+lz.lat,+lz.lon],[+dz.lat,+dz.lon]],line).addTo(p.sites)); }
+      for(const q of pts){
+        if(Math.abs(q.lat-ll[0])<1e-6&&Math.abs(q.lon-ll[1])<1e-6) continue;   // déjà le marqueur principal
+        const isLz=q.kind==="lz";
+        L.circleMarker([+q.lat,+q.lon],{radius:isLz?6:5,color:"#0D1B2A",weight:2,fillColor:isLz?"#5B9BE0":"#F0C040",fillOpacity:off?.4:1})
+          .bindTooltip(`<b>${esc(q.name)}</b> · ${esc(w.name||"")}${esc(elevTxt(q.elev_m))}`,{direction:"top",offset:[0,-6]})
+          .addTo(p.sites);
+      }
+      const icon=L.divIcon({className:"",iconSize:[0,0],
+        html:`<div class="wsm ${cls}">${siteSvg()}<span class="wl">${esc(w.name||"Chantier")}${w.reg?" · "+esc(w.reg):""}</span></div>`});
+      const mk=L.marker(ll,{icon,keyboard:true,title:w.name||"Chantier",zIndexOffset:-100}).addTo(p.sites);
+      mk.bindTooltip(()=>siteTip(w),{className:"wst",direction:"top",offset:[0,-14],opacity:1});
+      // Écran tactile : Leaflet ouvre déjà l'infobulle au toucher ; un toucher sur la carte la referme
+      // Infobulle sous le marqueur quand il est dans la moitié haute de la carte, pour qu'elle reste visible
+      mk.on("tooltipopen",e=>{ const up=p.map.latLngToContainerPoint(ll).y>p.map.getSize().y/2, tt=e.tooltip;
+        tt.options.direction=up?"top":"bottom"; tt.options.offset=L.point(0,up?-14:14); tt.update(); });
+    }
+  }
+}
+
+/* ---------- Données ---------- */
+let lastPs=null, loading=false, lastOk=0, pendingRealtimeLoad=false;
+let realtimeChannel=null, realtimeLoadTimer=null;
+// À chaque INSERT/UPDATE en base, relire les dernières positions ; le polling 30 s reste un secours.
+function scheduleRealtimeLoad(){
+  if(realtimeLoadTimer) return;
+  realtimeLoadTimer=setTimeout(()=>{
+    realtimeLoadTimer=null;
+    if(loading){ pendingRealtimeLoad=true; return; }
+    load();
+  },3000);
+}
+function subscribeFleetPositions(){
+  if(realtimeChannel) return;
+  realtimeChannel=sb.channel("saf-fleet-positions-live")
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"fleet_positions"},scheduleRealtimeLoad)
+    .on("postgres_changes",{event:"UPDATE",schema:"public",table:"fleet_positions"},scheduleRealtimeLoad)
+    .subscribe(status=>{
+      if(status==="CHANNEL_ERROR" || status==="TIMED_OUT")
+        console.warn("Supabase Realtime indisponible : actualisation automatique toutes les 30 s maintenue.");
+    });
+}
+function isAuthError(e){ const m=String(e&&(e.message||e.code)||e||""); return /jwt|token|401|PGRST30/i.test(m); }
+async function load(retried){
+  if(loading) return; loading=true;
+  const hours=+document.getElementById("win").value;
+  const winStart=Date.now()-hours*3600e3;
+  const since=new Date(Math.min(winStart, Date.now()-36*3600e3)).toISOString(); // 36 h pour le journal
+  try{
+    const [ac,ps]=await Promise.all([
+      sb.from("fleet_aircraft").select("reg,type,imei,provider,active").order("reg"),
+      sb.from("fleet_poll_state").select("last_poll,last_result").eq("id",1).maybeSingle(),
+    ]);
+    if(ac.error) throw ac.error;
+    fleet=ac.data.filter(a=>famOf(a)===SCOPE);
+    // Une lecture par appareil : avec 15 appareils, une requête unique plafonnée à 1000 points
+    // tronquerait les traces dès qu'une partie de la flotte vole.
+    const PCOLS="reg,fix_time,lat,lon,alt_m,heading,speed";
+    const [lasts,wins]=await Promise.all([
+      Promise.all(fleet.map(a=>sb.from("fleet_positions").select(PCOLS).eq("reg",a.reg).order("fix_time",{ascending:false}).limit(2))),
+      Promise.all(fleet.map(a=>sb.from("fleet_positions").select(PCOLS).eq("reg",a.reg).gte("fix_time",since).order("fix_time",{ascending:false}).limit(1000))),
+    ]);
+    const bad=[...lasts,...wins].find(r=>r.error); if(bad) throw bad.error;
+    state={};
+    fleet.forEach((a,i)=>{
+      const two=lasts[i].data||[];
+      const all=(wins[i].data||[]).slice().reverse();   // ordre chronologique pour les traces et l'analyse des vols
+      state[a.reg]={ac:a,last:two[0]||null,prev:two[1]||null,all,
+        trail:all.filter(p=>new Date(p.fix_time)>=winStart), an:analyze(all)};
+    });
+    lastPs=ps.data; lastOk=Date.now();
+    try{ await loadWorksites(); }catch(e){ console.warn("Chantiers du jour :",e); }
+    render(lastPs);
+    checkStarts();
+    // Même cycle de données NSE pour les projections sur la carte et le profil AGL.
+    // Les altitudes de terrain manquantes sont demandées, les autres restent en cache.
+    if(terrain.visible) updateTerrain();
+    if(selected) ensureDetails(selected);
+  }catch(e){
+    if(!retried && isAuthError(e)){
+      // Jeton expiré (onglet en veille, PC sorti de veille) : renouvellement puis nouvel essai
+      loading=false;
+      const r=await sb.auth.refreshSession().catch(()=>({error:true}));
+      if(r && !r.error && r.data && r.data.session) return load(true);
+      location.replace(LOGIN); return;
+    }
+    document.getElementById("foot").innerHTML=`<span class="err">Lecture impossible : ${esc(e.message||e)}. Nouvel essai dans ${CONFIG.refreshMs/1000} s.</span>`;
+  }finally{
+    loading=false;
+    if(pendingRealtimeLoad){ pendingRealtimeLoad=false; scheduleRealtimeLoad(); }
+  }
+}
+/* Les navigateurs ralentissent ou suspendent les minuteries des onglets en arrière-plan
+   et des ordinateurs en veille : on relit immédiatement au retour, puis on relance le cycle. */
+function restartCycle(){ clearInterval(timer); load(); timer=setInterval(load,CONFIG.refreshMs); }
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && Date.now()-lastOk>CONFIG.refreshMs/2) restartCycle(); });
+window.addEventListener("focus",()=>{ if(Date.now()-lastOk>CONFIG.refreshMs) restartCycle(); });
+window.addEventListener("online",restartCycle);
+/* Garde-fou visible : si l'affichage n'a pas pu être actualisé depuis plus de 2 cycles */
+setInterval(()=>{
+  if(!lastOk || document.visibilityState!=="visible") return;
+  const late=Date.now()-lastOk;
+  if(late>2*CONFIG.refreshMs){
+    const f=document.getElementById("foot");
+    if(!f.querySelector(".stale")) f.innerHTML+=` <span class="err stale">Affichage non actualisé depuis ${Math.round(late/60000)||1} min — nouvel essai en cours.</span>`;
+    load();
+  }
+},10000);
+
+/* ---------- Profil relief et hauteur sol (affichage consultatif) ---------- */
+const terrain={visible:false, reg:null, elevations:new Map(), lastFetch:0, fetching:false, pending:false, token:0, retryTimer:null, source:""};
+const terrainPanel=document.getElementById("terrain-panel");
+const terrainPlot=document.getElementById("terrain-plot");
+const terrainKey=p=>`${(+p.lat).toFixed(5)},${(+p.lon).toFixed(5)}`;
+const terrainFmt=v=>Number.isFinite(v)?Math.round(v).toLocaleString("fr-FR")+" m":"—";
+function terrainPoints(){
+  const reg=terrain.reg||selected;
+  const pts=(state[reg]?.trail||[]).filter(p=>Number.isFinite(+p.lat)&&Number.isFinite(+p.lon)&&Number.isFinite(+p.alt_m));
+  // Montrer au maximum 80 positions réelles, sans créer de points fictifs.
+  if(pts.length<=80) return pts;
+  return Array.from({length:80},(_,i)=>pts[Math.round(i*(pts.length-1)/79)]);
+}
+function chooseTerrainReg(){
+  if(selected && state[selected]?.last) return selected;
+  return fleet.find(a=>a.active && passFilter(a) && state[a.reg]?.last)?.reg||null;
+}
+function openTerrain(){
+  terrain.visible=true; terrain.reg=chooseTerrainReg(); terrainPanel.hidden=false;
+  document.getElementById("terrainbtn").setAttribute("aria-expanded","true");
+  updateTerrain();
+}
+function closeTerrain(){
+  terrain.visible=false;terrainPanel.hidden=true;
+  document.getElementById("terrainbtn").setAttribute("aria-expanded","false");
+}
+document.getElementById("terrainbtn").onclick=()=>terrain.visible?closeTerrain():openTerrain();
+document.getElementById("terrain-close").onclick=closeTerrain;
+async function fetchTerrain(pts){
+  if(terrain.fetching){terrain.pending=true;return;}
+  const missing=[...new Map(pts.filter(p=>!terrain.elevations.has(terrainKey(p))).map(p=>[terrainKey(p),p])).values()];
+  if(!missing.length)return;
+  if(Date.now()-terrain.lastFetch<1500){
+    if(!terrain.retryTimer)terrain.retryTimer=setTimeout(()=>{terrain.retryTimer=null;if(terrain.visible)updateTerrain();},1600);
+    return;
+  }
+  terrain.fetching=true;terrain.lastFetch=Date.now();
+  const statusEl=document.getElementById("terrain-status");
+  statusEl.textContent="Chargement du relief…";
+  const batch=missing.slice(0,80);
+  async function readJson(url){
+    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);
+    try{
+      const response=await fetch(url,{signal:ctrl.signal,cache:"no-store"});
+      if(!response.ok)throw Error("HTTP "+response.status);
+      return await response.json();
+    }finally{clearTimeout(timer);}
+  }
+  try{
+    let heights=null,source="";
+    try{
+      const loc=batch.map(p=>terrainKey(p)).join("|");
+      const j=await readJson("https://api.opentopodata.org/v1/eudem25m?locations="+encodeURIComponent(loc));
+      if(j.status!=="OK"||!Array.isArray(j.results)||j.results.length!==batch.length)throw Error(j.error||"Réponse EU-DEM invalide");
+      heights=j.results.map(v=>v.elevation);
+      if(!heights.some(Number.isFinite))throw Error("Aucune altitude EU-DEM");
+      source="EU-DEM 25 m";
+    }catch(firstErr){
+      console.warn("EU-DEM indisponible, tentative Open-Meteo :",firstErr);
+      const lat=batch.map(p=>(+p.lat).toFixed(5)).join(",");
+      const lon=batch.map(p=>(+p.lon).toFixed(5)).join(",");
+      const j=await readJson("https://api.open-meteo.com/v1/elevation?latitude="+encodeURIComponent(lat)+"&longitude="+encodeURIComponent(lon));
+      if(!Array.isArray(j.elevation)||j.elevation.length!==batch.length)throw Error(j.reason||"Réponse Copernicus invalide");
+      heights=j.elevation;
+      source="Copernicus GLO-90 (90 m)";
+    }
+    batch.forEach((p,i)=>terrain.elevations.set(terrainKey(p),Number.isFinite(heights[i])?heights[i]:null));
+    terrain.source=source;
+    statusEl.textContent="Relief : "+source;
+  }catch(e){
+    statusEl.textContent="Relief indisponible : "+String(e.message||e);
+    console.warn("Relief : échec des deux services :",e);
+    // Ne pas bloquer les futures tentatives si les services sont momentanément indisponibles.
+  }finally{
+    terrain.fetching=false;
+    if(terrain.visible)drawTerrain();
+    if(terrain.pending||missing.length>batch.length){
+      terrain.pending=false;
+      if(!terrain.retryTimer)terrain.retryTimer=setTimeout(()=>{terrain.retryTimer=null;if(terrain.visible)updateTerrain();},1700);
+    }
+  }
+}
+function updateTerrain(){
+  if(!terrain.visible)return;
+  if(selected && state[selected]?.last)terrain.reg=selected;
+  if(!terrain.reg || !state[terrain.reg]?.last)terrain.reg=chooseTerrainReg();
+  drawTerrain();
+  if(terrain.reg)fetchTerrain(terrainPoints());
+}
+function drawTerrain(){
+  if(!terrain.visible)return;
+  const pts=terrainPoints();
+  document.getElementById("terrain-name").textContent=`Profil relief / AGL · ${terrain.reg||"—"}`;
+  const summary=document.getElementById("terrain-stat");
+  if(!pts.length){summary.textContent="Aucune position disponible pour la période choisie.";terrainPlot.replaceChildren();return;}
+  const pairs=pts.map(p=>({p,ground:terrain.elevations.get(terrainKey(p))}));
+  const known=pairs.filter(x=>Number.isFinite(x.ground));
+  const last=pairs[pairs.length-1];
+  const agl=Number.isFinite(last.ground)?Number(last.p.alt_m)-last.ground:null;
+  summary.textContent=`Dernier point : ${hhmm(last.p.fix_time)} · Alt. GPS : ${terrainFmt(+last.p.alt_m)} · Relief : ${terrainFmt(last.ground)} · AGL indicative : ${agl===null?"—":terrainFmt(agl)}${agl!==null && agl<0?" (incohérence altimétrique)":""}`;
+  if(pts.length<2){terrainPlot.textContent="Au moins deux positions sont nécessaires pour tracer le profil.";return;}
+  const W=700,H=240, L=53,R=14,T=15,B=35;
+  const values=pts.map(p=>+p.alt_m).concat(known.map(x=>x.ground));
+  let lo=Math.floor((Math.min(...values)-100)/100)*100,hi=Math.ceil((Math.max(...values)+100)/100)*100;
+  if(hi<=lo)hi=lo+100;
+  const x=i=>L+i*(W-L-R)/(pts.length-1),y=v=>T+(hi-v)*(H-T-B)/(hi-lo);
+  const poly=(arr)=>arr.map(z=>z.join(",")).join(" ");
+  const heli=poly(pairs.map((o,i)=>[x(i).toFixed(1),y(+o.p.alt_m).toFixed(1)]));
+  const terrainSegments=[];let seg=[];
+  pairs.forEach((o,i)=>{if(Number.isFinite(o.ground))seg.push([x(i).toFixed(1),y(o.ground).toFixed(1)]);else if(seg.length){terrainSegments.push(seg);seg=[];}});
+  if(seg.length)terrainSegments.push(seg);
+  let svg=`<svg role="img" aria-label="Profil de relief sous la trajectoire de ${esc(terrain.reg)}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
+  for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4,Y=y(v);svg+=`<line x1="${L}" x2="${W-R}" y1="${Y}" y2="${Y}" stroke="#415062" stroke-dasharray="3 5"/><text x="${L-6}" y="${Y+4}" fill="#bac5cf" text-anchor="end" font-size="11">${Math.round(v)}</text>`;}
+  svg+=`<text x="4" y="11" fill="#bac5cf" font-size="10">m</text>`;
+  for(const seg of terrainSegments){if(seg.length>1){const bottom=H-B;svg+=`<polygon points="${seg[0][0]},${bottom} ${poly(seg)} ${seg[seg.length-1][0]},${bottom}" fill="#8C7044" fill-opacity=".55"/><polyline points="${poly(seg)}" fill="none" stroke="#e0ad57" stroke-width="2.5"/>`;}}
+  svg+=`<polyline points="${heli}" fill="none" stroke="#4bd6a0" stroke-width="2.7"/>`;
+  const ticks=[0,Math.floor((pts.length-1)/2),pts.length-1];
+  ticks.forEach(i=>svg+=`<text x="${x(i)}" y="${H-10}" text-anchor="${i===0?"start":i===pts.length-1?"end":"middle"}" fill="#bac5cf" font-size="11">${hm(pts[i].fix_time)} UTC</text>`);
+  svg+=`<circle cx="${x(pts.length-1)}" cy="${y(+last.p.alt_m)}" r="4" fill="#4bd6a0" stroke="white" stroke-width="1"/>`;
+  svg+=`<text x="${L+3}" y="${T+12}" fill="#4bd6a0" font-size="11">— Hélicoptère</text><text x="${L+125}" y="${T+12}" fill="#e0ad57" font-size="11">— Relief</text>`;
+  svg+=`<rect id="terrain-hit" x="${L}" y="${T+24}" width="${W-L-R}" height="${H-T-B-24}" fill="transparent" style="cursor:crosshair"/></svg>`;
+  terrainPlot.innerHTML=svg;
+  const hit=terrainPlot.querySelector("#terrain-hit");
+  hit?.addEventListener("pointermove",e=>{
+    const rect=hit.ownerSVGElement.getBoundingClientRect();
+    const index=Math.max(0,Math.min(pairs.length-1,Math.round(((e.clientX-rect.left)/rect.width*W-L)/(W-L-R)*(pairs.length-1))));
+    const o=pairs[index], a=Number.isFinite(o.ground)?+o.p.alt_m-o.ground:null;
+    summary.textContent=`${hhmm(o.p.fix_time)} · GPS : ${terrainFmt(+o.p.alt_m)} · Terrain : ${terrainFmt(o.ground)} · AGL indicative : ${a===null?"—":terrainFmt(a)}${a!==null&&a<0?" (incohérence)":""}`;
+  });
+}
+
+function render(ps){
+  const list=document.getElementById("list"); const scroll=list.scrollTop; list.innerHTML="";
+  let nLive=0, nLost=0, nShown=0;
+  const stackCount={}; // appareils posés au même endroit (~100 m) : étiquettes empilées
+
+  for(const a of fleet){
+    const s=state[a.reg], last=s.last, st=a.active?status(last):{k:"none",t:"Suivi non activé ("+a.provider+")"};
+    const shown=passFilter(a);
+    if(shown){ nShown++; if(st.k==="live") nLive++; if(st.k==="lost") nLost++; }
+    const hd=last?normHeading(last.heading):null;
+    const gs=computedGs(s.prev,last);
+    const an=s.an;
+    let facts="";
+    if(last){
+      if(an.lastLanding) facts+=`<div>Dernière pose : <b>${esc(placeLabel(an.lastLanding.place))}</b>, vers ${hm(an.lastLanding.to)} UTC</div>`;
+      if(atBase(last)) facts+=`<div>En base : <b>${esc(nearestAds(last,ad=>ad.base)[0].ad.icao)}</b></div>`;
+      else if(an.outside?.since) facts+=`<div>Hors base depuis au moins <b>${dur(minsAgo(an.outside.since))}</b> (départ de ${esc(nearestAds(an.outside.leftFrom,ad=>ad.base)[0].ad.icao)})</div>`;
+      else facts+=`<div>Hors base – départ non enregistré</div>`;
+      for(const w of sitesFor(a.reg)) facts+=`<div class="ws">Chantier du jour : <b>${esc(w.name||"—")}</b>${w.start_time?` · ${esc(tShort(w.start_time))}`:""} · ${Math.round(siteDist(w,last)*10)/10} km</div>`;
+      const n24=an.flights.filter(f=>new Date(f.ldTo||f.toTo)>=Date.now()-24*3600e3).length;
+      if(n24) facts+=`<div>${n24} vol${n24>1?"s":""} sur 24 h</div>`;
+    }
+    const li=document.createElement("li");
+    li.className="ac"+(selected===a.reg?" sel":""); li.dataset.st=st.k; li.tabIndex=0;
+    li.innerHTML=`<div class="bar"></div><div class="body">
+      <div class="top"><span class="reg">${esc(a.reg)}</span><span class="type">${esc(a.type||"")}</span></div>
+      <div class="st">${esc(st.t)}</div>
+      ${last?`<dl>
+        <div><dt>Altitude</dt><dd>${Math.round(last.alt_m*3.28084).toLocaleString("fr-FR")} <small>ft</small></dd></div>
+        <div><dt>Cap</dt><dd>${hd==null?"–":String(Math.round(hd)%360).padStart(3,"0")+"°"}</dd></div>
+        <div><dt>${gs!=null?"Vit. sol calc.":"Vitesse (brute)"}</dt><dd>${gs!=null?Math.round(gs/1.852)+' <small>kt</small>':esc(last.speed)}</dd></div>
+      </dl>
+      <div class="facts">${facts}</div>
+      <div class="when">Dernier point ${hhmm(last.fix_time)} – ${ago(last.fix_time)}</div>
+      ${selected===a.reg?detailsHTML(a.reg):`<div class="more">Afficher vols et météo</div>`}`:""}
+    </div>`;
+    const go=()=>{
+      if(selected===a.reg){ selected=null; render(lastPs); return; }
+      selected=a.reg;
+      // Centrer la carte qui suit cet appareil, sinon la première carte
+      if(last){ const p=panes.find(x=>x.follow===a.reg)||panes[0];
+        if(p.follow===a.reg){ p.moved=false; p.btn.hidden=true; }
+        const b=predictionBounds(a.reg);
+        if(b) p.map.fitBounds(b,{padding:[35,35],maxZoom:11,animate:false});
+        else p.map.setView([last.lat,last.lon],Math.max(p.map.getZoom(),11)); }
+      render(lastPs); ensureDetails(a.reg);
+    };
+    li.onclick=e=>{ if(e.target.closest(".det")) return; go(); };
+    li.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};
+    if(shown) list.appendChild(li);
+
+    // Marqueur et trace, sur chaque carte
+    const spot=last?last.lat.toFixed(3)+","+last.lon.toFixed(3):null;
+    const idx=last?(stackCount[spot]=(stackCount[spot]??-1)+1):0;
+    const pts=s.trail.map(p=>[p.lat,p.lon]);
+    for(const p of panes){
+      if(!visibleIn(a,p)){
+        // Appareil hors filtre : retirer marqueur, trace et projection de cette carte
+        if(p.markers[a.reg]){ p.markers[a.reg].remove(); delete p.markers[a.reg]; }
+        if(p.trails[a.reg]){ p.trails[a.reg].remove(); delete p.trails[a.reg]; }
+        if(p.predicts[a.reg]){ p.predicts[a.reg].remove(); delete p.predicts[a.reg]; }
+        continue;
+      }
+      const focus=p.follow||selected;   // appareil mis en avant sur cette carte
+      if(last){
+        const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl" style="top:${-11+idx*23}px">${esc(a.reg)}</span></div>`;
+        const icon=L.divIcon({className:"",html,iconSize:[0,0]});
+        if(p.markers[a.reg]) p.markers[a.reg].setLatLng([last.lat,last.lon]).setIcon(icon);
+        else p.markers[a.reg]=L.marker([last.lat,last.lon],{icon,keyboard:false}).addTo(p.map);
+        p.markers[a.reg].off("click").on("click",go);
+        p.markers[a.reg].setZIndexOffset(p.follow===a.reg?2000:st.k==="lost"?1000:st.k==="live"?500:0);
+      }
+      if(p.trails[a.reg]) p.trails[a.reg].setLatLngs(pts);
+      else p.trails[a.reg]=L.polyline(pts,{weight:3,opacity:.85}).addTo(p.map);
+      p.trails[a.reg].setStyle({color:COLORS[st.k],weight:focus===a.reg?5:3,opacity:focus&&focus!==a.reg?.35:.85});
+      renderPrediction(p,a.reg,last,s.prev,st);
+    }
+  }
+  list.scrollTop=scroll;
+  renderWorksites();
+  document.getElementById("sub").textContent=
+    `${nShown} appareil${nShown>1?"s":""}${typeFilter!=="all"?" "+FAM_LABEL[typeFilter]:""} · ${nLive} en vol`+(nLost?` · ${nLost} signal perdu`:"")+
+    (worksites.length?` · ${worksites.length} chantier${worksites.length>1?"s":""} du jour`:"");
+  const f=document.getElementById("foot");
+  f.textContent=`Affichage mis à jour ${new Date().toLocaleTimeString("fr-FR")}`+
+    (ps?.last_poll?` · relais NSE ${ago(ps.last_poll)}`:"");
+  if(ps?.last_poll && minsAgo(ps.last_poll)>5) f.innerHTML+=` <span class="err">Le relais ne tourne plus.</span>`;
+  paneBars(); filterBar();
+  if(!list.children.length) list.innerHTML=`<li style="padding:16px 20px;color:var(--ink-2)">Aucun appareil ${esc(FAM_LABEL[SCOPE]||"")} dans la flotte suivie.</li>`;
+  panes.forEach(p=>{
+    for(const reg of Object.keys(p.predicts)) if(!fleet.some(a=>a.reg===reg)) { p.predicts[reg].remove(); delete p.predicts[reg]; }
+    centerPane(p,false);
+  });   // les cartes qui suivent un appareil se recentrent
+  firstFit=false;
+}
+/* ---------- Carte automatique à la mise en route ----------
+   Les traceurs NSE sont alimentés par l'appareil : une reprise d'émission après au moins
+   CONFIG.startGapMin de silence est traitée comme une mise en route. Chaque mise en route n'ouvre
+   qu'une carte (mémorisée dans ce navigateur), seulement pour les types affichés par le filtre. */
+const AUTO_KEY="saf_fleet_autoopen_"+SCOPE, SEEN_KEY="saf_fleet_autoseen_"+SCOPE;
+let autoOpen=(()=>{ try{ return localStorage.getItem(AUTO_KEY)!=="0"; }catch(e){ return true; } })();
+let autoSeen=(()=>{ try{ return JSON.parse(localStorage.getItem(SEEN_KEY)||"{}")||{}; }catch(e){ return {}; } })();
+const autoBox=document.getElementById("autoopen");
+autoBox.checked=autoOpen;
+autoBox.onchange=()=>{
+  autoOpen=autoBox.checked;
+  try{ localStorage.setItem(AUTO_KEY,autoOpen?"1":"0"); }catch(e){}
+  // Notifications du navigateur quand l'onglet est en arrière-plan (autorisation demandée une fois)
+  if(autoOpen && "Notification" in window && Notification.permission==="default") Notification.requestPermission().catch(()=>{});
+};
+function sessionStart(reg){
+  const s=state[reg]; if(!s?.last) return null;
+  const pts=s.all||[]; if(!pts.length) return null;
+  for(let i=pts.length-1;i>0;i--){
+    if((new Date(pts[i].fix_time)-new Date(pts[i-1].fix_time))/60000>=CONFIG.startGapMin) return pts[i].fix_time;
+  }
+  return pts[0].fix_time;   // aucune coupure dans la fenêtre : début de la fenêtre (trop ancien pour déclencher)
+}
+function checkStarts(){
+  let dirty=false;
+  for(const a of fleet){
+    const last=state[a.reg]?.last;
+    if(!a.active || !last || minsAgo(last.fix_time)>CONFIG.liveMaxMin) continue;
+    const start=sessionStart(a.reg);
+    if(!start || minsAgo(start)>CONFIG.startRecentMin || autoSeen[a.reg]===start) continue;
+    autoSeen[a.reg]=start; dirty=true;
+    if(autoOpen && passFilter(a)) openAuto(a, start);
+  }
+  if(dirty){ try{ localStorage.setItem(SEEN_KEY,JSON.stringify(autoSeen)); }catch(e){} }
+}
+function openAuto(a,start){
+  let p=panes.find(x=>x.follow===a.reg), how="";
+  if(p){ how="carte déjà ouverte"; }
+  else if(panes.length<4){
+    viewFollow[panes.length]=a.reg;
+    setSplit(panes.length+1);
+    p=panes[panes.length-1]; how="nouvelle carte";
+  } else {
+    // 4 cartes : remplacer d'abord une carte dont l'appareil est éteint, puis une vue « toute la flotte »
+    // (sauf la première), puis une carte ouverte automatiquement dont l'appareil est au sol.
+    // Une carte qui suit un appareil en vol ou en perte de signal n'est jamais remplacée.
+    const rank=x=>{
+      if(!x.follow) return x.i>0?2:4;
+      const k=status(state[x.follow]?.last).k;
+      if(k==="none"||k==="stale") return 1;
+      if(k==="ground") return x.autoAt?3:5;
+      return 99;
+    };
+    const c=panes.map(x=>({x,r:rank(x)})).filter(o=>o.r<99).sort((u,v)=>u.r-v.r||(u.x.autoAt||0)-(v.x.autoAt||0))[0];
+    if(c){ p=c.x; how="carte "+(p.i+1)+" réaffectée"; }
+  }
+  if(p){
+    p.follow=a.reg; viewFollow[p.i]=a.reg; saveView();
+    p.autoAt=Date.now(); p.moved=false; p.btn.hidden=true; p.fitted=false;
+    centerPane(p,true); render(lastPs);
+    p.el.classList.remove("flash"); void p.el.offsetWidth; p.el.classList.add("flash");
+    setTimeout(()=>p.el.classList.remove("flash"),5200);
+  }
+  toast(a, start, p?how:"4 cartes déjà occupées par des appareils en vol");
+}
+function toast(a,start,how){
+  const box=document.getElementById("toasts"), el=document.createElement("div");
+  el.className="toast";
+  el.innerHTML=`<b>${esc(a.reg)}</b> mis en route <span class="muted">(${esc(a.type||"")})</span><div class="muted">Traceur actif depuis ${hm(start)} UTC · ${esc(how)}</div>`;
+  el.onclick=()=>el.remove();
+  box.prepend(el);
+  setTimeout(()=>el.remove(),20000);
+  if(document.visibilityState!=="visible" && "Notification" in window && Notification.permission==="granted"){
+    try{ new Notification(`${a.reg} mis en route`,{body:`${a.type||""} · traceur actif depuis ${hm(start)} UTC`,tag:"saf-start-"+a.reg}); }catch(e){}
+  }
+}
+function fitAll(){
+  // « Toute la flotte » : la première carte revient en vue libre sur l'ensemble
+  const p=panes[0]; if(!p) return;
+  p.follow=null; p.autoAt=0; viewFollow[0]=null; saveView(); p.moved=false; p.btn.hidden=true; p.fitted=false;
+  centerPane(p,true);
+}
+
+/* ---------- Session (partagée avec l'accueil) ---------- */
+let timer=null;
+function gate(msg){ clearInterval(timer); document.getElementById("gate-msg").textContent=msg; document.getElementById("gate").style.display="grid"; }
+async function boot(){
+  const {data}=await sb.auth.getSession();
+  const session=data.session;
+  if(!session){ location.replace(LOGIN); return; }
+  // Rôle lu comme dans index.html ; l'accès réel est décidé par la RLS (admin, editor, reader)
+  let role="reader";
+  try{
+    const r=await sb.from("user_roles").select("role").ilike("user_email",String(session.user.email||"").trim()).limit(1);
+    if(r.data&&r.data[0]&&r.data[0].role) role=String(r.data[0].role).toLowerCase();
+  }catch(e){}
+  if(!["admin","editor","reader"].includes(role)){ gate("Le suivi flotte n'est pas ouvert à ce compte."); return; }
+  subscribeFleetPositions();
+  restartCycle();
+}
+document.getElementById("logout").onclick=async()=>{await sb.auth.signOut(); location.replace("https://saf-international-portail.netlify.app/");};
+document.getElementById("win").onchange=()=>load();
+document.getElementById("split").onchange=e=>setSplit(e.target.value);
+setSplit(loadView().n);
+document.getElementById("fit").onclick=()=>{selected=null; fitAll(); load();};
+sb.auth.onAuthStateChange(ev=>{ if(ev==="SIGNED_OUT") location.replace("https://saf-international-portail.netlify.app/"); });
+/* ---------- Historique des vols ----------
+   Lit fleet_positions par appareil, par pages de 1000 points (plafond PostgREST),
+   puis reconstruit les vols avec analyze(). La base garde 180 jours (tâche fleet-purge-positions). */
+const HIST_MAX_DAYS=180, PAGE=1000;
+const hist={rows:[],map:null,layer:null,busy:false};
+const isoDay=d=>new Date(d).toISOString().slice(0,10);
+const dayLabel=t=>new Date(t).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"UTC"});
+const dmy=t=>new Date(t).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",timeZone:"UTC"});
+const COLS="reg,fix_time,lat,lon,alt_m,heading,speed";
+
+function histPreset(days){
+  document.getElementById("h-to").value=isoDay(Date.now());
+  document.getElementById("h-from").value=isoDay(Date.now()-days*864e5);
+}
+function openHist(){
+  const sel=document.getElementById("h-reg"), cur=sel.value;
+  sel.innerHTML=`<option value="">Toute la flotte</option>`+fleet.map(a=>`<option value="${esc(a.reg)}">${esc(a.reg)}</option>`).join("");
+  sel.value=cur||selected||"";
+  if(!document.getElementById("h-to").value) histPreset(60);
+  document.getElementById("hist").hidden=false;
+  if(!hist.map){
+    hist.map=L.map("h-map",{zoomControl:false}).setView([45.9,6.8],8);
+    L.control.zoom({position:"bottomright"}).addTo(hist.map);
+    const lay=makeLayers(); lay["Topo (OpenTopoMap)"].addTo(hist.map);
+    L.control.layers(lay,makeOverlays(),{position:"topright"}).addTo(hist.map);
+    L.control.scale({imperial:false,position:"bottomleft"}).addTo(hist.map);
+    BASES.forEach(b=>L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null}),keyboard:false}).addTo(hist.map));
+    hist.layer=L.layerGroup().addTo(hist.map);
+  }
+  setTimeout(()=>hist.map.invalidateSize(),60);
+  document.getElementById("h-load").focus();
+}
+function closeHist(){ document.getElementById("hist").hidden=true; document.getElementById("histbtn").focus(); }
+
+async function fetchPositions(reg,fromIso,toIso){
+  // Un point juste avant la période : il donne le lieu de décollage du premier vol
+  const before=await sb.from("fleet_positions").select(COLS).eq("reg",reg).lt("fix_time",fromIso).order("fix_time",{ascending:false}).limit(1);
+  if(before.error) throw before.error;
+  const out=[...(before.data||[])];
+  for(let i=0;;i+=PAGE){
+    const r=await sb.from("fleet_positions").select(COLS).eq("reg",reg).gte("fix_time",fromIso).lt("fix_time",toIso)
+      .order("fix_time",{ascending:true}).range(i,i+PAGE-1);
+    if(r.error) throw r.error;
+    out.push(...r.data);
+    if(r.data.length<PAGE) break;
+  }
+  return out;
+}
+
+async function loadHist(){
+  if(hist.busy) return;
+  const f=document.getElementById("h-from").value, t=document.getElementById("h-to").value;
+  const list=document.getElementById("h-list");
+  if(!f||!t||f>t){ list.innerHTML=`<p class="empty">Indiquez une date de début antérieure à la date de fin.</p>`; return; }
+  const fromIso=new Date(f+"T00:00:00Z").toISOString(), toIso=new Date(new Date(t+"T00:00:00Z").getTime()+864e5).toISOString();
+  if((Date.parse(toIso)-Date.parse(fromIso))/864e5>HIST_MAX_DAYS+1){ list.innerHTML=`<p class="empty">La base ne garde que ${HIST_MAX_DAYS} jours : réduisez la période.</p>`; return; }
+  const regSel=document.getElementById("h-reg").value;
+  const regs=regSel?[regSel]:fleet.map(a=>a.reg);
+  hist.busy=true; document.getElementById("h-load").disabled=true; document.getElementById("h-csv").disabled=true;
+  list.innerHTML=`<p class="empty">Chargement des positions…</p>`; hist.layer.clearLayers();
+  try{
+    const rows=[], info=[];
+    for(const reg of regs){
+      const pts=await fetchPositions(reg,fromIso,toIso);
+      const inPeriod=pts.filter(p=>p.fix_time>=fromIso);
+      const fl=analyze(pts).flights.filter(x=>x.toTo>=fromIso);
+      fl.forEach(x=>rows.push({reg,f:x}));
+      info.push({reg,n:inPeriod.length,first:inPeriod[0]?.fix_time||null,flights:fl});
+    }
+    rows.sort((a,b)=>a.f.toTo<b.f.toTo?1:-1);
+    hist.rows=rows; renderHist(info,fromIso);
+    document.getElementById("h-csv").disabled=!rows.length;
+  }catch(e){
+    list.innerHTML=`<p class="empty">Lecture impossible : ${esc(e.message||e)}</p>`;
+  }finally{ hist.busy=false; document.getElementById("h-load").disabled=false; }
+}
+
+function durTxt(f){
+  if(!f.ldTo) return "vol en cours";
+  if(f.maxMin!=null) return Math.round(f.maxMin-f.minMin)<=2?dur((f.minMin+f.maxMin)/2):`${dur(f.minMin)} à ${dur(f.maxMin)}`;
+  return f.minMin>=5?`≥ ${dur(f.minMin)}`:"inconnue";
+}
+function renderHist(info,fromIso){
+  const list=document.getElementById("h-list");
+  let h=`<div class="hsum">`;
+  for(const i of info){
+    const done=i.flights.filter(f=>f.ldTo);
+    const lo=done.reduce((s,f)=>s+Math.max(0,f.minMin),0), hi=done.reduce((s,f)=>s+(f.maxMin??f.minMin),0);
+    const tt=Math.round(hi-lo)<=Math.max(5,done.length*2)?dur((lo+hi)/2):`${dur(lo)} à ${dur(hi)}`;
+    h+=`<div><b>${esc(i.reg)}</b> : ${i.flights.length} vol${i.flights.length>1?"s":""}${done.length?`, temps de vol estimé ${tt}`:""}</div>`;
+    if(!i.n) h+=`<div class="warn">${esc(i.reg)} : aucune position enregistrée sur la période.</div>`;
+    else if(Date.parse(i.first)-Date.parse(fromIso)>36*3600e3) h+=`<div class="warn">${esc(i.reg)} : pas de données avant le ${dmy(i.first)}.</div>`;
+  }
+  h+=`<div>Heures UTC, encadrées entre deux points du traceur. Cliquez un vol pour afficher sa trace.</div></div>`;
+  if(!hist.rows.length){ list.innerHTML=h+`<p class="empty">Aucun vol sur la période.</p>`; return; }
+  h+=`<table><thead><tr><th>Appareil</th><th>Départ</th><th>Arrivée</th><th>Durée</th><th>Dist.</th></tr></thead><tbody>`;
+  let day="";
+  hist.rows.forEach((r,idx)=>{
+    const f=r.f, d=isoDay(f.toTo);
+    if(d!==day){ day=d; h+=`<tr class="day"><td colspan="5">${esc(dayLabel(f.toTo))}</td></tr>`; }
+    const dep=f.toPlace?placeLabel(f.toPlace):"lieu non enregistré";
+    const arr=f.ldPlace?placeLabel(f.ldPlace):"—";
+    h+=`<tr class="fl" data-i="${idx}" tabindex="0"><td><span class="reg">${esc(r.reg)}</span></td>
+      <td>${esc(dep)}<br><span class="muted">${f.toFrom?hm(f.toFrom)+"–":"avant "}${hm(f.toTo)}</span></td>
+      <td>${esc(arr)}<br><span class="muted">${f.ldTo?hm(f.ldFrom)+"–"+hm(f.ldTo):""}</span></td>
+      <td>${esc(durTxt(f))}</td><td>${Math.round(f.km)} km</td></tr>`;
+  });
+  list.innerHTML=h+`</tbody></table>`;
+  list.querySelectorAll("tr.fl").forEach(tr=>{
+    const go=()=>showHistFlight(+tr.dataset.i);
+    tr.onclick=go; tr.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } };
+  });
+  showHistAll();
+}
+function showHistAll(){
+  hist.layer.clearLayers(); const b=[];
+  hist.rows.forEach(r=>{ const ll=r.f.pts.map(p=>[p.lat,p.lon]); b.push(...ll);
+    L.polyline(ll,{color:COLORS.ground,weight:2,opacity:.6}).addTo(hist.layer); });
+  if(b.length) hist.map.fitBounds(L.latLngBounds(b).pad(.1),{maxZoom:12});
+}
+function showHistFlight(i){
+  const r=hist.rows[i]; if(!r) return;
+  document.querySelectorAll("#h-list tr.fl").forEach(tr=>tr.classList.toggle("on",+tr.dataset.i===i));
+  hist.layer.clearLayers();
+  const ll=r.f.pts.map(p=>[p.lat,p.lon]);
+  L.polyline(ll,{color:COLORS.live,weight:4,opacity:.9}).addTo(hist.layer);
+  L.circleMarker(ll[0],{radius:6,color:"#fff",weight:2,fillColor:COLORS.live,fillOpacity:1}).bindTooltip("Départ").addTo(hist.layer);
+  if(r.f.ldTo) L.circleMarker(ll[ll.length-1],{radius:6,color:"#fff",weight:2,fillColor:COLORS.lost,fillOpacity:1}).bindTooltip("Arrivée").addTo(hist.layer);
+  hist.map.fitBounds(L.latLngBounds(ll).pad(.25),{maxZoom:13});
+}
+function exportHistCsv(){
+  const q=v=>{ v=v==null?"":String(v); return /[;"\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v; };
+  const t=x=>x?new Date(x).toISOString().replace("T"," ").slice(0,16):"";
+  const n=x=>x==null?"":String(Math.round(x));
+  const head=["date_utc","appareil","depart_lieu","decollage_apres","decollage_avant","arrivee_lieu","atterrissage_apres","atterrissage_avant","duree_min_min","duree_max_min","distance_km","depart_lat","depart_lon","arrivee_lat","arrivee_lon"];
+  const lines=[head.join(";")];
+  hist.rows.slice().reverse().forEach(({reg,f})=>{
+    lines.push([isoDay(f.toTo),reg,f.toPlace?placeLabel(f.toPlace):"",t(f.toFrom),t(f.toTo),f.ldPlace?placeLabel(f.ldPlace):"",t(f.ldFrom),t(f.ldTo),
+      f.ldTo?n(f.minMin):"",f.ldTo?n(f.maxMin):"",f.km.toFixed(1).replace(".",","),
+      f.pts[0].lat.toFixed(5),f.pts[0].lon.toFixed(5),f.ldPlace?f.ldPlace.lat.toFixed(5):"",f.ldPlace?f.ldPlace.lon.toFixed(5):""].map(q).join(";"));
+  });
+  const blob=new Blob(["\ufeff"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=`SAF_vols_${document.getElementById("h-reg").value||"flotte"}_${document.getElementById("h-from").value}_${document.getElementById("h-to").value}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+document.getElementById("histbtn").onclick=openHist;
+document.getElementById("h-close").onclick=closeHist;
+document.getElementById("h-load").onclick=loadHist;
+document.getElementById("h-csv").onclick=exportHistCsv;
+document.querySelectorAll("#hist .presets button").forEach(b=>b.onclick=()=>{ histPreset(+b.dataset.d); loadHist(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!document.getElementById("hist").hidden) closeHist(); });
+
+boot();
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SAF – Suivi flotte</title>
+<title>SAF – Suivi flotte AS 332</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -200,7 +200,7 @@ footer .err{color:var(--lost)}
   <aside id="side">
     <header>
       <a class="home" href="https://saf-international-portail.netlify.app/">← Portail SAF International</a>
-      <h1>Suivi flotte</h1>
+      <h1>Suivi flotte AS 332</h1>
       <p id="sub">Chargement…</p>
     </header>
     <div id="controls">
@@ -224,11 +224,6 @@ footer .err{color:var(--lost)}
       <button id="logout" type="button">Déconnexion</button>
     </div>
     <div id="filters">
-      <div class="seg" role="group" aria-label="Types d'appareils affichés">
-        <button type="button" data-f="all" aria-pressed="true">Tous<span class="n"></span></button>
-        <button type="button" data-f="332" aria-pressed="false">AS 332<span class="n"></span></button>
-        <button type="button" data-f="350" aria-pressed="false">AS 350<span class="n"></span></button>
-      </div>
       <label class="chk" title="Ouvre une carte qui suit l'hélicoptère dès que son traceur se rallume après un arrêt"><input type="checkbox" id="autoopen"> Carte auto à la mise en route</label>
     </div>
     <ul id="list"></ul>
@@ -267,6 +262,12 @@ footer .err{color:var(--lost)}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
+/* ---------- Périmètre de la page ----------
+   Même code pour les deux pages, seule cette ligne change :
+   SAF_Suivi_Flotte.html -> "332" (AS 332 Super Puma) · SAF_Suivi_B3.html -> "350" (AS 350 B3) */
+const SCOPE = "332";
+const SELF = (location.pathname.split("/").pop() || "SAF_Suivi_Flotte.html");
+const LOGIN = "index.html?next=" + encodeURIComponent(SELF);
 const CONFIG = {
   url: "https://qaqehmxoehcvzcojcqkm.supabase.co",
   key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q",
@@ -314,7 +315,7 @@ function makeOverlays(){
   if(CONFIG.openAipKey) o["Espaces aériens (openAIP)"]=L.tileLayer("https://{s}.api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.png?apiKey="+encodeURIComponent(CONFIG.openAipKey),{subdomains:"abc",maxNativeZoom:14,maxZoom:19,zIndex:10,attribution:"© openAIP (données communautaires, non officielles)"});
   return o;
 }
-const VIEW_KEY="saf_fleet_view";
+const VIEW_KEY="saf_fleet_view"+(SCOPE==="332"?"":"_"+SCOPE);
 function loadView(){ try{ const v=JSON.parse(localStorage.getItem(VIEW_KEY)||"null"); if(v&&v.n>=1&&v.n<=4&&Array.isArray(v.follow)) return v; }catch(e){} return {n:1,follow:[null,null,null,null]}; }
 function saveView(){ try{ localStorage.setItem(VIEW_KEY,JSON.stringify({n:panes.length,follow:viewFollow})); }catch(e){} }
 let viewFollow=loadView().follow.concat([null,null,null,null]).slice(0,4);
@@ -411,7 +412,7 @@ let fleet = [], state = {}, selected = null, firstFit = true;
 const FILTER_KEY="saf_fleet_filter";
 const FAM_LABEL={all:"Tous",332:"AS 332",350:"AS 350"};
 const famOf=a=>/332|H215|super\s*puma/i.test(a?.type||"")?"332":/350|H125|[eé]cureuil/i.test(a?.type||"")?"350":"autre";
-let typeFilter=(()=>{ try{ const v=localStorage.getItem(FILTER_KEY); return v in FAM_LABEL?v:"all"; }catch(e){ return "all"; } })();
+let typeFilter="all";   // la flotte est déjà restreinte au périmètre de la page (SCOPE)
 const passFilter=a=>typeFilter==="all"||famOf(a)===typeFilter;
 // Un appareil filtré reste visible sur une carte qui le suit explicitement
 const visibleIn=(a,p)=>passFilter(a)||p.follow===a.reg;
@@ -814,7 +815,7 @@ async function load(retried){
       sb.from("fleet_poll_state").select("last_poll,last_result").eq("id",1).maybeSingle(),
     ]);
     if(ac.error) throw ac.error;
-    fleet=ac.data;
+    fleet=ac.data.filter(a=>famOf(a)===SCOPE);
     // Une lecture par appareil : avec 15 appareils, une requête unique plafonnée à 1000 points
     // tronquerait les traces dès qu'une partie de la flotte vole.
     const PCOLS="reg,fix_time,lat,lon,alt_m,heading,speed";
@@ -844,7 +845,7 @@ async function load(retried){
       loading=false;
       const r=await sb.auth.refreshSession().catch(()=>({error:true}));
       if(r && !r.error && r.data && r.data.session) return load(true);
-      location.replace("index.html?next=SAF_Suivi_Flotte.html"); return;
+      location.replace(LOGIN); return;
     }
     document.getElementById("foot").innerHTML=`<span class="err">Lecture impossible : ${esc(e.message||e)}. Nouvel essai dans ${CONFIG.refreshMs/1000} s.</span>`;
   }finally{
@@ -1088,7 +1089,7 @@ function render(ps){
     (ps?.last_poll?` · relais NSE ${ago(ps.last_poll)}`:"");
   if(ps?.last_poll && minsAgo(ps.last_poll)>5) f.innerHTML+=` <span class="err">Le relais ne tourne plus.</span>`;
   paneBars(); filterBar();
-  if(!list.children.length) list.innerHTML=`<li style="padding:16px 20px;color:var(--ink-2)">Aucun appareil ${esc(FAM_LABEL[typeFilter]||"")} dans la flotte suivie.</li>`;
+  if(!list.children.length) list.innerHTML=`<li style="padding:16px 20px;color:var(--ink-2)">Aucun appareil ${esc(FAM_LABEL[SCOPE]||"")} dans la flotte suivie.</li>`;
   panes.forEach(p=>{
     for(const reg of Object.keys(p.predicts)) if(!fleet.some(a=>a.reg===reg)) { p.predicts[reg].remove(); delete p.predicts[reg]; }
     centerPane(p,false);
@@ -1099,7 +1100,7 @@ function render(ps){
    Les traceurs NSE sont alimentés par l'appareil : une reprise d'émission après au moins
    CONFIG.startGapMin de silence est traitée comme une mise en route. Chaque mise en route n'ouvre
    qu'une carte (mémorisée dans ce navigateur), seulement pour les types affichés par le filtre. */
-const AUTO_KEY="saf_fleet_autoopen", SEEN_KEY="saf_fleet_autoseen";
+const AUTO_KEY="saf_fleet_autoopen_"+SCOPE, SEEN_KEY="saf_fleet_autoseen_"+SCOPE;
 let autoOpen=(()=>{ try{ return localStorage.getItem(AUTO_KEY)!=="0"; }catch(e){ return true; } })();
 let autoSeen=(()=>{ try{ return JSON.parse(localStorage.getItem(SEEN_KEY)||"{}")||{}; }catch(e){ return {}; } })();
 const autoBox=document.getElementById("autoopen");
@@ -1184,7 +1185,7 @@ function gate(msg){ clearInterval(timer); document.getElementById("gate-msg").te
 async function boot(){
   const {data}=await sb.auth.getSession();
   const session=data.session;
-  if(!session){ location.replace("index.html?next=SAF_Suivi_Flotte.html"); return; }
+  if(!session){ location.replace(LOGIN); return; }
   // Rôle lu comme dans index.html ; l'accès réel est décidé par la RLS (admin, editor, reader)
   let role="reader";
   try{
