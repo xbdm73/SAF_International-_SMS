@@ -3,7 +3,7 @@
   "short_name": "SAF CMS",
   "description": "Surveillance de la conformité et audits terrain SAF International",
   "lang": "fr",
-  "start_url": "./SAF_International_Compliance_Monitoring_System.html",
+  "start_url": "./saf_international_compliance_monitoring_system",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",

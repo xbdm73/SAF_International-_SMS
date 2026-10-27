@@ -4,9 +4,11 @@
    - Bibliothèques CDN (Supabase, pdf.js, polices) : cache d'abord, mise à jour
      en arrière-plan.
    - Jamais de cache pour l'API Supabase (données, authentification, fichiers). */
-const VERSION = 'saf-cms-2026-10-27a';
+const VERSION = 'saf-cms-2026-10-27b';
+// Page du CMS telle que l'ouvre la tuile du portail (URL « jolie » Netlify, sans .html)
+const PAGE = './saf_international_compliance_monitoring_system';
 const CORE = [
-  './SAF_International_Compliance_Monitoring_System.html',
+  PAGE,
   './manifest.webmanifest',
   './cms-icon-180.png', './cms-icon-192.png', './cms-icon-512.png'
 ];
@@ -20,7 +22,9 @@ const CDN_HOSTS = ['cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'fonts.googleapis
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
     const c = await caches.open(VERSION);
-    await Promise.all(CORE.map(u => c.add(new Request(u, { cache: 'reload' })).catch(() => {})));
+    await Promise.all(CORE.map(async u => {
+      try { const r = await fetch(new Request(u, { cache: 'reload' })); if (r.ok) await c.put(u, await storable(r)); } catch (_) {}
+    }));
     await Promise.all(CDN.map(async u => {
       try { const r = await fetch(u, { mode: 'no-cors' }); await c.put(u, r); } catch (_) {}
     }));
@@ -36,16 +40,22 @@ self.addEventListener('activate', (e) => {
   })());
 });
 
+async function storable(r) {
+  if (!r || !r.redirected) return r;
+  const b = await r.blob();
+  return new Response(b, { status: r.status, statusText: r.statusText, headers: r.headers });
+}
+
 function timeout(ms) { return new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms)); }
 
 async function networkFirst(req) {
   const c = await caches.open(VERSION);
-  const net = fetch(req).then(r => { if (r && r.ok) c.put(req, r.clone()); return r; });
+  const net = fetch(req).then(async r => { if (r && r.ok) { const s = await storable(r.clone()); await c.put(req, s); return r.redirected ? s.clone() : r; } return r; });
   try { return await Promise.race([net, timeout(5000)]); }
   catch (_) {
     const hit = await c.match(req, { ignoreSearch: true })
-      || await c.match(new URL(req.url).pathname.replace(/\/?$/, '') + '.html', { ignoreSearch: true })
-      || await c.match('./SAF_International_Compliance_Monitoring_System.html');
+      || await c.match(new URL(req.url).pathname.replace(/\.html?$/i, ''), { ignoreSearch: true })
+      || (/compliance_monitoring_system/i.test(req.url) ? await c.match(PAGE) : null);
     if (hit) { net.catch(() => {}); return hit; }
     return net;
   }
