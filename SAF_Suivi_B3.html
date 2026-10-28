@@ -242,6 +242,7 @@ footer .err{color:var(--lost)}
       <a class="home" href="https://saf-international-portail.netlify.app/">← Portail SAF International</a>
       <h1>Suivi AS 350 B3</h1>
       <p id="sub">Chargement…</p>
+      <p id="who"></p>
     </header>
     <div id="controls">
       <label for="win">Trace</label>
@@ -294,6 +295,7 @@ footer .err{color:var(--lost)}
 <div id="night" hidden role="dialog" aria-modal="true" aria-labelledby="n-title">
   <div class="nbar">
     <h2 id="n-title">Bases et contrôle de nuit</h2>
+    <span id="n-who" class="muted" style="font-size:13px;color:var(--ink-2)"></span>
     <p>Chaque soir, 15 min après le début de la nuit aéronautique (coucher du soleil + 30 min à la base d’affectation), le système vérifie que chaque AS 350 B3 est sur sa base, une base de repli ou le lieu de nuit autorisé. Sinon, une alerte part vers les destinataires des alertes du suivi flotte.</p>
     <button type="button" id="n-close">Fermer</button>
   </div>
@@ -1361,6 +1363,7 @@ const fmtC=x=>x==null?"":(+x).toFixed(6);
 function openNight(){
   if(!night.loaded){ loadNight().then(()=>{ if(night.loaded) openNight(); }); return; }
   renderNight(); document.getElementById("night").hidden=false;
+  document.getElementById("n-who").textContent=`${userEmail} · ${canEdit()?"modification autorisée":"lecture seule"}`;
   document.getElementById("n-close").focus();
 }
 function closeNight(){ document.getElementById("night").hidden=true; document.getElementById("nightbtn").focus(); }
@@ -1557,15 +1560,23 @@ async function boot(){
   if(!["admin","editor","reader"].includes(role)){ gate("Le suivi flotte n'est pas ouvert à ce compte."); return; }
   userRole=role; userEmail=String(session.user.email||"");
   try{ const r=await sb.rpc("fleet_is_editor"); fleetEditor=r.data===true; }catch(e){ fleetEditor=false; }
+  document.getElementById("who").textContent=`Connecté : ${userEmail} · ${fleetEditor?"bases et nuit modifiables":"lecture seule"}`;
   subscribeFleetPositions();
   restartCycle();
 }
-document.getElementById("logout").onclick=async()=>{await sb.auth.signOut(); location.replace("https://saf-international-portail.netlify.app/");};
+// Déconnexion robuste : session locale effacée même si le serveur ne répond pas, puis écran de connexion
+let loggingOut=false;
+document.getElementById("logout").onclick=async()=>{
+  loggingOut=true;
+  try{ await Promise.race([sb.auth.signOut({scope:"local"}), new Promise(r=>setTimeout(r,3000))]); }catch(e){}
+  try{ for(const st of [localStorage,sessionStorage]) Object.keys(st).filter(k=>/^sb-|supabase/i.test(k)).forEach(k=>st.removeItem(k)); }catch(e){}
+  location.replace(LOGIN);
+};
 document.getElementById("win").onchange=()=>load();
 document.getElementById("split").onchange=e=>setSplit(e.target.value);
 setSplit(loadView().n);
 document.getElementById("fit").onclick=()=>{selected=null; fitAll(); load();};
-sb.auth.onAuthStateChange(ev=>{ if(ev==="SIGNED_OUT") location.replace("https://saf-international-portail.netlify.app/"); });
+sb.auth.onAuthStateChange(ev=>{ if(ev==="SIGNED_OUT" && !loggingOut) location.replace(LOGIN); });
 /* ---------- Historique des vols ----------
    Lit fleet_positions par appareil, par pages de 1000 points (plafond PostgREST),
    puis reconstruit les vols avec analyze(). La base garde 180 jours (tâche fleet-purge-positions). */
