@@ -192,6 +192,46 @@ footer .err{color:var(--lost)}
   #hist .hmap{grid-row:1} #hist .hlist{grid-row:2;border-right:0;border-top:1px solid var(--line)}
   #hist .hbar{padding:10px 14px}
 }
+
+/* Bases et contrôle de nuit */
+.ac .facts .nf{color:var(--ink-2)} .ac .facts .nf b{color:var(--ink)}
+.ac .facts .nf.ok{color:var(--live)} .ac .facts .nf.warn{color:var(--signal)}
+.ac .facts .nf.bad{color:#fff;background:var(--lost);border-radius:3px;padding:2px 6px;font-weight:600}
+.ac .facts .nf.off{color:var(--stale)}
+#night{position:fixed;inset:0;z-index:1500;background:var(--paper);display:grid;grid-template-rows:auto 1fr;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#night[hidden]{display:none}
+#night .nbar{display:flex;gap:10px 16px;align-items:center;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+#night h2{font-family:var(--cond);font-weight:700;font-size:24px;margin:0;color:var(--signal);line-height:1}
+#night .nbar p{margin:0;color:var(--ink-2);font-size:13px;flex:1 1 320px;max-width:76ch}
+#night .nbody{overflow:auto;padding:4px 20px 28px}
+#night h3{font-family:var(--cond);font-weight:600;font-size:19px;margin:22px 0 4px;color:var(--ink)}
+#night .hint{color:var(--ink-2);font-size:13px;margin:0 0 10px;max-width:80ch}
+#night .ro{color:var(--signal);font-size:13px;margin:12px 0 0}
+#night .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+#night table{border-collapse:collapse;width:100%;min-width:760px;font-size:13.5px}
+#night th{text-align:left;font-weight:600;font-size:12px;color:var(--ink-2);padding:7px 10px;border-bottom:1px solid var(--line);background:var(--panel);white-space:nowrap}
+#night td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+#night tr:last-child>td{border-bottom:0}
+#night td .reg{font-family:var(--cond);font-weight:700;font-size:18px;line-height:1.1}
+#night td .muted{color:var(--ink-2);font-size:12px}
+#night select,#night input[type=text],#night input[type=date],#night input[type=number]{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:4px 6px;color-scheme:dark}
+#night input[type=number]{width:80px} #night input.coord{width:150px}
+#night .chips{display:flex;flex-wrap:wrap;gap:4px 10px}
+#night .chips label{display:inline-flex;gap:4px;align-items:center;white-space:nowrap;font-size:13px}
+#night input[type=checkbox]{accent-color:var(--signal);width:15px;height:15px;margin:0}
+#night button{background:none;border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer;white-space:nowrap}
+#night button.go{background:var(--signal);color:#111;border-color:var(--signal);font-weight:600}
+#night button:disabled,#night input:disabled,#night select:disabled{opacity:.45;cursor:default}
+#night .acts{display:flex;gap:6px;flex-wrap:wrap}
+#night .st-ok{color:var(--live)} #night .st-bad{color:var(--lost);font-weight:600} #night .st-warn{color:var(--signal)}
+#night tr.exrow>td{background:rgba(255,255,255,.025);padding:12px 14px 14px}
+#night .exform{display:flex;gap:10px 14px;flex-wrap:wrap;align-items:end}
+#night .exform .fld{display:grid;gap:3px;font-size:12px;color:var(--ink-2)}
+#night .exlist{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:4px;font-size:13px}
+#night .exlist li{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#night .msg{font-size:12.5px;margin-top:6px;min-height:1em} #night .msg.err{color:var(--lost)} #night .msg.ok{color:var(--live)}
+@media (max-width:760px){ #night .nbar,#night .nbody{padding-left:14px;padding-right:14px} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -220,6 +260,7 @@ footer .err{color:var(--lost)}
       </select>
       <button id="fit" type="button">Toute la flotte</button>
       <button id="histbtn" type="button">Historique des vols</button>
+      <button id="nightbtn" type="button">Bases et nuit</button>
        <button id="terrainbtn" type="button" aria-expanded="false">Profil relief / AGL</button>
       <button id="logout" type="button">Déconnexion</button>
     </div>
@@ -249,6 +290,14 @@ footer .err{color:var(--lost)}
     <div class="hlist" id="h-list"><p class="empty">Choisissez un appareil et une période, puis « Afficher ».</p></div>
     <div class="hmap"><div class="map" id="h-map"></div></div>
   </div>
+</div>
+<div id="night" hidden role="dialog" aria-modal="true" aria-labelledby="n-title">
+  <div class="nbar">
+    <h2 id="n-title">Bases et contrôle de nuit</h2>
+    <p>Chaque soir, 15 min après le début de la nuit aéronautique (coucher du soleil + 30 min à la base d’affectation), le système vérifie que chaque AS 350 B3 est sur sa base, une base de repli ou le lieu de nuit autorisé. Sinon, une alerte part vers les destinataires des alertes du suivi flotte.</p>
+    <button type="button" id="n-close">Fermer</button>
+  </div>
+  <div class="nbody" id="n-body"></div>
 </div>
 <section id="terrain-panel" hidden aria-label="Profil du relief et hauteur sol">
   <div class="terrain-head"><strong id="terrain-name">Profil relief / AGL</strong><span id="terrain-status">—</span><button id="terrain-close" type="button" aria-label="Fermer le profil">Fermer</button></div>
@@ -290,9 +339,9 @@ const CONFIG = {
 };
 // Chantiers du jour : table fleet_worksites du projet SMS, copiée depuis l'agenda Operations
 const WORKSITES = { table:"fleet_worksites", nearKm:2, tz:"Europe/Paris" };
-const BASES = [
-  {name:"LFKA Albertville", lat:45.6276, lon:6.3297},
-  {name:"LSGS Sion", lat:46.2196, lon:7.3268},
+// Bases SAF : valeurs par défaut, remplacées par la table fleet_bases dès la première lecture
+let BASES = [
+  {name:"LFKA Albertville", lat:45.6276, lon:6.3297, radius_m:300},
 ];
 const COLORS = {live:"#3CC882", ground:"#5B9BE0", stale:"#6C7784", lost:"#E5484D", none:"#6C7784"};
 
@@ -334,8 +383,8 @@ function createPane(i){
   const ov=makeOverlays(); ov["Chantiers du jour"]=sites;
   L.control.layers(lay,ov,{position:"topright"}).addTo(m);
   L.control.scale({imperial:false,position:"bottomleft"}).addTo(m);
-  BASES.forEach(b => L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null}),keyboard:false}).addTo(m));
-  const pane={i,el,map:m,markers:{},trails:{},predicts:{},sites,follow:viewFollow[i]||null,moved:false,fitted:false,
+  const baseLayer=L.layerGroup().addTo(m); drawBases(baseLayer);
+  const pane={i,el,map:m,markers:{},trails:{},predicts:{},sites,baseLayer,follow:viewFollow[i]||null,moved:false,fitted:false,
     sel:el.querySelector("select"),pst:el.querySelector(".pst"),btn:el.querySelector("button")};
   // Déplacement à la main : on arrête de suivre jusqu'au clic sur « Recentrer »
   m.on("dragstart",()=>{ if(pane.follow){ pane.moved=true; pane.btn.hidden=false; } });
@@ -557,6 +606,8 @@ const AERODROMES = [
   {icao:"LFLJ",name:"Courchevel",lat:45.3967,lon:6.6347},
   {icao:"LFKX",name:"Méribel",lat:45.4070,lon:6.5806},
   {icao:"LFHU",name:"L'Alpe d'Huez",lat:45.0883,lon:6.0847},
+  {icao:"LFMD",name:"Cannes-Mandelieu",lat:43.54639,lon:6.95417,metar:true},
+  {icao:"LFNC",name:"Saint-Crépin",lat:44.7017,lon:6.6003},
   {icao:"LSGB",name:"Bex",lat:46.2583,lon:6.9864},
   {icao:"LSGT",name:"Gruyères",lat:46.5942,lon:7.0944},
   {icao:"LFLY",name:"Lyon Bron",lat:45.7272,lon:4.9444,metar:true},
@@ -566,6 +617,9 @@ const AERODROMES = [
   {icao:"LIMF",name:"Turin Caselle",lat:45.2008,lon:7.6497,metar:true},
 ];
 const BASE_RADIUS_KM = 2;
+// Libellé d'un aérodrome ou d'une base sans indicateur OACI (Ger)
+const adName = ad => ad.icao ? `${ad.icao} ${ad.name}` : ad.name;
+const adShort = ad => ad.icao || ad.name;
 function bearingDeg(a,b){
   const r=x=>x*Math.PI/180, y=Math.sin(r(b.lon-a.lon))*Math.cos(r(b.lat));
   const x=Math.cos(r(a.lat))*Math.sin(r(b.lat))-Math.sin(r(a.lat))*Math.cos(r(b.lat))*Math.cos(r(b.lon-a.lon));
@@ -577,8 +631,8 @@ function nearestAds(p,filter=()=>true,n=1){
 }
 function placeLabel(p){
   const {ad,km}=nearestAds(p)[0];
-  if(km<BASE_RADIUS_KM) return `${ad.icao} ${ad.name}`;
-  return `${km<10?km.toFixed(1):Math.round(km)} km ${CARD[Math.round(bearingDeg(ad,p)/45)%8]} de ${ad.icao} ${ad.name}`;
+  if(km<BASE_RADIUS_KM) return adName(ad);
+  return `${km<10?km.toFixed(1):Math.round(km)} km ${CARD[Math.round(bearingDeg(ad,p)/45)%8]} de ${adName(ad)}`;
 }
 const atBase = p => nearestAds(p,ad=>ad.base)[0].km < BASE_RADIUS_KM;
 const isAir = p => (p.speed??0) > CONFIG.movingSpeed;
@@ -655,7 +709,7 @@ function detailsHTML(reg){
   const since24=Date.now()-24*3600e3;
   const fl=an.flights.filter(f=>new Date(f.ldTo||f.toTo)>=since24).reverse();
   let h=`<div class="det">`;
-  h+=`<h3>Position</h3><p>${esc(placeLabel(last))}<br><span class="muted">Aérodrome le plus proche : ${esc(near.ad.icao)} ${esc(near.ad.name)}, ${near.km.toFixed(1)} km</span></p>`;
+  h+=`<h3>Position</h3><p>${esc(placeLabel(last))}<br><span class="muted">Aérodrome le plus proche : ${esc(adName(near.ad))}, ${near.km.toFixed(1)} km</span></p>`;
   h+=`<h3>Vols des dernières 24 h</h3>`;
   if(!fl.length) h+=`<p class="muted">Aucun vol enregistré sur la période.</p>`;
   else{
@@ -835,6 +889,7 @@ async function load(retried){
     });
     lastPs=ps.data; lastOk=Date.now();
     try{ await loadWorksites(); }catch(e){ console.warn("Chantiers du jour :",e); }
+    try{ await loadNight(); }catch(e){ console.warn("Bases et contrôle de nuit :",e); }
     render(lastPs);
     checkStarts();
     // Même cycle de données NSE pour les projections sur la carte et le profil AGL.
@@ -1018,12 +1073,13 @@ function render(ps){
     let facts="";
     if(last){
       if(an.lastLanding) facts+=`<div>Dernière pose : <b>${esc(placeLabel(an.lastLanding.place))}</b>, vers ${hm(an.lastLanding.to)} UTC</div>`;
-      if(atBase(last)) facts+=`<div>En base : <b>${esc(nearestAds(last,ad=>ad.base)[0].ad.icao)}</b></div>`;
-      else if(an.outside?.since) facts+=`<div>Hors base depuis au moins <b>${dur(minsAgo(an.outside.since))}</b> (départ de ${esc(nearestAds(an.outside.leftFrom,ad=>ad.base)[0].ad.icao)})</div>`;
+      if(atBase(last)) facts+=`<div>En base : <b>${esc(adShort(nearestAds(last,ad=>ad.base)[0].ad))}</b></div>`;
+      else if(an.outside?.since) facts+=`<div>Hors base depuis au moins <b>${dur(minsAgo(an.outside.since))}</b> (départ de ${esc(adShort(nearestAds(an.outside.leftFrom,ad=>ad.base)[0].ad))})</div>`;
       else facts+=`<div>Hors base – départ non enregistré</div>`;
       for(const w of sitesFor(a.reg)) facts+=`<div class="ws">Chantier du jour : <b>${esc(w.name||"—")}</b>${w.start_time?` · ${esc(tShort(w.start_time))}`:""} · ${Math.round(siteDist(w,last)*10)/10} km</div>`;
       if(st.k==="live"||st.k==="ground"){ const st0=sessionStart(a.reg);
         if(st0 && minsAgo(st0)<=60) facts+=`<div class="ws">Mis en route vers <b>${hm(st0)} UTC</b></div>`; }
+      facts+=nightFacts(a,last);
       const n24=an.flights.filter(f=>new Date(f.ldTo||f.toTo)>=Date.now()-24*3600e3).length;
       if(n24) facts+=`<div>${n24} vol${n24>1?"s":""} sur 24 h</div>`;
     }
@@ -1039,7 +1095,7 @@ function render(ps){
       </dl>
       <div class="facts">${facts}</div>
       <div class="when">Dernier point ${hhmm(last.fix_time)} – ${ago(last.fix_time)}</div>
-      ${selected===a.reg?detailsHTML(a.reg):`<div class="more">Afficher vols et météo</div>`}`:""}
+      ${selected===a.reg?detailsHTML(a.reg):`<div class="more">Afficher vols et météo</div>`}`:`<div class="facts">${nightFacts(a,null)}</div>`}
     </div>`;
     const go=()=>{
       if(selected===a.reg){ selected=null; render(lastPs); return; }
@@ -1188,6 +1244,303 @@ function fitAll(){
   centerPane(p,true);
 }
 
+
+/* ---------- Bases d'affectation et contrôle de nuit ----------
+   Le contrôle lui-même tourne côté Supabase (fleet_night_scan, toutes les 5 min) : la page ne fait
+   qu'afficher l'état et permettre aux rôles admin et editor de régler bases, affectations et nuits hors base. */
+let userRole="reader", userEmail="", fleetEditor=false;
+// Droit d'écriture décidé par la base (fleet_is_editor) : admin, editor, ou éditeur du suivi B3 (table fleet_editors)
+const canEdit=()=>fleetEditor;
+const isAdmin=()=>userRole==="admin";
+const night={loaded:false,off:false,bases:[],asg:{},checks:[],ex:[],editors:[],sig:""};
+const NIGHT_MARGIN_MIN=15;
+const baseBy=code=>night.bases.find(b=>b.code===code);
+const dayShift=(day,n)=>new Date(Date.parse(day+"T12:00:00Z")+n*864e5).toISOString().slice(0,10);
+const dmyDay=d=>d.split("-").reverse().join("/");
+
+// Coucher du soleil (même calcul que fleet_sunset_utc en base, précision ~1 min) ; nuit aéro = +30 min
+function sunsetUtc(lat,lon,day){
+  const r=Math.PI/180, n=Math.round((Date.parse(day+"T00:00:00Z")-Date.parse("2000-01-01T00:00:00Z"))/864e5);
+  const j=n-lon/360, m=((357.5291+0.98560028*j)%360+360)%360;
+  const c=1.9148*Math.sin(m*r)+0.02*Math.sin(2*m*r)+0.0003*Math.sin(3*m*r);
+  const lam=((m+c+180+102.9372)%360+360)%360;
+  const jt=j+0.0053*Math.sin(m*r)-0.0069*Math.sin(2*lam*r);
+  const sd=Math.sin(lam*r)*Math.sin(23.4397*r), cd=Math.cos(Math.asin(sd));
+  const cw=Math.max(-1,Math.min(1,(Math.sin(-0.833*r)-Math.sin(lat*r)*sd)/(Math.cos(lat*r)*cd)));
+  return new Date(Date.parse("2000-01-01T12:00:00Z")+(jt+Math.acos(cw)/r/360)*864e5);
+}
+const nightStart=(b,day)=>new Date(sunsetUtc(b.lat,b.lon,day).getTime()+30*60e3);
+
+function drawBases(layer){
+  if(!layer) return;
+  layer.clearLayers();
+  for(const b of BASES){
+    if(b.radius_m) L.circle([b.lat,b.lon],{radius:b.radius_m,color:"#C9A227",weight:1,opacity:.7,dashArray:"4 4",fillColor:"#C9A227",fillOpacity:.06,interactive:false}).addTo(layer);
+    L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+esc(b.name),iconSize:null}),keyboard:false}).addTo(layer);
+  }
+}
+function applyBases(){
+  const act=night.bases.filter(b=>b.active);
+  const sig=JSON.stringify(act.map(b=>[b.code,b.lat,b.lon,b.radius_m]));
+  if(sig===night.sig) return; night.sig=sig;
+  BASES=act.map(b=>({name:b.name,lat:b.lat,lon:b.lon,radius_m:b.radius_m}));
+  // Référentiel des lieux : les bases SAF deviennent « base » pour l'analyse des vols
+  AERODROMES.forEach(ad=>{ if(ad.saf) ad.base=false; });
+  for(const b of act){
+    let ad=AERODROMES.find(x=>x.icao===b.code);
+    if(!ad){ ad={icao:/^[A-Z]{4}$/.test(b.code)?b.code:"",name:b.name}; AERODROMES.push(ad); if(!ad.icao) ad.code=b.code; }
+    Object.assign(ad,{lat:b.lat,lon:b.lon,base:true,saf:true});
+  }
+  panes.forEach(p=>drawBases(p.baseLayer));
+  drawBases(hist.baseLayer);
+}
+function isMissingTable(err){ return /PGRST205|PGRST202|42P01|42703|does not exist|Could not find/i.test(String(err?.code)+" "+err?.message); }
+async function loadNight(){
+  if(night.off) return;
+  const day=todayLocal(), from=dayShift(day,-1);
+  const [b,a,c,x,ed]=await Promise.all([
+    sb.from("fleet_bases").select("*").order("name"),
+    sb.from("fleet_aircraft").select("reg,home_base,alt_bases,in_maintenance"),
+    sb.from("fleet_night_checks").select("*").gte("night_date",from),
+    sb.from("fleet_night_exceptions").select("*").gte("night_date",from).order("night_date"),
+    sb.from("fleet_editors").select("*").order("email"),
+  ]);
+  const bad=[b,a,c,x].find(r=>r.error);
+  if(bad){ if(isMissingTable(bad.error)){ night.off=true; document.getElementById("nightbtn").hidden=true; return; } throw bad.error; }
+  night.bases=b.data||[]; night.asg=Object.fromEntries((a.data||[]).map(r=>[r.reg,r]));
+  night.checks=c.data||[]; night.ex=x.data||[]; night.editors=ed.data||[]; night.loaded=true;
+  applyBases();
+}
+const exLabel=e=>e.label||baseBy(e.base_code)?.name||"lieu autorisé";
+function exPoint(e){ const b=baseBy(e.base_code); return {lat:e.lat??b?.lat, lon:e.lon??b?.lon, r:e.radius_m||300}; }
+// Lieu accepté pour la nuit où se trouve l'appareil (null = hors des lieux autorisés)
+function acceptedPlace(reg,last,day){
+  const g=night.asg[reg]; if(!g) return null;
+  if(!last) return "sa base (aucune position reçue)";
+  const cand=[g.home_base,...(g.alt_bases||[])].map(baseBy).filter(b=>b&&b.active).map(b=>({name:b.name,lat:b.lat,lon:b.lon,r:b.radius_m}));
+  night.ex.filter(e=>e.reg===reg&&e.night_date===day).forEach(e=>{ const p=exPoint(e); if(p.lat!=null) cand.push({name:exLabel(e)+" (autorisé)",...p}); });
+  const hit=cand.map(c=>({c,m:haversineKm(last,c)*1000})).filter(h=>h.m<=h.c.r).sort((x,y)=>x.m-y.m)[0];
+  return hit?hit.c.name:null;
+}
+function nightFacts(a,last){
+  if(!night.loaded) return "";
+  const g=night.asg[a.reg]; if(!g) return "";
+  if(g.in_maintenance) return `<div class="nf off">En maintenance : pas de contrôle de nuit</div>`;
+  const home=baseBy(g.home_base);
+  if(!home) return `<div class="nf warn">Aucune base d’affectation : pas de contrôle de nuit</div>`;
+  const day=todayLocal(), ns=nightStart(home,day);
+  const ck=night.checks.find(c=>c.reg===a.reg&&c.night_date===day);
+  const ex=night.ex.find(e=>e.reg===a.reg&&e.night_date===day);
+  const alts=(g.alt_bases||[]).map(c=>baseBy(c)?.name||c);
+  let h=`<div class="nf">Base <b>${esc(home.name)}</b>${alts.length?` · repli ${esc(alts.join(", "))}`:""}</div>`;
+  if(ex) h+=`<div class="nf">Nuit hors base autorisée : <b>${esc(exLabel(ex))}</b></div>`;
+  if(ck){
+    h+=ck.ok?`<div class="nf ok">Contrôle de nuit ${hm(ck.checked_at)} UTC : ${esc(ck.reason)}</div>`
+            :`<div class="nf bad">Non rentré à la nuit aéronautique (${hm(ck.night_start)} UTC) : alerte envoyée</div>`;
+  }else{
+    const ctl=new Date(ns.getTime()+NIGHT_MARGIN_MIN*60e3), where=acceptedPlace(a.reg,last,day);
+    const past=Date.now()>ctl.getTime();
+    h+=`<div class="nf${where?"":" warn"}">Nuit aéro ${hm(ns)} UTC · contrôle ${past?"en cours":hm(ctl)+" UTC"}${where?"":" · actuellement hors des lieux autorisés"}</div>`;
+  }
+  return h;
+}
+
+// Coordonnées : décimales (43.0508 / 43,0508) ou degrés-minutes-secondes (43°03'03"N, 000°02'29"W)
+function parseCoord(v){
+  v=String(v||"").trim(); if(!v) return NaN;
+  const dec=v.replace(",",".").match(/^[-+]?\d+(\.\d+)?$/); if(dec) return parseFloat(v.replace(",","."));
+  const m=v.match(/^([-+]?\d+(?:[.,]\d+)?)\s*[°º:\s]\s*(?:(\d+(?:[.,]\d+)?)\s*['’′:\s]\s*)?(?:(\d+(?:[.,]\d+)?)\s*(?:["”″]|''|’’)?\s*)?([NSEWO])?$/i);
+  if(!m) return NaN;
+  const f=x=>x?parseFloat(x.replace(",",".")):0;
+  let d=Math.abs(f(m[1]))+f(m[2])/60+f(m[3])/3600;
+  if(/^-/.test(m[1])||/[SWO]/i.test(m[4]||"")) d=-d;
+  return d;
+}
+const fmtC=x=>x==null?"":(+x).toFixed(6);
+
+function openNight(){
+  if(!night.loaded){ loadNight().then(()=>{ if(night.loaded) openNight(); }); return; }
+  renderNight(); document.getElementById("night").hidden=false;
+  document.getElementById("n-close").focus();
+}
+function closeNight(){ document.getElementById("night").hidden=true; document.getElementById("nightbtn").focus(); }
+
+function renderNight(){
+  const day=todayLocal(), dis=canEdit()?"":" disabled";
+  const act=night.bases.filter(b=>b.active);
+  const b3=fleet.slice().sort((x,y)=>x.reg.localeCompare(y.reg));
+  let h=canEdit()?"":`<p class="ro">Lecture seule : les modifications sont réservées aux rôles admin et editor, et aux éditeurs du suivi B3 désignés par un administrateur.</p>`;
+  h+=`<h3>Appareils</h3><p class="hint">Un appareil sans base d’affectation ou en maintenance n’est pas contrôlé. Les bases de repli sont acceptées tous les soirs ; une nuit hors base ne vaut que pour la date choisie.</p>
+  <div class="scroll"><table><thead><tr><th>Appareil</th><th>Base d’affectation</th><th>Bases de repli</th><th>Maintenance</th><th>Ce soir</th><th></th></tr></thead><tbody>`;
+  for(const a of b3){
+    const g=night.asg[a.reg]||{}, home=baseBy(g.home_base), last=state[a.reg]?.last||null;
+    const ck=night.checks.find(c=>c.reg===a.reg&&c.night_date===day);
+    let st;
+    if(g.in_maintenance) st=`<span class="muted">Non contrôlé (maintenance)</span>`;
+    else if(!home) st=`<span class="st-warn">Non contrôlé (pas de base)</span>`;
+    else if(ck) st=ck.ok?`<span class="st-ok">${esc(ck.reason)}</span>`:`<span class="st-bad">Non rentré : alerte envoyée</span>`;
+    else { const w=acceptedPlace(a.reg,last,day); st=`Contrôle ${hm(new Date(nightStart(home,day).getTime()+NIGHT_MARGIN_MIN*60e3))} UTC<br>${w?`<span class="muted">Actuellement : ${esc(w)}</span>`:`<span class="st-warn">Actuellement hors des lieux autorisés</span>`}`; }
+    const exs=night.ex.filter(e=>e.reg===a.reg&&e.night_date>=day);
+    h+=`<tr data-reg="${esc(a.reg)}">
+      <td><div class="reg">${esc(a.reg)}</div><div class="muted">${esc(a.type||"")}</div></td>
+      <td><select class="home" aria-label="Base d’affectation de ${esc(a.reg)}"${dis}><option value="">Aucune</option>${act.map(b=>`<option value="${esc(b.code)}"${b.code===g.home_base?" selected":""}>${esc(b.name)}</option>`).join("")}</select></td>
+      <td><div class="chips">${act.map(b=>`<label><input type="checkbox" class="alt" value="${esc(b.code)}"${(g.alt_bases||[]).includes(b.code)?" checked":""}${dis}> ${esc(b.name)}</label>`).join("")}</div></td>
+      <td><label class="chips"><input type="checkbox" class="maint"${g.in_maintenance?" checked":""}${dis}> En maintenance</label></td>
+      <td>${st}</td>
+      <td><div class="acts"><button type="button" class="go save"${dis}>Enregistrer</button><button type="button" class="exbtn" aria-expanded="false">Nuit hors base${exs.length?` (${exs.length})`:""}</button></div><div class="msg"></div></td>
+    </tr>
+    <tr class="exrow" data-reg="${esc(a.reg)}" hidden><td colspan="6">
+      <div class="exform">
+        <label class="fld">Nuit du<input type="date" class="exdate" value="${day}" min="${day}"${dis}></label>
+        <label class="fld">Lieu<select class="explace"${dis}>${act.map(b=>`<option value="b:${esc(b.code)}">${esc(b.name)}</option>`).join("")}<option value="pos"${last?"":" disabled"}>Position actuelle de l’appareil</option><option value="other" selected>Autre lieu…</option></select></label>
+        <label class="fld exother">Nom du lieu<input type="text" class="exlabel" placeholder="Chantier, DZ, hôtel…"${dis}></label>
+        <label class="fld exother">Latitude<input type="text" class="coord exlat" placeholder="45.1234 ou 45°07'24&quot;N"${dis}></label>
+        <label class="fld exother">Longitude<input type="text" class="coord exlon" placeholder="6.1234 ou 006°07'24&quot;E"${dis}></label>
+        <label class="fld">Rayon (m)<input type="number" class="exrad" value="300" min="50" max="5000" step="50"${dis}></label>
+        <label class="fld">Motif<input type="text" class="exnote" placeholder="Facultatif"${dis}></label>
+        <button type="button" class="go exsave"${dis}>Autoriser cette nuit</button>
+      </div>
+      <div class="msg"></div>
+      ${exs.length?`<ul class="exlist">${exs.map(e=>`<li><b>${dmyDay(e.night_date)}</b> ${esc(exLabel(e))} · rayon ${e.radius_m} m${e.note?` · ${esc(e.note)}`:""}${e.created_by?` <span class="muted">par ${esc(e.created_by)}</span>`:""} <button type="button" class="exdel" data-id="${e.id}"${dis}>Supprimer</button></li>`).join("")}</ul>`:`<p class="hint" style="margin-top:10px">Aucune nuit hors base prévue.</p>`}
+    </td></tr>`;
+  }
+  h+=`</tbody></table></div>`;
+
+  h+=`<h3>Bases</h3><p class="hint">Un appareil est considéré comme rentré si son dernier point est dans le rayon de la base. Centrez chaque base sur l’aire de stationnement SAF plutôt que sur le point de référence de l’aérodrome : « Recaler » reprend la dernière position d’un appareil posé.</p>
+  <div class="scroll"><table><thead><tr><th>Base</th><th>Latitude</th><th>Longitude</th><th>Rayon (m)</th><th>Nuit aéro ce soir</th><th>Recaler sur</th><th></th></tr></thead><tbody>`;
+  for(const b of night.bases){
+    const ns=nightStart(b,day);
+    h+=`<tr data-code="${esc(b.code)}">
+      <td><div class="reg">${esc(b.name)}</div><div class="muted">${esc(b.code)}${b.active?"":" · inactive"}</div></td>
+      <td><input type="text" class="coord blat" value="${fmtC(b.lat)}" aria-label="Latitude ${esc(b.name)}"${dis}></td>
+      <td><input type="text" class="coord blon" value="${fmtC(b.lon)}" aria-label="Longitude ${esc(b.name)}"${dis}></td>
+      <td><input type="number" class="brad" value="${b.radius_m}" min="50" max="5000" step="50" aria-label="Rayon ${esc(b.name)}"${dis}></td>
+      <td>${hm(ns)} UTC<div class="muted">${ns.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Paris"})} heure française</div></td>
+      <td><select class="snap" aria-label="Recaler ${esc(b.name)} sur la position d’un appareil"${dis}><option value="">—</option>${b3.filter(a=>state[a.reg]?.last).map(a=>{ const l=state[a.reg].last, d=haversineKm(l,b); return `<option value="${esc(a.reg)}">${esc(a.reg)} · ${d<1?Math.round(d*1000)+" m":d.toFixed(d<10?1:0)+" km"}</option>`; }).join("")}</select></td>
+      <td><button type="button" class="go bsave"${dis}>Enregistrer</button><div class="msg"></div></td>
+    </tr>`;
+  }
+  h+=`</tbody></table></div>`;
+  if(isAdmin()){
+    h+=`<h3>Éditeurs du suivi B3</h3><p class="hint">Ces comptes peuvent régler les bases, les affectations et les nuits hors base de cette page, sans droit d’écriture ailleurs dans l’outil. Le compte doit déjà exister dans la gestion des utilisateurs, au minimum avec le rôle reader. Les rôles admin et editor ont déjà ces droits.</p>
+    <div class="scroll"><table style="min-width:560px"><thead><tr><th>Adresse e-mail</th><th>Nom</th><th>Ajouté par</th><th></th></tr></thead><tbody>
+    ${night.editors.map(e=>`<tr data-email="${esc(e.email)}"><td>${esc(e.email)}</td><td>${esc(e.name||"")}</td><td class="muted">${esc(e.added_by||"")}${e.added_at?` · ${new Date(e.added_at).toLocaleDateString("fr-FR")}`:""}</td><td><button type="button" class="eddel">Retirer</button><div class="msg"></div></td></tr>`).join("")}
+    <tr class="edadd"><td><input type="text" class="edmail" placeholder="prenom.nom@saf-helico.com" aria-label="Adresse e-mail du nouvel éditeur" style="width:100%;min-width:220px"></td><td><input type="text" class="edname" placeholder="Facultatif" aria-label="Nom"></td><td></td><td><button type="button" class="go edsave">Ajouter</button><div class="msg"></div></td></tr>
+    </tbody></table></div>`;
+  }
+  const body=document.getElementById("n-body"); body.innerHTML=h;
+  body.querySelectorAll("tr.exrow").forEach(syncExForm);
+}
+function syncExForm(row){
+  const v=row.querySelector(".explace").value;
+  row.querySelectorAll(".exother").forEach(el=>el.hidden=v!=="other");
+}
+function nMsg(cell,text,ok){ const m=cell.querySelector(".msg"); if(m){ m.textContent=text; m.className="msg "+(ok?"ok":"err"); } }
+async function afterNightWrite(){ await loadNight(); renderNight(); render(lastPs); }
+
+document.getElementById("nightbtn").onclick=openNight;
+document.getElementById("n-close").onclick=closeNight;
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!document.getElementById("night").hidden) closeNight(); });
+document.getElementById("n-body").addEventListener("change",e=>{
+  const t=e.target;
+  if(t.classList.contains("explace")) syncExForm(t.closest("tr"));
+  if(t.classList.contains("home")){ // la base d'affectation ne peut pas être aussi base de repli
+    t.closest("tr").querySelectorAll(".alt").forEach(c=>{ if(c.value===t.value) c.checked=false; });
+  }
+  if(t.classList.contains("snap")&&t.value){
+    const l=state[t.value]?.last, tr=t.closest("tr");
+    if(l){ tr.querySelector(".blat").value=fmtC(l.lat); tr.querySelector(".blon").value=fmtC(l.lon); nMsg(tr,`Position de ${t.value} reprise (${hhmm(l.fix_time)}) : enregistrer pour valider.`,true); }
+    t.value="";
+  }
+});
+document.getElementById("n-body").addEventListener("click",async e=>{
+  const btn=e.target.closest("button"); if(!btn) return;
+  const tr=btn.closest("tr");
+  if(btn.classList.contains("exbtn")){
+    const ex=tr.nextElementSibling; ex.hidden=!ex.hidden; btn.setAttribute("aria-expanded",String(!ex.hidden));
+    if(!ex.hidden) ex.querySelector(".exdate").focus();
+    return;
+  }
+  if(!canEdit()) return;
+  btn.disabled=true;
+  try{
+    if(btn.classList.contains("edsave")){
+      const email=tr.querySelector(".edmail").value.trim().toLowerCase(), name=tr.querySelector(".edname").value.trim()||null;
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error("Adresse e-mail invalide.");
+      const u=await sb.from("user_roles").select("role").ilike("user_email",email).limit(1);
+      if(!u.error && !(u.data&&u.data.length)) throw new Error("Ce compte n’a pas accès au suivi : créez-le d’abord avec le rôle reader dans la gestion des utilisateurs.");
+      const {error}=await sb.from("fleet_editors").upsert({email,name},{onConflict:"email"});
+      if(error) throw error;
+      await afterNightWrite();
+      const row=document.querySelector("#n-body tr.edadd"); if(row) nMsg(row,`${email} peut maintenant modifier le suivi B3`,true);
+      return;
+    }
+    if(btn.classList.contains("eddel")){
+      const email=tr.dataset.email;
+      const {error}=await sb.from("fleet_editors").delete().eq("email",email);
+      if(error) throw error;
+      await afterNightWrite();
+      const row=document.querySelector("#n-body tr.edadd"); if(row) nMsg(row,`${email} retiré des éditeurs`,true);
+      return;
+    }
+    if(btn.classList.contains("save")){
+      const reg=tr.dataset.reg, home=tr.querySelector(".home").value;
+      const alts=[...tr.querySelectorAll(".alt:checked")].map(c=>c.value).filter(c=>c!==home);
+      const {error}=await sb.rpc("fleet_set_assignment",{p_reg:reg,p_home:home||null,p_alts:alts,p_maint:tr.querySelector(".maint").checked});
+      if(error) throw error;
+      await afterNightWrite();
+      const row=document.querySelector(`#n-body tr[data-reg="${CSS.escape(reg)}"]:not(.exrow)`); if(row) nMsg(row,"Enregistré",true);
+      return;
+    }
+    if(btn.classList.contains("exsave")){
+      const reg=tr.dataset.reg, v=tr.querySelector(".explace").value, rec={reg,
+        night_date:tr.querySelector(".exdate").value, radius_m:Math.round(+tr.querySelector(".exrad").value||300),
+        note:tr.querySelector(".exnote").value.trim()||null, base_code:null, label:null, lat:null, lon:null};
+      if(!rec.night_date) throw new Error("Choisissez la date de la nuit.");
+      if(rec.night_date<todayLocal()) throw new Error("La date est déjà passée.");
+      if(rec.radius_m<50||rec.radius_m>5000) throw new Error("Le rayon doit être compris entre 50 et 5 000 m.");
+      if(v.startsWith("b:")){ rec.base_code=v.slice(2); }
+      else if(v==="pos"){ const l=state[reg]?.last; if(!l) throw new Error("Aucune position connue pour cet appareil.");
+        rec.lat=l.lat; rec.lon=l.lon; rec.label=`Position du ${hhmm(l.fix_time)}`; }
+      else {
+        rec.label=tr.querySelector(".exlabel").value.trim()||null;
+        rec.lat=parseCoord(tr.querySelector(".exlat").value); rec.lon=parseCoord(tr.querySelector(".exlon").value);
+        if(!rec.label) throw new Error("Donnez un nom au lieu.");
+        if(!(Math.abs(rec.lat)<=90)||!(Math.abs(rec.lon)<=180)) throw new Error("Coordonnées illisibles : utilisez 45.1234 ou 45°07'24\"N.");
+      }
+      const {error}=await sb.from("fleet_night_exceptions").upsert(rec,{onConflict:"reg,night_date"});
+      if(error) throw error;
+      await afterNightWrite();
+      const row=document.querySelector(`#n-body tr.exrow[data-reg="${CSS.escape(reg)}"]`);
+      if(row){ row.hidden=false; row.previousElementSibling.querySelector(".exbtn").setAttribute("aria-expanded","true"); nMsg(row,`Nuit hors base autorisée le ${dmyDay(rec.night_date)}`,true); }
+      return;
+    }
+    if(btn.classList.contains("exdel")){
+      const reg=tr.dataset.reg;
+      const {error}=await sb.from("fleet_night_exceptions").delete().eq("id",+btn.dataset.id);
+      if(error) throw error;
+      await afterNightWrite();
+      const row=document.querySelector(`#n-body tr.exrow[data-reg="${CSS.escape(reg)}"]`);
+      if(row){ row.hidden=false; nMsg(row,"Nuit hors base supprimée",true); }
+      return;
+    }
+    if(btn.classList.contains("bsave")){
+      const code=tr.dataset.code, lat=parseCoord(tr.querySelector(".blat").value), lon=parseCoord(tr.querySelector(".blon").value);
+      const rad=Math.round(+tr.querySelector(".brad").value);
+      if(!(Math.abs(lat)<=90)||!(Math.abs(lon)<=180)) throw new Error("Coordonnées illisibles : utilisez 45.1234 ou 45°07'24\"N.");
+      if(!(rad>=50&&rad<=5000)) throw new Error("Le rayon doit être compris entre 50 et 5 000 m.");
+      const {data,error}=await sb.from("fleet_bases").update({lat,lon,radius_m:rad,updated_at:new Date().toISOString(),updated_by:userEmail}).eq("code",code).select("code");
+      if(error) throw error;
+      if(!data||!data.length) throw new Error("Modification refusée par la base (droits).");
+      await afterNightWrite();
+      const row=document.querySelector(`#n-body tr[data-code="${CSS.escape(code)}"]`); if(row) nMsg(row,"Enregistré",true);
+      return;
+    }
+  }catch(err){
+    nMsg(tr,(err&&err.message)||String(err),false);
+  }finally{ if(document.body.contains(btn)) btn.disabled=false; }
+});
+
 /* ---------- Session (partagée avec l'accueil) ---------- */
 let timer=null;
 function gate(msg){ clearInterval(timer); document.getElementById("gate-msg").textContent=msg; document.getElementById("gate").style.display="grid"; }
@@ -1202,6 +1555,8 @@ async function boot(){
     if(r.data&&r.data[0]&&r.data[0].role) role=String(r.data[0].role).toLowerCase();
   }catch(e){}
   if(!["admin","editor","reader"].includes(role)){ gate("Le suivi flotte n'est pas ouvert à ce compte."); return; }
+  userRole=role; userEmail=String(session.user.email||"");
+  try{ const r=await sb.rpc("fleet_is_editor"); fleetEditor=r.data===true; }catch(e){ fleetEditor=false; }
   subscribeFleetPositions();
   restartCycle();
 }
@@ -1237,7 +1592,7 @@ function openHist(){
     const lay=makeLayers(); lay["Topo (OpenTopoMap)"].addTo(hist.map);
     L.control.layers(lay,makeOverlays(),{position:"topright"}).addTo(hist.map);
     L.control.scale({imperial:false,position:"bottomleft"}).addTo(hist.map);
-    BASES.forEach(b=>L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null}),keyboard:false}).addTo(hist.map));
+    hist.baseLayer=L.layerGroup().addTo(hist.map); drawBases(hist.baseLayer);
     hist.layer=L.layerGroup().addTo(hist.map);
   }
   setTimeout(()=>hist.map.invalidateSize(),60);
