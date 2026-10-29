@@ -1068,6 +1068,14 @@ function render(ps){
         if(p.predicts[a.reg]){ p.predicts[a.reg].remove(); delete p.predicts[a.reg]; }
         continue;
       }
+      // HB-ZIP : ne pas placer sur la carte la position NSE historique du 28/07/2026.
+      // Les autres appareils ne sont pas affectes ; une position recente le fera reapparaitre.
+      if(a.reg==="HB-ZIP" && (!last || minsAgo(last.fix_time)>1440)){
+        if(p.markers[a.reg]){p.markers[a.reg].remove();delete p.markers[a.reg];}
+        if(p.trails[a.reg]){p.trails[a.reg].remove();delete p.trails[a.reg];}
+        if(p.predicts[a.reg]){p.predicts[a.reg].remove();delete p.predicts[a.reg];}
+        continue;
+      }
       const focus=p.follow||selected;   // appareil mis en avant sur cette carte
       if(last){
         const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl" style="top:${-11+idx*23}px">${esc(a.reg)}</span></div>`;
