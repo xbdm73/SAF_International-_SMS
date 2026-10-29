@@ -24,6 +24,14 @@ button,input,select{font:inherit;color:inherit}
 #app{display:grid;grid-template-columns:340px 1fr;height:100%}
 #side{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;
   padding-top:env(safe-area-inset-top,0px)}
+#map-area{display:flex;flex-direction:column;min-width:0;min-height:0;height:100%}
+#as332-ribbon{flex:0 0 auto;display:flex;gap:6px;align-items:center;overflow-x:auto;white-space:nowrap;padding:8px 10px;background:var(--panel);border-bottom:1px solid var(--line);scrollbar-width:thin}
+#as332-ribbon .ribbon-label{color:var(--ink-2);font-size:12px;font-weight:600;flex-shrink:0}
+#as332-ribbon button{flex:0 0 auto;border:1px solid rgba(255,255,255,.2);background:#1d2d3d;color:#e5ebf0;border-radius:5px;padding:5px 8px;font:600 13px var(--cond);cursor:pointer}
+#as332-ribbon button[data-tracker="on"]{background:#F0C040;border-color:#D39B19;color:#111827}
+#as332-ribbon button[aria-pressed="true"]{outline:2px solid #fff;outline-offset:-2px}
+#map-area #maps{flex:1;min-height:0;height:auto}
+@media(max-width:760px){#map-area{grid-row:1}#map-area #maps{grid-row:auto}}
 #maps{height:100%;width:100%;display:grid;gap:2px;background:var(--line);grid-template-columns:1fr;grid-template-rows:1fr}
 #maps[data-n="2"]{grid-template-columns:1fr 1fr}
 #maps[data-n="3"]{grid-template-columns:1fr 1fr 1fr}
@@ -235,7 +243,7 @@ footer .err{color:var(--lost)}
     <ul id="list"></ul>
     <footer id="foot">—</footer>
   </aside>
-  <div id="maps" data-n="1"></div>
+  <div id="map-area"><nav id="as332-ribbon" aria-label="État des traceurs AS332"><span class="ribbon-label">Traceurs AS332</span></nav><div id="maps" data-n="1"></div></div>
 </div>
 
 <div id="hist" hidden role="dialog" aria-modal="true" aria-labelledby="h-title">
@@ -1009,7 +1017,40 @@ function drawTerrain(){
   });
 }
 
+function renderAS332Ribbon(){
+  const bar=document.getElementById("as332-ribbon");if(!bar)return;
+  const scroll=bar.scrollLeft,active=document.activeElement?.dataset?.reg;
+  bar.replaceChildren();
+  const label=document.createElement("span");label.className="ribbon-label";label.textContent="Traceurs AS332";bar.appendChild(label);
+  for(const a of fleet){
+    const last=state[a.reg]?.last;
+    const recent=!!(a.active && last && minsAgo(last.fix_time)>=0 && minsAgo(last.fix_time)<=CONFIG.liveMaxMin);
+    const b=document.createElement("button");b.type="button";b.textContent=a.reg;
+    b.dataset.reg=a.reg;b.dataset.tracker=recent?"on":"off";
+    b.setAttribute("aria-pressed",String(selected===a.reg));
+    b.title=recent?"Position GPS récente (5 min maximum)":"Pas de position GPS récente";
+    b.onclick=()=>{
+      selected=a.reg;
+      const pos=state[a.reg]?.last;
+      const pane=panes.find(p=>p.follow===a.reg)||panes[0];
+      // Ne pas recentrer HB-ZIP sur l'ancienne position NSE de juillet.
+      const usable=pos && Number.isFinite(+pos.lat) && Number.isFinite(+pos.lon) &&
+        !(a.reg==="HB-ZIP" && minsAgo(pos.fix_time)>1440);
+      if(pane && usable){
+        pane.follow=a.reg;viewFollow[pane.i]=a.reg;pane.moved=false;pane.fitted=false;pane.btn.hidden=true;
+        pane.map.setView([+pos.lat,+pos.lon],11,{animate:false});saveView();
+      }
+      render(lastPs);
+      if(pos)ensureDetails(a.reg);
+    };
+    bar.appendChild(b);
+  }
+  bar.scrollLeft=scroll;
+  if(active)bar.querySelectorAll("button").forEach(b=>{if(b.dataset.reg===active)b.focus({preventScroll:true});});
+}
+
 function render(ps){
+  renderAS332Ribbon();
   const list=document.getElementById("list"); const scroll=list.scrollTop; list.innerHTML="";
   let nLive=0, nLost=0, nShown=0;
   const stackCount={}; // appareils posés au même endroit (~100 m) : étiquettes empilées
