@@ -523,7 +523,7 @@ function status(last){
   if(moving && m>CONFIG.lostAfterMin) return {k:"lost",t:`Signal perdu en vol – ${ago(last.fix_time)}`};
   if(moving) return {k:"live",t:m<=CONFIG.liveMaxMin?"En vol":"En vol – dernier point "+ago(last.fix_time)};
   if(m<=CONFIG.liveMaxMin) return {k:"ground",t:"Au sol, traceur actif"};
-  return {k:"stale",t:m>1440?"Position ancienne – localisation actuelle inconnue":"Position non actualisée – état inconnu"};
+  return {k:"stale",t:"Au sol / traceur éteint"};
 }
 function arrowSvg(color,heading){
   // Vue de dessus : nez vers le nord avant rotation selon le cap NSE.
@@ -1066,14 +1066,6 @@ function render(ps){
         if(p.markers[a.reg]){ p.markers[a.reg].remove(); delete p.markers[a.reg]; }
         if(p.trails[a.reg]){ p.trails[a.reg].remove(); delete p.trails[a.reg]; }
         if(p.predicts[a.reg]){ p.predicts[a.reg].remove(); delete p.predicts[a.reg]; }
-        continue;
-      }
-      // Ne pas afficher une ancienne localisation comme position actuelle.
-      // Les anciennes donnees restent accessibles dans le journal historique.
-      if(!last || minsAgo(last.fix_time)>1440){
-        if(p.markers[a.reg]){p.markers[a.reg].remove();delete p.markers[a.reg];}
-        if(p.trails[a.reg]){p.trails[a.reg].remove();delete p.trails[a.reg];}
-        if(p.predicts[a.reg]){p.predicts[a.reg].remove();delete p.predicts[a.reg];}
         continue;
       }
       const focus=p.follow||selected;   // appareil mis en avant sur cette carte
