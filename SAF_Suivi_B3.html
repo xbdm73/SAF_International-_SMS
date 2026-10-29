@@ -1091,8 +1091,21 @@ function renderB3Ribbon(){
     b.setAttribute("aria-pressed",String(selected===a.reg));
     b.title=recent?"Position GPS récente (5 min maximum)":"Pas de position GPS récente";
     b.onclick=()=>{
-      const li=Array.from(document.querySelectorAll("#list > li.ac")).find(el=>el.querySelector(".reg")?.textContent===a.reg);
-      if(li)li.click();
+      // Le bandeau fonctionne meme si l'appareil n'est pas visible dans la liste.
+      selected=a.reg;
+      const pos=state[a.reg]?.last;
+      const pane=panes.find(p=>p.follow===a.reg)||panes[0];
+      if(pane && pos && Number.isFinite(+pos.lat) && Number.isFinite(+pos.lon)){
+        pane.follow=a.reg;
+        viewFollow[pane.i]=a.reg;
+        pane.moved=false;
+        pane.fitted=false;
+        pane.btn.hidden=true;
+        pane.map.setView([+pos.lat,+pos.lon],11,{animate:false});
+        saveView();
+      }
+      render(lastPs);
+      if(pos)ensureDetails(a.reg);
     };
     bar.appendChild(b);
   }
