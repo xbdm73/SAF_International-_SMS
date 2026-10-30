@@ -253,6 +253,52 @@ footer .err{color:var(--lost)}
 #night .msg{font-size:12.5px;margin-top:6px;min-height:1em} #night .msg.err{color:var(--lost)} #night .msg.ok{color:var(--live)}
 @media (max-width:760px){ #night .nbar,#night .nbody{padding-left:14px;padding-right:14px} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* Outils de carte repris de SAF Operations */
+.opsx{position:absolute;inset:0;pointer-events:none;z-index:790}
+.opsx button,.opsx select{pointer-events:auto;font-family:var(--font)}
+.opsx button{display:flex;align-items:center;justify-content:center;gap:6px;width:34px;height:34px;padding:0;border-radius:7px;cursor:pointer;
+  background:#fff;color:#111;border:1px solid rgba(0,0,0,.25);box-shadow:0 1px 4px rgba(0,0,0,.35);font:700 16px/1 var(--font)}
+.opsx button svg{width:18px;height:18px;flex:none}
+.opsx button.on{background:#1E8BD6;color:#fff;border-color:#1572b3}
+.opsx button.dim{opacity:.55}
+.opsx button em{display:none;font-style:normal;font-weight:600;font-size:12.5px;white-space:nowrap}
+.opsx.labels .opsx-col button{width:auto;justify-content:flex-start;padding:0 10px 0 8px}
+.opsx.labels .opsx-col button em{display:inline}
+.opsx-top{position:absolute;top:48px;left:10px;display:flex;gap:6px;align-items:center}
+.opsx-top select{pointer-events:auto;height:34px;max-width:min(320px,45vw);border-radius:17px;border:0;padding:0 30px 0 14px;
+  background:#0D1B2A;color:#fff;font-weight:700;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.opsx-col{position:absolute;top:92px;left:10px;display:flex;flex-direction:column;gap:6px}
+.opsx-col [data-a="flights"]{width:auto;padding:0 8px;font-size:13px}
+.opsx-col [data-a="flights"].shake{animation:opsx-sh .4s}
+@keyframes opsx-sh{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.opsx-bot{position:absolute;left:10px;bottom:34px;display:flex;flex-direction:column;gap:6px}
+.opsx-box{pointer-events:auto;position:absolute;top:48px;left:236px;max-width:min(330px,calc(100% - 250px));background:var(--panel);color:var(--ink);
+  border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+.opsx-box table{border-collapse:collapse;width:100%;margin:5px 0;font-variant-numeric:tabular-nums}
+.opsx-box th,.opsx-box td{text-align:right;padding:1px 6px;border-bottom:1px solid var(--line)} .opsx-box th:first-child,.opsx-box td:first-child{text-align:left}
+.opsx-bh{display:flex;flex-direction:column;gap:2px} .opsx-bh span{color:var(--signal);font-weight:600}
+.opsx-eur{margin:4px 0;color:#fff} .opsx-eur small{color:var(--ink-2)}
+.opsx-bb{display:flex;gap:6px;margin-top:6px} .opsx-bb button{width:auto;height:26px;padding:0 9px;font-size:12px}
+.opsx-cross{cursor:crosshair!important}
+.opsx-pt{position:relative;font:700 11px/1 var(--cond);white-space:nowrap}
+.opsx-pt span{position:absolute;left:8px;top:-8px;padding:1px 4px;border-radius:3px;background:#fff;color:#1d3f8f;border:1.5px solid #2F6FD0}
+.opsx-pt.oad i{position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:#2F6FD0;border:1px solid #fff}
+.opsx-pt.oad span{left:-14px;top:-9px} .opsx-pt.oad.obig span{background:#fff;border-color:#1d3f8f}
+.opsx-pt.ohp b{position:absolute;left:-8px;top:-8px;width:16px;height:16px;border-radius:50%;background:#fff;color:#7a1d8f;border:1.5px solid #7a1d8f;display:grid;place-items:center;font-size:10px}
+.opsx-pt.ohp span{color:#7a1d8f;border-color:#7a1d8f}
+.opsx-pt.onv b{position:absolute;left:-7px;top:-8px;color:#1d6f3f;font-size:15px;text-shadow:0 0 2px #fff}
+.opsx-pt.onv span{color:#1d6f3f;border-color:#1d6f3f}
+.opsx-pt.obase b{position:absolute;left:-10px;top:-10px;width:20px;height:20px;border-radius:5px;display:grid;place-items:center;font-size:14px;color:#fff;background:#1E8BD6;border:1.5px solid #fff}
+.opsx-pt.obase.oaff b{background:#C0392B} .opsx-pt.obase.ooff b{background:#6C7784}
+.opsx-pt.obase span{left:12px;top:-8px;background:#0D1B2A;color:#fff;border-color:#0D1B2A}
+.opsx-pt.ofuel b{position:absolute;left:-10px;top:-10px;width:20px;height:20px;border-radius:5px;display:grid;place-items:center;font-size:13px;background:#E5484D;border:1.5px solid #fff}
+.opsx-pt.osite b{position:absolute;left:-6px;top:-6px;width:12px;height:12px;transform:rotate(45deg);border:1.5px solid #0A1420;background:#F0C040}
+.opsx-pt.osite.olz b{background:#5B9BE0} .opsx-pt.osite.orf b{background:#E5484D}
+.opsx-pt.ovenue b{position:absolute;left:-8px;top:-9px;color:#0D1B2A;font-size:15px;text-shadow:0 0 2px #fff}
+.opsx-pt.omis b{position:absolute;left:-9px;top:-11px;color:#F0C040;font-size:20px;text-shadow:0 0 3px #000}
+.opsx-pt.omis span{left:12px;top:-9px;background:#0D1B2A;color:#fff;border-color:#F0C040;font-size:12px}
+/* Contrôles Leaflet du bas à gauche (échelle, légendes) décalés pour laisser la place aux boutons */
+.pane .leaflet-bottom.leaflet-left{left:50px}
 </style>
 </head>
 <body>
@@ -393,12 +439,282 @@ function loadView(){ try{ const v=JSON.parse(localStorage.getItem(VIEW_KEY)||"nu
 function saveView(){ try{ localStorage.setItem(VIEW_KEY,JSON.stringify({n:panes.length,follow:viewFollow})); }catch(e){} }
 let viewFollow=loadView().follow.concat([null,null,null,null]).slice(0,4);
 const panes=[];
+/* ===================================================================
+   OUTILS DE CARTE REPRIS DE « SAF OPERATIONS » (30.10.2026)
+   Barre d'outils à gauche de chaque carte, comme dans l'application OPS :
+   en haut  ☰ libellés · trait (route avec ETE) · règle (mesure 2 points) · € (coût) · liste des missions
+   colonne  aérodromes · hélistations · balises · espaces aériens · LZ/DZ · zones réglementées ·
+            lieux · bases · carburant · appareils en vol
+   en bas   zoom + / − · plein écran
+   Données : relais « ops-map » (projet SMS), qui lit l'application OPS en lecture seule.
+   =================================================================== */
+const OPSX = {
+  key: "saf_ops_layers_" + (typeof SCOPE !== "undefined" ? SCOPE : "x"),
+  settings: null, stat: {}, statAt: 0, missions: [], missionsAt: 0,
+  btns: [
+    {k:"aerodromes", t:"Aérodromes", minZ:7, bbox:true, ic:'<path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="currentColor"/>'},
+    {k:"heliports",  t:"Hélistations et altiports", minZ:8, bbox:true, ic:'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 7.5v9M15.5 7.5v9M8.5 12h7" stroke="currentColor" stroke-width="2.2"/>'},
+    {k:"navaids",    t:"Balises radio (VOR, NDB, DME)", minZ:7, bbox:true, ic:'<circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/>'},
+    {k:"airspaces",  t:"Espaces aériens (CTR, TMA, ATZ, RMZ…)", minZ:7, bbox:true, ic:'<path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z" fill="none" stroke="currentColor" stroke-width="2"/>'},
+    {k:"sites",      t:"LZ / DZ enregistrées", minZ:0, ic:'<path d="M12 3l9 9-9 9-9-9z" fill="currentColor"/>'},
+    {k:"zones",      t:"Zones R, P, D, TRA, réserves, vol à voile", minZ:7, bbox:true, ic:'<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/>'},
+    {k:"venues",     t:"Lieux (chantiers, hôtels, prestataires)", minZ:0, ic:'<rect x="4" y="5" width="16" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 10h16" stroke="currentColor" stroke-width="2"/>'},
+    {k:"bases",      t:"Bases SAF et bases AFF", minZ:0, ic:'<path d="M3 11.5L12 4l9 7.5M6 10v10h12V10" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'},
+    {k:"fuel",       t:"Stocks carburant", minZ:0, ic:'<path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16zM5 10h10M15 8l3 2v8a1.5 1.5 0 0 0 3 0v-7l-3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'}
+  ]
+};
+try{ OPSX.on = new Set(JSON.parse(localStorage.getItem(OPSX.key) || '[]')); }catch(e){ OPSX.on = new Set(); }
+const opsSave = () => { try{ localStorage.setItem(OPSX.key, JSON.stringify([...OPSX.on])); }catch(e){} };
+const opsKm = (a,b) => { const R=6371,r=x=>x*Math.PI/180,dLat=r(b.lat-a.lat),dLon=r(b.lon-a.lon);
+  const s=Math.sin(dLat/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLon/2)**2; return 2*R*Math.asin(Math.sqrt(s)); };
+const opsBrg = (a,b) => { const r=x=>x*Math.PI/180, y=Math.sin(r(b.lon-a.lon))*Math.cos(r(b.lat)),
+  x=Math.cos(r(a.lat))*Math.sin(r(b.lat))-Math.sin(r(a.lat))*Math.cos(r(b.lat))*Math.cos(r(b.lon-a.lon));
+  return (Math.atan2(y,x)*180/Math.PI+360)%360; };
+const opsFmtMin = m => !isFinite(m) ? "–" : m<60 ? Math.round(m)+" min" : Math.floor(m/60)+" h "+String(Math.round(m%60)).padStart(2,"0");
+const opsE = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const opsFt = m => m==null||m==="" ? "" : Math.round(+m*3.28084).toLocaleString("fr-FR")+" ft";
+
+async function opsCall(body){
+  const {data,error} = await sb.functions.invoke("ops-map", {body});
+  if(error) throw error; if(data && data.error) throw new Error(data.error); return data || {};
+}
+async function opsStatic(){
+  // Couches peu volumineuses et réglages : une lecture toutes les 30 min, partagée par toutes les cartes
+  if(Date.now()-OPSX.statAt < 30*60000 && OPSX.settings) return;
+  try{
+    const d = await opsCall({layers:["settings","bases","fuel","sites","venues"]});
+    OPSX.settings = d.settings || OPSX.settings || {cruise_kt:120};
+    OPSX.stat = {bases:d.bases||[], fuel:d.fuel||[], sites:d.sites||[], venues:d.venues||[]};
+    OPSX.statAt = Date.now();
+  }catch(e){ console.warn("Couches OPS indisponibles :", e); OPSX.settings = OPSX.settings || {cruise_kt:120}; }
+}
+
+/* ---------- dessin des couches ---------- */
+function opsIcon(cls, html){ return L.divIcon({className:"", iconSize:null, iconAnchor:[0,0], html:`<div class="opsx-pt ${cls}">${html}</div>`}); }
+function opsDrawStatic(p, k){
+  const g = p.opsx.g[k]; g.clearLayers();
+  const pane = "opsxPts";
+  if(k==="bases") OPSX.stat.bases.forEach(b => L.marker([+b.lat,+b.lon],{pane, keyboard:false, icon:opsIcon("obase "+(b.kind==="saf_base"?"osaf":b.kind==="aff_base"?"oaff":"ooff"),
+      `<b>⌂</b><span>${opsE(b.code || b.name)}</span>`)}).bindTooltip(`<b>${opsE(b.name)}</b><br>${b.kind==="aff_base"?"Base AFF":b.kind==="office"?"Bureau":"Base SAF"}${b.elevation_m?" · "+opsFt(b.elevation_m):""}`).addTo(g));
+  if(k==="fuel") OPSX.stat.fuel.forEach(f => L.marker([+f.lat,+f.lon],{pane, keyboard:false, icon:opsIcon("ofuel",'<b>⛽</b>')})
+      .bindTooltip(`<b>${opsE(f.name)}</b><br>${opsE(f.fuel||"")} · ${f.kind==="tank"?"cuve":f.kind==="drums"?"fûts":opsE(f.kind)}${f.capacity_l?" · "+(+f.capacity_l).toLocaleString("fr-FR")+" L":""}${f.owner?"<br>"+opsE(f.owner):""}${f.notes?"<br><i>"+opsE(f.notes)+"</i>":""}`).addTo(g));
+  if(k==="sites") OPSX.stat.sites.forEach(s => L.marker([+s.lat,+s.lon],{pane, keyboard:false, icon:opsIcon("osite "+(s.kind==="lz"?"olz":s.kind==="refuel"?"orf":"odz"),'<b></b>')})
+      .bindTooltip(`<b>${opsE(s.name)}</b> · ${opsE((s.kind||"").toUpperCase())}${s.elevation_m!=null?" · "+opsFt(s.elevation_m):""}${s.surface?"<br>Surface : "+opsE(s.surface):""}${s.slope?" · pente : "+opsE(s.slope):""}${s.notes?"<br><i>"+opsE(s.notes)+"</i>":""}`).addTo(g));
+  if(k==="venues") OPSX.stat.venues.forEach(v => L.marker([+v.lat,+v.lon],{pane, keyboard:false, icon:opsIcon("ovenue",'<b>▣</b>')})
+      .bindTooltip(`<b>${opsE(v.name)}</b><br>${opsE({worksite:"Chantier / LZ",hotel:"Hôtel",provider:"Prestataire",training:"Centre de formation",other:"Autre"}[v.kind]||v.kind)}${v.elevation_m?" · "+opsFt(v.elevation_m):""}${v.lz_notes?"<br><i>"+opsE(v.lz_notes)+"</i>":""}${v.phone?"<br>"+opsE(v.phone):""}`).addTo(g));
+}
+const OPS_AS_STYLE = t => {
+  const T=String(t||"");
+  if(T==="CTR") return {color:"#D33A3A",weight:1.6,dashArray:"6 4",fillOpacity:.04};
+  if(/^(TMA|CTA|26|15)$/.test(T)) return {color:"#2F6FD0",weight:1.3,fillOpacity:.03};
+  if(/^(ATZ|MATZ)$/.test(T)) return {color:"#2F6FD0",weight:1.3,dashArray:"4 3",fillOpacity:.03};
+  if(/^(RMZ|TMZ)$/.test(T)) return {color:"#8E44AD",weight:1.3,dashArray:"2 3",fillOpacity:.03};
+  if(T==="P") return {color:"#C0392B",weight:1.6,fillColor:"#C0392B",fillOpacity:.12};
+  if(T==="R"||T==="TRA"||T==="TSA") return {color:"#E05A2B",weight:1.3,fillColor:"#E05A2B",fillOpacity:.07};
+  if(T==="D") return {color:"#E0A02B",weight:1.3,fillColor:"#E0A02B",fillOpacity:.06};
+  if(T==="Nature reserve") return {color:"#2E9E5B",weight:1.2,dashArray:"5 4",fillColor:"#2E9E5B",fillOpacity:.06};
+  if(T==="Gliding") return {color:"#C9A227",weight:1.2,dashArray:"5 4",fillOpacity:.04};
+  return {color:"#5B7FA6",weight:1,fillOpacity:.02};
+};
+function opsDrawBbox(p, k, list){
+  const g = p.opsx.g[k]; g.clearLayers();
+  const z = p.map.getZoom(), lbl = z >= 9;
+  if(k==="aerodromes") list.forEach(a => {
+    const big = a.subtype==="Airport", id = a.icao || "";
+    const info = a.info || {};
+    L.marker([+a.lat,+a.lon],{pane:"opsxPts", keyboard:false, icon:opsIcon("oad"+(big?" obig":""), lbl||big ? `<span>${opsE(id || "·")}</span>` : "<i></i>")})
+      .bindTooltip(`<b>${opsE(id)}</b> ${opsE(a.name)}<br>${opsE(a.subtype||"")}${a.elevation_m!=null?" · "+opsFt(a.elevation_m):""}${(info.rwy||[]).length?"<br>Piste "+opsE(info.rwy.join(", ")):""}${(info.freq||[]).length?"<br>"+opsE(info.freq.join(" · ")):""}`).addTo(g);
+  });
+  if(k==="heliports") list.forEach(a => L.marker([+a.lat,+a.lon],{pane:"opsxPts", keyboard:false, icon:opsIcon("ohp",`<b>H</b>${lbl&&a.icao?`<span>${opsE(a.icao)}</span>`:""}`)})
+      .bindTooltip(`<b>${opsE(a.icao||"")}</b> ${opsE(a.name)}${a.elevation_m!=null?"<br>"+opsFt(a.elevation_m):""}`).addTo(g));
+  if(k==="navaids") list.forEach(a => { const info=a.info||{};
+    L.marker([+a.lat,+a.lon],{pane:"opsxPts", keyboard:false, icon:opsIcon("onv",`<b>⊙</b>${lbl?`<span>${opsE(a.icao||"")}</span>`:""}`)})
+      .bindTooltip(`<b>${opsE(a.icao||"")}</b> ${opsE(a.name)}<br>${opsE(a.subtype||"")}${(info.freq||[]).length?" · "+opsE(info.freq.join(" / ")):""}`).addTo(g); });
+  if(k==="airspaces" || k==="zones") list.forEach(a => {
+    const pts = (Array.isArray(a.poly)?a.poly:[]).filter(c => Array.isArray(c) && isFinite(c[0]) && isFinite(c[1]));
+    if(pts.length < 3) return;
+    L.polygon(pts,{pane:"opsxZones", ...OPS_AS_STYLE(a.type), interactive:true})
+      .bindTooltip(`<b>${opsE(a.name)}</b><br>${opsE(a.type)}${a.icao_class?" · classe "+opsE(a.icao_class):""}<br>${opsE(a.lower_txt||"?")} → ${opsE(a.upper_txt||"?")}`,{sticky:true}).addTo(g);
+  });
+}
+async function opsRefresh(p){
+  const m = p.map, z = m.getZoom(), want = OPSX.btns.filter(b => b.bbox && OPSX.on.has(b.k));
+  // Couches non découpées
+  await opsStatic();
+  OPSX.btns.filter(b => !b.bbox).forEach(b => { if(OPSX.on.has(b.k)) opsDrawStatic(p,b.k); else p.opsx.g[b.k].clearLayers(); });
+  // Couches découpées selon la zone visible, au-dessus du zoom minimal de chacune
+  OPSX.btns.filter(b => b.bbox).forEach(b => { if(!OPSX.on.has(b.k) || z < b.minZ) p.opsx.g[b.k].clearLayers(); });
+  const ask = want.filter(b => z >= b.minZ).map(b => b.k);
+  opsMark(p);
+  if(!ask.length) return;
+  const bb = m.getBounds().pad(0.15), seq = ++p.opsx.seq;
+  try{
+    const d = await opsCall({layers:ask, bbox:[bb.getSouth(),bb.getWest(),bb.getNorth(),bb.getEast()]});
+    if(seq !== p.opsx.seq) return;
+    ask.forEach(k => opsDrawBbox(p, k, d[k] || []));
+  }catch(e){ console.warn("Couches OPS :", e); }
+}
+
+/* ---------- route (trait), mesure (règle) et coût (€) ---------- */
+function opsToolOff(p){
+  const t = p.opsx.tool; p.opsx.tool = null; p.map.doubleClickZoom.enable();
+  p.map.getContainer().classList.remove("opsx-cross");
+  p.opsx.el.querySelectorAll(".opsx-top [data-tool]").forEach(b => b.classList.toggle("on", false));
+  return t;
+}
+function opsToolOn(p, tool){
+  const was = opsToolOff(p);
+  if(was === tool) return;           // second appui : outil désactivé (le tracé reste affiché)
+  p.opsx.tool = tool; p.map.doubleClickZoom.disable();
+  p.map.getContainer().classList.add("opsx-cross");
+  p.opsx.el.querySelector(`.opsx-top [data-tool="${tool}"]`).classList.add("on");
+  if(tool === "ruler"){ p.opsx.rpts = []; }
+  opsDrawRoute(p);
+}
+function opsDrawRoute(p){
+  const g = p.opsx.route; g.clearLayers();
+  const box = p.opsx.box, cruise = +(OPSX.settings?.cruise_kt) || 120, eur = +(OPSX.settings?.transit_eur_min) || null;
+  const pts = p.opsx.tool === "ruler" ? p.opsx.rpts : p.opsx.wpts;
+  if(!pts.length){ box.hidden = true; return; }
+  const ll = pts.map(q => [q.lat,q.lon]);
+  L.polyline(ll,{pane:"opsxPts", color:"#fff", weight:6, opacity:.85, interactive:false}).addTo(g);
+  L.polyline(ll,{pane:"opsxPts", color: p.opsx.tool==="ruler" ? "#F0C040" : "#B0177A", weight:3, dashArray: p.opsx.tool==="ruler" ? "6 5" : null, interactive:false}).addTo(g);
+  pts.forEach((q,i) => L.circleMarker([q.lat,q.lon],{pane:"opsxPts", radius:5, color:"#0A1420", weight:2, fillColor:"#fff", fillOpacity:1, interactive:false}).addTo(g));
+  let tot = 0; const legs = [];
+  for(let i=1;i<pts.length;i++){ const km = opsKm(pts[i-1],pts[i]); tot += km; legs.push({km, brg:opsBrg(pts[i-1],pts[i])}); }
+  const nm = tot/1.852, min = nm/cruise*60;
+  const rows = legs.map((l,i) => `<tr><td>${i+1}</td><td>${String(Math.round(l.brg)%360).padStart(3,"0")}°</td><td>${(l.km/1.852).toFixed(1)} NM</td><td>${opsFmtMin(l.km/1.852/cruise*60)}</td></tr>`).join("");
+  const cost = p.opsx.euro && eur ? `<div class="opsx-eur">Coût transit estimé : <b>${Math.round(min*eur).toLocaleString("fr-FR")} €</b> <small>(${eur} €/min, réglage OPS)</small></div>` : "";
+  box.innerHTML = `<div class="opsx-bh"><b>${p.opsx.tool==="ruler" ? "Mesure" : "Route"}</b>
+      <span>${nm.toFixed(1)} NM · ${tot.toFixed(1)} km · ETE ${opsFmtMin(min)} à ${cruise} kt</span></div>
+    ${legs.length ? `<table><tr><th>#</th><th>Route</th><th>Dist.</th><th>Temps</th></tr>${rows}</table>` : `<small>Cliquez le point suivant sur la carte.</small>`}
+    ${cost}
+    <div class="opsx-bb"><button type="button" data-a="undo">↶ Dernier point</button><button type="button" data-a="clear">Effacer</button></div>`;
+  box.hidden = false;
+}
+
+/* ---------- missions (agenda Operations, via fleet_worksites) ---------- */
+async function opsMissions(){
+  if(Date.now()-OPSX.missionsAt < 5*60000) return OPSX.missions;
+  try{
+    const r = await sb.from("fleet_worksites").select("site_id,work_date,name,mission_no,reg,lat,lon,features,route,status,start_time")
+      .gte("work_date", todayLocal()).order("work_date").order("start_time",{nullsFirst:false}).limit(300);
+    if(r.error) throw r.error;
+    const by = new Map();
+    for(const w of r.data||[]){ if(w.status==="annulé") continue; if(!by.has(w.site_id)) by.set(w.site_id, {...w, days:[w.work_date]}); else by.get(w.site_id).days.push(w.work_date); }
+    OPSX.missions = [...by.values()]; OPSX.missionsAt = Date.now();
+  }catch(e){ console.warn("Missions :", e); }
+  return OPSX.missions;
+}
+async function opsFillMissions(p){
+  const sel = p.opsx.msel, cur = sel.value, list = await opsMissions();
+  const d = s => s.slice(8,10)+"/"+s.slice(5,7);
+  sel.innerHTML = `<option value="">Mission…</option>` + list.map(w => `<option value="${opsE(w.site_id)}">${d(w.days[0])}${w.days.length>1?"→"+d(w.days[w.days.length-1]):""} · ${opsE(w.mission_no||"")} ${opsE(w.name)}${w.reg?" · "+opsE(w.reg):""}</option>`).join("");
+  sel.value = cur;
+}
+function opsShowMission(p, id){
+  const g = p.opsx.mis; g.clearLayers();
+  const w = OPSX.missions.find(x => String(x.site_id) === String(id)); if(!w) return;
+  const pts = (Array.isArray(w.features)?w.features:[]).filter(q => isFinite(+q.lat) && isFinite(+q.lon));
+  (Array.isArray(w.route)?w.route:[]).forEach(r => Array.isArray(r) && r.length>1 && L.polyline(r.map(c=>[+c[0],+c[1]]),{pane:"opsxPts",color:"#F0C040",weight:3,dashArray:"6 5",interactive:false}).addTo(g));
+  const all = [[+w.lat,+w.lon], ...pts.map(q => [+q.lat,+q.lon])];
+  pts.forEach(q => L.marker([+q.lat,+q.lon],{pane:"opsxPts",keyboard:false,icon:opsIcon("osite "+(q.kind==="lz"?"olz":"odz"),"<b></b>")})
+    .bindTooltip(`<b>${opsE(q.name)}</b> · ${opsE(w.name)}${q.elev_m!=null?" · "+opsFt(q.elev_m):""}`).addTo(g));
+  L.marker([+w.lat,+w.lon],{pane:"opsxPts",keyboard:false,icon:opsIcon("omis",`<b>◆</b><span>${opsE(w.mission_no||"")} ${opsE(w.name)}${w.reg?" · "+opsE(w.reg):""}</span>`)}).addTo(g);
+  if(p.follow){ p.moved = true; if(p.btn) p.btn.hidden = false; }      // la carte arrête de suivre l'appareil
+  p.map.fitBounds(L.latLngBounds(all).pad(0.4), {maxZoom:13});
+}
+
+/* ---------- appareils en vol ---------- */
+function opsLive(){ try{ return (fleet||[]).filter(a => a.active && state[a.reg] && status(state[a.reg].last).k==="live"); }catch(e){ return []; } }
+function opsMark(p){
+  const z = p.map.getZoom();
+  p.opsx.el.querySelectorAll(".opsx-col [data-k]").forEach(b => {
+    const d = OPSX.btns.find(x => x.k === b.dataset.k), on = OPSX.on.has(d.k);
+    b.classList.toggle("on", on); b.classList.toggle("dim", on && z < d.minZ);
+    b.title = d.t + (on && z < d.minZ ? " — zoomez pour afficher (niveau " + d.minZ + ")" : "");
+  });
+  const n = opsLive().length, f = p.opsx.el.querySelector('[data-a="flights"]');
+  f.querySelector("span").textContent = n; f.classList.toggle("on", n > 0);
+}
+
+/* ---------- construction de la barre pour une carte ---------- */
+function opsTools(p){
+  const m = p.map;
+  if(!m.getPane("opsxZones")){ m.createPane("opsxZones").style.zIndex = 350; m.createPane("opsxPts").style.zIndex = 450; }
+  const ic = s => `<svg viewBox="0 0 24 24" aria-hidden="true">${s}</svg>`;
+  const el = document.createElement("div"); el.className = "opsx";
+  el.innerHTML = `
+    <div class="opsx-top">
+      <button type="button" data-a="labels" title="Afficher les libellés des boutons">${ic('<path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>')}</button>
+      <button type="button" data-tool="route" title="Tracer une route (distance, cap, ETE)">${ic('<path d="M5 19L19 5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>')}</button>
+      <button type="button" data-tool="ruler" title="Mesurer entre deux points">${ic('<path d="M3 17L17 3l4 4L7 21z" fill="#E0B23A" stroke="#7a5a10" stroke-width="1"/><path d="M8 12l2 2M11 9l2 2M14 6l2 2" stroke="#7a5a10" stroke-width="1.4"/>')}</button>
+      <button type="button" data-a="euro" title="Afficher le coût estimé de la route">€</button>
+      <select class="opsx-mis" aria-label="Mission"><option value="">Mission…</option></select>
+    </div>
+    <div class="opsx-col">
+      ${OPSX.btns.map(b => `<button type="button" data-k="${b.k}" title="${opsE(b.t)}">${ic(b.ic)}<em>${opsE(b.t)}</em></button>`).join("")}
+      <button type="button" data-a="flights" title="Appareils en vol : appuyer pour passer de l'un à l'autre">${ic('<path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="currentColor"/>')}<span>0</span><em>Appareils en vol</em></button>
+    </div>
+    <div class="opsx-box" hidden></div>
+    <div class="opsx-bot">
+      <button type="button" data-a="zin" title="Zoom avant">+</button>
+      <button type="button" data-a="zout" title="Zoom arrière">−</button>
+      <button type="button" data-a="full" title="Plein écran">${ic('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>')}</button>
+    </div>`;
+  p.el.appendChild(el);
+  L.DomEvent.disableClickPropagation(el); L.DomEvent.disableScrollPropagation(el);
+  p.opsx = { el, g:{}, seq:0, tool:null, wpts:[], rpts:[], euro:false, idx:0,
+             box:el.querySelector(".opsx-box"), msel:el.querySelector(".opsx-mis"),
+             route:L.layerGroup().addTo(m), mis:L.layerGroup().addTo(m) };
+  OPSX.btns.forEach(b => p.opsx.g[b.k] = L.layerGroup().addTo(m));
+
+  el.querySelector(".opsx-col").addEventListener("click", e => {
+    const b = e.target.closest("[data-k]"); if(!b) return;
+    const k = b.dataset.k;
+    if(OPSX.on.has(k)) OPSX.on.delete(k); else OPSX.on.add(k);
+    opsSave(); panes.forEach(q => q.opsx && opsRefresh(q));
+  });
+  el.addEventListener("click", e => {
+    const t = e.target.closest("[data-tool]"); if(t){ opsToolOn(p, t.dataset.tool); return; }
+    const a = e.target.closest("[data-a]"); if(!a) return;
+    const act = a.dataset.a;
+    if(act==="labels"){ el.classList.toggle("labels"); a.classList.toggle("on"); }
+    if(act==="euro"){ p.opsx.euro = !p.opsx.euro; a.classList.toggle("on", p.opsx.euro); opsDrawRoute(p); }
+    if(act==="zin") m.zoomIn(); if(act==="zout") m.zoomOut();
+    if(act==="full"){ const d=document; if(d.fullscreenElement) d.exitFullscreen(); else (p.el.requestFullscreen||p.el.webkitRequestFullscreen||(()=>{})).call(p.el); }
+    if(act==="undo"){ const arr = p.opsx.tool==="ruler" ? p.opsx.rpts : p.opsx.wpts; arr.pop(); opsDrawRoute(p); }
+    if(act==="clear"){ p.opsx.wpts = []; p.opsx.rpts = []; opsToolOff(p); opsDrawRoute(p); }
+    if(act==="flights"){
+      const live = opsLive(); if(!live.length){ a.classList.add("shake"); setTimeout(()=>a.classList.remove("shake"),500); return; }
+      const ac = live[p.opsx.idx++ % live.length], last = state[ac.reg].last;
+      if(p.follow){ p.moved = true; if(p.btn) p.btn.hidden = false; }
+      m.setView([last.lat,last.lon], Math.max(m.getZoom(), 10));
+    }
+  });
+  p.opsx.msel.addEventListener("focus", () => opsFillMissions(p));
+  p.opsx.msel.addEventListener("change", () => opsShowMission(p, p.opsx.msel.value));
+  m.on("click", ev => {
+    if(!p.opsx.tool) return;
+    const q = {lat:ev.latlng.lat, lon:ev.latlng.lng};
+    if(p.opsx.tool==="ruler"){ if(p.opsx.rpts.length >= 2) p.opsx.rpts = []; p.opsx.rpts.push(q); }
+    else p.opsx.wpts.push(q);
+    opsDrawRoute(p);
+  });
+  document.addEventListener("keydown", e => { if(e.key==="Escape" && p.opsx.tool) opsToolOff(p); });
+  document.addEventListener("fullscreenchange", () => setTimeout(() => m.invalidateSize(), 150));
+  let deb = null;
+  m.on("moveend zoomend", () => { clearTimeout(deb); deb = setTimeout(() => opsRefresh(p), 500); opsMark(p); });
+  setInterval(() => opsMark(p), 5000);
+  opsRefresh(p); opsFillMissions(p);
+}
+
 function createPane(i){
   const el=document.createElement("div"); el.className="pane";
   el.innerHTML=`<div class="map"></div><div class="pane-bar"><select aria-label="Appareil suivi sur cette carte"></select><span class="pst"></span><button type="button" hidden>Recentrer</button></div>`;
   document.getElementById("maps").appendChild(el);
   const m=L.map(el.querySelector(".map"),{zoomControl:false}).setView([45.9,6.8],8);
-  L.control.zoom({position:"bottomright"}).addTo(m);
+  // Zoom et plein écran : boutons de la barre OPS, en bas à gauche
   const lay=makeLayers(); lay["Topo (OpenTopoMap)"].addTo(m);
   const sites=L.layerGroup().addTo(m);
   m.on("click",()=>sites.eachLayer(l=>l.closeTooltip&&l.closeTooltip()));   // toucher ailleurs = fermer
@@ -415,6 +731,7 @@ function createPane(i){
     pane.moved=false; pane.btn.hidden=true; pane.fitted=false; centerPane(pane,true); render(lastPs); };
   L.DomEvent.disableClickPropagation(el.querySelector(".pane-bar"));
   L.DomEvent.disableScrollPropagation(el.querySelector(".pane-bar"));
+  opsTools(pane);
   return pane;
 }
 function setSplit(n){
