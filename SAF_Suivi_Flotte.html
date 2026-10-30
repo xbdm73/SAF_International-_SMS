@@ -324,11 +324,64 @@ function makeLayers(){
     "OACI France (IGN)": L.tileLayer("https://data.geopf.fr/private/wmts?apikey="+encodeURIComponent(CONFIG.ignOaciKey)+"&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN-OACI&STYLE=normal&FORMAT=image/jpeg&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}",{minZoom:6,maxNativeZoom:11,maxZoom:15,attribution:"© IGN / SIA – carte OACI-VFR, ne pas utiliser pour la navigation"}),
     "OACI Suisse (swisstopo)": L.tileLayer("https://wmts.geo.admin.ch/1.0.0/ch.bazl.luftfahrtkarten-icao/default/current/3857/{z}/{x}/{y}.png",{maxNativeZoom:12,maxZoom:15,attribution:"© OFAC/BAZL, swisstopo – carte OACI, ne pas utiliser pour la navigation"}),
     "Satellite (Esri)": L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"© Esri"}),
+    // Image satellite du jour (MODIS Terra, NASA GIBS) : nuages et panaches de fumée. Avant 14 h UTC, image de la veille.
+    "Satellite du jour (NASA MODIS)": L.tileLayer("https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/"+ymdUTC(new Date().getUTCHours()<14?-1:0)+"/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg",{maxNativeZoom:9,maxZoom:15,attribution:"© NASA GIBS – MODIS Terra"}),
   };
+}
+/* ---------- Surcouches météo et feux de forêt ----------
+   Dates en UTC. Les couches datées se remettent à jour toutes les heures tant qu'elles sont affichées
+   (une page laissée ouverte passe ainsi le changement de jour). */
+const ymdUTC=(d=0)=>new Date(Date.now()+d*864e5).toISOString().slice(0,10);
+// EFFIS ne publie pas EPSG:3857 sous ce nom mais sous son ancien alias EPSG:900913 (même projection).
+const EPSG900913=L.extend({},L.CRS.EPSG3857,{code:"EPSG:900913"});
+function datedWms(url,opts,timeFn){
+  const lyr=L.tileLayer.wms(url,Object.assign({format:"image/png",transparent:true,TIME:timeFn()},opts));
+  let t=null;
+  lyr.on("add",()=>{ lyr.setParams({TIME:timeFn()}); t=setInterval(()=>lyr.setParams({TIME:timeFn()}),3600000); });
+  lyr.on("remove",()=>{ clearInterval(t); t=null; });
+  return lyr;
+}
+const EFFIS_URL="https://maps.effis.emergency.copernicus.eu/effis";
+const EFFIS_ATT='© <a href="https://forest-fire.emergency.copernicus.eu/" target="_blank" rel="noopener">EFFIS</a> – Copernicus EMS / JRC';
+const effis=(layers,timeFn,extra)=>datedWms(EFFIS_URL,Object.assign({layers,version:"1.1.1",crs:EPSG900913,zIndex:9,attribution:EFFIS_ATT},extra),timeFn);
+// NASA GIBS (données LANCE/FIRMS) : anomalies thermiques VIIRS, sans clé. Une couche par jour (hier + aujourd'hui).
+const GIBS_WMS="https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi";
+const GIBS_ATT='© NASA <a href="https://earthdata.nasa.gov/gibs" target="_blank" rel="noopener">GIBS</a> / LANCE FIRMS';
+function nasaFires(){
+  const layers="VIIRS_NOAA20_Thermal_Anomalies_375m_All,VIIRS_SNPP_Thermal_Anomalies_375m_All";
+  const o={layers,version:"1.1.1",zIndex:9,attribution:GIBS_ATT};
+  return L.layerGroup([datedWms(GIBS_WMS,o,()=>ymdUTC(-1)),datedWms(GIBS_WMS,o,()=>ymdUTC(0))]);
+}
+// Radar RainViewer : on lit l'index public et on n'utilise que le chemin qu'il renvoie (dernière image, rafraîchie toutes les 5 min).
+// Gratuit pour un usage personnel/éducatif, zoom natif limité à 7, mention obligatoire.
+function rainRadar(){
+  const g=L.layerGroup(); let tl=null,t=null;
+  async function refresh(){
+    try{
+      const r=await fetch("https://api.rainviewer.com/public/weather-maps.json",{cache:"no-store"});
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      const j=await r.json(); const past=(j.radar&&j.radar.past)||[]; const f=past[past.length-1];
+      if(!f||!j.host) return;
+      const url=j.host+f.path+"/256/{z}/{x}/{y}/2/1_0.png";   // 2 = Universal Blue (seul schéma public), lissé, sans neige
+      if(tl) tl.setUrl(url);
+      else{ tl=L.tileLayer(url,{maxNativeZoom:7,maxZoom:19,opacity:.7,zIndex:8,
+              attribution:'Weather data by <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">Rain Viewer</a>'}); g.addLayer(tl); }
+    }catch(e){ console.warn("Radar RainViewer indisponible :",e); }
+  }
+  g.on("add",()=>{ refresh(); t=setInterval(refresh,300000); });
+  g.on("remove",()=>{ clearInterval(t); t=null; });
+  return g;
 }
 function makeOverlays(){
   const o={};
   if(CONFIG.openAipKey) o["Espaces aériens (openAIP)"]=L.tileLayer("https://{s}.api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.png?apiKey="+encodeURIComponent(CONFIG.openAipKey),{subdomains:"abc",maxNativeZoom:14,maxZoom:19,zIndex:10,attribution:"© openAIP (données communautaires, non officielles)"});
+  o["🌧 Radar précipitations (RainViewer)"]=rainRadar();
+  o["🔥 Feux actifs 24 h (EFFIS, VIIRS)"]=effis("viirs.hs",()=>ymdUTC(-1)+"/"+ymdUTC(0));
+  o["🔥 Feux actifs 7 j (EFFIS, VIIRS)"]=effis("viirs.hs",()=>ymdUTC(-6)+"/"+ymdUTC(0));
+  o["🔥 Anomalies thermiques hier + aujourd'hui (NASA)"]=nasaFires();
+  o["⬛ Surfaces brûlées 30 j (EFFIS)"]=effis("modis.ba.poly",()=>ymdUTC(-29)+"/"+ymdUTC(0),{opacity:.8});
+  o["⚠ Danger feux FWI du jour (EFFIS)"]=effis("ecmwf007.fwi",()=>ymdUTC(0),{opacity:.5,zIndex:7});
+  o["⚠ Danger feux Suisse (OFEV)"]=L.tileLayer.wms("https://wms.geo.admin.ch/",{layers:"ch.bafu.gefahren-waldbrand_warnung",format:"image/png",transparent:true,version:"1.3.0",opacity:.6,zIndex:7,attribution:"© OFEV/BAFU – danger d'incendie de forêt"});
   return o;
 }
 const VIEW_KEY="saf_fleet_view"+(SCOPE==="332"?"":"_"+SCOPE);
