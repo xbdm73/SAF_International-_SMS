@@ -879,7 +879,7 @@ const SUN = (() => {
 })();
 // État jour/nuit à un point et à un instant, avec la prochaine bascule
 function nightAt(lat, lon, t){
-  t = t ? new Date(t) : new Date();
+  t = t ? new Date(t) : new Date(nowMs());
   const ev = [-1,0,1,2].map(k => SUN.times(new Date(t.getTime() + k*864e5), lat, lon));
   const dusks = ev.map(x => x.dusk).filter(Boolean).sort((a,b) => a-b);
   const dawns = ev.map(x => x.dawn).filter(Boolean).sort((a,b) => a-b);
@@ -897,14 +897,14 @@ function nightAt(lat, lon, t){
 }
 const nHM = d => d ? d.toISOString().slice(11,16) : "–";
 const nLoc = d => d ? d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Paris"}) : "–";
-const nIn = d => { const m = (d - Date.now())/60000; return m < 60 ? Math.max(0,Math.round(m))+" min" : Math.floor(m/60)+" h "+String(Math.round(m%60)).padStart(2,"0"); };
+const nIn = d => { const m = (d - nowMs())/60000; return m < 60 ? Math.max(0,Math.round(m))+" min" : Math.floor(m/60)+" h "+String(Math.round(m%60)).padStart(2,"0"); };
 // Ligne de la fiche appareil
 function nightFact(last){
   if(!last) return "";
   const n = nightAt(last.lat, last.lon);
   if(n.night) return `<div class="ngt on">☾ <b>De nuit</b> depuis ${nHM(n.start)} UTC (${nLoc(n.start)} loc.)${n.end?` · aube civile ${nHM(n.end)} UTC`:""}</div>`;
   if(!n.start) return `<div class="ngt">☀ Pas de nuit aéronautique dans les prochaines 24 h à cette position</div>`;
-  const soon = (n.start - Date.now()) < 30*60000;
+  const soon = (n.start - nowMs()) < 30*60000;
   return `<div class="ngt${soon?" soon":""}">${soon?"◐":"☀"} Nuit aéronautique à <b>${nHM(n.start)} UTC</b> (${nLoc(n.start)} loc.) · dans ${nIn(n.start)}`+
     `<small>Coucher du soleil ${nHM(n.sunset)} UTC · règle FR simplifiée (coucher + ${n.frMin} min) : ${nHM(n.frStart)} UTC</small></div>`;
 }
@@ -913,7 +913,7 @@ function nightBadge(last){
   if(!last) return "";
   const n = nightAt(last.lat, last.lon);
   if(n.night) return `<span class="nb on" title="De nuit (aéronautique)">☾</span>`;
-  if(n.start && n.start - Date.now() < 30*60000) return `<span class="nb soon" title="Nuit aéronautique dans ${nIn(n.start)}">◐ ${nIn(n.start)}</span>`;
+  if(n.start && n.start - nowMs() < 30*60000) return `<span class="nb soon" title="Nuit aéronautique dans ${nIn(n.start)}">◐ ${nIn(n.start)}</span>`;
   return "";
 }
 // Arrivée à destination par rapport à la nuit au point d'arrivée
@@ -1076,7 +1076,20 @@ const hdgOf = p => {
   if(p.heading==null) return null;
   return p.source==="nse" || !p.source ? normHeading(+p.heading) : ((+p.heading % 360)+360)%360;
 };
-const minsAgo = t => (Date.now() - new Date(t).getTime())/60000;
+/* Horloge : l'écran (ex. Maxhub) peut être à l'heure fausse ou sur un mauvais fuseau. L'âge des positions,
+   le passage en jaune « traceur actif », l'état en vol et la nuit aéronautique se calculent donc avec
+   l'heure du serveur Supabase (fonction fleet_server_now), relue toutes les 30 min. */
+let CLOCK_OFFSET = 0;                       // ms : heure serveur − heure de l'écran
+const nowMs = () => Date.now() + CLOCK_OFFSET;
+async function syncClock(){
+  try{
+    const t0 = Date.now(); const r = await sb.rpc("fleet_server_now"); const t1 = Date.now();
+    if(r.error || !r.data) return;
+    const srv = new Date(r.data).getTime();
+    if(isFinite(srv) && t1 - t0 < 5000) CLOCK_OFFSET = srv - (t0 + t1)/2;
+  }catch(e){}
+}
+const minsAgo = t => (nowMs() - new Date(t).getTime())/60000;
 function ago(t){
   const m = minsAgo(t);
   if (m < 1) return "à l'instant";
@@ -1723,7 +1736,7 @@ function renderAS332Ribbon(){
   const label=document.createElement("span");label.className="ribbon-label";label.textContent="Traceurs AS332";bar.appendChild(label);
   for(const a of fleet){
     const last=state[a.reg]?.last;
-    const recent=!!(a.active && last && minsAgo(last.fix_time)>=0 && minsAgo(last.fix_time)<=CONFIG.liveMaxMin);
+    const recent=!!(a.active && last && minsAgo(last.fix_time)>=-1 && minsAgo(last.fix_time)<=CONFIG.liveMaxMin);
     const b=document.createElement("button");b.type="button";b.textContent=a.reg;
     b.dataset.reg=a.reg;b.dataset.tracker=recent?"on":"off";
     b.setAttribute("aria-pressed",String(selected===a.reg));
@@ -1778,7 +1791,7 @@ function render(ps){
     }
     if(last) facts+=nightFact(last);
     const li=document.createElement("li");
-    li.className="ac"+(selected===a.reg?" sel":"")+(a.active && last && minsAgo(last.fix_time)>=0 && minsAgo(last.fix_time)<=CONFIG.liveMaxMin?" tracker-active":""); li.dataset.st=st.k; li.tabIndex=0;
+    li.className="ac"+(selected===a.reg?" sel":"")+(a.active && last && minsAgo(last.fix_time)>=-1 && minsAgo(last.fix_time)<=CONFIG.liveMaxMin?" tracker-active":""); li.dataset.st=st.k; li.tabIndex=0;
     li.innerHTML=`<div class="bar"></div><div class="body">
       <div class="top"><span class="reg">${esc(a.reg)}</span><span class="type">${esc(a.type||"")}</span></div>
       <div class="st">${esc(st.t)}</div>
@@ -1850,7 +1863,7 @@ function render(ps){
     `${nShown} appareil${nShown>1?"s":""}${typeFilter!=="all"?" "+FAM_LABEL[typeFilter]:""} · ${nLive} en vol`+(nLost?` · ${nLost} signal perdu`:"")+
     (worksites.length?` · ${worksites.length} chantier${worksites.length>1?"s":""} du jour`:"");
   const f=document.getElementById("foot");
-  f.textContent=`Affichage mis à jour ${new Date().toLocaleTimeString("fr-FR")}`+
+  f.textContent=(Math.abs(CLOCK_OFFSET)>60000?`⚠ Horloge de cet écran décalée de ${Math.round(CLOCK_OFFSET/60000)} min (corrigée automatiquement) · `:"")+`Affichage mis à jour ${new Date(nowMs()).toLocaleTimeString("fr-FR")}`+
     (ps?.last_poll?` · relais NSE ${ago(ps.last_poll)}`:"");
   if(ps?.last_poll && minsAgo(ps.last_poll)>5) f.innerHTML+=` <span class="err">Le relais ne tourne plus.</span>`;
   paneBars(); filterBar();
@@ -1971,6 +1984,8 @@ document.getElementById("logout").onclick=async()=>{await sb.auth.signOut(); loc
 document.getElementById("win").onchange=()=>load();
 document.getElementById("split").onchange=e=>setSplit(e.target.value);
 setSplit(loadView().n);
+syncClock().then(()=>{ if(typeof lastPs!=="undefined" && lastPs) render(lastPs); });
+setInterval(syncClock, 30*60000);
 document.getElementById("fit").onclick=()=>{selected=null; fitAll(); load();};
 sb.auth.onAuthStateChange(ev=>{ if(ev==="SIGNED_OUT") location.replace("https://saf-international-portail.netlify.app/"); });
 /* ---------- Historique des vols ----------
