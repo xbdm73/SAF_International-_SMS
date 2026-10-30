@@ -624,7 +624,17 @@ function filterBar(){
 document.querySelectorAll("#filters .seg button").forEach(b=>b.onclick=()=>setFilter(b.dataset.f));
 
 /* ---------- Utilitaires ---------- */
-const normHeading = h => h == null ? null : ((h/100) % 360); // NSE : cap en centièmes de degré
+// Cap en degrés. NSE envoie « headland » = cap en degrés × 57,29578 (et non en centièmes de degré) :
+// vérifié le 30.10.2026 sur 2 496 points en vol (écart médian 2° avec la route réellement suivie, contre 83° en /100).
+// Le relais fleet-poll écrit désormais heading_deg correct pour toutes les sources ; repli si la colonne est vide.
+const NSE_HDG_DIV = 57.29578;
+const normHeading = h => h == null ? null : ((h/NSE_HDG_DIV) % 360);
+const hdgOf = p => {
+  if(!p) return null;
+  if(p.heading_deg!=null && isFinite(+p.heading_deg)) return ((+p.heading_deg % 360)+360)%360;
+  if(p.heading==null) return null;
+  return p.source==="nse" || !p.source ? normHeading(+p.heading) : ((+p.heading % 360)+360)%360;
+};
 const minsAgo = t => (Date.now() - new Date(t).getTime())/60000;
 function ago(t){
   const m = minsAgo(t);
@@ -665,7 +675,7 @@ function destPoint(lat,lon,bearingDeg,km){
 function predictionRadiusKm(kt,min){ return kt*1.852*min/60; }
 function renderPrediction(pane,reg,last,prev,st){
   let group=pane.predicts[reg];
-  const hd=normHeading(last?.heading), kt=currentKt(prev,last);
+  const hd=hdgOf(last), kt=currentKt(prev,last);
   if(!(last && st.k==="live" && Number.isFinite(hd) && Number.isFinite(kt) && kt>0)){
     if(group){ group.remove(); delete pane.predicts[reg]; }
     return;
@@ -736,7 +746,7 @@ function navFor(reg){
   // Appareil déjà sur zone : pas de navigation
   if(cands.some(w=>siteDist(w,last)<=WORKSITES.nearKm)) return null;
   if(!cands.length) return null;
-  let trk=s.prev&&haversineKm(s.prev,last)>0.05?bearingDeg(s.prev,last):normHeading(last.heading);
+  let trk=s.prev&&haversineKm(s.prev,last)>0.05?bearingDeg(s.prev,last):hdgOf(last);
   let pick=null;
   if(cands.length>1 && Number.isFinite(trk)){
     const aligned=cands.map(w=>({w,d:angDiff(bearingDeg(last,siteTarget(w)),trk)})).filter(x=>x.d<=60).sort((a,b)=>a.d-b.d);
@@ -1082,7 +1092,7 @@ async function load(retried){
     fleet=ac.data.filter(a=>famOf(a)===SCOPE);
     // Une lecture par appareil : avec 15 appareils, une requête unique plafonnée à 1000 points
     // tronquerait les traces dès qu'une partie de la flotte vole.
-    const PCOLS="reg,fix_time,lat,lon,alt_m,heading,speed";
+    const PCOLS="reg,fix_time,lat,lon,alt_m,heading,heading_deg,source,speed";
     const [lasts,wins]=await Promise.all([
       Promise.all(fleet.map(a=>sb.from("fleet_positions").select(PCOLS).eq("reg",a.reg).order("fix_time",{ascending:false}).limit(2))),
       Promise.all(fleet.map(a=>sb.from("fleet_positions").select(PCOLS).eq("reg",a.reg).gte("fix_time",since).order("fix_time",{ascending:false}).limit(1000))),
@@ -1307,7 +1317,7 @@ function render(ps){
     const s=state[a.reg], last=s.last, st=a.active?status(last):{k:"none",t:"Suivi non activé ("+a.provider+")"};
     const shown=passFilter(a);
     if(shown){ nShown++; if(st.k==="live") nLive++; if(st.k==="lost") nLost++; }
-    const hd=last?normHeading(last.heading):null;
+    const hd=last?hdgOf(last):null;
     const gs=computedGs(s.prev,last);
     const nav=a.active&&shown?navFor(a.reg):null;
     const an=s.an;
