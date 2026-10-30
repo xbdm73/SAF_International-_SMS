@@ -47,6 +47,21 @@ button,input,select{font:inherit;color:inherit}
 .pane-bar button{background:var(--signal);color:#111;border:0;border-radius:4px;padding:3px 8px;font-weight:600;cursor:pointer}
 .pane-bar button[hidden]{display:none}
 
+
+/* Recherche manuelle de lieux (OpenStreetMap Nominatim) */
+#place-search{position:relative;display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--panel);border-bottom:1px solid var(--line);z-index:1050;flex-wrap:wrap}
+#place-search label{font:600 12px var(--cond);color:var(--signal)}
+#place-query{flex:1;min-width:120px;max-width:460px;background:var(--paper);border:1px solid rgba(255,255,255,.25);border-radius:4px;padding:7px 10px;font-size:13px}
+#place-search button{background:var(--signal);color:#111;border:0;border-radius:4px;font-weight:600;padding:7px 10px;cursor:pointer;font-size:12px}
+#place-search button:disabled{opacity:.5;cursor:wait}
+#place-feedback{font-size:12px;color:var(--ink-2)}
+#place-results{position:absolute;top:100%;left:10px;right:10px;max-width:580px;background:var(--panel);border:1px solid rgba(255,255,255,.25);border-radius:5px;box-shadow:0 10px 24px #0009;max-height:240px;overflow-y:auto;z-index:1100}
+#place-results[hidden]{display:none}
+#place-results button{display:block;text-align:left;width:100%;background:transparent;color:var(--ink);border:0;border-bottom:1px solid var(--line);border-radius:0;font-weight:400;white-space:normal;padding:10px;font-size:12px}
+#place-results button:hover,#place-results button:focus-visible{background:#243849}
+#place-search .place-credit{font-size:10px;color:var(--ink-2)}
+@media(max-width:760px){#place-search{gap:5px;padding:6px}#place-query{min-width:100px}}
+
 header{padding:18px 20px 12px;border-bottom:1px solid var(--line)}
 header h1{font-family:var(--cond);font-weight:700;font-size:26px;letter-spacing:.01em;margin:0;line-height:1;color:var(--signal)}
 header .home{display:inline-block;margin-bottom:10px;font-size:13px;color:var(--gold);text-decoration:none}
@@ -266,7 +281,14 @@ footer .err{color:var(--lost)}
     <ul id="list"></ul>
     <footer id="foot">—</footer>
   </aside>
-  <div id="map-area"><nav id="as332-ribbon" aria-label="État des traceurs AS332"><span class="ribbon-label">Traceurs AS332</span></nav><div id="maps" data-n="1"></div></div>
+  <div id="map-area"><form id="place-search" role="search" autocomplete="off">
+    <label for="place-query">Rechercher un lieu</label>
+    <input id="place-query" type="search" maxlength="160" placeholder="Ville, commune, adresse, sommet…" aria-controls="place-results">
+    <button id="place-submit" type="submit">Rechercher</button>
+    <span id="place-feedback" role="status" aria-live="polite"></span>
+    <span class="place-credit">Recherche : © OpenStreetMap</span>
+    <div id="place-results" hidden aria-label="Résultats de recherche"></div>
+  </form><nav id="as332-ribbon" aria-label="État des traceurs AS332"><span class="ribbon-label">Traceurs AS332</span></nav><div id="maps" data-n="1"></div></div>
 </div>
 
 <div id="hist" hidden role="dialog" aria-modal="true" aria-labelledby="h-title">
@@ -527,6 +549,60 @@ function createPane(i){
   L.DomEvent.disableScrollPropagation(el.querySelector(".pane-bar"));
   return pane;
 }
+/* Recherche volontaire uniquement sur validation, sans interrogation à chaque frappe.
+   API publique Nominatim : respecter la limitation de fréquence et l'attribution. */
+const placeForm=document.getElementById("place-search");
+const placeQuery=document.getElementById("place-query");
+const placeFeedback=document.getElementById("place-feedback");
+const placeResults=document.getElementById("place-results");
+const placeSubmit=document.getElementById("place-submit");
+let placeLastRequest=0,placeMarker=null,placeSeq=0;
+function showPlace(item){
+  const p=panes[0]; if(!p)return;
+  const lat=Number(item.lat),lon=Number(item.lon);
+  if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
+  // La recherche prend temporairement la main sur la première carte : le suivi
+  // automatique de l'hélicoptère reprend au clic sur « Recentrer ».
+  p.moved=true;p.fitted=true;if(p.follow)p.btn.hidden=false;
+  if(placeMarker){placeMarker.remove();placeMarker=null;}
+  placeMarker=L.marker([lat,lon],{title:item.display_name}).addTo(p.map);
+  placeMarker.bindPopup(document.createTextNode(item.display_name||"Lieu trouvé")).openPopup();
+  if(Array.isArray(item.boundingbox)&&item.boundingbox.length===4){
+    const bb=item.boundingbox.map(Number);
+    if(bb.every(Number.isFinite)&&bb[1]>bb[0]&&bb[3]>bb[2]){
+      p.map.fitBounds([[bb[0],bb[2]],[bb[1],bb[3]]],{maxZoom:14,padding:[35,35]});
+    }else p.map.setView([lat,lon],13);
+  }else p.map.setView([lat,lon],13);
+  placeResults.hidden=true;
+  placeFeedback.textContent="Lieu affiché sur la première carte";
+}
+placeForm.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const q=placeQuery.value.trim();
+  if(q.length<3){placeFeedback.textContent="Saisir au moins 3 caractères";return;}
+  if(Date.now()-placeLastRequest<1100){placeFeedback.textContent="Réessayez dans une seconde";return;}
+  placeLastRequest=Date.now();
+  const seq=++placeSeq;
+  placeSubmit.disabled=true;placeFeedback.textContent="Recherche en cours…";
+  placeResults.hidden=true;placeResults.replaceChildren();
+  try{
+    const url="https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=0&limit=5&q="+encodeURIComponent(q);
+    const response=await fetch(url,{headers:{Accept:"application/json"}});
+    if(!response.ok)throw new Error("HTTP "+response.status);
+    const items=await response.json();
+    if(seq!==placeSeq)return;
+    if(!Array.isArray(items)||!items.length){placeFeedback.textContent="Aucun lieu trouvé";return;}
+    items.forEach(item=>{
+      const b=document.createElement("button");b.type="button";b.textContent=item.display_name;
+      b.onclick=()=>showPlace(item);placeResults.appendChild(b);
+    });
+    placeResults.hidden=false;placeFeedback.textContent=items.length+" résultat(s) — choisissez un lieu";
+  }catch(err){placeFeedback.textContent="Recherche indisponible : "+String(err.message||err);}
+  finally{if(seq===placeSeq)placeSubmit.disabled=false;}
+});
+placeQuery.addEventListener("input",()=>{placeResults.hidden=true;});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")placeResults.hidden=true;});
+
 function setSplit(n){
   n=Math.max(1,Math.min(4,+n||1));
   // Proposer d'office un appareil différent dans chaque nouvelle carte
