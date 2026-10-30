@@ -24,6 +24,14 @@ button,input,select{font:inherit;color:inherit}
 #app{display:grid;grid-template-columns:340px 1fr;height:100%}
 #side{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;
   padding-top:env(safe-area-inset-top,0px)}
+#map-area{display:flex;flex-direction:column;min-width:0;min-height:0;height:100%}
+#as332-ribbon{flex:0 0 auto;display:flex;gap:6px;align-items:center;overflow-x:auto;white-space:nowrap;padding:8px 10px;background:var(--panel);border-bottom:1px solid var(--line);scrollbar-width:thin}
+#as332-ribbon .ribbon-label{color:var(--ink-2);font-size:12px;font-weight:600;flex-shrink:0}
+#as332-ribbon button{flex:0 0 auto;border:1px solid rgba(255,255,255,.2);background:#1d2d3d;color:#e5ebf0;border-radius:5px;padding:5px 8px;font:600 13px var(--cond);cursor:pointer}
+#as332-ribbon button[data-tracker="on"]{background:#F0C040;border-color:#D39B19;color:#111827}
+#as332-ribbon button[aria-pressed="true"]{outline:2px solid #fff;outline-offset:-2px}
+#map-area #maps{flex:1;min-height:0;height:auto}
+@media(max-width:760px){#map-area{grid-row:1}#map-area #maps{grid-row:auto}}
 #maps{height:100%;width:100%;display:grid;gap:2px;background:var(--line);grid-template-columns:1fr;grid-template-rows:1fr}
 #maps[data-n="2"]{grid-template-columns:1fr 1fr}
 #maps[data-n="3"]{grid-template-columns:1fr 1fr 1fr}
@@ -56,6 +64,12 @@ header p{margin:4px 0 0;color:var(--ink-2);font-size:13px}
 .ac .bar{background:var(--stale)}
 .ac[data-st=live] .bar{background:var(--live)} .ac[data-st=ground] .bar{background:var(--ground)}
 .ac[data-st=lost] .bar{background:var(--lost)}
+.ac.tracker-active,.ac.tracker-active:hover,.ac.tracker-active.sel{background:#F0C040;color:#111827}
+.ac.tracker-active .bar{background:#B57C00}
+.ac.tracker-active .type,.ac.tracker-active dt,.ac.tracker-active small,.ac.tracker-active .when,.ac.tracker-active .muted{color:#374151}
+.ac.tracker-active .st,.ac.tracker-active[data-st=live] .st,.ac.tracker-active[data-st=ground] .st{color:#111827}
+.ac.tracker-active .more,.ac.tracker-active .det h3{color:#463500}
+.ac.tracker-active .det{border-top-color:rgba(0,0,0,.18)}
 .ac .body{padding:12px 16px 12px 14px}
 .ac .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .ac .reg{font-family:var(--cond);font-weight:700;font-size:30px;line-height:1}
@@ -229,7 +243,7 @@ footer .err{color:var(--lost)}
     <ul id="list"></ul>
     <footer id="foot">—</footer>
   </aside>
-  <div id="maps" data-n="1"></div>
+  <div id="map-area"><nav id="as332-ribbon" aria-label="État des traceurs AS332"><span class="ribbon-label">Traceurs AS332</span></nav><div id="maps" data-n="1"></div></div>
 </div>
 
 <div id="hist" hidden role="dialog" aria-modal="true" aria-labelledby="h-title">
@@ -526,17 +540,26 @@ function status(last){
   return {k:"stale",t:"Au sol / traceur éteint"};
 }
 function arrowSvg(color,heading){
-  // Vue de dessus : nez vers le nord avant rotation selon le cap NSE.
-  // Le rotor anime uniquement ses pales, sans modifier l'orientation de l'appareil.
+  // Silhouette AS 332 Super Puma vue de dessus : nez vers le nord avant rotation selon le cap.
+  // Nez arrondi, cabine longue, carénage moteurs, sponsons de train, poutre de queue,
+  // plan horizontal à gauche et rotor de queue à droite. Rotor principal 4 pales, seul élément animé.
   const rot=Number.isFinite(heading)?heading:0;
   return `<span class="heli-icon" style="transform:rotate(${rot}deg)"><svg viewBox="0 0 44 44" aria-hidden="true">
-    <path d="M22 3 L25.5 12 L26.5 26 L24 31 L23.8 40 L20.2 40 L20 31 L17.5 26 L18.5 12 Z" fill="${color}" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/>
-    <path d="M18 28 L11 33 L11 35 L20.3 32 M26 28 L33 33 L33 35 L23.7 32" fill="${color}" stroke="#fff" stroke-width="1.1"/>
-    <path d="M17.5 11 Q22 7 26.5 11 L26 17 L18 17Z" fill="#d4f4ff" stroke="#fff" stroke-width=".7"/>
-    <path d="M17 37 H27" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>
-    <g class="heli-rotor" stroke="#fff" stroke-width="2.4" stroke-linecap="round">
-      <path d="M4 22 H40 M22 4 V40"/>
-      <circle cx="22" cy="22" r="2.7" fill="${color}" stroke="#0A1420" stroke-width="1.1"/>
+    <g stroke="#fff" stroke-linejoin="round">
+      <path d="M20.4 29.5 L23.6 29.5 L22.9 40.5 L21.1 40.5 Z" fill="${color}" stroke-width=".8"/>
+      <path d="M21.1 37.6 L15.6 37 L15.6 39.4 L21.1 39.8 Z" fill="${color}" stroke-width=".9"/>
+      <path d="M21.1 39.4 L22.9 39.4 L22.6 43.6 L21.4 43.6 Z" fill="${color}" stroke-width=".9"/>
+      <path d="M22.9 40.4 H25.4" stroke-width="1.1"/>
+      <path d="M25.6 37.4 V43.4" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M18.7 20.5 L15.4 21.6 Q14.5 25 15.4 28.3 L18.7 28.9 Z M25.3 20.5 L28.6 21.6 Q29.5 25 28.6 28.3 L25.3 28.9 Z" fill="${color}" stroke-width="1"/>
+      <path d="M22 7.4 C24.7 7.4 25.7 10.2 25.7 13.4 L25.7 27.2 C25.7 29.4 24.4 31 22 31 C19.6 31 18.3 29.4 18.3 27.2 L18.3 13.4 C18.3 10.2 19.3 7.4 22 7.4 Z" fill="${color}" stroke-width="1.1"/>
+      <rect x="20.1" y="14.6" width="3.8" height="14.4" rx="1.6" fill="#0A1420" fill-opacity=".28" stroke-width=".6"/>
+      <path d="M19.3 12.4 Q22 8.7 24.7 12.4 L24.4 14.4 L19.6 14.4 Z" fill="#d4f4ff" stroke-width=".6"/>
+    </g>
+    <circle cx="21.1" cy="27.6" r=".8" fill="#0A1420"/><circle cx="22.9" cy="27.6" r=".8" fill="#0A1420"/>
+    <g class="heli-rotor" stroke="#fff" stroke-width="1.9" stroke-linecap="round">
+      <path d="M9.3 9.3 L34.7 34.7 M34.7 9.3 L9.3 34.7"/>
+      <circle cx="22" cy="22" r="2.2" fill="${color}" stroke="#0A1420" stroke-width="1.1"/>
     </g>
   </svg></span>`;
 }
@@ -1003,7 +1026,40 @@ function drawTerrain(){
   });
 }
 
+function renderAS332Ribbon(){
+  const bar=document.getElementById("as332-ribbon");if(!bar)return;
+  const scroll=bar.scrollLeft,active=document.activeElement?.dataset?.reg;
+  bar.replaceChildren();
+  const label=document.createElement("span");label.className="ribbon-label";label.textContent="Traceurs AS332";bar.appendChild(label);
+  for(const a of fleet){
+    const last=state[a.reg]?.last;
+    const recent=!!(a.active && last && minsAgo(last.fix_time)>=0 && minsAgo(last.fix_time)<=CONFIG.liveMaxMin);
+    const b=document.createElement("button");b.type="button";b.textContent=a.reg;
+    b.dataset.reg=a.reg;b.dataset.tracker=recent?"on":"off";
+    b.setAttribute("aria-pressed",String(selected===a.reg));
+    b.title=recent?"Position GPS récente (5 min maximum)":"Pas de position GPS récente";
+    b.onclick=()=>{
+      selected=a.reg;
+      const pos=state[a.reg]?.last;
+      const pane=panes.find(p=>p.follow===a.reg)||panes[0];
+      // Ne pas recentrer HB-ZIP sur l'ancienne position NSE de juillet.
+      const usable=pos && Number.isFinite(+pos.lat) && Number.isFinite(+pos.lon) &&
+        !(a.reg==="HB-ZIP" && minsAgo(pos.fix_time)>1440);
+      if(pane && usable){
+        pane.follow=a.reg;viewFollow[pane.i]=a.reg;pane.moved=false;pane.fitted=false;pane.btn.hidden=true;
+        pane.map.setView([+pos.lat,+pos.lon],11,{animate:false});saveView();
+      }
+      render(lastPs);
+      if(pos)ensureDetails(a.reg);
+    };
+    bar.appendChild(b);
+  }
+  bar.scrollLeft=scroll;
+  if(active)bar.querySelectorAll("button").forEach(b=>{if(b.dataset.reg===active)b.focus({preventScroll:true});});
+}
+
 function render(ps){
+  renderAS332Ribbon();
   const list=document.getElementById("list"); const scroll=list.scrollTop; list.innerHTML="";
   let nLive=0, nLost=0, nShown=0;
   const stackCount={}; // appareils posés au même endroit (~100 m) : étiquettes empilées
@@ -1028,7 +1084,7 @@ function render(ps){
       if(n24) facts+=`<div>${n24} vol${n24>1?"s":""} sur 24 h</div>`;
     }
     const li=document.createElement("li");
-    li.className="ac"+(selected===a.reg?" sel":""); li.dataset.st=st.k; li.tabIndex=0;
+    li.className="ac"+(selected===a.reg?" sel":"")+(a.active && last && minsAgo(last.fix_time)>=0 && minsAgo(last.fix_time)<=CONFIG.liveMaxMin?" tracker-active":""); li.dataset.st=st.k; li.tabIndex=0;
     li.innerHTML=`<div class="bar"></div><div class="body">
       <div class="top"><span class="reg">${esc(a.reg)}</span><span class="type">${esc(a.type||"")}</span></div>
       <div class="st">${esc(st.t)}</div>
@@ -1066,6 +1122,14 @@ function render(ps){
         if(p.markers[a.reg]){ p.markers[a.reg].remove(); delete p.markers[a.reg]; }
         if(p.trails[a.reg]){ p.trails[a.reg].remove(); delete p.trails[a.reg]; }
         if(p.predicts[a.reg]){ p.predicts[a.reg].remove(); delete p.predicts[a.reg]; }
+        continue;
+      }
+      // HB-ZIP : ne pas placer sur la carte la position NSE historique du 28/07/2026.
+      // Les autres appareils ne sont pas affectes ; une position recente le fera reapparaitre.
+      if(a.reg==="HB-ZIP" && (!last || minsAgo(last.fix_time)>1440)){
+        if(p.markers[a.reg]){p.markers[a.reg].remove();delete p.markers[a.reg];}
+        if(p.trails[a.reg]){p.trails[a.reg].remove();delete p.trails[a.reg];}
+        if(p.predicts[a.reg]){p.predicts[a.reg].remove();delete p.predicts[a.reg];}
         continue;
       }
       const focus=p.follow||selected;   // appareil mis en avant sur cette carte
