@@ -439,28 +439,43 @@ function metarTafLayer(){
       `<br><span class="muted">METAR ${st.time?hm(st.time)+" UTC":""}${a!=null?" (il y a "+a+" min)":""}</span><pre>${esc(st.raw||"—")}</pre>`+
       (st.taf?`<span class="muted">TAF</span><pre>${esc(st.taf)}</pre>`:`<span class="muted">Pas de TAF publié.</span>`);
   };
-  async function load(){
+  // Emprise demandée : zone visible + 10 %, ramenée autour du centre si elle dépasse ce que le relais accepte
+  // (20° x 30°). Les pastilles affichées restent en place tant qu'une nouvelle réponse valide n'est pas arrivée.
+  let lastBox=null,lastT=0,lastZ=null;
+  const MAXLAT=19,MAXLON=29;
+  function wantedBox(){
+    const b=map.getBounds().pad(0.1), c=map.getCenter();
+    let s=b.getSouth(),n=b.getNorth(),w=b.getWest(),e=b.getEast();
+    if(n-s>MAXLAT){ s=c.lat-MAXLAT/2; n=c.lat+MAXLAT/2; }
+    if(e-w>MAXLON){ w=c.lng-MAXLON/2; e=c.lng+MAXLON/2; }
+    return [Math.max(-89,s),Math.max(-180,w),Math.min(89,n),Math.min(180,e)];
+  }
+  const inside=(a,b)=>b&&a[0]>=b[0]&&a[1]>=b[1]&&a[2]<=b[2]&&a[3]<=b[3];
+  async function load(force){
     if(!map) return;
-    g.clearLayers();
-    if(map.getZoom()<6) return;
-    const b=map.getBounds().pad(0.1), my=++seq;
+    const z=map.getZoom();
+    if(z<6){ g.clearLayers(); lastBox=null; return; }
+    const box=wantedBox();
+    // Simple recentrage (suivi automatique d'un appareil) : rien à recharger si la zone est déjà couverte et récente.
+    if(!force&&inside(box,lastBox)&&Date.now()-lastT<600000&&(z>=8)===(lastZ>=8)) return;
+    const my=++seq;
     try{
-      const {data,error}=await sb.functions.invoke("fleet-metar",{body:{bbox:[b.getSouth(),b.getWest(),b.getNorth(),b.getEast()]}});
+      const {data,error}=await sb.functions.invoke("fleet-metar",{body:{bbox:box}});
       if(error) throw error;
       if(my!==seq||!map) return;
-      g.clearLayers();
+      g.clearLayers(); lastBox=box; lastT=Date.now(); lastZ=z;
       for(const st of (data&&data.stations)||[]){
         const [col]=WX_CAT[st.cat]||[WX_NONE]; const old=(ageMin(st.time)??999)>90;
-        const icon=L.divIcon({className:"",iconSize:[0,0],html:`<div class="wxst${old?" old":""}"><i style="background:${col}"></i>${map.getZoom()>=8?`<span>${esc(st.id)}</span>`:""}</div>`});
+        const icon=L.divIcon({className:"",iconSize:[0,0],html:`<div class="wxst${old?" old":""}"><i style="background:${col}"></i>${z>=8?`<span>${esc(st.id)}</span>`:""}</div>`});
         const mk=L.marker([st.lat,st.lon],{icon,keyboard:false,zIndexOffset:-200,title:st.id});
         mk.bindTooltip(html(st),{className:"wxtt",direction:"top",offset:[0,-8]});
         mk.bindPopup(html(st),{className:"wxpop",maxWidth:360});
         g.addLayer(mk);
       }
-    }catch(e){ console.warn("METAR/TAF indisponibles :",e); }
+    }catch(e){ console.warn("METAR/TAF indisponibles (pastilles précédentes conservées) :",e); }
   }
   const onMove=()=>{ clearTimeout(deb); deb=setTimeout(load,600); };
-  g.on("add",e=>{ map=e.target._map; map.on("moveend",onMove); load(); timer=setInterval(load,600000); });
+  g.on("add",e=>{ map=e.target._map; map.on("moveend",onMove); lastBox=null; load(true); timer=setInterval(()=>load(true),600000); });
   g.on("remove",()=>{ if(map) map.off("moveend",onMove); clearInterval(timer); clearTimeout(deb); timer=null; map=null; });
   return g;
 }
