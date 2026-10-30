@@ -281,6 +281,14 @@ footer .err{color:var(--lost)}
 .opsx-pt.omis span{left:12px;top:-9px;background:#0D1B2A;color:#fff;border-color:#F0C040;font-size:12px}
 /* Contrôles Leaflet du bas à gauche (échelle, légendes) décalés pour laisser la place aux boutons */
 .pane .leaflet-bottom.leaflet-left{left:50px}
+/* Nuit aéronautique */
+.facts .ngt{color:var(--ink-2)} .facts .ngt b{color:var(--ink)}
+.facts .ngt small{display:block;opacity:.8}
+.facts .ngt.soon{color:#F5A524} .facts .nwarn{color:#F5A524} .facts .ngt.on{color:#9DB8FF}
+.acm .nb{position:absolute;top:-30px;left:25px;white-space:nowrap;font:700 12px/16px var(--cond);padding:0 4px;border-radius:3px;border:1px solid #fff}
+.acm .nb.on{background:#13224A;color:#C9D8FF} .acm .nb.soon{background:#F5A524;color:#1B1200}
+.acm .eta.night{background:#13224A} .acm .eta.soon{background:#C2610C}
+.navdst.night{background:#13224A} .navdst.soon{background:#C2610C}
 </style>
 </head>
 <body>
@@ -547,6 +555,7 @@ function makeOverlays(){
   o["⬛ Surfaces brûlées 30 j (EFFIS)"]=effis("modis.ba.poly",()=>ymdUTC(-29)+"/"+ymdUTC(0),{opacity:.8});
   o["⚠ Danger feux FWI du jour (EFFIS)"]=withLegend(effis("ecmwf007.fwi",()=>ymdUTC(0),{opacity:.5,zIndex:7}),fwiLegend);
   o["⚠ Danger feux Suisse (OFEV)"]=L.tileLayer.wms("https://wms.geo.admin.ch/",{layers:"ch.bafu.gefahren-waldbrand_warnung",format:"image/png",transparent:true,version:"1.3.0",opacity:.6,zIndex:7,attribution:"© OFEV/BAFU – danger d'incendie de forêt"});
+  o["☾ Nuit aéronautique (limite jour/nuit)"]=nightLayer();
   return o;
 }
 const VIEW_KEY="saf_fleet_view"+(SCOPE==="332"?"":"_"+SCOPE);
@@ -824,6 +833,113 @@ function opsTools(p){
   opsRefresh(p); opsFillMissions(p);
 }
 
+/* ===================================================================
+   NUIT AÉRONAUTIQUE (30.10.2026)
+   Référence : SERA / EASA — la nuit va de la fin du crépuscule civil du soir au début de
+   l'aube civile du matin (centre du soleil à 6° sous l'horizon). Calcul local, horizon dégagé.
+   Repère secondaire affiché : forme simplifiée admise en France (coucher + 30 min / lever − 30 min
+   entre 30° et 60° de latitude ; 15 min en dessous de 30°).
+   Algorithme : position du soleil (formules astronomiques usuelles, précision ~1 min).
+   =================================================================== */
+const SUN = (() => {
+  const rad = Math.PI/180, dayMs = 864e5, J1970 = 2440588, J2000 = 2451545, e = rad*23.4397, J0 = 0.0009;
+  const toJ = d => d.valueOf()/dayMs - 0.5 + J1970, fromJ = j => new Date((j + 0.5 - J1970)*dayMs), toDays = d => toJ(d) - J2000;
+  const dec = l => Math.asin(Math.sin(e)*Math.sin(l));
+  const ra = l => Math.atan2(Math.sin(l)*Math.cos(e), Math.cos(l));
+  const M = d => rad*(357.5291 + 0.98560028*d);
+  const L = m => m + rad*(1.9148*Math.sin(m) + 0.02*Math.sin(2*m) + 0.0003*Math.sin(3*m)) + rad*102.9372 + Math.PI;
+  function altitude(date, lat, lon){
+    const d = toDays(date), m = M(d), l = L(m), lw = rad*-lon, phi = rad*lat;
+    const H = rad*(280.16 + 360.9856235*d) - lw - ra(l), dc = dec(l);
+    return Math.asin(Math.sin(phi)*Math.sin(dc) + Math.cos(phi)*Math.cos(dc)*Math.cos(H)) / rad;
+  }
+  function times(date, lat, lon){
+    const lw = rad*-lon, phi = rad*lat, d = toDays(date), n = Math.round(d - J0 - lw/(2*Math.PI));
+    const ds = J0 + lw/(2*Math.PI) + n, m = M(ds), l = L(m), dc = dec(l);
+    const Jnoon = J2000 + ds + 0.0053*Math.sin(m) - 0.0069*Math.sin(2*l);
+    const pair = h0 => {
+      const c = (Math.sin(h0*rad) - Math.sin(phi)*Math.sin(dc)) / (Math.cos(phi)*Math.cos(dc));
+      if(c < -1 || c > 1) return [null, null];          // pas de passage à cette hauteur ce jour-là
+      const w = Math.acos(c), a = J0 + (w + lw)/(2*Math.PI) + n;
+      const Jset = J2000 + a + 0.0053*Math.sin(m) - 0.0069*Math.sin(2*l);
+      return [fromJ(Jnoon - (Jset - Jnoon)), fromJ(Jset)];
+    };
+    const [sunrise, sunset] = pair(-0.833), [dawn, dusk] = pair(-6);
+    return { sunrise, sunset, dawn, dusk };
+  }
+  return { altitude, times };
+})();
+// État jour/nuit à un point et à un instant, avec la prochaine bascule
+function nightAt(lat, lon, t){
+  t = t ? new Date(t) : new Date();
+  const ev = [-1,0,1,2].map(k => SUN.times(new Date(t.getTime() + k*864e5), lat, lon));
+  const dusks = ev.map(x => x.dusk).filter(Boolean).sort((a,b) => a-b);
+  const dawns = ev.map(x => x.dawn).filter(Boolean).sort((a,b) => a-b);
+  const sets  = ev.map(x => x.sunset).filter(Boolean).sort((a,b) => a-b);
+  const rises = ev.map(x => x.sunrise).filter(Boolean).sort((a,b) => a-b);
+  const night = SUN.altitude(t, lat, lon) < -6;
+  const next = arr => arr.find(x => x > t) || null, prev = arr => [...arr].reverse().find(x => x <= t) || null;
+  const frMin = Math.abs(lat) <= 30 ? 15 : 30;
+  const nextSet = next(sets), nextRise = next(rises);
+  return { night, t,
+    start: night ? prev(dusks) : next(dusks),      // début de la nuit (en cours ou à venir)
+    end:   night ? next(dawns) : null,             // fin de la nuit en cours
+    sunset: nextSet && (!night) ? nextSet : prev(sets), sunrise: nextRise,
+    frStart: nextSet ? new Date(nextSet.getTime() + frMin*60000) : null, frMin };
+}
+const nHM = d => d ? d.toISOString().slice(11,16) : "–";
+const nLoc = d => d ? d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Paris"}) : "–";
+const nIn = d => { const m = (d - Date.now())/60000; return m < 60 ? Math.max(0,Math.round(m))+" min" : Math.floor(m/60)+" h "+String(Math.round(m%60)).padStart(2,"0"); };
+// Ligne de la fiche appareil
+function nightFact(last){
+  if(!last) return "";
+  const n = nightAt(last.lat, last.lon);
+  if(n.night) return `<div class="ngt on">☾ <b>De nuit</b> depuis ${nHM(n.start)} UTC (${nLoc(n.start)} loc.)${n.end?` · aube civile ${nHM(n.end)} UTC`:""}</div>`;
+  if(!n.start) return `<div class="ngt">☀ Pas de nuit aéronautique dans les prochaines 24 h à cette position</div>`;
+  const soon = (n.start - Date.now()) < 30*60000;
+  return `<div class="ngt${soon?" soon":""}">${soon?"◐":"☀"} Nuit aéronautique à <b>${nHM(n.start)} UTC</b> (${nLoc(n.start)} loc.) · dans ${nIn(n.start)}`+
+    `<small>Coucher du soleil ${nHM(n.sunset)} UTC · règle FR simplifiée (coucher + ${n.frMin} min) : ${nHM(n.frStart)} UTC</small></div>`;
+}
+// Pastille sur l'étiquette de l'hélicoptère
+function nightBadge(last){
+  if(!last) return "";
+  const n = nightAt(last.lat, last.lon);
+  if(n.night) return `<span class="nb on" title="De nuit (aéronautique)">☾</span>`;
+  if(n.start && n.start - Date.now() < 30*60000) return `<span class="nb soon" title="Nuit aéronautique dans ${nIn(n.start)}">◐ ${nIn(n.start)}</span>`;
+  return "";
+}
+// Arrivée à destination par rapport à la nuit au point d'arrivée
+function nightAtEta(tgt, eta){
+  if(!tgt || !eta) return null;
+  const n = nightAt(tgt.lat, tgt.lon, eta);
+  if(n.night) return { k:"night", txt:"arrivée de nuit", start:n.start };
+  if(n.start && n.start - eta < 30*60000) return { k:"soon", txt:"arrivée < 30 min avant la nuit", start:n.start };
+  return null;
+}
+// Surcouche : zone déjà dans la nuit aéronautique (soleil à plus de 6° sous l'horizon)
+function nightLayer(){
+  const g = L.layerGroup(); let t = null;
+  function draw(){
+    g.clearLayers();
+    const now = new Date(), pts = [];
+    const southNight = SUN.altitude(now, -89, 0) < -6 && SUN.altitude(now, -89, 180) < -6;
+    for(let lon = -180; lon <= 180; lon += 2){
+      let b = southNight ? -89 : 89;
+      for(let lat = -88; lat <= 88; lat += 0.5){
+        const a1 = SUN.altitude(now, lat, lon) < -6, a2 = SUN.altitude(now, lat + 0.5, lon) < -6;
+        if(a1 !== a2){ b = lat + 0.25; if(southNight ? a1 : a2) break; }
+      }
+      pts.push([b, lon]);
+    }
+    const pole = southNight ? -89 : 89;
+    L.polygon([...pts, [pole, 180], [pole, -180]], {color:"#0A1A3A", weight:1, opacity:.6, fillColor:"#0A1A3A", fillOpacity:.32, interactive:false, smoothFactor:2}).addTo(g);
+    L.polyline(pts, {color:"#7FA7FF", weight:1.5, dashArray:"6 5", interactive:false}).bindTooltip("Limite de la nuit aéronautique (fin du crépuscule civil)",{sticky:true}).addTo(g);
+  }
+  g.on("add", () => { draw(); t = setInterval(draw, 300000); });
+  g.on("remove", () => { clearInterval(t); t = null; });
+  return g;
+}
+
 function createPane(i){
   const el=document.createElement("div"); el.className="pane";
   el.innerHTML=`<div class="map"></div><div class="pane-bar"><select aria-label="Appareil suivi sur cette carte"></select><span class="pst"></span><button type="button" hidden>Recentrer</button></div>`;
@@ -1074,11 +1190,11 @@ function navFor(reg){
   const okKt=Number.isFinite(kt)&&kt>=20&&kt<=200;
   const eteMin=okKt?km/(kt*1.852)*60:null;
   const eta=okKt?new Date(new Date(last.fix_time).getTime()+eteMin*60000):null;
-  return {site:pick,tgt,km,kt:okKt?kt:null,eteMin,eta,brg:bearingDeg(last,tgt)};
+  return {site:pick,tgt,km,kt:okKt?kt:null,eteMin,eta,brg:bearingDeg(last,tgt),night:nightAtEta(tgt,eta)};
 }
 const fmtEte=m=>m==null?"–":m<60?Math.round(m)+" min":Math.floor(m/60)+" h "+String(Math.round(m%60)).padStart(2,"0");
 function navLine(nav){
-  return `ETE ${fmtEte(nav.eteMin)}`+(nav.eta?` · ETA ${hm(nav.eta)}Z`:"");
+  return `ETE ${fmtEte(nav.eteMin)}`+(nav.eta?` · ETA ${hm(nav.eta)}Z`:"")+(nav.night?` · ⚠ ${nav.night.txt}`:"");
 }
 function renderNav(pane,reg,nav,last){
   let g=pane.navs[reg];
@@ -1095,7 +1211,7 @@ function renderNav(pane,reg,nav,last){
   L.polyline(pts,{color:"#B0177A",weight:4,opacity:1,dashArray:"10 7",interactive:false}).addTo(g);
   const txt=`${esc(nav.site.name||"Chantier")}${nav.tgt.name?" · "+esc(nav.tgt.name):""} – ${Math.round(nav.km)} km · ${navLine(nav)}`;
   L.marker([nav.tgt.lat,nav.tgt.lon],{interactive:false,keyboard:false,zIndexOffset:1300,
-    icon:L.divIcon({className:"",iconSize:null,iconAnchor:[0,0],html:`<span class="navdst">${txt}</span>`})}).addTo(g);
+    icon:L.divIcon({className:"",iconSize:null,iconAnchor:[0,0],html:`<span class="navdst${nav.night?" "+nav.night.k:""}">${txt}</span>`})}).addTo(g);
 }
 function status(last){
   if(!last) return {k:"none",t:"Aucune position reçue"};
@@ -1645,13 +1761,14 @@ function render(ps){
       else if(an.outside?.since) facts+=`<div>Hors base depuis au moins <b>${dur(minsAgo(an.outside.since))}</b> (départ de ${esc(nearestAds(an.outside.leftFrom,ad=>ad.base)[0].ad.icao)})</div>`;
       else facts+=`<div>Hors base – départ non enregistré</div>`;
       if(nav) facts+=`<div class="nav">→ ${esc(nav.site.name||"Chantier")}${nav.tgt.name?" ("+esc(nav.tgt.name)+")":""} : ${Math.round(nav.km)} km · ETE ${fmtEte(nav.eteMin)}`+
-        (nav.eta?` · ETA ${hm(nav.eta)} UTC (${fmtLocal(nav.eta)} loc.)`:` · vitesse sol non exploitable`)+`</div>`;
+        (nav.eta?` · ETA ${hm(nav.eta)} UTC (${fmtLocal(nav.eta)} loc.)`:` · vitesse sol non exploitable`)+(nav.night?`<br><b class="nwarn">⚠ ${nav.night.txt} à destination (nuit à ${nHM(nav.night.start)} UTC)</b>`:"")+`</div>`;
       for(const w of sitesFor(a.reg)) facts+=`<div class="ws">Chantier du jour : <b>${esc(w.name||"—")}</b>${w.start_time?` · ${esc(tShort(w.start_time))}`:""} · ${Math.round(siteDist(w,last)*10)/10} km</div>`;
       if(st.k==="live"||st.k==="ground"){ const st0=sessionStart(a.reg);
         if(st0 && minsAgo(st0)<=60) facts+=`<div class="ws">Mis en route vers <b>${hm(st0)} UTC</b></div>`; }
       const n24=an.flights.filter(f=>new Date(f.ldTo||f.toTo)>=Date.now()-24*3600e3).length;
       if(n24) facts+=`<div>${n24} vol${n24>1?"s":""} sur 24 h</div>`;
     }
+    if(last) facts+=nightFact(last);
     const li=document.createElement("li");
     li.className="ac"+(selected===a.reg?" sel":"")+(a.active && last && minsAgo(last.fix_time)>=0 && minsAgo(last.fix_time)<=CONFIG.liveMaxMin?" tracker-active":""); li.dataset.st=st.k; li.tabIndex=0;
     li.innerHTML=`<div class="bar"></div><div class="body">
@@ -1705,7 +1822,7 @@ function render(ps){
       }
       const focus=p.follow||selected;   // appareil mis en avant sur cette carte
       if(last){
-        const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl" style="top:${-11+idx*23}px">${esc(a.reg)}</span>${nav?`<span class="eta" style="top:${11+idx*23}px">${navLine(nav)}</span>`:""}</div>`;
+        const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl" style="top:${-11+idx*23}px">${esc(a.reg)}</span>${nightBadge(last)}${nav?`<span class="eta${nav.night?" "+nav.night.k:""}" style="top:${11+idx*23}px">${navLine(nav)}</span>`:""}</div>`;
         const icon=L.divIcon({className:"",html,iconSize:[0,0]});
         if(p.markers[a.reg]) p.markers[a.reg].setLatLng([last.lat,last.lon]).setIcon(icon);
         else p.markers[a.reg]=L.marker([last.lat,last.lon],{icon,keyboard:false}).addTo(p.map);
