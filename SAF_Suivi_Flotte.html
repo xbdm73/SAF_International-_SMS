@@ -619,7 +619,20 @@ function filterBar(){
 document.querySelectorAll("#filters .seg button").forEach(b=>b.onclick=()=>setFilter(b.dataset.f));
 
 /* ---------- Utilitaires ---------- */
-const normHeading = h => h == null ? null : ((h/100) % 360); // NSE : cap en centièmes de degré
+// Le champ heading NSE n'est pas utilisé comme route sol sans validation de son référentiel.
+// On calcule la route vraie à partir de deux fixes GPS, en évitant les points immobiles,
+// les intervalles excessifs et les positions identiques (cap indéterminé).
+function gpsTrack(prev,last){
+  if(!prev || !last) return null;
+  const t0=Date.parse(prev.fix_time), t1=Date.parse(last.fix_time);
+  const dt=(t1-t0)/1000;
+  if(!Number.isFinite(dt) || dt<20 || dt>900) return null;
+  if(![prev.lat,prev.lon,last.lat,last.lon].every(v=>v!==null&&v!==''&&Number.isFinite(Number(v)))) return null;
+  const km=haversineKm(prev,last);
+  if(!Number.isFinite(km) || km<0.10 || km/dt*3600/1.852<5) return null;
+  return {deg:bearingDeg(prev,last), dtSec:dt};
+}
+const routeSol = (prev,last) => gpsTrack(prev,last)?.deg ?? null;
 const minsAgo = t => (Date.now() - new Date(t).getTime())/60000;
 function ago(t){
   const m = minsAgo(t);
@@ -660,7 +673,9 @@ function destPoint(lat,lon,bearingDeg,km){
 function predictionRadiusKm(kt,min){ return kt*1.852*min/60; }
 function renderPrediction(pane,reg,last,prev,st){
   let group=pane.predicts[reg];
-  const hd=normHeading(last?.heading), kt=currentKt(prev,last);
+  const track=gpsTrack(prev,last), hd=track?.deg ?? null, kt=currentKt(prev,last);
+  // Une projection rectiligne n’est pas fiable lorsque les deux fixes sont trop espacés.
+  if(track && track.dtSec>300){ if(group){ group.remove(); delete pane.predicts[reg]; } return; }
   if(!(last && st.k==="live" && Number.isFinite(hd) && Number.isFinite(kt) && kt>0)){
     if(group){ group.remove(); delete pane.predicts[reg]; }
     return;
@@ -731,7 +746,7 @@ function navFor(reg){
   // Appareil déjà sur zone : pas de navigation
   if(cands.some(w=>siteDist(w,last)<=WORKSITES.nearKm)) return null;
   if(!cands.length) return null;
-  let trk=s.prev&&haversineKm(s.prev,last)>0.05?bearingDeg(s.prev,last):normHeading(last.heading);
+  let trk=routeSol(s.prev,last);
   let pick=null;
   if(cands.length>1 && Number.isFinite(trk)){
     const aligned=cands.map(w=>({w,d:angDiff(bearingDeg(last,siteTarget(w)),trk)})).filter(x=>x.d<=60).sort((a,b)=>a.d-b.d);
@@ -778,7 +793,7 @@ function arrowSvg(color,heading){
   // Nez arrondi, cabine longue, carénage moteurs, sponsons de train, poutre de queue,
   // plan horizontal à gauche et rotor de queue à droite. Rotor principal 4 pales, seul élément animé.
   const rot=Number.isFinite(heading)?heading:0;
-  return `<span class="heli-icon" style="transform:rotate(${rot}deg)"><svg viewBox="0 0 44 44" aria-hidden="true">
+  return `<span class="heli-icon" style="transform:rotate(${rot}deg);opacity:${Number.isFinite(heading)?1:.55}" title="${Number.isFinite(heading)?"Orientation selon la route sol GPS":"Route sol indisponible : orientation non déterminée"}"><svg viewBox="0 0 44 44" aria-hidden="true">
     <g stroke="#fff" stroke-linejoin="round">
       <path d="M20.4 29.5 L23.6 29.5 L22.9 40.5 L21.1 40.5 Z" fill="${color}" stroke-width=".8"/>
       <path d="M21.1 37.6 L15.6 37 L15.6 39.4 L21.1 39.8 Z" fill="${color}" stroke-width=".9"/>
@@ -1302,8 +1317,10 @@ function render(ps){
     const s=state[a.reg], last=s.last, st=a.active?status(last):{k:"none",t:"Suivi non activé ("+a.provider+")"};
     const shown=passFilter(a);
     if(shown){ nShown++; if(st.k==="live") nLive++; if(st.k==="lost") nLost++; }
-    const hd=last?normHeading(last.heading):null;
+    const track=last?gpsTrack(s.prev,last):null;
+    const hd=track?.deg ?? null;
     const gs=computedGs(s.prev,last);
+    // Le champ NSE heading ne dirige jamais le symbole ni les prévisions sans validation GPS.
     const nav=a.active&&shown?navFor(a.reg):null;
     const an=s.an;
     let facts="";
@@ -1327,7 +1344,7 @@ function render(ps){
       <div class="st">${esc(st.t)}</div>
       ${last?`<dl>
         <div><dt>Altitude</dt><dd>${Math.round(last.alt_m*3.28084).toLocaleString("fr-FR")} <small>ft</small></dd></div>
-        <div><dt>Cap</dt><dd>${hd==null?"–":String(Math.round(hd)%360).padStart(3,"0")+"°"}</dd></div>
+        <div><dt>Route sol GPS</dt><dd>${hd==null?"–":String(Math.round(hd)%360).padStart(3,"0")+"°"}${track&&track.dtSec>300?'<small>moy.</small>':""}</dd></div>
         <div><dt>${gs!=null?"Vit. sol calc.":"Vitesse (brute)"}</dt><dd>${gs!=null?Math.round(gs/1.852)+' <small>kt</small>':esc(last.speed)}</dd></div>
       </dl>
       <div class="facts">${facts}</div>
