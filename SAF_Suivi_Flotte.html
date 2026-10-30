@@ -131,6 +131,12 @@ footer .err{color:var(--lost)}
 .acm .lbl{position:absolute;left:25px;top:-11px;white-space:nowrap;font-family:var(--cond);font-weight:700;font-size:15px;
   background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:3px;padding:0 5px;line-height:20px}
 .acm.lost .lbl{background:var(--lost);color:#fff;border-color:var(--lost)}
+/* ETE / ETA sous l'immatriculation d'un appareil en vol vers un chantier */
+.acm .eta{position:absolute;left:25px;white-space:nowrap;font:600 12px/17px var(--cond);color:#fff;background:#B0177A;
+  border:1px solid #fff;border-radius:3px;padding:0 5px;box-shadow:0 1px 3px rgba(0,0,0,.45)}
+.navdst{white-space:nowrap;font:600 12px/17px var(--cond);color:#fff;background:#B0177A;border:1px solid #fff;border-radius:3px;
+  padding:0 5px;transform:translate(10px,-50%);display:inline-block;box-shadow:0 1px 3px rgba(0,0,0,.45)}
+.facts .nav{color:#B0177A;font-weight:600}
 /* Légende du danger feux FWI (EFFIS) */
 .fwi-legend{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:12px;line-height:1.35;box-shadow:0 1px 4px rgba(0,0,0,.35);max-width:210px}
 .fwi-legend b{display:block;font-family:var(--cond);font-size:13px;margin-bottom:4px}
@@ -510,7 +516,7 @@ function createPane(i){
   L.control.layers(lay,ov,{position:"topright"}).addTo(m);
   L.control.scale({imperial:false,position:"bottomleft"}).addTo(m);
   BASES.forEach(b => L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null}),keyboard:false}).addTo(m));
-  const pane={i,el,map:m,markers:{},trails:{},predicts:{},sites,follow:viewFollow[i]||null,moved:false,fitted:false,
+  const pane={i,el,map:m,markers:{},trails:{},predicts:{},navs:{},sites,follow:viewFollow[i]||null,moved:false,fitted:false,
     sel:el.querySelector("select"),pst:el.querySelector(".pst"),btn:el.querySelector("button")};
   // Déplacement à la main : on arrête de suivre jusqu'au clic sur « Recentrer »
   m.on("dragstart",()=>{ if(pane.follow){ pane.moved=true; pane.btn.hidden=false; } });
@@ -693,6 +699,71 @@ function renderPrediction(pane,reg,last,prev,st){
   L.polyline([center,[end.lat,end.lon]],{
     color:"#001F54",weight:5,opacity:1,interactive:false
   }).addTo(group);
+}
+/* ---------- Navigation vers le prochain chantier : ETE, ETA et route ----------
+   Destination = chantier du jour attribué à l'appareil (agenda Operations), hors annulés et terminés,
+   dont l'horaire de fin n'est pas passé et sur lequel l'appareil n'est pas déjà venu puis reparti aujourd'hui.
+   S'il en reste plusieurs : celui qui est dans l'axe de la route suivie (±60°), sinon le plus tôt dans la journée.
+   Point visé : la LZ du chantier si elle existe, sinon son point principal.
+   Vitesse sol calculée entre les deux derniers points (sans vent), entre 20 et 200 kt, sinon pas d'ETE. */
+function bearingDeg(a,b){
+  const r=x=>x*Math.PI/180, φ1=r(a.lat), φ2=r(b.lat), Δλ=r(b.lon-a.lon);
+  const y=Math.sin(Δλ)*Math.cos(φ2), x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+const angDiff=(a,b)=>{ const d=Math.abs(a-b)%360; return d>180?360-d:d; };
+const localHM=()=>new Intl.DateTimeFormat("fr-FR",{timeZone:WORKSITES.tz,hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date());
+const fmtLocal=t=>new Date(t).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",timeZone:WORKSITES.tz});
+function siteTarget(w){
+  const lz=sitePts(w).find(p=>p.kind==="lz");
+  return lz?{lat:+lz.lat,lon:+lz.lon,name:lz.name}:{lat:+w.lat,lon:+w.lon,name:null};
+}
+function navFor(reg){
+  const s=state[reg], last=s?.last;
+  if(!last || status(last).k!=="live") return null;
+  const kt=currentKt(s.prev,last);
+  const midnight=new Date(todayLocal()+"T00:00:00");   // approximatif (heure du navigateur), suffit pour « aujourd'hui »
+  const today=(s.all||[]).filter(p=>new Date(p.fix_time)>=midnight-2*3600e3);
+  const nowHM=localHM();
+  let cands=sitesFor(reg).filter(w=>w.status!=="terminé" && !(w.end_time && tShort(w.end_time)<nowHM));
+  // Chantier déjà travaillé puis quitté aujourd'hui : écarté
+  cands=cands.filter(w=>!(today.some(p=>siteDist(w,p)<=WORKSITES.nearKm) && siteDist(w,last)>WORKSITES.nearKm));
+  // Appareil déjà sur zone : pas de navigation
+  if(cands.some(w=>siteDist(w,last)<=WORKSITES.nearKm)) return null;
+  if(!cands.length) return null;
+  let trk=s.prev&&haversineKm(s.prev,last)>0.05?bearingDeg(s.prev,last):normHeading(last.heading);
+  let pick=null;
+  if(cands.length>1 && Number.isFinite(trk)){
+    const aligned=cands.map(w=>({w,d:angDiff(bearingDeg(last,siteTarget(w)),trk)})).filter(x=>x.d<=60).sort((a,b)=>a.d-b.d);
+    if(aligned.length) pick=aligned[0].w;
+  }
+  if(!pick) pick=cands.slice().sort((a,b)=>String(a.start_time||"99").localeCompare(String(b.start_time||"99")))[0];
+  const tgt=siteTarget(pick), km=haversineKm(last,tgt);
+  const okKt=Number.isFinite(kt)&&kt>=20&&kt<=200;
+  const eteMin=okKt?km/(kt*1.852)*60:null;
+  const eta=okKt?new Date(new Date(last.fix_time).getTime()+eteMin*60000):null;
+  return {site:pick,tgt,km,kt:okKt?kt:null,eteMin,eta,brg:bearingDeg(last,tgt)};
+}
+const fmtEte=m=>m==null?"–":m<60?Math.round(m)+" min":Math.floor(m/60)+" h "+String(Math.round(m%60)).padStart(2,"0");
+function navLine(nav){
+  return `ETE ${fmtEte(nav.eteMin)}`+(nav.eta?` · ETA ${hm(nav.eta)}Z`:"");
+}
+function renderNav(pane,reg,nav,last){
+  let g=pane.navs[reg];
+  if(!nav||!last){ if(g){ g.remove(); delete pane.navs[reg]; } return; }
+  const sig=[last.fix_time,nav.site.id??nav.site.name,nav.tgt.lat,nav.tgt.lon,Math.round(nav.eteMin??-1)].join("|");
+  if(g && g.navSig===sig) return;
+  if(!g){ g=L.layerGroup().addTo(pane.map); pane.navs[reg]=g; }
+  g.navSig=sig; g.clearLayers();
+  // Route directe, découpée en arc de grand cercle (lisible sur les longues distances)
+  const n=Math.max(2,Math.min(64,Math.ceil(nav.km/10))), pts=[];
+  for(let i=0;i<=n;i++){ const q=destPoint(last.lat,last.lon,nav.brg,nav.km*i/n); pts.push([q.lat,q.lon]); }
+  pts[pts.length-1]=[nav.tgt.lat,nav.tgt.lon];
+  L.polyline(pts,{color:"#FFFFFF",weight:7,opacity:.9,interactive:false}).addTo(g);
+  L.polyline(pts,{color:"#B0177A",weight:4,opacity:1,dashArray:"10 7",interactive:false}).addTo(g);
+  const txt=`${esc(nav.site.name||"Chantier")}${nav.tgt.name?" · "+esc(nav.tgt.name):""} – ${Math.round(nav.km)} km · ${navLine(nav)}`;
+  L.marker([nav.tgt.lat,nav.tgt.lon],{interactive:false,keyboard:false,zIndexOffset:1300,
+    icon:L.divIcon({className:"",iconSize:null,iconAnchor:[0,0],html:`<span class="navdst">${txt}</span>`})}).addTo(g);
 }
 function status(last){
   if(!last) return {k:"none",t:"Aucune position reçue"};
@@ -1233,6 +1304,7 @@ function render(ps){
     if(shown){ nShown++; if(st.k==="live") nLive++; if(st.k==="lost") nLost++; }
     const hd=last?normHeading(last.heading):null;
     const gs=computedGs(s.prev,last);
+    const nav=a.active&&shown?navFor(a.reg):null;
     const an=s.an;
     let facts="";
     if(last){
@@ -1240,6 +1312,8 @@ function render(ps){
       if(atBase(last)) facts+=`<div>En base : <b>${esc(nearestAds(last,ad=>ad.base)[0].ad.icao)}</b></div>`;
       else if(an.outside?.since) facts+=`<div>Hors base depuis au moins <b>${dur(minsAgo(an.outside.since))}</b> (départ de ${esc(nearestAds(an.outside.leftFrom,ad=>ad.base)[0].ad.icao)})</div>`;
       else facts+=`<div>Hors base – départ non enregistré</div>`;
+      if(nav) facts+=`<div class="nav">→ ${esc(nav.site.name||"Chantier")}${nav.tgt.name?" ("+esc(nav.tgt.name)+")":""} : ${Math.round(nav.km)} km · ETE ${fmtEte(nav.eteMin)}`+
+        (nav.eta?` · ETA ${hm(nav.eta)} UTC (${fmtLocal(nav.eta)} loc.)`:` · vitesse sol non exploitable`)+`</div>`;
       for(const w of sitesFor(a.reg)) facts+=`<div class="ws">Chantier du jour : <b>${esc(w.name||"—")}</b>${w.start_time?` · ${esc(tShort(w.start_time))}`:""} · ${Math.round(siteDist(w,last)*10)/10} km</div>`;
       if(st.k==="live"||st.k==="ground"){ const st0=sessionStart(a.reg);
         if(st0 && minsAgo(st0)<=60) facts+=`<div class="ws">Mis en route vers <b>${hm(st0)} UTC</b></div>`; }
@@ -1285,6 +1359,7 @@ function render(ps){
         if(p.markers[a.reg]){ p.markers[a.reg].remove(); delete p.markers[a.reg]; }
         if(p.trails[a.reg]){ p.trails[a.reg].remove(); delete p.trails[a.reg]; }
         if(p.predicts[a.reg]){ p.predicts[a.reg].remove(); delete p.predicts[a.reg]; }
+        renderNav(p,a.reg,null,null);
         continue;
       }
       // HB-ZIP : ne pas placer sur la carte la position NSE historique du 28/07/2026.
@@ -1293,11 +1368,12 @@ function render(ps){
         if(p.markers[a.reg]){p.markers[a.reg].remove();delete p.markers[a.reg];}
         if(p.trails[a.reg]){p.trails[a.reg].remove();delete p.trails[a.reg];}
         if(p.predicts[a.reg]){p.predicts[a.reg].remove();delete p.predicts[a.reg];}
+        renderNav(p,a.reg,null,null);
         continue;
       }
       const focus=p.follow||selected;   // appareil mis en avant sur cette carte
       if(last){
-        const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl" style="top:${-11+idx*23}px">${esc(a.reg)}</span></div>`;
+        const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl" style="top:${-11+idx*23}px">${esc(a.reg)}</span>${nav?`<span class="eta" style="top:${11+idx*23}px">${navLine(nav)}</span>`:""}</div>`;
         const icon=L.divIcon({className:"",html,iconSize:[0,0]});
         if(p.markers[a.reg]) p.markers[a.reg].setLatLng([last.lat,last.lon]).setIcon(icon);
         else p.markers[a.reg]=L.marker([last.lat,last.lon],{icon,keyboard:false}).addTo(p.map);
@@ -1308,6 +1384,7 @@ function render(ps){
       else p.trails[a.reg]=L.polyline(pts,{weight:3,opacity:.85}).addTo(p.map);
       p.trails[a.reg].setStyle({color:COLORS[st.k],weight:focus===a.reg?5:3,opacity:focus&&focus!==a.reg?.35:.85});
       renderPrediction(p,a.reg,last,s.prev,st);
+      renderNav(p,a.reg,nav,last);
     }
   }
   list.scrollTop=scroll;
@@ -1323,6 +1400,7 @@ function render(ps){
   if(!list.children.length) list.innerHTML=`<li style="padding:16px 20px;color:var(--ink-2)">Aucun appareil ${esc(FAM_LABEL[SCOPE]||"")} dans la flotte suivie.</li>`;
   panes.forEach(p=>{
     for(const reg of Object.keys(p.predicts)) if(!fleet.some(a=>a.reg===reg)) { p.predicts[reg].remove(); delete p.predicts[reg]; }
+    for(const reg of Object.keys(p.navs)) if(!fleet.some(a=>a.reg===reg)) renderNav(p,reg,null,null);
     centerPane(p,false);
   });   // les cartes qui suivent un appareil se recentrent
   firstFit=false;
