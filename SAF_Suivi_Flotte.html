@@ -140,6 +140,14 @@ footer .err{color:var(--lost)}
 .fwi-legend img{display:none;max-width:100%;margin-top:4px;background:#fff;border-radius:3px}
 .fwi-legend.img-ok .rows{display:none} .fwi-legend.img-ok img{display:block}
 .fwi-legend small{display:block;margin-top:4px;opacity:.7}
+/* METAR / TAF : pastille par aérodrome selon la catégorie de vol */
+.wxst{position:relative}
+.wxst i{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.45)}
+.wxst span{position:absolute;left:9px;top:-8px;font:600 11px/16px var(--cond);color:#fff;background:rgba(10,20,32,.72);border-radius:3px;padding:0 3px;white-space:nowrap}
+.wxst.old i{opacity:.45}
+.leaflet-tooltip.wxtt,.wxpop .leaflet-popup-content{font-size:12px;line-height:1.35;max-width:340px;white-space:normal}
+.wxtt pre,.wxpop pre{margin:3px 0 0;white-space:pre-wrap;font:12.5px/1.35 ui-monospace,Menlo,Consolas,monospace}
+.wxtt .cat,.wxpop .cat{display:inline-block;color:#fff;border-radius:3px;padding:0 5px;font-weight:700;margin-left:4px}
 /* Chantiers du jour (agenda Operations) */
 .wsm{position:relative}
 .wsm svg{position:absolute;left:-11px;top:-11px;width:22px;height:22px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
@@ -407,9 +415,59 @@ function withLegend(lyr,makeCtl){
   lyr.on("remove",()=>{ if(ctl){ ctl.remove(); ctl=null; } });
   return lyr;
 }
+// METAR / TAF via le relais Supabase « fleet-metar » (aviationweather.gov, données NOAA) :
+// stations de la zone visible, rafraîchies toutes les 10 min et à chaque déplacement de carte (zoom ≥ 6).
+const WX_CAT={VFR:["#2DB34A","VFR – plafond > 3000 ft et visi > 5 SM"],MVFR:["#2F7DE1","MVFR – plafond 1000–3000 ft ou visi 3–5 SM"],
+  IFR:["#E2231A","IFR – plafond 500–999 ft ou visi 1–3 SM"],LIFR:["#C026D3","LIFR – plafond < 500 ft ou visi < 1 SM"]};
+const WX_NONE="#8A94A0";
+function wxCatLegend(){
+  const c=L.control({position:"bottomleft"});
+  c.onAdd=()=>{ const d=L.DomUtil.create("div","fwi-legend");
+    d.innerHTML=`<b>METAR – catégorie de vol</b>`+Object.entries(WX_CAT).map(([k,[col,t]])=>
+      `<div class="r"><span class="sw" style="background:${col};border-radius:50%"></span>${esc(t)}</div>`).join("")+
+      `<div class="r"><span class="sw" style="background:${WX_NONE};border-radius:50%"></span>Indéterminée</div>`+
+      `<small>Pastille pâle : METAR de plus de 90 min. Zoom ≥ 6 requis.</small>`;
+    L.DomEvent.disableClickPropagation(d); return d; };
+  return c;
+}
+function metarTafLayer(){
+  const g=L.layerGroup(); let map=null,timer=null,deb=null,seq=0;
+  const ageMin=t=>t?Math.round((Date.now()-new Date(t))/60000):null;
+  const html=st=>{
+    const [col]=WX_CAT[st.cat]||[WX_NONE]; const a=ageMin(st.time);
+    return `<b>${esc(st.id)}</b>${st.name?" – "+esc(st.name):""}<span class="cat" style="background:${col}">${esc(st.cat||"?")}</span>`+
+      `<br><span class="muted">METAR ${st.time?hm(st.time)+" UTC":""}${a!=null?" (il y a "+a+" min)":""}</span><pre>${esc(st.raw||"—")}</pre>`+
+      (st.taf?`<span class="muted">TAF</span><pre>${esc(st.taf)}</pre>`:`<span class="muted">Pas de TAF publié.</span>`);
+  };
+  async function load(){
+    if(!map) return;
+    g.clearLayers();
+    if(map.getZoom()<6) return;
+    const b=map.getBounds().pad(0.1), my=++seq;
+    try{
+      const {data,error}=await sb.functions.invoke("fleet-metar",{body:{bbox:[b.getSouth(),b.getWest(),b.getNorth(),b.getEast()]}});
+      if(error) throw error;
+      if(my!==seq||!map) return;
+      g.clearLayers();
+      for(const st of (data&&data.stations)||[]){
+        const [col]=WX_CAT[st.cat]||[WX_NONE]; const old=(ageMin(st.time)??999)>90;
+        const icon=L.divIcon({className:"",iconSize:[0,0],html:`<div class="wxst${old?" old":""}"><i style="background:${col}"></i>${map.getZoom()>=8?`<span>${esc(st.id)}</span>`:""}</div>`});
+        const mk=L.marker([st.lat,st.lon],{icon,keyboard:false,zIndexOffset:-200,title:st.id});
+        mk.bindTooltip(html(st),{className:"wxtt",direction:"top",offset:[0,-8]});
+        mk.bindPopup(html(st),{className:"wxpop",maxWidth:360});
+        g.addLayer(mk);
+      }
+    }catch(e){ console.warn("METAR/TAF indisponibles :",e); }
+  }
+  const onMove=()=>{ clearTimeout(deb); deb=setTimeout(load,600); };
+  g.on("add",e=>{ map=e.target._map; map.on("moveend",onMove); load(); timer=setInterval(load,600000); });
+  g.on("remove",()=>{ if(map) map.off("moveend",onMove); clearInterval(timer); clearTimeout(deb); timer=null; map=null; });
+  return g;
+}
 function makeOverlays(){
   const o={};
   if(CONFIG.openAipKey) o["Espaces aériens (openAIP)"]=L.tileLayer("https://{s}.api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.png?apiKey="+encodeURIComponent(CONFIG.openAipKey),{subdomains:"abc",maxNativeZoom:14,maxZoom:19,zIndex:10,attribution:"© openAIP (données communautaires, non officielles)"});
+  o["✈ METAR / TAF (catégorie de vol)"]=withLegend(metarTafLayer(),wxCatLegend);
   o["🌧 Radar précipitations (RainViewer)"]=rainRadar();
   o["🔥 Feux actifs 24 h (EFFIS, VIIRS)"]=effis("viirs.hs",()=>ymdUTC(-1)+"/"+ymdUTC(0));
   o["🔥 Feux actifs 7 j (EFFIS, VIIRS)"]=effis("viirs.hs",()=>ymdUTC(-6)+"/"+ymdUTC(0));
