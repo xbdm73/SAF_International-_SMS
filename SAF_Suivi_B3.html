@@ -24,6 +24,15 @@ button,input,select{font:inherit;color:inherit}
 #app{display:grid;grid-template-columns:340px 1fr;height:100%}
 #side{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;
   padding-top:env(safe-area-inset-top,0px)}
+#map-area{display:flex;flex-direction:column;min-width:0;min-height:0;height:100%}
+#b3-ribbon{flex:0 0 auto;display:flex;gap:6px;align-items:center;overflow-x:auto;white-space:nowrap;padding:8px 10px;background:var(--panel);border-bottom:1px solid var(--line);scrollbar-width:thin}
+#b3-ribbon .ribbon-label{color:var(--ink-2);font-size:12px;font-weight:600;flex-shrink:0}
+#b3-ribbon button{flex:0 0 auto;border:1px solid rgba(255,255,255,.2);background:#1d2d3d;color:#e5ebf0;border-radius:5px;padding:5px 8px;font:600 13px var(--cond);cursor:pointer}
+#b3-ribbon button[data-tracker="on"]{background:#F0C040;border-color:#D39B19;color:#111827}
+#b3-ribbon button[aria-pressed="true"]{outline:2px solid #fff;outline-offset:-2px}
+#b3-ribbon button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#map-area #maps{flex:1;min-height:0;height:auto}
+@media(max-width:760px){#map-area{grid-row:1}#map-area #maps{grid-row:auto}}
 #maps{height:100%;width:100%;display:grid;gap:2px;background:var(--line);grid-template-columns:1fr;grid-template-rows:1fr}
 #maps[data-n="2"]{grid-template-columns:1fr 1fr}
 #maps[data-n="3"]{grid-template-columns:1fr 1fr 1fr}
@@ -56,6 +65,12 @@ header p{margin:4px 0 0;color:var(--ink-2);font-size:13px}
 .ac .bar{background:var(--stale)}
 .ac[data-st=live] .bar{background:var(--live)} .ac[data-st=ground] .bar{background:var(--ground)}
 .ac[data-st=lost] .bar{background:var(--lost)}
+.ac.tracker-active,.ac.tracker-active:hover,.ac.tracker-active.sel{background:#F0C040;color:#111827}
+.ac.tracker-active .bar{background:#B57C00}
+.ac.tracker-active .type,.ac.tracker-active dt,.ac.tracker-active small,.ac.tracker-active .when,.ac.tracker-active .muted{color:#374151}
+.ac.tracker-active .st,.ac.tracker-active[data-st=live] .st,.ac.tracker-active[data-st=ground] .st{color:#111827}
+.ac.tracker-active .more,.ac.tracker-active .det h3{color:#463500}
+.ac.tracker-active .det{border-top-color:rgba(0,0,0,.18)}
 .ac .body{padding:12px 16px 12px 14px}
 .ac .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .ac .reg{font-family:var(--cond);font-weight:700;font-size:30px;line-height:1}
@@ -271,7 +286,7 @@ footer .err{color:var(--lost)}
     <ul id="list"></ul>
     <footer id="foot">—</footer>
   </aside>
-  <div id="maps" data-n="1"></div>
+  <div id="map-area"><nav id="b3-ribbon" aria-label="État des traceurs AS350 B3"><span class="ribbon-label">Traceurs B3</span></nav><div id="maps" data-n="1"></div></div>
 </div>
 
 <div id="hist" hidden role="dialog" aria-modal="true" aria-labelledby="h-title">
@@ -1060,7 +1075,46 @@ function drawTerrain(){
   });
 }
 
+function renderB3Ribbon(){
+  const bar=document.getElementById("b3-ribbon");
+  if(!bar)return;
+  const active=document.activeElement?.dataset?.reg;
+  const scroll=bar.scrollLeft;
+  bar.replaceChildren();
+  const label=document.createElement("span");
+  label.className="ribbon-label";label.textContent="Traceurs B3";bar.appendChild(label);
+  for(const a of fleet){
+    const last=state[a.reg]?.last;
+    const recent=!!(a.active && last && minsAgo(last.fix_time)>=0 && minsAgo(last.fix_time)<=CONFIG.liveMaxMin);
+    const b=document.createElement("button");b.type="button";
+    b.textContent=a.reg;b.dataset.reg=a.reg;b.dataset.tracker=recent?"on":"off";
+    b.setAttribute("aria-pressed",String(selected===a.reg));
+    b.title=recent?"Position GPS récente (5 min maximum)":"Pas de position GPS récente";
+    b.onclick=()=>{
+      // Le bandeau fonctionne meme si l'appareil n'est pas visible dans la liste.
+      selected=a.reg;
+      const pos=state[a.reg]?.last;
+      const pane=panes.find(p=>p.follow===a.reg)||panes[0];
+      if(pane && pos && Number.isFinite(+pos.lat) && Number.isFinite(+pos.lon)){
+        pane.follow=a.reg;
+        viewFollow[pane.i]=a.reg;
+        pane.moved=false;
+        pane.fitted=false;
+        pane.btn.hidden=true;
+        pane.map.setView([+pos.lat,+pos.lon],11,{animate:false});
+        saveView();
+      }
+      render(lastPs);
+      if(pos)ensureDetails(a.reg);
+    };
+    bar.appendChild(b);
+  }
+  bar.scrollLeft=scroll;
+  if(active)bar.querySelectorAll("button").forEach(b=>{if(b.dataset.reg===active)b.focus({preventScroll:true});});
+}
+
 function render(ps){
+  renderB3Ribbon();
   const list=document.getElementById("list"); const scroll=list.scrollTop; list.innerHTML="";
   let nLive=0, nLost=0, nShown=0;
   const stackCount={}; // appareils posés au même endroit (~100 m) : étiquettes empilées
@@ -1086,7 +1140,7 @@ function render(ps){
       if(n24) facts+=`<div>${n24} vol${n24>1?"s":""} sur 24 h</div>`;
     }
     const li=document.createElement("li");
-    li.className="ac"+(selected===a.reg?" sel":""); li.dataset.st=st.k; li.tabIndex=0;
+    li.className="ac"+(selected===a.reg?" sel":"")+(a.active && last && minsAgo(last.fix_time)>=0 && minsAgo(last.fix_time)<=CONFIG.liveMaxMin?" tracker-active":""); li.dataset.st=st.k; li.tabIndex=0;
     li.innerHTML=`<div class="bar"></div><div class="body">
       <div class="top"><span class="reg">${esc(a.reg)}</span><span class="type">${esc(a.type||"")}</span></div>
       <div class="st">${esc(st.t)}</div>
