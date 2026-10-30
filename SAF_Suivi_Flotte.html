@@ -546,7 +546,9 @@ function predictionBounds(reg){
   if(!Number.isFinite(kt)||kt<=0)return null;
   const radius=predictionRadiusKm(kt,30)*1000;
   if(!(radius>0))return null;
-  return L.circle([last.lat,last.lon],{radius}).getBounds();
+  // Emprise calculée sans passer par une couche : L.circle(...).getBounds() exige un cercle déjà posé sur
+  // une carte et levait « Cannot read properties of undefined (reading 'layerPointToLatLng') ».
+  return L.latLng(last.lat,last.lon).toBounds(radius*2);
 }
 function centerPane(pane,force){
   if(pane.follow){
