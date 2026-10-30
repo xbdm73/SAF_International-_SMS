@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<script>/* Porte d'entrée unique (30.10.2026) : ce bloc s'ouvre par le portail SAF, qui le sert à /sms/
+   (même adresse, donc même session). Ouvert depuis son ancienne adresse, il y est renvoyé. */
+(function(){ if(location.hostname==='saf-international-sms.netlify.app')
+  location.replace('https://saf-international-portail.netlify.app/sms'+location.pathname+location.search+location.hash); })();</script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SAF – Suivi AS 350 B3</title>
@@ -333,7 +338,7 @@ footer .err{color:var(--lost)}
    SAF_Suivi_Flotte.html -> "332" (AS 332 Super Puma) · SAF_Suivi_B3.html -> "350" (AS 350 B3) */
 const SCOPE = "350";
 const SELF = (location.pathname.split("/").pop() || "SAF_Suivi_Flotte.html");
-const LOGIN = "index.html?next=" + encodeURIComponent(SELF);
+const LOGIN = location.pathname.indexOf("/sms/")===0 ? "/?next=" + encodeURIComponent(location.pathname) : "index.html?next=" + encodeURIComponent(SELF);
 // Mise en route : AS 332 = ouverture d'une carte ; AS 350 B3 (12 appareils) = simple signalement, sans carte
 const AUTO_MAP = SCOPE === "332";
 const CONFIG = {

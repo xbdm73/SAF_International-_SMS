@@ -2,6 +2,11 @@
 
 <html lang="fr">
 <head>
+<script>/* Porte d'entrée unique (30.10.2026) : ce bloc s'ouvre par le portail SAF, qui le sert à /sms/
+   (même adresse, donc même session). Ouvert depuis son ancienne adresse, il y est renvoyé. */
+(function(){ if(location.hostname==='saf-international-sms.netlify.app')
+  location.replace('https://saf-international-portail.netlify.app/sms'+location.pathname+location.search+location.hash); })();</script>
+
 <link rel="manifest" href="manifest.webmanifest"/>
 <link rel="apple-touch-icon" href="cms-icon-180.png"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>

@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<script>/* Porte d'entrée unique (30.10.2026) : ce bloc s'ouvre par le portail SAF, qui le sert à /sms/
+   (même adresse, donc même session). Ouvert depuis son ancienne adresse, il y est renvoyé. */
+(function(){ if(location.hostname==='saf-international-sms.netlify.app')
+  location.replace('https://saf-international-portail.netlify.app/sms'+location.pathname+location.search+location.hash); })();</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SAF International — Outils de gestion / Management tools</title>
@@ -1198,6 +1203,10 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   // Tout visiteur sans session admin obtient automatiquement un accès
   // lecture seule, sans login ni token requis.
   function applyGuestRole(){
+    // Porte d'entrée unique : sans session, la connexion se fait sur le portail, qui renvoie ensuite ici.
+    if(location.pathname.indexOf('/sms/')===0){
+      location.replace('/?next=' + encodeURIComponent('/sms/' + (SAF_NEXT || 'index.html'))); return;
+    }
     // Connexion obligatoire — plus d'accès invité (RLS : lecture réservée aux comptes déclarés)
     overlay.style.display = 'flex';
     userInfo.textContent  = '\u2014';
