@@ -20404,6 +20404,7 @@ function printLessonById(id,_versions,_mergedPdf){
   var w=window.open('','_blank');
   var overflowScript=`
   window.onload=function(){
+    if(window.__llRenderStarted)return;window.__llRenderStarted=true;
     // Images insérées dans le corps : si la page déborde, on les réduit par
     // paliers (jusqu'à 30 % de la largeur) plutôt que de rogner le texte.
     document.querySelectorAll('.ct').forEach(function(ct){
@@ -20606,6 +20607,7 @@ function printLessonById(id,_versions,_mergedPdf){
           ]);
           await Promise.all(Array.prototype.map.call(document.images,function(im){return im.complete?Promise.resolve():new Promise(function(done){im.onload=done;im.onerror=done;});}));
           if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+          var status=document.getElementById('ll-pdf-status'); if(status)status.textContent='Préparation de la communication et des annexes...';
           var pdf=await PDFLib.PDFDocument.create();
           var pages=Array.prototype.slice.call(document.querySelectorAll('.page'));
           for(var i=0;i<pages.length;i++){
@@ -20616,6 +20618,7 @@ function printLessonById(id,_versions,_mergedPdf){
             var png=await pdf.embedPng(pngBytes);
             var out=pdf.addPage([595.28,841.89]);out.drawImage(png,{x:0,y:0,width:595.28,height:841.89});
           }
+          if(status)status.textContent='Ajout de '+payload.attachments.length+' annexe(s) PDF...';
           for(var j=0;j<payload.attachments.length;j++){
             var item=payload.attachments[j], src=item.data;
             if(!src)continue;
@@ -20629,7 +20632,8 @@ function printLessonById(id,_versions,_mergedPdf){
           if(nAttachments && pdf.getPageCount()<=pages.length){throw new Error('Aucune page annexe n’a été ajoutée. Vérifiez que le PDF est bien enregistré dans la fiche.');}
           var bytes=await pdf.save();
           var blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob);
-          var a=document.createElement('a');a.href=url;a.download=payload.name;a.click();
+          var host=(window.opener&&!window.opener.closed)?window.opener:window;
+          var a=host.document.createElement('a');a.href=url;a.download=payload.name;a.style.display='none';host.document.body.appendChild(a);a.click();a.remove();
           setTimeout(function(){URL.revokeObjectURL(url);},60000);
           var status=document.getElementById('ll-pdf-status');if(status)status.textContent='PDF unique généré : '+pdf.getPageCount()+' pages, '+payload.attachments.length+' annexe(s). Vous pouvez fermer cet onglet.';
         }catch(err){console.error('LL PDF unique',err);alert('Impossible de générer le PDF unique. Aucune annexe n’a été omise silencieusement. '+(err.message||err));}
@@ -20638,10 +20642,17 @@ function printLessonById(id,_versions,_mergedPdf){
   };
   `;
   var llMergedConfig={name:(l.ref||'SAF_Lesson_Learned').replace(/[^a-zA-Z0-9_-]/g,'_')+'_complet.pdf',attachments:_list.filter(function(v){return !!v.pdf;}).map(function(v){return {name:v.pdf_name||'annexe.pdf',data:v.pdf};})};
-  if(_mergedPdf && !llMergedConfig.attachments.length){ console.warn('Aucune annexe PDF enregistrée sur la Lesson Learned '+(l.ref||'')); }
+  if(_mergedPdf && !llMergedConfig.attachments.length){ alert('Aucun PDF joint enregistré dans '+(l.ref||'cette Lesson Learned')+'. Ouvrez Modifier, joignez le document PDF, puis Enregistrer avant de relancer PDF unique.'); return; }
   var mergedInit=_mergedPdf?'<script>window.__llMergedExport='+JSON.stringify(llMergedConfig).replace(/</g,'\u003c')+';<\/script>':'';
   w.document.write('<!doctype html><html><head><title>'+esc((l.ref||'Safety Communication')+_ttlSfx)+'</title><style>'+css+'</style></head><body>'+( _mergedPdf?'<div id="ll-pdf-status" style="position:fixed;right:8px;top:8px;z-index:999;background:white;padding:7px;font:12px Arial">Génération du PDF unique en cours...</div>':'')+pagesHtml+mergedInit+'<script>'+overflowScript+'<\/script></body></html>');
   w.document.close();
+  if(_mergedPdf){
+    // On some browsers about:blank popup does not dispatch load consistently.
+    setTimeout(function(){
+      try{if(w&&!w.closed&&!w.__llRenderStarted&&typeof w.onload==='function')w.onload();}
+      catch(e){console.error('LL export startup',e);alert('Impossible de démarrer la fusion PDF : '+(e.message||e));}
+    },1200);
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
