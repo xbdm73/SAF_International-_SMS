@@ -20061,10 +20061,13 @@ function renderLessonsList(){
     }
     var printBtn=mkBtn('🖨','','var(--grey-400)','rgba(255,255,255,.06)');
     printBtn.addEventListener('click',(function(id){return function(){printLessonById(id);};})(l.id));
+    var mergedBtn=mkBtn('PDF unique','','var(--gold-light)','rgba(201,162,39,.18)');
+    mergedBtn.title='Télécharger la communication et son annexe PDF dans un seul document';
+    mergedBtn.addEventListener('click',(function(id){return function(){printLessonById(id,null,true);};})(l.id));
     var delBtn=document.createElement('button');
     delBtn.textContent='✕';delBtn.style.cssText='background:none;border:none;color:#f85149;cursor:pointer;font-size:13px;padding:0 2px;';
     delBtn.addEventListener('click',(function(id){return function(){deleteLesson(id);};})(l.id));
-    rightDiv.appendChild(editBtn);rightDiv.appendChild(llRevBtn(l));rightDiv.appendChild(printBtn);rightDiv.appendChild(delBtn);
+    rightDiv.appendChild(editBtn);rightDiv.appendChild(llRevBtn(l));rightDiv.appendChild(printBtn);rightDiv.appendChild(mergedBtn);rightDiv.appendChild(delBtn);
     hdr.appendChild(rightDiv);card.appendChild(hdr);
     var titleDiv=document.createElement('div');
     titleDiv.style.cssText='font-size:14px;font-weight:600;color:var(--white);margin-bottom:8px;';
@@ -20298,7 +20301,7 @@ function _SAF_COM_IMG(){var el=document.getElementById('_saf_com_bg');return el?
 function _SAF_SIG_IMG(){var el=document.getElementById('_saf_sig');return el?el.src:'';}
 
 
-function printLessonById(id,_versions){
+function printLessonById(id,_versions,_mergedPdf){
   // _versions (optionnel) : liste de versions issues de llRevVersions(),
   // imprimées à la suite dans un seul document, numérotées séparément.
   var _base=getLessons().find(function(x){return x.id===id;});
@@ -20589,10 +20592,46 @@ function printLessonById(id,_versions){
       });
     });
 
-    setTimeout(function(){window.print();},400);
+    if(window.__llMergedExport){
+      (async function(){
+        try{
+          var payload=window.__llMergedExport;
+          var loadScript=function(url){return new Promise(function(resolve,reject){var e=document.createElement('script');e.src=url;e.onload=resolve;e.onerror=function(){reject(new Error('Bibliothèque PDF indisponible : '+url));};document.head.appendChild(e);});};
+          await Promise.all([
+            loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'),
+            loadScript('https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js')
+          ]);
+          await Promise.all(Array.prototype.map.call(document.images,function(im){return im.complete?Promise.resolve():new Promise(function(done){im.onload=done;im.onerror=done;});}));
+          if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+          var pdf=await PDFLib.PDFDocument.create();
+          var pages=Array.prototype.slice.call(document.querySelectorAll('.page'));
+          for(var i=0;i<pages.length;i++){
+            var canvas=await html2canvas(pages[i],{scale:1.45,backgroundColor:'#ffffff',useCORS:true,logging:false,width:794,height:1123});
+            var png=await pdf.embedPng(await fetch(canvas.toDataURL('image/png')).then(function(r){return r.arrayBuffer();}));
+            var out=pdf.addPage([595.28,841.89]);out.drawImage(png,{x:0,y:0,width:595.28,height:841.89});
+          }
+          for(var j=0;j<payload.attachments.length;j++){
+            var item=payload.attachments[j], src=item.data;
+            if(!src)continue;
+            var base64=src.indexOf(',')>=0?src.substring(src.indexOf(',')+1):src;
+            var raw=Uint8Array.from(atob(base64),function(c){return c.charCodeAt(0);});
+            var attached=await PDFLib.PDFDocument.load(raw,{ignoreEncryption:false});
+            var imported=await pdf.copyPages(attached,attached.getPageIndices());
+            imported.forEach(function(pg){pdf.addPage(pg);});
+          }
+          var bytes=await pdf.save();
+          var blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob);
+          var a=document.createElement('a');a.href=url;a.download=payload.name;a.click();
+          setTimeout(function(){URL.revokeObjectURL(url);},60000);
+          var status=document.getElementById('ll-pdf-status');if(status)status.textContent='PDF unique généré : '+pdf.getPageCount()+' pages. Vous pouvez fermer cet onglet.';
+        }catch(err){console.error('LL PDF unique',err);alert('Impossible de générer le PDF unique. Aucune annexe n’a été omise silencieusement. '+(err.message||err));}
+      })();
+    }else setTimeout(function(){window.print();},400);
   };
   `;
-  w.document.write('<!doctype html><html><head><title>'+esc((l.ref||'Safety Communication')+_ttlSfx)+'</title><style>'+css+'</style></head><body>'+pagesHtml+'<script>'+overflowScript+'<\/script></body></html>');
+  var llMergedConfig={name:(l.ref||'SAF_Lesson_Learned').replace(/[^a-zA-Z0-9_-]/g,'_')+'_complet.pdf',attachments:_list.filter(function(v){return !!v.pdf;}).map(function(v){return {name:v.pdf_name||'annexe.pdf',data:v.pdf};})};
+  var mergedInit=_mergedPdf?'<script>window.__llMergedExport='+JSON.stringify(llMergedConfig).replace(/</g,'\u003c')+';<\/script>':'';
+  w.document.write('<!doctype html><html><head><title>'+esc((l.ref||'Safety Communication')+_ttlSfx)+'</title><style>'+css+'</style></head><body>'+( _mergedPdf?'<div id="ll-pdf-status" style="position:fixed;right:8px;top:8px;z-index:999;background:white;padding:7px;font:12px Arial">Génération du PDF unique en cours...</div>':'')+pagesHtml+mergedInit+'<script>'+overflowScript+'<\/script></body></html>');
   w.document.close();
 }
 
