@@ -24444,6 +24444,9 @@ setTimeout(function(){
     if(!r || !r.by) return 'par un poste dont l\'auteur n\'est pas enregistré (ancienne version du SMS encore ouverte)';
     var me = ccMe().toLowerCase();
     var where = r.agent ? ' (' + r.agent + ')' : '';
+    if(r.tab && r.tab === CC_TAB_ID){
+      return 'par <strong>cet onglet</strong> (écriture précédente non confirmée par le réseau)' + where;
+    }
     if(me && r.by.toLowerCase() === me){
       return 'par <strong>vous-même</strong>, depuis un autre onglet ou un autre appareil' + where;
     }
@@ -24575,8 +24578,18 @@ setTimeout(function(){
 
   function ccPayload(){ try{ return window.safExportForCloud(); }catch(e){ return null; } }
 
+  // 02.11.2026 — Écritures en file : une seule requête en vol à la fois.
+  // Avant, safCloudSaveNow() n'attendait que 12 s une sauvegarde en cours puis
+  // partait en parallèle avec un updated_at périmé : l'onglet entrait en conflit
+  // avec sa PROPRE écriture (« par vous-même, depuis un autre onglet »).
+  var CC_QUEUE = Promise.resolve();
+  function ccWrite(payload){
+    var run = CC_QUEUE.then(function(){ return ccWriteRaw(payload, false); });
+    CC_QUEUE = run.catch(function(){});
+    return run;
+  }
   // Écriture conditionnelle : n'aboutit que si personne n'a écrit entre-temps.
-  async function ccWrite(payload){
+  async function ccWriteRaw(payload, retried){
     if(CC_TAB_LOCKED) return { error:'onglet en lecture seule — SMS repris dans un autre onglet' };
     ccTag(payload);
     var stamp = new Date().toISOString(), q;
@@ -24596,7 +24609,21 @@ setTimeout(function(){
       if(res.error.code === '23505') return { conflict:true };  // ligne créée entre-temps
       return { error: res.error.message };
     }
-    if(!res.data || res.data.length === 0) return { conflict:true }; // updated_at périmé
+    if(!res.data || res.data.length === 0){                         // updated_at périmé
+      // Auto-conflit : la dernière version du serveur vient de CET onglet (écriture
+      // aboutie côté serveur mais réponse perdue, ou requête concurrente). Rien
+      // d'étranger n'a été écrit entre-temps : on s'aligne et on réessaie, toujours
+      // en écriture conditionnelle. Une écriture d'un autre onglet/appareil porte
+      // un autre _cc_tab et reste un vrai conflit.
+      if(!retried){
+        var w = await ccReadWriter();
+        if(w && w.tab === CC_TAB_ID && w.updated_at){
+          CC_LAST_SYNC = w.updated_at; CC_ROW_EXISTS = true;
+          return ccWriteRaw(payload, true);
+        }
+      }
+      return { conflict:true };
+    }
     CC_LAST_SYNC = res.data[0].updated_at;
     CC_ROW_EXISTS = true;
     try{ safPublishRegisterIfChanged(); }catch(e){}
@@ -24695,6 +24722,7 @@ setTimeout(function(){
       var w = await ccReadWriter();
       if(!w) return;
       var remote = w.updated_at;
+      if(remote !== CC_LAST_SYNC && w.tab === CC_TAB_ID){ CC_LAST_SYNC = remote; return; }
       if(remote !== CC_LAST_SYNC && remote !== CC_NOTIFIED){
         CC_NOTIFIED = remote;
         var src = w.by ? ((ccMe() && w.by.toLowerCase() === ccMe().toLowerCase()) ? 'vous, autre onglet/appareil' : w.by)
@@ -24747,8 +24775,10 @@ setTimeout(function(){
     if(isGuest)         return {error:'connexion requise'};
     if(!authenticated)  return {error:'non connecté — rien n\'a été envoyé au cloud'};
     if(typeof window.safExportForCloud !== 'function') return {error:'export indisponible'};
-    var guard = 0;
-    while(saving && guard < 100){ await new Promise(function(r){ setTimeout(r,120); }); guard++; }
+    // Attend la sauvegarde en cours sans limite (la file de ccWrite garantit de
+    // toute façon qu'aucune requête ne part en parallèle).
+    while(saving){ await new Promise(function(r){ setTimeout(r,150); }); }
+    if(CC_CONFLICT) return {error:'conflit de version non résolu'};
     saving = true; setBar('saving','Sauvegarde...');
     var out;
     try{
