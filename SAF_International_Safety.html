@@ -20610,7 +20610,10 @@ function printLessonById(id,_versions,_mergedPdf){
           var pages=Array.prototype.slice.call(document.querySelectorAll('.page'));
           for(var i=0;i<pages.length;i++){
             var canvas=await html2canvas(pages[i],{scale:1.45,backgroundColor:'#ffffff',useCORS:true,logging:false,width:794,height:1123});
-            var png=await pdf.embedPng(await fetch(canvas.toDataURL('image/png')).then(function(r){return r.arrayBuffer();}));
+            var pngData=canvas.toDataURL('image/png');
+            var pngBase64=pngData.substring(pngData.indexOf(',')+1);
+            var pngBytes=Uint8Array.from(atob(pngBase64),function(c){return c.charCodeAt(0);});
+            var png=await pdf.embedPng(pngBytes);
             var out=pdf.addPage([595.28,841.89]);out.drawImage(png,{x:0,y:0,width:595.28,height:841.89});
           }
           for(var j=0;j<payload.attachments.length;j++){
