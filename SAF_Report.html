@@ -755,6 +755,7 @@ body.L-en .pol-fr{display:none;}
 
   <!-- S8 DESCRIPTION -->
   <div class="slabel" data-fr="Description" data-en="Description" data-req="1"></div>
+  <div class="f"><label><span class="fr">Titre de l&#39;&#233;v&#232;nement</span><span class="en">Event title</span> <span class="req">*</span></label><input id="f-title" type="text" maxlength="200" placeholder="En quelques mots&#8230; / In a few words&#8230;"/></div>
   <div class="f"><label><span class="fr">Description de l&#39;&#233;v&#232;nement</span><span class="en">Event description</span> <span class="req">*</span></label><textarea id="f-desc" style="min-height:140px;" placeholder="D&#233;crire les faits objectivement&#8230; / Describe facts objectively&#8230;"></textarea></div>
   <div class="f"><label><span class="fr">Mesures prises imm&#233;diatement apr&#232;s</span><span class="en">Actions taken immediately after</span></label><textarea id="f-act" style="min-height:80px;" placeholder="AOG, signalement M.A.308&#8230;"></textarea></div>
   <div class="f"><label><span class="fr">Commentaires / Suggestions</span><span class="en">Comments / Suggestions</span></label><textarea id="f-com" style="min-height:70px;"></textarea></div>
@@ -1027,6 +1028,7 @@ function validate(){
   if(!g('f-date')){setStatus('error','Date obligatoire / Date required');return false;}
   if(!DATA.entity){setStatus('error','Entité obligatoire / Entity required');return false;}
   if(!g('f-loc')){setStatus('error','Lieu obligatoire / Location required');return false;}
+  if(!g('f-title')){setStatus('error','Titre obligatoire / Title required');return false;}
   if(!g('f-desc')){setStatus('error','Description obligatoire / Description required');return false;}
   return true;
 }
@@ -1090,6 +1092,7 @@ async function submit(){
     consequence:DATA.cons,
     pressure:allChecked('#g-pressure'),
     pressure_other:g('f-pressure-oth'),
+    title:g('f-title'),
     description:g('f-desc'),
     actions:g('f-act')?[{text:g('f-act'),status:'open',owner:'',owner_custom:'',actionDate:''}]:[],
     comments:g('f-com'),
