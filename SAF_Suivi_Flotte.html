@@ -378,7 +378,7 @@ footer .err{color:var(--lost)}
     <label class="fld">Du<input type="date" id="h-from"></label>
     <label class="fld">Au<input type="date" id="h-to"></label>
     <div class="fld">Période<div class="presets">
-      <button type="button" data-d="7">7 j</button><button type="button" data-d="30">30 j</button><button type="button" data-d="60">60 j</button>
+      <button type="button" data-d="0">Aujourd'hui</button><button type="button" data-d="7">7 j</button><button type="button" data-d="30">30 j</button><button type="button" data-d="60">60 j</button>
     </div></div>
     <button type="button" class="go" id="h-load">Afficher</button>
     <button type="button" id="h-csv" disabled>Exporter CSV</button>
@@ -2061,15 +2061,17 @@ const dayLabel=t=>new Date(t).toLocaleDateString("fr-FR",{weekday:"long",day:"nu
 const dmy=t=>new Date(t).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",timeZone:"UTC"});
 const COLS="reg,fix_time,lat,lon,alt_m,heading,speed";
 
+// Date du jour en heure locale (isoDay est en UTC : entre minuit et 1 h/2 h il donnerait la veille)
+const localDay=t=>{ const d=new Date(t); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
 function histPreset(days){
-  document.getElementById("h-to").value=isoDay(Date.now());
-  document.getElementById("h-from").value=isoDay(Date.now()-days*864e5);
+  document.getElementById("h-to").value=localDay(Date.now());
+  document.getElementById("h-from").value=localDay(Date.now()-days*864e5);
 }
 function openHist(){
   const sel=document.getElementById("h-reg"), cur=sel.value;
   sel.innerHTML=`<option value="">Toute la flotte</option>`+fleet.map(a=>`<option value="${esc(a.reg)}">${esc(a.reg)}</option>`).join("");
   sel.value=cur||selected||"";
-  if(!document.getElementById("h-to").value) histPreset(60);
+  histPreset(0); // à chaque ouverture : la journée en cours
   document.getElementById("hist").hidden=false;
   if(!hist.map){
     hist.map=L.map("h-map",{zoomControl:false}).setView([45.9,6.8],8);
