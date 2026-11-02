@@ -20060,7 +20060,8 @@ function renderLessonsList(){
       rightDiv.appendChild(pdfDl);
     }
     var printBtn=mkBtn('🖨','','var(--grey-400)','rgba(255,255,255,.06)');
-    printBtn.addEventListener('click',(function(id){return function(){printLessonById(id);};})(l.id));
+    printBtn.title='Exporter un PDF unique avec les annexes si présentes';
+    printBtn.addEventListener('click',(function(id){return function(){printLessonById(id,null,true);};})(l.id));
     var mergedBtn=mkBtn('PDF unique','','var(--gold-light)','rgba(201,162,39,.18)');
     mergedBtn.title='Télécharger la communication et son annexe PDF dans un seul document';
     mergedBtn.addEventListener('click',(function(id){return function(){printLessonById(id,null,true);};})(l.id));
@@ -20306,6 +20307,8 @@ function printLessonById(id,_versions,_mergedPdf){
   // imprimées à la suite dans un seul document, numérotées séparément.
   var _base=getLessons().find(function(x){return x.id===id;});
   var _list=(_versions&&_versions.length)?_versions:(_base?[_base]:[]);
+  // L'export PDF du bouton Imprimer utilise aussi la fusion des annexes.
+  if(_mergedPdf===undefined)_mergedPdf=true;
   if(!_list.length)return;
   var l=_list[0];
   var _ttlSfx=' '+_list.map(function(v){return 'V'+((v.rev||0)+1);}).join('-');
@@ -20619,17 +20622,20 @@ function printLessonById(id,_versions,_mergedPdf){
             var imported=await pdf.copyPages(attached,attached.getPageIndices());
             imported.forEach(function(pg){pdf.addPage(pg);});
           }
+          var nAttachments=payload.attachments.length;
+          if(nAttachments && pdf.getPageCount()<=pages.length){throw new Error('Aucune page annexe n’a été ajoutée. Vérifiez que le PDF est bien enregistré dans la fiche.');}
           var bytes=await pdf.save();
           var blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob);
           var a=document.createElement('a');a.href=url;a.download=payload.name;a.click();
           setTimeout(function(){URL.revokeObjectURL(url);},60000);
-          var status=document.getElementById('ll-pdf-status');if(status)status.textContent='PDF unique généré : '+pdf.getPageCount()+' pages. Vous pouvez fermer cet onglet.';
+          var status=document.getElementById('ll-pdf-status');if(status)status.textContent='PDF unique généré : '+pdf.getPageCount()+' pages, '+payload.attachments.length+' annexe(s). Vous pouvez fermer cet onglet.';
         }catch(err){console.error('LL PDF unique',err);alert('Impossible de générer le PDF unique. Aucune annexe n’a été omise silencieusement. '+(err.message||err));}
       })();
     }else setTimeout(function(){window.print();},400);
   };
   `;
   var llMergedConfig={name:(l.ref||'SAF_Lesson_Learned').replace(/[^a-zA-Z0-9_-]/g,'_')+'_complet.pdf',attachments:_list.filter(function(v){return !!v.pdf;}).map(function(v){return {name:v.pdf_name||'annexe.pdf',data:v.pdf};})};
+  if(_mergedPdf && !llMergedConfig.attachments.length){ console.warn('Aucune annexe PDF enregistrée sur la Lesson Learned '+(l.ref||'')); }
   var mergedInit=_mergedPdf?'<script>window.__llMergedExport='+JSON.stringify(llMergedConfig).replace(/</g,'\u003c')+';<\/script>':'';
   w.document.write('<!doctype html><html><head><title>'+esc((l.ref||'Safety Communication')+_ttlSfx)+'</title><style>'+css+'</style></head><body>'+( _mergedPdf?'<div id="ll-pdf-status" style="position:fixed;right:8px;top:8px;z-index:999;background:white;padding:7px;font:12px Arial">Génération du PDF unique en cours...</div>':'')+pagesHtml+mergedInit+'<script>'+overflowScript+'<\/script></body></html>');
   w.document.close();
