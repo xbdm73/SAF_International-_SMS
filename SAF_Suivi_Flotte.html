@@ -440,7 +440,11 @@ const AUTO_MAP = SCOPE === "332";
 const CONFIG = {
   url: "https://qaqehmxoehcvzcojcqkm.supabase.co",
   key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q",
-  refreshMs: 30000,     // lecture Supabase (jamais NSE)
+  refreshMs: 60000,     // secours si Realtime muet (les nouvelles positions arrivent par Realtime en ~5 s)
+  hiddenMs: 120000,     // onglet caché / écran verrouillé : cycle allégé (positions + alertes) toutes les 2 min
+  refMs: 300000,        // appareils, bases, chantiers, contrôle de nuit : relus toutes les 5 min (scan de nuit = 5 min)
+  fullMs: 600000,       // relecture complète des traces toutes les 10 min (resynchronisation)
+  lateMs: 180000,       // marge pour les points arrivés en retard (traceurs à mémoire tampon)
   liveMaxMin: 5,        // point plus récent que 5 min = en direct
   lostAfterMin: 45,     // en mouvement puis plus de point depuis 45 min = signal perdu
   movingSpeed: 5,
@@ -1574,15 +1578,17 @@ function renderWorksites(){
 
 /* ---------- Données ---------- */
 let lastPs=null, loading=false, lastOk=0, pendingRealtimeLoad=false;
+let posCache={at:0}, refAt=0;   // cache des traces (lecture incrémentale) et horodatage des données de référence
 let realtimeChannel=null, realtimeLoadTimer=null;
 // À chaque INSERT/UPDATE en base, relire les dernières positions ; le polling 30 s reste un secours.
 function scheduleRealtimeLoad(){
   if(realtimeLoadTimer) return;
+  if(document.visibilityState==="hidden") return;   // onglet caché : le cycle allégé prend le relais
   realtimeLoadTimer=setTimeout(()=>{
     realtimeLoadTimer=null;
     if(loading){ pendingRealtimeLoad=true; return; }
     load();
-  },3000);
+  },5000);
 }
 function subscribeFleetPositions(){
   if(realtimeChannel) return;
@@ -1596,34 +1602,79 @@ function subscribeFleetPositions(){
 }
 function isAuthError(e){ const m=String(e&&(e.message||e.code)||e||""); return /jwt|token|401|PGRST30/i.test(m); }
 async function load(retried){
-  if(loading) return; loading=true;
+  if(loading) return;
+  // 02.11.2026 — Onglet caché ou écran verrouillé : une lecture allégée toutes les 2 min seulement,
+  // pour garder les notifications de mise en route sans interroger la base en continu.
+  const hiddenNow=document.visibilityState==="hidden";
+  if(hiddenNow && lastOk && Date.now()-lastOk<CONFIG.hiddenMs) return;
+  loading=true;
   const hours=+document.getElementById("win").value;
   const winStart=Date.now()-hours*3600e3;
   const since=new Date(Math.min(winStart, Date.now()-36*3600e3)).toISOString(); // 36 h pour le journal
   try{
+    // Données de référence (appareils, bases, chantiers, nuit) : toutes les 5 min, pas à chaque cycle.
+    const refDue=!fleet.length || (!hiddenNow && Date.now()-refAt>CONFIG.refMs);
     const [ac,ps]=await Promise.all([
-      sb.from("fleet_aircraft").select("reg,type,imei,provider,active").order("reg"),
+      refDue ? sb.from("fleet_aircraft").select("reg,type,imei,provider,active").order("reg") : Promise.resolve(null),
       sb.from("fleet_poll_state").select("last_poll,last_result").eq("id",1).maybeSingle(),
     ]);
-    if(ac.error) throw ac.error;
-    fleet=ac.data.filter(a=>famOf(a)===SCOPE);
+    if(ac){ if(ac.error) throw ac.error; fleet=ac.data.filter(a=>famOf(a)===SCOPE); }
     // Une lecture par appareil : avec 15 appareils, une requête unique plafonnée à 1000 points
     // tronquerait les traces dès qu'une partie de la flotte vole.
     const PCOLS="reg,fix_time,lat,lon,alt_m,heading,heading_deg,source,speed";
-    const [lasts,wins]=await Promise.all([
-      Promise.all(fleet.map(a=>sb.from("fleet_positions").select(PCOLS).eq("reg",a.reg).order("fix_time",{ascending:false}).limit(2))),
-      Promise.all(fleet.map(a=>sb.from("fleet_positions").select(PCOLS).eq("reg",a.reg).gte("fix_time",since).order("fix_time",{ascending:false}).limit(1000))),
-    ]);
-    const bad=[...lasts,...wins].find(r=>r.error); if(bad) throw bad.error;
-    state={};
-    fleet.forEach((a,i)=>{
-      const two=lasts[i].data||[];
-      const all=(wins[i].data||[]).slice().reverse();   // ordre chronologique pour les traces et l'analyse des vols
-      state[a.reg]={ac:a,last:two[0]||null,prev:two[1]||null,all,
-        trail:all.filter(p=>new Date(p.fix_time)>=winStart), an:analyze(all)};
-    });
+    const regsKey=fleet.map(a=>a.reg).join(",");
+    const fullDue=!posCache.at || Date.now()-posCache.at>CONFIG.fullMs || Date.parse(since)<posCache.since-60000 || posCache.regs!==regsKey;
+    if(fullDue){
+      const [lasts,wins]=await Promise.all([
+        Promise.all(fleet.map(a=>sb.from("fleet_positions").select(PCOLS).eq("reg",a.reg).order("fix_time",{ascending:false}).limit(2))),
+        Promise.all(fleet.map(a=>sb.from("fleet_positions").select(PCOLS).eq("reg",a.reg).gte("fix_time",since).order("fix_time",{ascending:false}).limit(1000))),
+      ]);
+      const bad=[...lasts,...wins].find(r=>r.error); if(bad) throw bad.error;
+      state={};
+      fleet.forEach((a,i)=>{
+        const two=lasts[i].data||[];
+        const all=(wins[i].data||[]).slice().reverse();   // ordre chronologique pour les traces et l'analyse des vols
+        state[a.reg]={ac:a,last:two[0]||null,prev:two[1]||null,all,
+          trail:all.filter(p=>new Date(p.fix_time)>=winStart), an:analyze(all)};
+      });
+      posCache={at:Date.now(), since:Date.parse(since), regs:regsKey, max:{}};
+      fleet.forEach(a=>{ const s=state[a.reg]; posCache.max[a.reg]=s&&s.last?s.last.fix_time:null; });
+    } else {
+      // 02.11.2026 — Une seule requête pour tous les appareils : les points postérieurs au dernier
+      // connu de chacun (moins une marge pour les points arrivés en retard), au lieu de 2 requêtes par appareil.
+      const conds=fleet.map(a=>{
+        const mx=posCache.max[a.reg];
+        const t=mx?new Date(Date.parse(mx)-CONFIG.lateMs).toISOString():since;
+        return `and(reg.eq."${a.reg}",fix_time.gt."${t}")`;
+      });
+      const r=await sb.from("fleet_positions").select(PCOLS).or(conds.join(",")).order("fix_time",{ascending:true}).limit(1000);
+      if(r.error) throw r.error;
+      if((r.data||[]).length>=1000){ posCache.at=0; loading=false; return load(retried); }   // trop de points : relecture complète
+      const byReg={};
+      (r.data||[]).forEach(p=>{ (byReg[p.reg]=byReg[p.reg]||[]).push(p); });
+      const sinceMs=Date.parse(since);
+      fleet.forEach(a=>{
+        const s=state[a.reg]; if(!s) return;
+        let all=s.all, last=s.last, prev=s.prev;
+        if(byReg[a.reg]){
+          const mp=new Map(all.map(p=>[p.fix_time,p]));
+          byReg[a.reg].forEach(p=>mp.set(p.fix_time,p));
+          all=[...mp.values()].sort((u,v)=>Date.parse(u.fix_time)-Date.parse(v.fix_time));
+          const n=all.length, nl=all[n-1];
+          if(nl && (!last || Date.parse(nl.fix_time)>=Date.parse(last.fix_time))){
+            prev=n>1?all[n-2]:(last&&last.fix_time!==nl.fix_time?last:prev); last=nl;
+            posCache.max[a.reg]=last.fix_time;
+          }
+        }
+        all=all.filter(p=>Date.parse(p.fix_time)>=sinceMs);
+        state[a.reg]={...s,ac:a,last,prev,all,trail:all.filter(p=>new Date(p.fix_time)>=winStart),an:analyze(all)};
+      });
+    }
     lastPs=ps.data; lastOk=Date.now();
-    try{ await loadWorksites(); }catch(e){ console.warn("Chantiers du jour :",e); }
+    if(refDue){
+      try{ await loadWorksites(); }catch(e){ console.warn("Chantiers du jour :",e); }
+      refAt=Date.now();
+    }
     render(lastPs);
     checkStarts();
     // Même cycle de données NSE pour les projections sur la carte et le profil AGL.

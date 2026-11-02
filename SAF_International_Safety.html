@@ -9928,6 +9928,16 @@ window.safExportForCloud = function(){
         var v = item[f];
         // retire les champs fichiers connus
         if(f === 'eccairs2_pdf' || f === 'image' || f === 'pdf'){ copy[f] = ''; return; }
+        // 02.11.2026 — les annexes PDF vivent dans Supabase Storage (pdf_path) :
+        // aucune copie base64 ne doit partir dans sms_data, même imbriquée dans
+        // un brouillon de révision ou une version archivée (+500 Ko par PDF).
+        if(f === 'rev_draft' && v && typeof v === 'object'){
+          copy[f] = Object.assign({}, v); if(typeof copy[f].pdf === 'string' && copy[f].pdf.indexOf('data:') === 0) copy[f].pdf = ''; return;
+        }
+        if(f === 'revisions' && Array.isArray(v)){
+          copy[f] = v.map(function(r){ if(!r || typeof r !== 'object') return r; if(typeof r.pdf === 'string' && r.pdf.indexOf('data:') === 0){ var c2 = Object.assign({}, r); c2.pdf = ''; return c2; } return r; });
+          return;
+        }
         // retire tout gros base64 résiduel — MAIS jamais les champs de contenu
         // rédactionnel (corps FR/EN des Lessons/Safety Alerts), sinon le texte
         // est définitivement perdu au rechargement cloud suivant.
@@ -9955,6 +9965,29 @@ window.safExportForCloud = function(){
   }catch(e){}
 
   return out;
+};
+
+// 02.11.2026 — Diagnostic : qu'est-ce qui pèse dans la ligne cloud sms_data ?
+// Console : safCloudPayloadReport()
+window.safCloudPayloadReport = function(){
+  var p = window.safExportForCloud(), rows = [], top = [];
+  Object.keys(p).forEach(function(k){
+    var v = p[k], str = typeof v === 'string' ? v : JSON.stringify(v);
+    rows.push({ cle:k, ko:Math.round((str||'').length/1024) });
+    try{
+      var arr = JSON.parse(str);
+      if(Array.isArray(arr)) arr.forEach(function(it){
+        var sz = JSON.stringify(it).length;
+        if(sz > 50*1024) top.push({ cle:k, fiche:(it&&(it.ref||it.id||it.title))||'?', ko:Math.round(sz/1024),
+          champs:Object.keys(it||{}).map(function(f){ return [f, JSON.stringify(it[f]||'').length]; })
+                 .sort(function(a,b){return b[1]-a[1];}).slice(0,3).map(function(x){return x[0]+' '+Math.round(x[1]/1024)+'Ko';}).join(', ') });
+      });
+    }catch(e){}
+  });
+  rows.sort(function(a,b){return b.ko-a.ko;}); top.sort(function(a,b){return b.ko-a.ko;});
+  var total = Math.round(JSON.stringify(p).length/1024);
+  console.log('sms_data envoyé au cloud : ' + total + ' Ko'); console.table(rows.slice(0,15)); console.table(top.slice(0,15));
+  return { total_ko:total, cles:rows, fiches:top };
 };
 
 function safExportAllData(){
@@ -19911,15 +19944,37 @@ async function llPdfPurgeOrphans(){
 }
 // Migration : une annexe encore en base64 dans ce navigateur (ancien mode,
 // non synchronisée) est envoyée dans le Storage puis remplacée par son chemin.
-var _llPdfSyncBusy=false;
+var _llPdfSyncBusy=false,_llPdfSyncTried={};
+// Cherche dans le dossier Storage une annexe déjà envoyée pour ce fichier
+// (évite les doublons « Annexe AAAAMMJJ-HHMMSS - … » après une sauvegarde cloud ratée).
+async function llPdfFindExisting(l){
+  try{
+    var db=window.safSupabaseClient; if(!db)return '';
+    var folder=llPdfFolder(l.date,l.ref), want=llPdfSeg(l.pdf_name||'document.pdf');
+    var res=await db.storage.from(LL_PDF_BUCKET).list(folder,{limit:100});
+    if(res.error||!res.data)return '';
+    var hit=res.data.filter(function(f){return f&&f.name&&/^Annexe /.test(f.name)&&f.name.slice(-want.length)===want;})
+                    .sort(function(a,b){return String(b.created_at||'').localeCompare(String(a.created_at||''));})[0];
+    return hit?folder+'/'+hit.name:'';
+  }catch(e){return '';}
+}
 async function llPdfSyncAll(){
   if(_llPdfSyncBusy||!llPdfCanCloud())return;
   _llPdfSyncBusy=true;
   try{
-    var todo=getLessons().filter(function(l){return l&&l.pdf&&String(l.pdf).indexOf('data:')===0&&!l.pdf_path;});
+    // Une seule tentative par communication et par session : en cas de panne
+    // Supabase, on ne relance pas un envoi à chaque affichage de la liste.
+    var todo=getLessons().filter(function(l){return l&&l.pdf&&String(l.pdf).indexOf('data:')===0&&!l.pdf_path&&!_llPdfSyncTried[l.id];});
     for(var i=0;i<todo.length;i++){
       var l=todo[i];
+      _llPdfSyncTried[l.id]=true;
       try{
+        var found=await llPdfFindExisting(l);
+        if(found){
+          var all0=getLessons(),j0=all0.findIndex(function(x){return x&&x.id===l.id;});
+          if(j0>=0&&all0[j0].pdf===l.pdf){all0[j0].pdf_path=found;all0[j0].pdf=null;saveLessons(all0);}
+          continue;
+        }
         var parts=String(l.pdf).split(','),bin=atob(parts[1]||''),arr=new Uint8Array(bin.length);
         for(var k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);
         var path=await llPdfUpload(new Blob([arr],{type:'application/pdf'}),l.pdf_name||'document.pdf',l.date,l.ref);
@@ -24350,18 +24405,27 @@ setTimeout(function(){
   // --- Chargement depuis la base --- (timeout 6s pour éviter le blocage)
   async function cloudLoad(){
     try{
-      var res = await Promise.race([
-        db.from('saf_data').select('data, updated_at').eq('module', MODULE).single(),
-        new Promise(function(_, reject){ setTimeout(function(){ reject(new Error('timeout réseau')); }, 6000); })
-      ]);
-      if(res.error){
-        if(res.error.code === 'PGRST116'){ setBar('ok','Base vide — sauvegarde au 1er changement'); return; }
-        setBar('ok','Erreur chargement: '+res.error.message); return;
+      var got;
+      try{ got = await ccSplitFetch(); }
+      catch(fe){ setBar('ok','Erreur chargement: '+fe.message); return; }
+      var data = null;
+      if(got.meta){
+        // SMS découpé : on réassemble les clés.
+        CC_SPLIT = true; CC_NEED_SPLIT = false; CC_ROW_EXISTS = true; CC_LAST_SYNC = 'split';
+        data = {};
+        Object.keys(got.parts).forEach(function(k){
+          var r = got.parts[k], v = r.data ? r.data.v : null;
+          CC_KEY_SYNC[k] = r.updated_at;
+          if(v != null){ data[k] = v; CC_KEY_HASH[k] = ccHash(ccValStr(v)); }
+        });
+        CC_SNAP_AT = got.legacy && got.legacy.data && got.legacy.data._snapshot_at ? Date.parse(got.legacy.data._snapshot_at) || 0 : 0;
+      } else {
+        if(!got.legacy){ setBar('ok','Base vide — sauvegarde au 1er changement'); return; }
+        // Contrôle de concurrence : mémorise la version chargée.
+        CC_ROW_EXISTS = true; CC_LAST_SYNC = got.legacy.updated_at || null;
+        data = got.legacy.data;
+        CC_NEED_SPLIT = true;
       }
-
-      // Contrôle de concurrence : mémorise la version chargée.
-      if(res.data){ CC_ROW_EXISTS = true; CC_LAST_SYNC = res.data.updated_at || null; }
-      var data = res.data && res.data.data;
       if(!data){ setBar('ok','Base vide'); return; }
 
       // Fusion intelligente : les champs fichiers lourds (eccairs2_pdf, image) ne sont
@@ -24406,7 +24470,7 @@ setTimeout(function(){
       if(data.safLessons==null && localLes && localLes!=='[]' && localLes!=='null'){
         data.safLessons = localLes;
       }
-      if(data.safLessons!=null)     data.safLessons     = mergeHeavy(data.safLessons, localLes, 'id', ['image','pdf','fr_body','en_body','description','lesson','fr_title','en_title','title']);
+      if(data.safLessons!=null)     data.safLessons     = mergeHeavy(data.safLessons, localLes, 'id', ['image','pdf','pdf_path','fr_body','en_body','description','lesson','fr_title','en_title','title']);
       // 19.10.2026 — registre des ERP : fusion additive (une fiche créée hors ligne n'est pas perdue)
       var localErpA = (function(){ try{ return localStorage.getItem('safERPActivations'); }catch(e){ return null; } })();
       if(data.safERPActivations==null && localErpA && localErpA!=='[]' && localErpA!=='null'){ data.safERPActivations = localErpA; }
@@ -24449,6 +24513,7 @@ setTimeout(function(){
       // Re-rendu : on relance les fonctions de l'outil pour refléter les données
       refreshAll();
       setBar('ok','Cloud ✓');
+      if(CC_NEED_SPLIT) setTimeout(function(){ ccSplitMigrate(); }, 4000);
     }catch(e){ setBar('ok','Chargement impossible: '+e.message); }
   }
 
@@ -24529,6 +24594,7 @@ setTimeout(function(){
     return 'par <strong>' + String(r.by).replace(/[<>&]/g,'') + '</strong>' + where;
   }
   function ccReadWriter(){
+    if(CC_SPLIT) return ccReadWriterSplit();
     return db.from('saf_data')
       .select('updated_at, by:data->>_cc_by, tab:data->>_cc_tab, agent:data->>_cc_agent')
       .eq('module', MODULE).single()
@@ -24664,9 +24730,186 @@ setTimeout(function(){
     CC_QUEUE = run.catch(function(){});
     return run;
   }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     02.11.2026 — SMS DÉCOUPÉ : UNE LIGNE PAR CLÉ
+     ----------------------------------------------------------------------
+     Avant : tout le SMS (≈ 4 Mo) dans la seule ligne saf_data « sms_data »,
+     réécrite en entier à chaque modification.
+     Après : une ligne par clé (« sms:safLessons », « sms:safRiskDB »…) et
+     seules les clés réellement modifiées partent au serveur. Chaque ligne a
+     son propre verrou optimiste (updated_at) et son auteur (_cc_tab…).
+     « sms:_meta » signale que le découpage a eu lieu.
+     « sms_data » reste un INSTANTANÉ de compatibilité (CMS, sauvegardes),
+     réécrit au plus toutes les 15 min, marqué _split_snapshot = true.
+     ══════════════════════════════════════════════════════════════════════ */
+  var SPLIT_PREFIX = 'sms:', SPLIT_META = 'sms:_meta';
+  var CC_SPLIT = false;            // true dès que les lignes par clé font foi
+  var CC_NEED_SPLIT = false;       // chargé depuis l'ancienne ligne unique
+  var CC_KEY_SYNC = {};            // clé -> updated_at connu
+  var CC_KEY_HASH = {};            // clé -> empreinte de la valeur synchronisée
+  var CC_CONFLICT_KEY = '';        // clé en conflit (pour le message)
+  var CC_SNAP_AT = 0, CC_SNAP_DIRTY = false, CC_SNAP_TIMER = null;
+  var SNAP_EVERY = 15 * 60 * 1000;
+
+  function ccHash(str){
+    str = String(str == null ? '' : str);
+    var h = 2166136261 >>> 0;
+    for(var i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    return h.toString(36) + ':' + str.length;
+  }
+  function ccSplitKeys(payload){
+    return Object.keys(payload || {}).filter(function(k){ return k.indexOf('_cc_') !== 0 && k.charAt(0) !== '_' && payload[k] != null; });
+  }
+  function ccValStr(v){ return typeof v === 'string' ? v : JSON.stringify(v); }
+  function ccRowData(v){
+    return { v: v, _cc_by: ccMe(), _cc_tab: CC_TAB_ID, _cc_agent: CC_AGENT, _cc_at: new Date().toISOString() };
+  }
+
+  // Lecture : toutes les lignes du SMS (ancienne + découpées) en une requête.
+  async function ccSplitFetch(){
+    var res = await Promise.race([
+      db.from('saf_data').select('module, data, updated_at').or('module.eq.sms_data,module.like."sms:*"'),
+      new Promise(function(_, reject){ setTimeout(function(){ reject(new Error('timeout réseau')); }, 25000); })
+    ]);
+    if(res.error) throw new Error(res.error.message);
+    var rows = res.data || [], legacy = null, parts = {}, meta = null;
+    rows.forEach(function(r){
+      if(r.module === 'sms_data') legacy = r;
+      else if(r.module === SPLIT_META) meta = r;
+      else if(r.module.indexOf(SPLIT_PREFIX) === 0) parts[r.module.slice(SPLIT_PREFIX.length)] = r;
+    });
+    return { legacy: legacy, parts: parts, meta: meta };
+  }
+
+  // Découpage initial (une seule fois, par le premier admin/editor qui ouvre la nouvelle version).
+  async function ccSplitMigrate(){
+    if(CC_SPLIT || !CC_NEED_SPLIT || CC_TAB_LOCKED || CC_CONFLICT || isGuest || !authenticated) return;
+    if(!safCanWrite(SAF_ROLE)) return;
+    try{
+      setBar('saving','Découpage du SMS en lignes par module…');
+      var payload = window.safExportForCloud(), keys = ccSplitKeys(payload), stamp = new Date().toISOString();
+      var rows = keys.map(function(k){ return { module: SPLIT_PREFIX + k, data: ccRowData(payload[k]), updated_at: stamp }; });
+      rows.push({ module: SPLIT_META, data: ccRowData({ split_at: stamp, split_by: ccMe(), from_updated_at: CC_LAST_SYNC, keys: keys.length }), updated_at: stamp });
+      var res = await db.from('saf_data').insert(rows).select('module, updated_at');
+      if(res.error){
+        if(res.error.code === '23505'){ setBar('error','Le SMS vient d’être découpé depuis un autre poste — rechargez la page'); CC_CONFLICT = true; return; }
+        console.warn('Découpage SMS refusé', res.error);
+        CC_NEED_SPLIT = false;   // on reste sur la ligne unique, sans réessayer en boucle
+        setBar('error','Découpage impossible (' + String(res.error.message).slice(0,70) + ') — fonctionnement inchangé');
+        return;
+      }
+      (res.data || []).forEach(function(r){ var k = r.module.slice(SPLIT_PREFIX.length); CC_KEY_SYNC[k] = r.updated_at; });
+      keys.forEach(function(k){ CC_KEY_HASH[k] = ccHash(ccValStr(payload[k])); });
+      CC_SPLIT = true; CC_NEED_SPLIT = false; CC_ROW_EXISTS = true; CC_LAST_SYNC = 'split';
+      // L'ancienne ligne devient l'instantané : toute ancienne version encore ouverte
+      // ailleurs tombe en conflit (updated_at changé) au lieu d'écrire dans le vide.
+      await ccSnapshot(payload);
+      setBar('ok','SMS découpé ✓ ' + keys.length + ' modules — seules les modifications partent au serveur');
+    }catch(e){ console.warn('Découpage SMS', e); setBar('error','Découpage impossible : ' + e.message); CC_NEED_SPLIT = false; }
+  }
+
+  async function ccSnapshot(payload){
+    try{
+      var p = Object.assign({}, payload || window.safExportForCloud());
+      ccTag(p); p._split_snapshot = true; p._snapshot_at = new Date().toISOString();
+      var res = await db.from('saf_data').upsert({ module: 'sms_data', data: p, updated_at: p._snapshot_at }, { onConflict:'module' });
+      if(!res.error){ CC_SNAP_AT = Date.now(); CC_SNAP_DIRTY = false; }
+      else console.warn('Instantané sms_data', res.error.message);
+    }catch(e){ console.warn('Instantané sms_data', e); }
+  }
+  function ccSnapshotLater(){
+    CC_SNAP_DIRTY = true;
+    if(CC_SNAP_TIMER) return;
+    var wait = Math.max(5000, SNAP_EVERY - (Date.now() - CC_SNAP_AT));
+    CC_SNAP_TIMER = setTimeout(function(){ CC_SNAP_TIMER = null; if(CC_SNAP_DIRTY && !CC_CONFLICT && !CC_TAB_LOCKED) ccSnapshot(); }, wait);
+  }
+
+  // Écrit une seule clé, conditionnellement à son updated_at.
+  async function ccWriteKey(k, v, retried){
+    var stamp = new Date().toISOString(), mod = SPLIT_PREFIX + k, q;
+    if(CC_KEY_SYNC[k]){
+      q = db.from('saf_data').update({ data: ccRowData(v), updated_at: stamp })
+            .eq('module', mod).eq('updated_at', CC_KEY_SYNC[k]).select('updated_at');
+    } else {
+      q = db.from('saf_data').insert({ module: mod, data: ccRowData(v), updated_at: stamp }).select('updated_at');
+    }
+    var res = await q;
+    if(res.error){
+      if(res.error.code === '23505' && !retried){
+        var r0 = await db.from('saf_data').select('updated_at, tab:data->>_cc_tab').eq('module', mod).single();
+        if(r0.data && r0.data.tab === CC_TAB_ID){ CC_KEY_SYNC[k] = r0.data.updated_at; return ccWriteKey(k, v, true); }
+        return { conflict:true };
+      }
+      return { error: res.error.message };
+    }
+    if(!res.data || !res.data.length){
+      if(!retried){
+        var r = await db.from('saf_data').select('updated_at, tab:data->>_cc_tab').eq('module', mod).single();
+        if(r.data && r.data.tab === CC_TAB_ID && r.data.updated_at){ CC_KEY_SYNC[k] = r.data.updated_at; return ccWriteKey(k, v, true); }
+      }
+      return { conflict:true };
+    }
+    CC_KEY_SYNC[k] = res.data[0].updated_at;
+    return { ok:true };
+  }
+
+  async function ccWriteSplit(payload, force){
+    var keys = ccSplitKeys(payload), changed = [], total = 0;
+    keys.forEach(function(k){
+      var str = ccValStr(payload[k]), h = ccHash(str);
+      if(force || h !== CC_KEY_HASH[k]){ changed.push({ k:k, v:payload[k], h:h }); total += str.length; }
+    });
+    if(!changed.length) return { ok:true, none:true };
+    for(var i = 0; i < changed.length; i++){
+      var c = changed[i], out;
+      if(force){
+        var stamp = new Date().toISOString();
+        var rf = await db.from('saf_data').upsert({ module: SPLIT_PREFIX + c.k, data: ccRowData(c.v), updated_at: stamp }, { onConflict:'module' }).select('updated_at');
+        out = rf.error ? { error: rf.error.message } : { ok:true };
+        if(!rf.error) CC_KEY_SYNC[c.k] = (rf.data && rf.data[0]) ? rf.data[0].updated_at : stamp;
+      } else {
+        out = await ccWriteKey(c.k, c.v, false);
+      }
+      if(out.conflict){ CC_CONFLICT_KEY = c.k; return { conflict:true }; }
+      if(out.error) return { error: out.error + ' (module ' + c.k + ')' };
+      CC_KEY_HASH[c.k] = c.h;
+    }
+    console.info('SMS → cloud : ' + changed.length + ' module(s), ' + Math.round(total/1024) + ' Ko (' + changed.map(function(c){return c.k;}).join(', ') + ')');
+    ccSnapshotLater();
+    try{ if(changed.some(function(c){ return c.k === 'safRiskDB'; })) safPublishRegisterIfChanged(); }catch(e){}
+    return { ok:true };
+  }
+
+  function ccReadWriterSplit(){
+    var q = db.from('saf_data').select('module, updated_at, by:data->>_cc_by, tab:data->>_cc_tab, agent:data->>_cc_agent');
+    q = CC_CONFLICT_KEY ? q.eq('module', SPLIT_PREFIX + CC_CONFLICT_KEY) : q.like('module', 'sms:%').order('updated_at', { ascending:false }).limit(1);
+    return q.then(function(r){ return (r && !r.error && r.data && r.data[0]) ? r.data[0] : null; }, function(){ return null; });
+  }
+
+  // Veille : une ligne modifiée par un autre onglet/appareil depuis notre dernière synchro ?
+  async function ccPollSplit(){
+    var r = await db.from('saf_data').select('module, updated_at, by:data->>_cc_by, tab:data->>_cc_tab, agent:data->>_cc_agent').like('module', 'sms:%');
+    if(r.error || !r.data) return;
+    var foreign = null;
+    r.data.forEach(function(x){
+      var k = x.module.slice(SPLIT_PREFIX.length);
+      if(k === '_meta' || x.updated_at === CC_KEY_SYNC[k]) return;
+      if(x.tab === CC_TAB_ID){ CC_KEY_SYNC[k] = x.updated_at; return; }
+      if(!foreign || x.updated_at > foreign.updated_at) foreign = x;
+    });
+    if(foreign && foreign.updated_at !== CC_NOTIFIED){
+      CC_NOTIFIED = foreign.updated_at;
+      var src = foreign.by ? ((ccMe() && foreign.by.toLowerCase() === ccMe().toLowerCase()) ? 'vous, autre onglet/appareil' : foreign.by) : 'auteur inconnu';
+      if(foreign.agent) src += ' · ' + foreign.agent;
+      setBar('ok','⚠ ' + foreign.module.slice(SPLIT_PREFIX.length) + ' modifié sur le serveur (' + new Date(foreign.updated_at).toLocaleTimeString() + ', ' + src + ') — rechargez avant de continuer');
+    }
+  }
+
   // Écriture conditionnelle : n'aboutit que si personne n'a écrit entre-temps.
   async function ccWriteRaw(payload, retried){
     if(CC_TAB_LOCKED) return { error:'onglet en lecture seule — SMS repris dans un autre onglet' };
+    if(CC_SPLIT) return ccWriteSplit(payload, false);
     ccTag(payload);
     var stamp = new Date().toISOString(), q;
     if(CC_ROW_EXISTS && CC_LAST_SYNC){
@@ -24709,6 +24952,7 @@ setTimeout(function(){
   // Écriture forcée (choix explicite de l'utilisateur : écraser le serveur).
   async function ccForce(payload){
     if(CC_TAB_LOCKED) return { error:'onglet en lecture seule — SMS repris dans un autre onglet' };
+    if(CC_SPLIT){ var o = await ccWriteSplit(payload, true); CC_CONFLICT_KEY = ''; return o; }
     ccTag(payload);
     var stamp = new Date().toISOString();
     var res = await db.from('saf_data')
@@ -24794,6 +25038,7 @@ setTimeout(function(){
   async function ccPoll(){
     if(SAF_RR_READER) return;
     if(CC_TAB_LOCKED || CC_CONFLICT || !CC_ROW_EXISTS || !CC_LAST_SYNC) return;
+    if(CC_SPLIT){ try{ await ccPollSplit(); }catch(e){} return; }
     try{
       var w = await ccReadWriter();
       if(!w) return;
@@ -24812,8 +25057,22 @@ setTimeout(function(){
   setInterval(ccPoll, 60000);
 
   // --- Sauvegarde vers la base ---
+  // 02.11.2026 — Recul exponentiel après une erreur serveur (timeout, 500, 504…).
+  // Sans lui, chaque frappe relançait une écriture de plusieurs Mo sur une base
+  // déjà saturée, ce qui entretenait la panne.
+  var CC_FAILS = 0, CC_BACKOFF_UNTIL = 0;
+  function ccNoteFailure(msg){
+    CC_FAILS++;
+    var wait = Math.min(300000, 15000 * Math.pow(2, CC_FAILS - 1));
+    CC_BACKOFF_UNTIL = Date.now() + wait;
+    CC_PENDING = true;
+    setBar('error', 'Serveur indisponible (' + String(msg||'').slice(0,60) + ') — nouvel essai dans ' + Math.round(wait/1000) + ' s. Modifications gardées dans ce navigateur.');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(cloudSave, wait);
+  }
   async function cloudSave(){
     if(CC_CONFLICT){ return; }   // bloqué jusqu'à résolution du conflit
+    if(Date.now() < CC_BACKOFF_UNTIL){ clearTimeout(saveTimer); saveTimer = setTimeout(cloudSave, CC_BACKOFF_UNTIL - Date.now() + 50); return; }
     if(CC_TAB_LOCKED){ return; } // SMS repris dans un autre onglet
     if(isGuest){ setBar('ok','Connexion requise'); return; }
     if(saving){ dirty = true; return; }
@@ -24824,9 +25083,9 @@ setTimeout(function(){
       var payload = window.safExportForCloud();
       var out = await ccWrite(payload);
       if(out.conflict){ CC_CONFLICT = true; ccShowConflict(payload); setBar('error','⚠ Conflit de version — sauvegarde suspendue'); }
-      else if(out.error) setBar('error','Erreur sauvegarde: '+out.error);
-      else { CC_PENDING = false; setBar('ok','Synchronisé ✓ '+new Date().toLocaleTimeString()); }
-    }catch(e){ setBar('ok','Sauvegarde impossible: '+e.message); }
+      else if(out.error){ saving = false; dirty = false; ccNoteFailure(out.error); return; }
+      else { CC_PENDING = false; CC_FAILS = 0; CC_BACKOFF_UNTIL = 0; setBar('ok','Synchronisé ✓ '+new Date().toLocaleTimeString()); }
+    }catch(e){ saving = false; dirty = false; ccNoteFailure(e.message); return; }
     saving = false;
     if(dirty){ dirty = false; scheduleSave(); }
   }
@@ -24834,6 +25093,7 @@ setTimeout(function(){
   function scheduleSave(){
     if(!ready || CC_TAB_LOCKED) return;
     CC_PENDING = true;
+    if(Date.now() < CC_BACKOFF_UNTIL) return;   // l'essai programmé partira tout seul
     clearTimeout(saveTimer);
     setBar('saving','Modification detectee...');
     saveTimer = setTimeout(cloudSave, 900);
@@ -24861,9 +25121,9 @@ setTimeout(function(){
       var payload = window.safExportForCloud();
       out = await ccWrite(payload);
       if(out.conflict){ CC_CONFLICT = true; ccShowConflict(payload); setBar('error','⚠ Conflit de version — sauvegarde suspendue'); }
-      else if(out.error){ setBar('error','Erreur sauvegarde: '+out.error); }
-      else { CC_PENDING = false; setBar('ok','Synchronisé ✓ '+new Date().toLocaleTimeString()); }
-    }catch(e){ out = {error:e.message}; setBar('error','Sauvegarde impossible: '+e.message); }
+      else if(out.error){ saving = false; ccNoteFailure(out.error); return out; }
+      else { CC_PENDING = false; CC_FAILS = 0; CC_BACKOFF_UNTIL = 0; setBar('ok','Synchronisé ✓ '+new Date().toLocaleTimeString()); }
+    }catch(e){ out = {error:e.message}; saving = false; ccNoteFailure(e.message); return out; }
     saving = false;
     return out;
   };
