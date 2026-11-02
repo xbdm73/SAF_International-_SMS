@@ -1,0 +1,25 @@
+{
+  "name": "SAF International - Safety Report",
+  "short_name": "Safety Report",
+  "description": "Compte rendu d’événement SAF International",
+  "lang": "fr",
+  "start_url": "./SAF_Report.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0D1B2A",
+  "theme_color": "#0D1B2A",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
