@@ -18787,7 +18787,7 @@ function llOnTypeChange(type){
   if(!cur||/^(SA|COM)-\d{3}$/.test(cur))el.value=llNextRef(type);
 }
 
-var _llEditId=null,_llImageData=null,_llPdfData=null,_llPdfName='',_llPdfPath='';
+var _llEditId=null,_llImageData=null,_llPdfData=null,_llPdfName='',_llPdfPath='',_llPdfOrphans=[];
 
 function showLessonForm(editId){
   _llEditId=editId||null;
@@ -18802,6 +18802,7 @@ function showLessonForm(editId){
   _llPdfData=ex?(ex.pdf||null):null;
   _llPdfName=ex?(ex.pdf_name||''):'';
   _llPdfPath=ex?(ex.pdf_path||''):'';
+  _llPdfOrphans=[];
 
   var wrap=document.getElementById('lessons-form-wrap');
   if(!wrap)return;
@@ -19605,7 +19606,7 @@ function showLessonForm(editId){
   pdfRow.appendChild(pdfLabel);
 
   var pdfClear=document.createElement('button');
-  pdfClear.type='button';pdfClear.textContent='✕ Retirer';
+  pdfClear.type='button';pdfClear.textContent='🗑 Supprimer l’annexe';pdfClear.title='Retire l’annexe de la communication ; le fichier est effacé du cloud à l’enregistrement (sauf s’il sert à une version archivée)';
   pdfClear.style.cssText='padding:6px 12px;background:rgba(204,34,0,.15);border:1px solid rgba(204,34,0,.4);border-radius:6px;font-family:var(--font-mono);font-size:10px;color:#ff7055;cursor:pointer;';
   pdfClear.addEventListener('click',llClearPdf);
   pdfRow.appendChild(pdfClear);
@@ -19643,7 +19644,7 @@ function showLessonForm(editId){
   saveBtn.textContent=isEdit?'✓ Save':'✓ Sauvegarder & publier';
   // L'evenement du clic ne doit PAS arriver dans _silent : sinon la
   // sauvegarde prend la branche autosave (ni message, ni fermeture).
-  saveBtn.addEventListener('click',function(e){if(e&&e.preventDefault)e.preventDefault();saveLesson(false);});
+  saveBtn.addEventListener('click',function(e){if(e&&e.preventDefault)e.preventDefault();saveLesson(false);llAfterSaveHook();});
   var cancelBtn=document.createElement('button');
   cancelBtn.className='btn btn-ghost';cancelBtn.textContent='Cancel';
   cancelBtn.addEventListener('click',function(){
@@ -19840,6 +19841,7 @@ function llAttachPdf(input){
     var ref=(((document.getElementById('ll-ref')||{}).value)||'').trim();
     if(nm){nm.textContent='⏳ Envoi de « '+f.name+' » dans le cloud…';}
     llPdfUpload(f,f.name,date,ref).then(function(path){
+      if(_llPdfPath&&_llPdfPath!==path)_llPdfOrphans.push(_llPdfPath);
       _llPdfPath=path;_llPdfData=null;_llPdfName=f.name||'document.pdf';
       llPdfSetUi();input.value='';
       showToast('☁ Annexe envoyée — cliquez sur Enregistrer pour l’associer à la communication','ok');
@@ -19865,10 +19867,47 @@ function llAttachPdf(input){
   reader.readAsDataURL(f);
 }
 function llClearPdf(){
-  // Le fichier reste dans le Storage : une version archivée peut y renvoyer.
+  if(!_llPdfData&&!_llPdfPath)return;
+  if(!confirm('Supprimer l’annexe « '+(_llPdfName||'PDF')+' » ?\n\nElle est retirée de la communication et le fichier est effacé du cloud quand vous cliquez sur Enregistrer.\nSi une version archivée de cette communication l’utilise encore, le fichier est conservé pour l’historique.'))return;
+  if(_llPdfPath)_llPdfOrphans.push(_llPdfPath);
   _llPdfData=null;_llPdfName='';_llPdfPath='';
   llPdfSetUi();
   var inp=document.getElementById('ll-pdf-input');if(inp)inp.value='';
+}
+// ── Suppression des annexes devenues orphelines ──────────────────────
+// Un fichier n'est effacé du Storage que si plus aucune communication ne le
+// référence : version en vigueur, brouillon de révision ou version archivée.
+function llPdfRefs(path){
+  var out=[];
+  getLessons().forEach(function(l){
+    if(!l)return;
+    if(l.pdf_path===path)out.push({ref:l.ref||l.id,kind:'current'});
+    if(l.rev_draft&&l.rev_draft.pdf_path===path)out.push({ref:l.ref||l.id,kind:'draft'});
+    (l.revisions||[]).forEach(function(r,i){if(r&&r.pdf_path===path)out.push({ref:(l.ref||l.id)+' V'+((r.rev||i)+1),kind:'archive'});});
+  });
+  return out;
+}
+// Supprime un objet du bucket. Supabase renvoie data:[] SANS erreur quand la
+// politique RLS refuse le DELETE : on contrôle donc ce qui a réellement été effacé.
+async function safStorageRemovePath(path){
+  var db=window.safSupabaseClient; if(!db)throw new Error('Supabase Storage indisponible');
+  var res=await db.storage.from(LL_PDF_BUCKET).remove([path]);
+  if(res.error)throw res.error;
+  if(!res.data||!res.data.length)throw new Error('suppression refusée par le serveur — il manque la politique DELETE sur storage.objects pour le bucket « SMS Documents »');
+  return true;
+}
+window.safStorageRemovePath=safStorageRemovePath;
+async function llPdfPurgeOrphans(){
+  if(!_llPdfOrphans.length||!llPdfCanCloud())return;
+  var keep=[];
+  for(var i=0;i<_llPdfOrphans.length;i++){
+    var path=_llPdfOrphans[i], refs=llPdfRefs(path);
+    if(refs.some(function(r){return r.kind!=='archive';})){keep.push(path);continue;} // pas encore enregistré
+    if(refs.length)continue;                                                           // historique : conservé
+    try{await safStorageRemovePath(path);showToast('🗑 Annexe supprimée du cloud','ok');}
+    catch(e){showToast('⚠ Annexe retirée, mais fichier non supprimé : '+(e&&e.message?e.message:e),'error');}
+  }
+  _llPdfOrphans=keep;
 }
 // Migration : une annexe encore en base64 dans ce navigateur (ancien mode,
 // non synchronisée) est envoyée dans le Storage puis remplacée par son chemin.
@@ -19960,6 +19999,7 @@ function llDownloadPdfData(dataUrl,name){
     setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},60000);
   }catch(e){ showToast('⚠ Téléchargement impossible : '+e.message,'error'); }
 }
+function llAfterSaveHook(){ if(_llPdfOrphans.length)setTimeout(llPdfPurgeOrphans,600); }
 function llDownloadLessonPdf(id){
   var l=getLessons().find(function(x){return x.id===id;});
   if(!llHasPdf(l))return;
@@ -20187,11 +20227,11 @@ function renderLessonsList(){
       rightDiv.appendChild(pdfDl);
     }
     var printBtn=mkBtn('🖨','','var(--grey-400)','rgba(255,255,255,.06)');
-    printBtn.title='Exporter un PDF unique avec les annexes si présentes';
+    printBtn.title='Afficher la communication avec son annexe à la suite (pour imprimer ou enregistrer en PDF)';
     printBtn.addEventListener('click',(function(id,hp){return function(){printLessonById(id,null,hp);};})(l.id,llHasPdf(l)));
     var mergedBtn=mkBtn('PDF unique','','var(--gold-light)','rgba(201,162,39,.18)');
     mergedBtn.title='Télécharger la communication et son annexe PDF dans un seul document';
-    mergedBtn.addEventListener('click',(function(id){return function(){printLessonById(id,null,true);};})(l.id));
+    mergedBtn.addEventListener('click',(function(id){return function(){printLessonById(id,null,true,'download');};})(l.id));
     var delBtn=document.createElement('button');
     delBtn.textContent='✕';delBtn.style.cssText='background:none;border:none;color:#f85149;cursor:pointer;font-size:13px;padding:0 2px;';
     delBtn.addEventListener('click',(function(id){return function(){deleteLesson(id);};})(l.id));
@@ -20225,8 +20265,10 @@ function deleteLesson(id){
   var label=l?(l.ref||l.id)+(l.title?' — '+l.title:''):id;
   if(l&&l.revisions&&l.revisions.length)label+='\n\n⚠ Les '+(l.revisions.length+1)+' versions (historique de révision compris) seront supprimées.';
   if(!confirm('⚠️ Delete définitivement cette communication ?\n\n'+label+'\n\nCette action est irréversible.'))return;
+  var _annex=[];if(l){if(l.pdf_path)_annex.push(l.pdf_path);if(l.rev_draft&&l.rev_draft.pdf_path)_annex.push(l.rev_draft.pdf_path);(l.revisions||[]).forEach(function(r){if(r&&r.pdf_path)_annex.push(r.pdf_path);});}
   saveLessons(getLessons().filter(function(x){return x.id!==id;}));
   llApplyOccLinks(id,[]);
+  if(_annex.length){_llPdfOrphans=_annex.filter(function(v,i,a){return a.indexOf(v)===i;});setTimeout(llPdfPurgeOrphans,600);}
   renderLessonsList();showToast('Communication supprimée','success');
 }
 
@@ -20430,7 +20472,7 @@ function _SAF_COM_IMG(){var el=document.getElementById('_saf_com_bg');return el?
 function _SAF_SIG_IMG(){var el=document.getElementById('_saf_sig');return el?el.src:'';}
 
 
-function printLessonById(id,_versions,_mergedPdf){
+function printLessonById(id,_versions,_mergedPdf,_mode){
   // _versions (optionnel) : liste de versions issues de llRevVersions(),
   // imprimées à la suite dans un seul document, numérotées séparément.
   var _base=getLessons().find(function(x){return x.id===id;});
@@ -20760,14 +20802,48 @@ function printLessonById(id,_versions,_mergedPdf){
               raw=new Uint8Array(ab.byteLength);raw.set(new Uint8Array(ab));
             }
             if(!raw)continue;
-            var attached=await PDFLib.PDFDocument.load(raw,{ignoreEncryption:false});
-            var imported=await pdf.copyPages(attached,attached.getPageIndices());
-            imported.forEach(function(pg){pdf.addPage(pg);});
+            try{
+              var attached=await PDFLib.PDFDocument.load(raw.slice(),{ignoreEncryption:false});
+              var imported=await pdf.copyPages(attached,attached.getPageIndices());
+              imported.forEach(function(pg){pdf.addPage(pg);});
+            }catch(copyErr){
+              // PDF protégé (restrictions d impression/copie) ou structure non standard :
+              // pdf-lib refuse de copier les pages. On les rend en images avec pdf.js.
+              console.warn('Annexe copiée en image',item.name,copyErr);
+              if(status)status.textContent='Annexe '+item.name+' protégée : rendu des pages en image...';
+              if(!window.pdfjsLib){
+                await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+                window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+              }
+              var pdoc;
+              try{ pdoc=await window.pdfjsLib.getDocument({data:raw.slice(),password:''}).promise; }
+              catch(pe){ throw new Error('Annexe '+item.name+' illisible ou protégée par mot de passe ('+(pe.message||pe)+')'); }
+              for(var pn=1;pn<=pdoc.numPages;pn++){
+                var ppg=await pdoc.getPage(pn), vp=ppg.getViewport({scale:2});
+                var cv=document.createElement('canvas');cv.width=Math.ceil(vp.width);cv.height=Math.ceil(vp.height);
+                var cx=cv.getContext('2d');cx.fillStyle='#ffffff';cx.fillRect(0,0,cv.width,cv.height);
+                await ppg.render({canvasContext:cx,viewport:vp}).promise;
+                var jd=cv.toDataURL('image/jpeg',0.92);
+                var jb=Uint8Array.from(atob(jd.substring(jd.indexOf(',')+1)),function(c){return c.charCodeAt(0);});
+                var jimg=await pdf.embedJpg(jb), w2=vp.width/2, h2=vp.height/2;
+                var np2=pdf.addPage([w2,h2]);np2.drawImage(jimg,{x:0,y:0,width:w2,height:h2});
+              }
+            }
           }
           var nAttachments=payload.attachments.length;
           if(nAttachments && pdf.getPageCount()<=pages.length){throw new Error('Aucune page annexe n’a été ajoutée. Vérifiez que le PDF est bien enregistré dans la fiche.');}
           var bytes=await pdf.save();
           var blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob);
+          if(payload.mode!=='download'){
+            // 🖨 : le document complet (pages + annexes) s affiche dans cet onglet,
+            // dans la visionneuse PDF du navigateur — imprimer ou enregistrer depuis là.
+            var st2=document.getElementById('ll-pdf-status');
+            if(st2){st2.innerHTML='Document prêt : '+pdf.getPageCount()+' pages dont annexe(s). <a href="'+url+'">Afficher</a> · <a href="'+url+'" download="'+String(payload.name).replace(/"/g,'')+'">Télécharger</a>';}
+            // Si le navigateur est réglé pour télécharger les PDF au lieu de les
+            // afficher, la page reste là et les deux liens restent utilisables.
+            window.location.replace(url);
+            return;
+          }
           var host=(window.opener&&!window.opener.closed)?window.opener:window;
           var a=host.document.createElement('a');a.href=url;a.download=payload.name;a.style.display='none';host.document.body.appendChild(a);a.click();a.remove();
           setTimeout(function(){URL.revokeObjectURL(url);},60000);
@@ -20777,7 +20853,7 @@ function printLessonById(id,_versions,_mergedPdf){
     }else setTimeout(function(){window.print();},400);
   };
   `;
-  var llMergedConfig={name:(l.ref||'SAF_Lesson_Learned').replace(/[^a-zA-Z0-9_-]/g,'_')+'_complet.pdf',attachments:_list.filter(function(v){return llHasPdf(v);}).map(function(v){return {name:v.pdf_name||'annexe.pdf',data:v.pdf||'',path:v.pdf_path||''};})};
+  var llMergedConfig={mode:(_mode==='download'?'download':'view'),name:(l.ref||'SAF_Lesson_Learned').replace(/[^a-zA-Z0-9_-]/g,'_')+'_complet.pdf',attachments:_list.filter(function(v){return llHasPdf(v);}).map(function(v){return {name:v.pdf_name||'annexe.pdf',data:v.pdf||'',path:v.pdf_path||''};})};
   if(_mergedPdf && !llMergedConfig.attachments.length){ alert('Aucun PDF joint enregistré dans '+(l.ref||'cette Lesson Learned')+'. Ouvrez Modifier, joignez le document PDF, puis Enregistrer avant de relancer PDF unique.'); return; }
   var mergedInit=_mergedPdf?'<script>window.__llMergedExport='+JSON.stringify(llMergedConfig).replace(/</g,'\u003c')+';<\/script>':'';
   w.document.write('<!doctype html><html><head><title>'+esc((l.ref||'Safety Communication')+_ttlSfx)+'</title><style>'+css+'</style></head><body>'+( _mergedPdf?'<div id="ll-pdf-status" style="position:fixed;right:8px;top:8px;z-index:999;background:white;padding:7px;font:12px Arial">Génération du PDF unique en cours...</div>':'')+pagesHtml+mergedInit+'<script>'+overflowScript+'<\/script></body></html>');
@@ -27603,10 +27679,16 @@ window.cmxBridgeDiag    = function(){
           + '<div style="flex:1;min-width:0;"><div style="font-family:var(--font-mono);font-size:10px;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(f.name)+'">'+esc(f.name)+'</div>'
           + (size ? '<div style="font-family:var(--font-mono);font-size:8px;color:var(--grey-600);margin-top:2px;">'+esc(size)+'</div>' : '') + '</div>'
           + '<button type="button" class="btn btn-ghost" style="padding:5px 9px;font-size:8px;" data-storage-path="'+esc(path)+'">Ouvrir</button>'
+          + (canWrite() ? '<button type="button" class="btn btn-ghost" style="padding:5px 9px;font-size:8px;color:#f85149;border-color:rgba(248,81,73,.45);" title="Supprimer ce fichier du cloud" data-storage-del="'+esc(path)+'">Supprimer</button>' : '')
           + '</div>';
       }).join('');
       list.querySelectorAll('[data-storage-path]').forEach(function(btn){
         btn.addEventListener('click', function(){ window.safStorageOpen(this.getAttribute('data-storage-path')); });
+      });
+      list.querySelectorAll('[data-storage-del]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          window.safStorageDeleteFile(this.getAttribute('data-storage-del'), function(){ window.safStorageRefreshOccurrence(); });
+        });
       });
       setStatus(files.length + ' document(s) · ' + folder, 'ok');
     }catch(e){
@@ -27671,6 +27753,28 @@ window.cmxBridgeDiag    = function(){
 
 
 
+<script id="saf-storage-delete">
+// 02.11.2026 — Suppression d'un fichier du bucket « SMS Documents ».
+window.safStorageDeleteFile = async function(path, done){
+  try{
+    var r=(typeof safCurrentRole==='function'?safCurrentRole():'').toLowerCase();
+    if(r!=='admin'&&r!=='editor'){ alert('Votre rôle est en lecture seule : suppression non autorisée.'); return; }
+    var name=String(path||'').split('/').pop();
+    var refs=(typeof llPdfRefs==='function')?llPdfRefs(path):[];
+    if(refs.length){
+      var cur=refs.filter(function(x){return x.kind!=='archive';});
+      alert(cur.length
+        ? '« '+name+' » est l’annexe PDF de '+cur.map(function(x){return x.ref;}).join(', ')+'.\n\nSupprimez-la depuis la communication (✎ → 🗑 Supprimer l’annexe → Enregistrer).'
+        : '« '+name+' » est l’annexe d’une version archivée ('+refs.map(function(x){return x.ref;}).join(', ')+').\n\nElle est conservée pour l’historique des révisions.');
+      return;
+    }
+    if(!confirm('Supprimer définitivement « '+name+' » du cloud ?\n\nCette action est irréversible.')) return;
+    await window.safStorageRemovePath(path);
+    if(typeof showToast==='function') showToast('🗑 « '+name+' » supprimé','ok');
+    if(typeof done==='function') done();
+  }catch(e){ alert('Suppression impossible : '+(e&&e.message?e.message:e)); }
+};
+</script>
 <!-- ═══ SAF STORAGE — OTHER SMS MODULES ═══════════════════════════════════ -->
 <script id="saf-storage-other-modules">
 (function(){
@@ -27765,9 +27869,12 @@ window.cmxBridgeDiag    = function(){
         return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:6px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:6px;">'
           +'<span style="font-size:15px;">📄</span><div style="flex:1;min-width:0;"><div style="font-family:var(--font-mono);font-size:10px;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(f.name)+'">'+esc(f.name)+'</div>'
           +(size?'<div style="font-family:var(--font-mono);font-size:8px;color:var(--grey-600);margin-top:2px;">'+esc(size)+'</div>':'')+'</div>'
-          +'<button type="button" class="btn btn-ghost" style="padding:5px 9px;font-size:8px;" data-saf-doc-path="'+esc(path)+'">Ouvrir</button></div>';
+          +'<button type="button" class="btn btn-ghost" style="padding:5px 9px;font-size:8px;" data-saf-doc-path="'+esc(path)+'">Ouvrir</button>'
+          +(canWrite()?'<button type="button" class="btn btn-ghost" style="padding:5px 9px;font-size:8px;color:#f85149;border-color:rgba(248,81,73,.45);" title="Supprimer ce fichier du cloud" data-saf-doc-del="'+esc(path)+'">Supprimer</button>':'')
+          +'</div>';
       }).join('');
       list.querySelectorAll('[data-saf-doc-path]').forEach(function(b){b.addEventListener('click',function(){openFile(this.getAttribute('data-saf-doc-path'));});});
+      list.querySelectorAll('[data-saf-doc-del]').forEach(function(b){b.addEventListener('click',function(){window.safStorageDeleteFile(this.getAttribute('data-saf-doc-del'),function(){refresh(key);});});});
       status(key,files.length+' document(s) · '+folder,'ok');
     }catch(e){
       list.innerHTML='<div style="color:#f85149;font-family:var(--font-mono);font-size:10px;">Erreur Storage : '+esc(e&&e.message?e.message:e)+'</div>';
