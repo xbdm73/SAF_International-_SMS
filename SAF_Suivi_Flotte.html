@@ -242,6 +242,41 @@ footer .err{color:var(--lost)}
   #hist .hmap{grid-row:1} #hist .hlist{grid-row:2;border-right:0;border-top:1px solid var(--line)}
   #hist .hbar{padding:10px 14px}
 }
+/* Analyse d'un vol */
+#ana{position:fixed;inset:0;z-index:1600;background:var(--paper);display:grid;grid-template-rows:auto 1fr;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#ana[hidden]{display:none}
+#ana .abar{display:flex;gap:10px 14px;align-items:end;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+#ana h2{font-family:var(--cond);font-weight:700;font-size:24px;margin:0 6px 2px 0;color:var(--signal);line-height:1}
+#ana .asub{color:var(--ink-2);font-size:13px;align-self:center}
+#ana .fld{display:grid;gap:3px;font-size:12px;color:var(--ink-2)}
+#ana input[type=number]{width:84px;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:4px 6px;color-scheme:dark}
+#ana button{background:none;border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer;color:var(--ink)}
+#ana button:disabled{opacity:.45;cursor:default}
+#ana .close{margin-left:auto}
+#ana .abody{display:grid;grid-template-columns:1fr 340px;grid-template-rows:minmax(220px,1fr) auto;min-height:0}
+#ana .amap{position:relative;min-height:0;grid-column:1;grid-row:1} #ana .amap .map{position:absolute;inset:0}
+#ana .aside{grid-column:2;grid-row:1/3;overflow:auto;border-left:1px solid var(--line);padding:12px 16px;font-size:13px;min-height:0}
+#ana .aside>*{margin:0 0 14px}
+#ana .acharts{grid-column:1;grid-row:2;border-top:1px solid var(--line);padding:8px 14px 10px;display:grid;gap:6px}
+#ana .ctitle{font-size:12px;color:var(--ink-2);display:flex;gap:14px;flex-wrap:wrap}
+#ana .ctitle i{font-style:normal;font-weight:600}
+#ana .chart{height:150px;width:100%} #ana .chart svg{width:100%;height:100%;display:block;touch-action:pan-y;cursor:crosshair}
+#ana .play{display:flex;gap:8px;align-items:center} #ana .play input{flex:1;accent-color:var(--signal)}
+#ana .read{font-family:var(--cond);font-size:15px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 10px;min-height:96px}
+#ana .read b{color:var(--signal)}
+#ana dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0}
+#ana dt{color:var(--ink-2)} #ana dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+#ana dd.bad{color:var(--lost);font-weight:600} #ana dd.warn{color:var(--signal)}
+#ana h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2);margin:0 0 6px;font-weight:600}
+#ana .exp{display:flex;gap:6px;flex-wrap:wrap}
+#ana .note{color:var(--ink-2);font-size:11.5px;line-height:1.4}
+#ana .lowlist{display:grid;gap:4px} #ana .lowlist button{text-align:left;font-size:12.5px}
+@media (max-width:760px){
+  #ana .abody{grid-template-columns:1fr;grid-template-rows:42vh auto auto;overflow:auto}
+  #ana .amap{grid-row:1} #ana .acharts{grid-row:2} #ana .aside{grid-column:1;grid-row:3;border-left:0;border-top:1px solid var(--line)}
+  #ana .abar{padding:10px 14px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 /* Outils de carte repris de SAF Operations */
 .opsx{position:absolute;inset:0;pointer-events:none;z-index:790}
@@ -347,11 +382,39 @@ footer .err{color:var(--lost)}
     </div></div>
     <button type="button" class="go" id="h-load">Afficher</button>
     <button type="button" id="h-csv" disabled>Exporter CSV</button>
+    <button type="button" class="go" id="h-ana" disabled title="Sélectionnez d'abord un vol dans la liste">Analyser ce vol</button>
     <button type="button" class="close" id="h-close">Fermer</button>
   </div>
   <div class="hbody">
     <div class="hlist" id="h-list"><p class="empty">Choisissez un appareil et une période, puis « Afficher ».</p></div>
     <div class="hmap"><div class="map" id="h-map"></div></div>
+  </div>
+</div>
+<div id="ana" hidden role="dialog" aria-modal="true" aria-labelledby="a-title">
+  <div class="abar">
+    <h2 id="a-title">Analyse du vol</h2>
+    <span class="asub" id="a-sub">—</span>
+    <label class="fld">Hauteur sol mini (ft)<input type="number" id="a-thr" min="0" max="5000" step="50" value="500"></label>
+    <button type="button" class="close" id="a-close">← Retour à l'historique</button>
+  </div>
+  <div class="abody">
+    <div class="amap"><div class="map" id="a-map"></div></div>
+    <div class="acharts">
+      <div class="ctitle"><span>Profil vertical (ft)</span><i style="color:#4bd6a0">— Hélicoptère (alt. GPS)</i><i style="color:#e0ad57">▆ Relief</i><i style="color:#F0C040">┄ Relief + seuil</i><i style="color:#E5484D">● Sous le seuil</i></div>
+      <div class="chart" id="a-prof"></div>
+      <div class="ctitle"><span>Vitesses</span><i style="color:#5B9BE0">— Vitesse sol (kt, axe gauche)</i><i style="color:#c792ea">— Vitesse verticale (ft/min, axe droit)</i></div>
+      <div class="chart" id="a-spd"></div>
+      <div class="play"><button type="button" id="a-play" aria-label="Rejouer le vol">▶</button><input type="range" id="a-slider" min="0" max="0" value="0" aria-label="Position dans le vol"></div>
+    </div>
+    <div class="aside">
+      <div class="read" id="a-read" aria-live="polite">—</div>
+      <div><h3>Synthèse</h3><dl id="a-stats"></dl></div>
+      <div><h3>Passages sous le seuil</h3><div class="lowlist" id="a-low"><span class="note">—</span></div></div>
+      <div><h3>Exporter</h3><div class="exp">
+        <button type="button" id="a-csv">CSV points</button><button type="button" id="a-gpx">GPX</button><button type="button" id="a-kml">KML 3D (Google Earth)</button>
+      </div></div>
+      <p class="note" id="a-note"></p>
+    </div>
   </div>
 </div>
 <section id="terrain-panel" hidden aria-label="Profil du relief et hauteur sol">
@@ -2047,6 +2110,7 @@ async function loadHist(){
   const regSel=document.getElementById("h-reg").value;
   const regs=regSel?[regSel]:fleet.map(a=>a.reg);
   hist.busy=true; document.getElementById("h-load").disabled=true; document.getElementById("h-csv").disabled=true;
+  hist.sel=null; document.getElementById("h-ana").disabled=true;
   list.innerHTML=`<p class="empty">Chargement des positions…</p>`; hist.layer.clearLayers();
   try{
     const rows=[], info=[];
@@ -2098,7 +2162,7 @@ function renderHist(info,fromIso){
   list.innerHTML=h+`</tbody></table>`;
   list.querySelectorAll("tr.fl").forEach(tr=>{
     const go=()=>showHistFlight(+tr.dataset.i);
-    tr.onclick=go; tr.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } };
+    tr.onclick=go; tr.ondblclick=()=>{ go(); openAna(+tr.dataset.i); }; tr.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } };
   });
   showHistAll();
 }
@@ -2110,6 +2174,7 @@ function showHistAll(){
 }
 function showHistFlight(i){
   const r=hist.rows[i]; if(!r) return;
+  hist.sel=i; const ab=document.getElementById("h-ana"); ab.disabled=false; ab.title=`Analyser le vol ${r.reg} du ${dmy(r.f.toTo)}`;
   document.querySelectorAll("#h-list tr.fl").forEach(tr=>tr.classList.toggle("on",+tr.dataset.i===i));
   hist.layer.clearLayers();
   const ll=r.f.pts.map(p=>[p.lat,p.lon]);
@@ -2140,6 +2205,330 @@ document.getElementById("h-load").onclick=loadHist;
 document.getElementById("h-csv").onclick=exportHistCsv;
 document.querySelectorAll("#hist .presets button").forEach(b=>b.onclick=()=>{ histPreset(+b.dataset.d); loadHist(); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!document.getElementById("hist").hidden) closeHist(); });
+
+/* ---------- Analyse d'un vol (depuis l'historique) ----------
+   Tout est calculé à partir des points du traceur : altitude GPS, vitesse sol moyenne et
+   vitesse verticale moyenne ENTRE deux points. Le relief vient d'un MNT (EU-DEM 25 m, sinon
+   Copernicus 90 m). La hauteur sol est donc indicative : à exploiter pour repérer, pas pour conclure. */
+const M2FT=3.28084, ANA_GAP_S=180;
+const ana={map:null,layer:null,cursor:null,reg:null,f:null,rows:[],idx:0,timer:null,source:"",segs:[],marks:[]};
+const fmtN=(v,d=0)=>Number.isFinite(v)?v.toLocaleString("fr-FR",{maximumFractionDigits:d,minimumFractionDigits:d}):"—";
+const hms=t=>new Date(t).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit",timeZone:"UTC"});
+function anaThr(){ const v=+document.getElementById("a-thr").value; return Number.isFinite(v)&&v>=0?v:500; }
+
+function anaBuild(f){
+  const pts=f.pts.filter(p=>Number.isFinite(+p.lat)&&Number.isFinite(+p.lon));
+  return pts.map((p,i)=>{
+    const prev=pts[i-1], t=Date.parse(p.fix_time), alt=Number.isFinite(+p.alt_m)?+p.alt_m:null;
+    let dt=null,gs=null,vs=null;
+    if(prev){
+      dt=(t-Date.parse(prev.fix_time))/1000;
+      if(dt>0){
+        gs=haversineKm(prev,p)/(dt/3600)/1.852;
+        if(alt!=null&&Number.isFinite(+prev.alt_m)) vs=(alt-prev.alt_m)*M2FT/(dt/60);
+      }
+    }
+    const h=prev&&haversineKm(prev,p)>0.05?bearingDeg(prev,p):hdgOf(p), trk=Number.isFinite(h)?Math.round(h)%360:null;
+    return {p,t,i,air:isAir(p),alt,dt,gs,vs,trk,raw:Number.isFinite(+p.speed)?+p.speed:null,ground:null,agl:null,low:false};
+  });
+}
+async function anaJson(url){
+  const c=new AbortController(), tm=setTimeout(()=>c.abort(),15000);
+  try{ const r=await fetch(url,{signal:c.signal,cache:"no-store"}); if(!r.ok) throw Error("HTTP "+r.status); return await r.json(); }
+  finally{ clearTimeout(tm); }
+}
+async function anaGround(rows,progress){
+  const need=[...new Map(rows.filter(r=>!terrain.elevations.has(terrainKey(r.p))).map(r=>[terrainKey(r.p),r.p])).values()];
+  let source=ana.source||terrain.source||"";
+  for(let i=0;i<need.length;i+=80){
+    const batch=need.slice(i,i+80); let h;
+    if(i) await new Promise(r=>setTimeout(r,1100)); // opentopodata : 1 requête par seconde
+    try{
+      const j=await anaJson("https://api.opentopodata.org/v1/eudem25m?locations="+encodeURIComponent(batch.map(terrainKey).join("|")));
+      if(j.status!=="OK"||!Array.isArray(j.results)||j.results.length!==batch.length) throw Error(j.error||"EU-DEM");
+      h=j.results.map(v=>v.elevation); if(!h.some(Number.isFinite)) throw Error("EU-DEM vide");
+      source="EU-DEM 25 m";
+    }catch(e){
+      const j=await anaJson("https://api.open-meteo.com/v1/elevation?latitude="+encodeURIComponent(batch.map(p=>(+p.lat).toFixed(5)).join(","))+
+        "&longitude="+encodeURIComponent(batch.map(p=>(+p.lon).toFixed(5)).join(",")));
+      if(!Array.isArray(j.elevation)||j.elevation.length!==batch.length) throw Error(j.reason||"Copernicus");
+      h=j.elevation; source="Copernicus GLO-90 (90 m)";
+    }
+    batch.forEach((p,k)=>terrain.elevations.set(terrainKey(p),Number.isFinite(h[k])?h[k]:null));
+    progress?.(Math.min(need.length,i+80),need.length);
+  }
+  rows.forEach(r=>{ const g=terrain.elevations.get(terrainKey(r.p)); r.ground=Number.isFinite(g)?g:null; });
+  return source;
+}
+function anaClassify(){
+  const thr=anaThr();
+  ana.rows.forEach(r=>{ r.agl=(r.alt!=null&&r.ground!=null)?(r.alt-r.ground)*M2FT:null; r.low=r.air&&r.agl!=null&&r.agl<thr; });
+}
+function anaLowRuns(){
+  const runs=[]; let cur=null;
+  ana.rows.forEach((r,i)=>{
+    if(r.low){ if(!cur) cur={a:i,b:i,min:r.agl}; else { cur.b=i; cur.min=Math.min(cur.min,r.agl); } }
+    else if(cur){ runs.push(cur); cur=null; }
+  });
+  if(cur) runs.push(cur);
+  return runs;
+}
+
+async function openAna(i){
+  const r=hist.rows[i]; if(!r) return;
+  ana.reg=r.reg; ana.f=r.f; ana.rows=anaBuild(r.f); ana.idx=0; anaStop();
+  try{ const v=window.localStorage?.getItem("saf_ana_thr_ft"); if(v!=null&&v!=="") document.getElementById("a-thr").value=v; }catch(e){}
+  const f=r.f, dep=f.toPlace?placeLabel(f.toPlace):"départ non enregistré", arr=f.ldPlace?placeLabel(f.ldPlace):(f.ldTo?"—":"vol en cours");
+  document.getElementById("a-title").textContent=`Analyse du vol · ${r.reg}`;
+  document.getElementById("a-sub").textContent=`${dayLabel(f.toTo)} · ${dep} → ${arr} · ${durTxt(f)} · ${Math.round(f.km)} km`;
+  document.getElementById("ana").hidden=false;
+  if(!ana.map){
+    ana.map=L.map("a-map",{zoomControl:false}).setView([45.9,6.8],8);
+    L.control.zoom({position:"bottomright"}).addTo(ana.map);
+    const lay=makeLayers(); lay["Topo (OpenTopoMap)"].addTo(ana.map);
+    L.control.layers(lay,makeOverlays(),{position:"topright"}).addTo(ana.map);
+    L.control.scale({imperial:false,position:"bottomleft"}).addTo(ana.map);
+    BASES.forEach(b=>L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null}),keyboard:false}).addTo(ana.map));
+    ana.layer=L.layerGroup().addTo(ana.map);
+  }
+  const sl=document.getElementById("a-slider"); sl.max=Math.max(0,ana.rows.length-1); sl.value=0;
+  setTimeout(()=>{ ana.map.invalidateSize(); anaFit(); anaDrawProfile(); anaDrawSpeed(); anaSeek(ana.idx); },60);
+  document.getElementById("a-read").textContent="Chargement du relief…";
+  anaClassify(); anaDraw();
+  if(ana.rows.length<2){ document.getElementById("a-read").textContent="Pas assez de positions pour analyser ce vol."; return; }
+  try{
+    ana.source=await anaGround(ana.rows,(n,t)=>{ document.getElementById("a-read").textContent=`Chargement du relief… ${n}/${t}`; });
+  }catch(e){
+    ana.source=""; console.warn("Analyse : relief indisponible",e);
+  }
+  if(document.getElementById("ana").hidden||ana.f!==f) return;
+  anaClassify(); anaDraw(); anaSeek(ana.idx);
+}
+function closeAna(){ anaStop(); document.getElementById("ana").hidden=true; document.getElementById("h-ana").focus(); }
+function anaFit(){ const ll=ana.rows.map(r=>[r.p.lat,r.p.lon]); if(ll.length) ana.map.fitBounds(L.latLngBounds(ll).pad(.15),{maxZoom:14}); }
+
+function anaDraw(){
+  anaDrawMap(); anaDrawProfile(); anaDrawSpeed(); anaStats();
+  const n=document.getElementById("a-note");
+  n.textContent=`Heures UTC. Altitude : GPS du traceur. Relief : ${ana.source||"indisponible (hauteur sol non calculée)"}. `+
+    `Vitesses moyennes entre deux points successifs ; au-delà de ${ANA_GAP_S/60} min d'écart, le tracé est en pointillé car le trajet réel entre les deux points n'est pas connu. `+
+    `La hauteur sol est indicative (précision GPS verticale et du modèle de terrain de l'ordre de plusieurs dizaines de mètres) : elle sert à repérer des passages à examiner, pas à établir un constat.`;
+}
+function anaColor(a,b){
+  if(!a.air&&!b.air) return COLORS.ground;
+  if(a.low||b.low) return COLORS.lost;
+  if(a.agl==null||b.agl==null) return "#9AA7B4";
+  return COLORS.live;
+}
+function anaDrawMap(){
+  ana.layer.clearLayers(); ana.marks=[];
+  const R=ana.rows;
+  for(let i=1;i<R.length;i++){
+    const a=R[i-1], b=R[i], gap=b.dt>ANA_GAP_S;
+    L.polyline([[a.p.lat,a.p.lon],[b.p.lat,b.p.lon]],{color:anaColor(a,b),weight:gap?2.5:4,opacity:.95,dashArray:gap?"6 6":null}).addTo(ana.layer);
+  }
+  R.forEach((r,i)=>{
+    const m=L.circleMarker([r.p.lat,r.p.lon],{radius:r.low?5:3,color:"#0A1420",weight:1,fillColor:r.low?COLORS.lost:(r.air?"#F4F6F8":COLORS.ground),fillOpacity:1});
+    m.on("mouseover click",()=>{ anaStop(); anaSeek(i); });
+    m.addTo(ana.layer); ana.marks.push(m);
+  });
+  if(R.length){
+    L.circleMarker([R[0].p.lat,R[0].p.lon],{radius:7,color:"#fff",weight:2,fillColor:COLORS.live,fillOpacity:1}).bindTooltip("Départ").addTo(ana.layer);
+    if(ana.f.ldTo){ const z=R[R.length-1]; L.circleMarker([z.p.lat,z.p.lon],{radius:7,color:"#fff",weight:2,fillColor:COLORS.lost,fillOpacity:1}).bindTooltip("Arrivée").addTo(ana.layer); }
+  }
+  ana.cursor=L.circleMarker(R.length?[R[0].p.lat,R[0].p.lon]:[0,0],{radius:9,color:"#F0C040",weight:3,fill:false,interactive:false}).addTo(ana.layer);
+}
+
+/* Graphiques SVG à échelle de temps (les points ne sont pas régulièrement espacés) */
+let ANA_W=900; const ANA_H=150, ANA_L=52, ANA_R=52, ANA_T=8, ANA_B=22;
+function anaX(t){ const R=ana.rows, t0=R[0].t, t1=R[R.length-1].t; return ANA_L+(t1>t0?(t-t0)/(t1-t0):0)*(ANA_W-ANA_L-ANA_R); }
+function anaTicks(){
+  const R=ana.rows; let s="";
+  [0,.25,.5,.75,1].forEach(k=>{ const t=R[0].t+k*(R[R.length-1].t-R[0].t), X=anaX(t);
+    s+=`<text x="${X}" y="${ANA_H-6}" fill="#9AA7B4" font-size="11" text-anchor="${k===0?"start":k===1?"end":"middle"}">${hm(t)}</text>`; });
+  return s;
+}
+function anaScale(lo,hi){ const Y=v=>ANA_T+(hi-v)*(ANA_H-ANA_T-ANA_B)/(hi-lo||1); return Y; }
+function anaStep(span,n){ const raw=span/n, p=10**Math.floor(Math.log10(raw)); return [1,2,2.5,5,10].map(m=>m*p).find(x=>x>=raw)||10*p; }
+function anaNice(lo,hi,n=4){ const st=anaStep(hi-lo||1,n); return {lo:Math.floor(lo/st)*st, hi:Math.ceil(hi/st)*st, st}; }
+function anaGrid(lo,hi,Y,side,col){
+  const st=anaStep(hi-lo||1,4);
+  let s=""; for(let v=Math.ceil(lo/st)*st; v<=hi+1e-9; v+=st){ const y=Y(v);
+    if(side==="l") s+=`<line x1="${ANA_L}" x2="${ANA_W-ANA_R}" y1="${y}" y2="${y}" stroke="#415062" stroke-dasharray="3 5"/>`;
+    s+=`<text x="${side==="l"?ANA_L-6:ANA_W-ANA_R+6}" y="${y+4}" fill="${col}" font-size="11" text-anchor="${side==="l"?"end":"start"}">${Math.round(v).toLocaleString("fr-FR")}</text>`; }
+  return s;
+}
+function anaPath(R,get,Y){
+  // Lignes pleines, coupées en pointillé là où l'écart entre deux points dépasse ANA_GAP_S
+  let solid="", dashed="", pen=false, prev=null;
+  R.forEach(r=>{ const v=get(r);
+    if(v==null||!Number.isFinite(v)){ pen=false; prev=null; return; }
+    const pt=`${anaX(r.t).toFixed(1)},${Y(v).toFixed(1)}`;
+    if(prev&&r.dt>ANA_GAP_S){ dashed+=`M${prev}L${pt}`; solid+=`M${pt}`; }
+    else solid+=(pen?"L":"M")+pt;
+    pen=true; prev=pt; });
+  return {solid,dashed};
+}
+function anaHook(el){
+  const svg=el.querySelector("svg"); if(!svg) return;
+  const go=e=>{ const b=svg.getBoundingClientRect(), X=(e.clientX-b.left)/b.width*ANA_W, R=ana.rows;
+    const t=R[0].t+(X-ANA_L)/(ANA_W-ANA_L-ANA_R)*(R[R.length-1].t-R[0].t);
+    let best=0; R.forEach((r,i)=>{ if(Math.abs(r.t-t)<Math.abs(R[best].t-t)) best=i; });
+    anaStop(); anaSeek(best); };
+  svg.addEventListener("pointermove",go); svg.addEventListener("pointerdown",go);
+}
+function anaDrawProfile(){
+  const el=document.getElementById("a-prof"), R=ana.rows; ANA_W=Math.max(300,Math.round(el.clientWidth||900));
+  if(R.length<2){ el.innerHTML=""; return; }
+  const thr=anaThr(), ft=v=>v*M2FT;
+  const vals=[]; R.forEach(r=>{ if(r.alt!=null) vals.push(ft(r.alt)); if(r.ground!=null) vals.push(ft(r.ground)+thr); });
+  if(!vals.length){ el.innerHTML=`<p class="note">Aucune altitude enregistrée.</p>`; return; }
+  const {lo,hi}=anaNice(Math.min(...R.filter(r=>r.ground!=null).map(r=>ft(r.ground)),...vals)-200, Math.max(...vals)+200);
+  const Y=anaScale(lo,hi);
+  let s=`<svg viewBox="0 0 ${ANA_W} ${ANA_H}" preserveAspectRatio="none" role="img" aria-label="Profil vertical du vol">`+anaGrid(lo,hi,Y,"l","#9AA7B4");
+  // Relief
+  const g=R.filter(r=>r.ground!=null);
+  if(g.length>1){
+    s+=`<polygon points="${anaX(g[0].t)},${ANA_H-ANA_B} ${g.map(r=>`${anaX(r.t).toFixed(1)},${Y(ft(r.ground)).toFixed(1)}`).join(" ")} ${anaX(g[g.length-1].t)},${ANA_H-ANA_B}" fill="#8C7044" fill-opacity=".55"/>`;
+    s+=`<polyline points="${g.map(r=>`${anaX(r.t).toFixed(1)},${Y(ft(r.ground)+thr).toFixed(1)}`).join(" ")}" fill="none" stroke="#F0C040" stroke-width="1.3" stroke-dasharray="5 4"/>`;
+  }
+  const p=anaPath(R,r=>r.alt!=null?ft(r.alt):null,Y);
+  s+=`<path d="${p.solid}" fill="none" stroke="#4bd6a0" stroke-width="2.4"/><path d="${p.dashed}" fill="none" stroke="#4bd6a0" stroke-width="1.6" stroke-dasharray="4 4"/>`;
+  R.forEach(r=>{ if(r.low&&r.alt!=null) s+=`<circle cx="${anaX(r.t)}" cy="${Y(ft(r.alt))}" r="3.5" fill="#E5484D"/>`; });
+  s+=anaTicks()+`<line id="a-cur1" x1="0" x2="0" y1="${ANA_T}" y2="${ANA_H-ANA_B}" stroke="#F0C040" stroke-width="1.5"/></svg>`;
+  el.innerHTML=s; anaHook(el);
+}
+function anaDrawSpeed(){
+  const el=document.getElementById("a-spd"), R=ana.rows; ANA_W=Math.max(300,Math.round(el.clientWidth||900));
+  if(R.length<2){ el.innerHTML=""; return; }
+  const gsv=R.filter(r=>r.dt<=ANA_GAP_S).map(r=>r.gs).filter(Number.isFinite), vsv=R.filter(r=>r.dt<=ANA_GAP_S).map(r=>r.vs).filter(Number.isFinite);
+  const ghi=anaNice(0,Math.max(40,...gsv)).hi;
+  const vm=anaNice(0,Math.max(500,...vsv.map(Math.abs))).hi;
+  const Yg=anaScale(0,ghi), Yv=anaScale(-vm,vm);
+  let s=`<svg viewBox="0 0 ${ANA_W} ${ANA_H}" preserveAspectRatio="none" role="img" aria-label="Vitesse sol et vitesse verticale">`+
+    anaGrid(0,ghi,Yg,"l","#5B9BE0")+anaGrid(-vm,vm,Yv,"r","#c792ea")+
+    `<line x1="${ANA_L}" x2="${ANA_W-ANA_R}" y1="${Yv(0)}" y2="${Yv(0)}" stroke="#c792ea" stroke-opacity=".35"/>`;
+  // Une vitesse moyenne vaut pour le segment : marche d'escalier entre les deux points
+  const step=(get,Y,col)=>{ let d=""; R.forEach((r,i)=>{ if(!i) return; const v=get(r); if(!Number.isFinite(v)) return;
+    if(r.dt>ANA_GAP_S) return; // moyenne sur un trou : non représentative
+    d+=`M${anaX(R[i-1].t).toFixed(1)},${Y(v).toFixed(1)}H${anaX(r.t).toFixed(1)}`; });
+    return `<path d="${d}" fill="none" stroke="${col}" stroke-width="2"/>`; };
+  s+=step(r=>r.vs,Yv,"#c792ea")+step(r=>r.gs,Yg,"#5B9BE0");
+  s+=anaTicks()+`<line id="a-cur2" x1="0" x2="0" y1="${ANA_T}" y2="${ANA_H-ANA_B}" stroke="#F0C040" stroke-width="1.5"/></svg>`;
+  el.innerHTML=s; anaHook(el);
+}
+function anaSeek(i){
+  const R=ana.rows; if(!R.length) return;
+  i=Math.max(0,Math.min(R.length-1,i)); ana.idx=i; const r=R[i];
+  document.getElementById("a-slider").value=i;
+  ["a-cur1","a-cur2"].forEach(id=>{ const c=document.getElementById(id); if(c){ const X=anaX(r.t); c.setAttribute("x1",X); c.setAttribute("x2",X); } });
+  ana.cursor?.setLatLng([r.p.lat,r.p.lon]);
+  if(ana.timer&&!ana.map.getBounds().pad(-.1).contains([r.p.lat,r.p.lon])) ana.map.panTo([r.p.lat,r.p.lon],{animate:false});
+  const thr=anaThr();
+  document.getElementById("a-read").innerHTML=
+    `<b>${hms(r.t)} UTC</b> · point ${i+1}/${R.length}${r.air?"":" · au sol"}<br>`+
+    `Alt. GPS ${r.alt!=null?fmtN(r.alt*M2FT)+" ft":"—"} · Relief ${r.ground!=null?fmtN(r.ground*M2FT)+" ft":"—"}<br>`+
+    `Hauteur sol <span style="color:${r.low?"var(--lost)":"inherit"}">${r.agl!=null?fmtN(r.agl)+" ft":"—"}</span>${r.low?` (seuil ${fmtN(thr)} ft)`:""}${r.agl!=null&&r.agl<0?" — incohérence altimétrique":""}<br>`+
+    `Vit. sol ${fmtN(r.gs)} kt · Vz ${r.vs!=null?(r.vs>0?"+":"")+fmtN(r.vs)+" ft/min":"—"}<br>`+
+    `<span class="note">${r.dt!=null?`${fmtN(r.dt)} s depuis le point précédent${r.dt>ANA_GAP_S?" (trou de données)":""}`:"premier point"} · route ${r.trk!=null?String(r.trk).padStart(3,"0")+"°":"—"}</span>`;
+}
+function anaStats(){
+  const R=ana.rows, A=R.filter(r=>r.air), thr=anaThr();
+  const dts=R.map(r=>r.dt).filter(Number.isFinite).sort((a,b)=>a-b);
+  const med=dts.length?dts[Math.floor(dts.length/2)]:null, gaps=dts.filter(d=>d>ANA_GAP_S).length;
+  const ok=r=>r.dt!=null&&r.dt<=ANA_GAP_S;
+  const mx=(arr,f)=>{ const v=arr.map(f).filter(Number.isFinite); return v.length?Math.max(...v):null; };
+  const mn=(arr,f)=>{ const v=arr.map(f).filter(Number.isFinite); return v.length?Math.min(...v):null; };
+  let lowS=0; for(let i=1;i<R.length;i++) if(R[i].low&&R[i-1].low&&ok(R[i])) lowS+=R[i].dt;
+  const minAgl=mn(A,r=>r.agl), runs=anaLowRuns();
+  const row=(k,v,c="")=>`<dt>${k}</dt><dd class="${c}">${v}</dd>`;
+  document.getElementById("a-stats").innerHTML=
+    row("Points enregistrés",`${R.length} (${A.length} en vol)`)+
+    row("Intervalle médian",med!=null?`${fmtN(med)} s`:"—",med>120?"warn":"")+
+    row("Trous > "+ANA_GAP_S/60+" min",gaps,gaps?"warn":"")+
+    row("Altitude max",(v=>v!=null?fmtN(v*M2FT)+" ft":"—")(mx(A,r=>r.alt)))+
+    row("Hauteur sol mini en vol",minAgl!=null?fmtN(minAgl)+" ft":"—",minAgl!=null&&minAgl<thr?"bad":"")+
+    row("Temps sous "+fmtN(thr)+" ft",ana.source?(lowS?"≈ "+dur(lowS/60):"0"):"—",lowS?"bad":"")+
+    row("Vitesse sol max",(v=>v!=null?fmtN(v)+" kt":"—")(mx(R.filter(ok),r=>r.gs)))+
+    row("Montée max",(v=>v!=null&&v>0?"+"+fmtN(v)+" ft/min":"—")(mx(R.filter(ok),r=>r.vs)))+
+    row("Descente max",(v=>v!=null&&v<0?fmtN(v)+" ft/min":"—")(mn(R.filter(ok),r=>r.vs)))+
+    row("Distance",`${fmtN(ana.f.km,1)} km`);
+  const box=document.getElementById("a-low");
+  if(!ana.source){ box.innerHTML=`<span class="note">Relief indisponible : hauteur sol non calculée.</span>`; return; }
+  if(!runs.length){ box.innerHTML=`<span class="note">Aucun point en vol sous ${fmtN(thr)} ft sol.</span>`; return; }
+  const tag=u=>(u.a>0&&!R[u.a-1].air)?" · montée initiale":(u.b<R.length-1&&!R[u.b+1].air)?" · approche finale":"";
+  box.innerHTML=runs.map(u=>`<button type="button" data-i="${u.a}">${hm(R[u.a].t)}${u.b>u.a?"–"+hm(R[u.b].t):""} UTC · mini ${fmtN(u.min)} ft · ${u.b-u.a+1} pt${u.b>u.a?"s":""}${tag(u)}</button>`).join("")+
+    `<span class="note">Les passages collés à un décollage ou à un atterrissage (poser, prise de charge) sont normaux ; ce sont les autres qui méritent d'être regardés.</span>`;
+  box.querySelectorAll("button").forEach(b=>b.onclick=()=>{ anaStop(); const i=+b.dataset.i; anaSeek(i); ana.map.setView([R[i].p.lat,R[i].p.lon],Math.max(ana.map.getZoom(),13)); });
+}
+
+/* Relecture */
+function anaStop(){ if(ana.timer){ clearInterval(ana.timer); ana.timer=null; } const b=document.getElementById("a-play"); if(b){ b.textContent="▶"; b.setAttribute("aria-label","Rejouer le vol"); } }
+function anaPlay(){
+  if(ana.timer){ anaStop(); return; }
+  if(ana.idx>=ana.rows.length-1) anaSeek(0);
+  const b=document.getElementById("a-play"); b.textContent="❚❚"; b.setAttribute("aria-label","Pause");
+  ana.timer=setInterval(()=>{ if(ana.idx>=ana.rows.length-1){ anaStop(); return; } anaSeek(ana.idx+1); },300);
+}
+
+/* Exports */
+function anaFileBase(){ return `SAF_vol_${ana.reg}_${new Date(ana.rows[0].t).toISOString().slice(0,16).replace(/[-:]/g,"").replace("T","_")}Z`; }
+function anaDownload(text,name,type){
+  const blob=new Blob([text],{type}), a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+const xml=s=>String(s).replace(/[<>&"]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]));
+function anaCsv(){
+  const n=(v,d=0)=>Number.isFinite(v)?v.toFixed(d).replace(".",","):"";
+  const lines=[["heure_utc","appareil","lat","lon","alt_gps_m","alt_gps_ft","relief_m","hauteur_sol_ft","sous_seuil","en_vol","vitesse_sol_kt","vitesse_verticale_ftmin","vitesse_brute_traceur","route_deg","ecart_s"].join(";")];
+  ana.rows.forEach(r=>lines.push([new Date(r.t).toISOString().replace("T"," ").slice(0,19),ana.reg,n(+r.p.lat,6),n(+r.p.lon,6),
+    n(r.alt),n(r.alt!=null?r.alt*M2FT:null),n(r.ground),n(r.agl),r.low?"oui":"",r.air?"oui":"non",n(r.gs),n(r.vs),n(r.raw),r.trk??"",n(r.dt)].join(";")));
+  lines.push(`# Seuil hauteur sol : ${anaThr()} ft · Relief : ${ana.source||"indisponible"} · Vitesses moyennes entre deux points`);
+  anaDownload("\ufeff"+lines.join("\r\n"),anaFileBase()+".csv","text/csv;charset=utf-8");
+}
+function anaGpx(){
+  const pts=ana.rows.map(r=>`<trkpt lat="${(+r.p.lat).toFixed(6)}" lon="${(+r.p.lon).toFixed(6)}">${r.alt!=null?`<ele>${r.alt.toFixed(1)}</ele>`:""}<time>${new Date(r.t).toISOString()}</time></trkpt>`).join("\n");
+  anaDownload(`<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="SAF International - Suivi flotte" xmlns="http://www.topografix.com/GPX/1/1">\n<trk><name>${xml(ana.reg)} ${xml(new Date(ana.rows[0].t).toISOString())}</name><trkseg>\n${pts}\n</trkseg></trk></gpx>\n`,anaFileBase()+".gpx","application/gpx+xml");
+}
+function anaKml(){
+  // gx:Track = relecture 3D animée avec le curseur temporel de Google Earth ; tronçons rouges = sous le seuil
+  const R=ana.rows.filter(r=>r.alt!=null), c=r=>`${(+r.p.lon).toFixed(6)},${(+r.p.lat).toFixed(6)},${r.alt.toFixed(1)}`;
+  const low=[]; let cur=null;
+  for(let i=1;i<R.length;i++){ const bad=R[i].low||R[i-1].low;
+    if(bad){ if(!cur){ cur=[R[i-1]]; } cur.push(R[i]); } else if(cur){ low.push(cur); cur=null; } }
+  if(cur) low.push(cur);
+  const k=`<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2"><Document>
+<name>${xml(ana.reg)} — ${xml(dayLabel(ana.rows[0].t))}</name>
+<description>Seuil hauteur sol ${anaThr()} ft · relief ${xml(ana.source||"indisponible")} · altitude GPS du traceur</description>
+<Style id="trk"><LineStyle><color>ff82c83c</color><width>3</width></LineStyle><PolyStyle><color>4082c83c</color></PolyStyle><IconStyle><Icon><href>https://maps.google.com/mapfiles/kml/shapes/heliport.png</href></Icon></IconStyle></Style>
+<Style id="low"><LineStyle><color>ff4d48e5</color><width>5</width></LineStyle><PolyStyle><color>804d48e5</color></PolyStyle></Style>
+<Placemark><name>Relecture ${xml(ana.reg)}</name><styleUrl>#trk</styleUrl><gx:Track><altitudeMode>absolute</altitudeMode><extrude>1</extrude>
+${R.map(r=>`<when>${new Date(r.t).toISOString()}</when>`).join("\n")}
+${R.map(r=>`<gx:coord>${c(r).replace(/,/g," ")}</gx:coord>`).join("\n")}
+</gx:Track></Placemark>
+${low.map((seg,i)=>`<Placemark><name>Sous le seuil ${i+1} (${hm(seg[0].t)} UTC)</name><styleUrl>#low</styleUrl><LineString><extrude>1</extrude><altitudeMode>absolute</altitudeMode><coordinates>${seg.map(c).join(" ")}</coordinates></LineString></Placemark>`).join("\n")}
+</Document></kml>\n`;
+  anaDownload(k,anaFileBase()+".kml","application/vnd.google-earth.kml+xml");
+}
+
+document.getElementById("h-ana").onclick=()=>{ if(hist.sel!=null) openAna(hist.sel); };
+document.getElementById("a-close").onclick=closeAna;
+document.getElementById("a-play").onclick=anaPlay;
+document.getElementById("a-slider").oninput=e=>{ anaStop(); anaSeek(+e.target.value); };
+document.getElementById("a-thr").onchange=()=>{ try{ window.localStorage?.setItem("saf_ana_thr_ft",String(anaThr())); }catch(e){} anaClassify(); anaDraw(); anaSeek(ana.idx); };
+document.getElementById("a-csv").onclick=anaCsv;
+let anaRz=null; window.addEventListener("resize",()=>{ if(document.getElementById("ana").hidden||!ana.rows.length) return;
+  clearTimeout(anaRz); anaRz=setTimeout(()=>{ anaDrawProfile(); anaDrawSpeed(); anaSeek(ana.idx); },150); });
+document.getElementById("a-gpx").onclick=anaGpx;
+document.getElementById("a-kml").onclick=anaKml;
+document.addEventListener("keydown",e=>{
+  if(document.getElementById("ana").hidden) return;
+  if(e.key==="Escape"){ e.stopImmediatePropagation(); closeAna(); }
+  else if(e.target.tagName!=="INPUT"&&(e.key==="ArrowRight"||e.key==="ArrowLeft")){ e.preventDefault(); anaStop(); anaSeek(ana.idx+(e.key==="ArrowRight"?1:-1)); }
+  else if(e.target.tagName!=="INPUT"&&e.key===" "){ e.preventDefault(); anaPlay(); }
+},true);
 
 boot();
 </script>
