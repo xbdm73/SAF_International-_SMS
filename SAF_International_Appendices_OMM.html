@@ -7,9 +7,9 @@
   location.replace('https://saf-international-portail.netlify.app/sms'+location.pathname+location.search+location.hash); })();
 /* Retour à l'accueil du SMS (03.11.2026) : servi par le portail sous /sms/, « index.html » est réécrit
    par le site du SMS (pretty URLs) en une 301 vers « / », que le proxy relaie : on atterrissait sur le portail.
-   /sms/ est servi directement (200), sans redirection. */
+   /sms/accueil est servi par la règle « /* /index.html 200 » du site du SMS : 200 direct, sans redirection. */
 window.safHomeUrl=function(){ var p=location.pathname;
-  if(p.indexOf('/sms/')===0) return '/sms/';
+  if(p.indexOf('/sms/')===0) return '/sms/accueil';   // ni /sms/ (règle /sms → /sms/ du portail) ni /sms/index.html (301 vers « / ») : servi par la règle « /* /index.html 200 » du SMS
   return (p.indexOf('/Archives/')!==-1?'../':'')+'index.html'; };
 document.addEventListener('DOMContentLoaded',function(){
   document.querySelectorAll('a[data-saf-tool="home"],a[href="index.html"]').forEach(function(a){ a.setAttribute('href',window.safHomeUrl()); });
