@@ -1510,6 +1510,8 @@ details.occ-own-pick>summary:focus-visible{outline:2px solid #e3b341;outline-off
 .occ-cfsum-chip.legacy{background:transparent;border-style:dashed;opacity:.8;font-weight:400;}
 .occ-cfsum-empty{font-size:11px;font-style:italic;opacity:.6;}
 .occ-cfsum-hint{font-size:10px;opacity:.65;margin-top:6px;font-style:italic;}
+.occ-hfacs-regen{padding:3px 10px;font-size:10px;border:1px solid rgba(227,179,65,.6);background:rgba(227,179,65,.12);color:inherit;border-radius:5px;cursor:pointer;white-space:nowrap;}
+.occ-hfacs-regen:hover{background:rgba(227,179,65,.25);}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -18116,8 +18118,8 @@ function showOccurrenceForm(editId){
           </div>
         </div>
         <div class="form-field" style="margin:0;">
-          <label class="field-label">Synthèse HFACS / HFACS narrative</label>
-          <textarea id="occ-hfacs-narrative" rows="3" placeholder="Synthèse des facteurs HFACS identifiés et leur enchaînement causal… / Summary of the HFACS factors identified and their causal sequence…"></textarea>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><label class="field-label" style="margin:0;">Synthèse HFACS / HFACS narrative</label><button type="button" id="occ-hfacs-regen" class="occ-hfacs-regen" onclick="occHfacsRegen()">↻ Générer la synthèse / Generate</button></div><div id="occ-hfacs-auto-hint" class="occ-cfsum-hint" style="margin:2px 0 4px;">Rédigée automatiquement à partir des cases cochées, tant que vous ne la modifiez pas. / Written automatically from the ticked boxes until you edit it.</div>
+          <textarea id="occ-hfacs-narrative" rows="8" placeholder="Synthèse des facteurs HFACS identifiés et leur enchaînement causal… / Summary of the HFACS factors identified and their causal sequence…"></textarea>
         </div>
       </div>
     </div>
@@ -26217,6 +26219,60 @@ var OCC_HFACS_FR={
  'Violations — Exceptional':'Violations — Exceptionnelles'
 };
 function occHfacsLbl(f){var fr=OCC_HFACS_FR[f];return fr?('<span>'+fr+'<br><span style="opacity:.7;">'+f+'</span></span>'):f;}
+/* ══ SYNTHÈSE HFACS AUTOMATIQUE ═══════════════════════════════════════
+   Rédigée à partir des cases cochées (FR puis EN), niveau L4 → L1.
+   Tant que le texte n'a pas été retouché à la main, il suit les cases.
+   Dès qu'il est modifié, il n'est plus réécrit : le bouton « Générer »
+   permet de le régénérer (avec confirmation). Une synthèse déjà
+   enregistrée est considérée comme manuelle et n'est jamais écrasée. */
+var OCC_HFACS_LV=[
+ ['L4','Influences organisationnelles','Organizational influences','influences organisationnelles','organizational influences'],
+ ['L3','Supervision inadéquate','Unsafe supervision','supervision inadéquate','unsafe supervision'],
+ ['L2','Conditions préalables aux actes dangereux','Preconditions for unsafe acts','conditions préalables','preconditions'],
+ ['L1','Actes dangereux','Unsafe acts','acte(s) dangereux','unsafe act(s)']];
+function occHfacsBuildNarrative(){
+  var fr=[],en=[],chainFr=[],chainEn=[],n=0,lv={};
+  OCC_HFACS_LV.forEach(function(L){
+    var v=[];document.querySelectorAll('.hfacs-cb[data-level="'+L[0]+'"]:checked').forEach(function(cb){v.push(cb.value);});
+    lv[L[0]]=v.length; if(!v.length)return; n+=v.length;
+    fr.push('• '+L[0]+' — '+L[1]+' : '+v.map(function(x){return OCC_HFACS_FR[x]||x;}).join(' ; ')+'.');
+    en.push('• '+L[0]+' — '+L[2]+': '+v.join('; ')+'.');
+    chainFr.push(L[3]); chainEn.push(L[4]);
+  });
+  if(!n)return '';
+  var k=chainFr.length;
+  var out=['Analyse HFACS — '+n+' facteur'+(n>1?'s':'')+' identifié'+(n>1?'s':'')+' sur '+k+' niveau'+(k>1?'x':'')+'.'].concat(fr);
+  if(k>1)out.push('Enchaînement causal : '+chainFr.join(' → ')+'.');
+  if(!lv.L1)out.push('Aucun acte dangereux identifié (L1) : facteurs latents uniquement.');
+  else if(k===1)out.push('Aucun facteur latent identifié (L2 à L4) : à confirmer avant clôture.');
+  out.push('');
+  out.push('HFACS analysis — '+n+' factor'+(n>1?'s':'')+' identified across '+k+' level'+(k>1?'s':'')+'.');
+  out=out.concat(en);
+  if(k>1)out.push('Causal sequence: '+chainEn.join(' → ')+'.');
+  if(!lv.L1)out.push('No unsafe act identified (L1): latent factors only.');
+  else if(k===1)out.push('No latent factor identified (L2 to L4): to be confirmed before closure.');
+  return out.join('\n');
+}
+function occHfacsIsAuto(ta){return !ta.value.trim() || (ta.getAttribute('data-auto')!==null && ta.value===ta.getAttribute('data-auto'));}
+function occHfacsAutoUpdate(){
+  var ta=document.getElementById('occ-hfacs-narrative'); if(!ta||ta.readOnly||ta.disabled)return;
+  if(!occHfacsIsAuto(ta))return;
+  var t=occHfacsBuildNarrative();
+  if(ta.value===t)return;
+  ta.value=t; ta.setAttribute('data-auto',t);
+  try{ta.dispatchEvent(new Event('input',{bubbles:true}));}catch(e){}
+}
+function occHfacsRegen(){
+  var ta=document.getElementById('occ-hfacs-narrative'); if(!ta||ta.readOnly||ta.disabled)return;
+  var t=occHfacsBuildNarrative();
+  if(!t){alert('Aucun facteur HFACS coché. / No HFACS factor ticked.');return;}
+  if(ta.value.trim() && !occHfacsIsAuto(ta) && !confirm('Remplacer la synthèse rédigée à la main par la synthèse automatique ?\nReplace the manually written narrative with the automatic one?'))return;
+  ta.value=t; ta.setAttribute('data-auto',t);
+  try{ta.dispatchEvent(new Event('input',{bubbles:true}));ta.dispatchEvent(new Event('change',{bubbles:true}));}catch(e){}
+}
+document.addEventListener('change',function(e){
+  var t=e.target; if(t&&t.classList&&t.classList.contains('hfacs-cb'))occHfacsAutoUpdate();
+},true);
 function occGetHFACS(){
   var L4=[],L3=[],L2=[],L1=[];
   document.querySelectorAll('.hfacs-cb[data-level="L4"]:checked').forEach(function(cb){L4.push(cb.value);});
