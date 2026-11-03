@@ -1505,6 +1505,11 @@ details.occ-own-pick>summary:focus-visible{outline:2px solid #e3b341;outline-off
 .occ-cfx-btn.on[data-v="systemic"]{background:#c63b3b;border-color:#c63b3b;color:#fff;}
 .occ-cfx-btn:disabled{cursor:default;opacity:.7;}
 .occ-cfx-hint{font-size:10px;opacity:.65;margin-top:4px;font-style:italic;}
+.occ-cfsum{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;min-height:22px;}
+.occ-cfsum-chip{display:inline-block;padding:3px 10px;border-radius:11px;font-size:11px;font-weight:600;background:rgba(227,179,65,.18);border:1px solid rgba(227,179,65,.55);}
+.occ-cfsum-chip.legacy{background:transparent;border-style:dashed;opacity:.8;font-weight:400;}
+.occ-cfsum-empty{font-size:11px;font-style:italic;opacity:.6;}
+.occ-cfsum-hint{font-size:10px;opacity:.65;margin-top:6px;font-style:italic;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -17929,10 +17934,12 @@ function showOccurrenceForm(editId){
         <button type="button" onclick="occAddAction()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 12px;background:rgba(74,159,224,.1);border:1px dashed var(--steel-bright);border-radius:5px;color:var(--steel-bright);font-family:var(--font-mono);font-size:11px;cursor:pointer;"><span style="font-size:14px;font-weight:700;">+</span> Add action</button>
       </div>
     </div>
-    <div class="form-field" style="margin:0 0 14px;"><label class="field-label">Contributing factors</label>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px;">
-        ${['Organizational factors','Supervision','Preconditions','Unsafe acts','Weather','Technical','Human factors','Other'].map(f=>`<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--grey-200);cursor:pointer;"><input type="checkbox" name="occ-cf" value="${f}" style="width:auto;"/> ${f}</label>`).join('')}
+    <div class="form-field" style="margin:0 0 14px;"><label class="field-label">Catégories de facteurs / Factor categories</label>
+      <div id="occ-cf-summary" class="occ-cfsum"><span class="occ-cfsum-empty">Aucun niveau HFACS coché / No HFACS level selected</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:18px;margin-top:8px;">
+        ${[['Weather','Météo / Weather'],['Technical','Technique / Technical'],['Other','Autre / Other']].map(f=>`<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--grey-200);cursor:pointer;"><input type="checkbox" name="occ-cf" value="${f[0]}" style="width:auto;"/> ${f[1]}</label>`).join('')}
       </div>
+      <div class="occ-cfsum-hint">Facteurs humains et organisationnels : repris automatiquement des niveaux cochés dans le bloc HFACS. / Human &amp; organisational factors are taken from the HFACS block.</div>
     </div>
 
     <div class="occ-jc-wrap" style="margin-bottom:14px;">
@@ -18079,38 +18086,38 @@ function showOccurrenceForm(editId){
     <!-- HFACS -->
     <div id="occ-hfacs-wrap" style="margin-top:16px;display:none;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:2px;color:#e3b341;text-transform:uppercase;border-bottom:1px solid rgba(227,179,65,.25);padding-bottom:6px;flex:1;">⚠ HFACS — Human Factors Analysis &amp; Classification</div>
+        <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:2px;color:#e3b341;text-transform:uppercase;border-bottom:1px solid rgba(227,179,65,.25);padding-bottom:6px;flex:1;">⚠ HFACS — Analyse et classification des facteurs humains / Human Factors Analysis &amp; Classification</div>
         <button type="button" class="occ-panel-toggle" onclick="occTogglePanel('occ-hfacs-body',this)" style="margin-left:12px;"><span class="occ-panel-chevron">▼</span> Replier / déplier</button>
       </div>
       <div id="occ-hfacs-body" class="occ-panel-body">
-        <div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-bottom:16px;padding:8px 12px;background:rgba(227,179,65,.06);border-left:3px solid rgba(227,179,65,.4);border-radius:0 6px 6px 0;">HFACS (Wiegmann &amp; Shappell) — 4 niveaux. Cocher tous les facteurs applicables.</div>
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-bottom:16px;padding:8px 12px;background:rgba(227,179,65,.06);border-left:3px solid rgba(227,179,65,.4);border-radius:0 6px 6px 0;">HFACS (Wiegmann &amp; Shappell) — 4 niveaux. Cocher tous les facteurs applicables. / 4 levels. Tick all applicable factors.</div>
         <div style="margin-bottom:18px;">
-          <div style="font-family:var(--font-mono);font-size:10px;color:#f85149;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding:6px 10px;background:rgba(248,81,73,.08);border-radius:4px;">L4 — Organizational Influences</div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:#f85149;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding:6px 10px;background:rgba(248,81,73,.08);border-radius:4px;">L4 — Influences organisationnelles / Organizational Influences</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
-            ${['Resource Management — Staffing','Resource Management — Training','Resource Management — Equipment/facilities','Organizational Climate — Culture of safety','Organizational Climate — Policies','Organizational Process — Operations','Organizational Process — Procedures','Organizational Process — Oversight'].map(f=>'<label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--grey-200);cursor:pointer;padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;"><input type="checkbox" class="hfacs-cb" data-level="L4" value="'+f+'" style="width:auto;margin-top:2px;flex-shrink:0;"/> '+f+'</label>').join('')}
+            ${['Resource Management — Staffing','Resource Management — Training','Resource Management — Equipment/facilities','Organizational Climate — Culture of safety','Organizational Climate — Policies','Organizational Process — Operations','Organizational Process — Procedures','Organizational Process — Oversight'].map(f=>'<label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--grey-200);cursor:pointer;padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;"><input type="checkbox" class="hfacs-cb" data-level="L4" value="'+f+'" style="width:auto;margin-top:2px;flex-shrink:0;"/> '+occHfacsLbl(f)+'</label>').join('')}
           </div>
         </div>
         <div style="margin-bottom:18px;">
-          <div style="font-family:var(--font-mono);font-size:10px;color:#e05000;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding:6px 10px;background:rgba(224,80,0,.08);border-radius:4px;">L3 — Unsafe Supervision</div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:#e05000;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding:6px 10px;background:rgba(224,80,0,.08);border-radius:4px;">L3 — Supervision inadéquate / Unsafe Supervision</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
-            ${['Inadequate Supervision — Guidance','Inadequate Supervision — Oversight','Inadequate Supervision — Training opportunities','Planned Inappropriate Operations — Risk management','Planned Inappropriate Operations — Crew pairing','Failed to Correct — Known problem','Failed to Correct — Rule violations','Supervisory Violations — Rules/regulations'].map(f=>'<label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--grey-200);cursor:pointer;padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;"><input type="checkbox" class="hfacs-cb" data-level="L3" value="'+f+'" style="width:auto;margin-top:2px;flex-shrink:0;"/> '+f+'</label>').join('')}
+            ${['Inadequate Supervision — Guidance','Inadequate Supervision — Oversight','Inadequate Supervision — Training opportunities','Planned Inappropriate Operations — Risk management','Planned Inappropriate Operations — Crew pairing','Failed to Correct — Known problem','Failed to Correct — Rule violations','Supervisory Violations — Rules/regulations'].map(f=>'<label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--grey-200);cursor:pointer;padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;"><input type="checkbox" class="hfacs-cb" data-level="L3" value="'+f+'" style="width:auto;margin-top:2px;flex-shrink:0;"/> '+occHfacsLbl(f)+'</label>').join('')}
           </div>
         </div>
         <div style="margin-bottom:18px;">
-          <div style="font-family:var(--font-mono);font-size:10px;color:#e3b341;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding:6px 10px;background:rgba(227,179,65,.08);border-radius:4px;">L2 — Preconditions for Unsafe Acts</div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:#e3b341;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding:6px 10px;background:rgba(227,179,65,.08);border-radius:4px;">L2 — Conditions préalables aux actes dangereux / Preconditions for Unsafe Acts</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
-            ${['Environmental — Physical (weather, terrain)','Environmental — Technological (equip design)','Condition of Operator — Adverse mental (stress, fatigue)','Condition of Operator — Adverse physiological','Condition of Operator — Physical/mental limitation','Personnel Factors — CRM breakdown','Personnel Factors — Personal readiness'].map(f=>'<label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--grey-200);cursor:pointer;padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;"><input type="checkbox" class="hfacs-cb" data-level="L2" value="'+f+'" style="width:auto;margin-top:2px;flex-shrink:0;"/> '+f+'</label>').join('')}
+            ${['Environmental — Physical (weather, terrain)','Environmental — Technological (equip design)','Condition of Operator — Adverse mental (stress, fatigue)','Condition of Operator — Adverse physiological','Condition of Operator — Physical/mental limitation','Personnel Factors — CRM breakdown','Personnel Factors — Personal readiness'].map(f=>'<label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--grey-200);cursor:pointer;padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;"><input type="checkbox" class="hfacs-cb" data-level="L2" value="'+f+'" style="width:auto;margin-top:2px;flex-shrink:0;"/> '+occHfacsLbl(f)+'</label>').join('')}
           </div>
         </div>
         <div style="margin-bottom:18px;">
-          <div style="font-family:var(--font-mono);font-size:10px;color:#3fb950;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding:6px 10px;background:rgba(63,185,80,.08);border-radius:4px;">L1 — Unsafe Acts</div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:#3fb950;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding:6px 10px;background:rgba(63,185,80,.08);border-radius:4px;">L1 — Actes dangereux / Unsafe Acts</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
-            ${['Errors — Skill-based (slip/lapse)','Errors — Decision error','Errors — Perceptual error','Violations — Routine','Violations — Exceptional'].map(f=>'<label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--grey-200);cursor:pointer;padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;"><input type="checkbox" class="hfacs-cb" data-level="L1" value="'+f+'" style="width:auto;margin-top:2px;flex-shrink:0;"/> '+f+'</label>').join('')}
+            ${['Errors — Skill-based (slip/lapse)','Errors — Decision error','Errors — Perceptual error','Violations — Routine','Violations — Exceptional'].map(f=>'<label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--grey-200);cursor:pointer;padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;"><input type="checkbox" class="hfacs-cb" data-level="L1" value="'+f+'" style="width:auto;margin-top:2px;flex-shrink:0;"/> '+occHfacsLbl(f)+'</label>').join('')}
           </div>
         </div>
         <div class="form-field" style="margin:0;">
-          <label class="field-label">HFACS narrative / synthesis</label>
-          <textarea id="occ-hfacs-narrative" rows="3" placeholder="Synthèse des facteurs HFACS identifiés et leur enchaînement causal…"></textarea>
+          <label class="field-label">Synthèse HFACS / HFACS narrative</label>
+          <textarea id="occ-hfacs-narrative" rows="3" placeholder="Synthèse des facteurs HFACS identifiés et leur enchaînement causal… / Summary of the HFACS factors identified and their causal sequence…"></textarea>
         </div>
       </div>
     </div>
@@ -18246,6 +18253,7 @@ function showOccurrenceForm(editId){
       var cb = document.querySelector('input[name="occ-cf"][value="'+cf+'"]');
       if(cb) cb.checked = true;
     });
+    occCfSetLegacy(_occ.contributing_factors||[]);
 
     // Restore investigation & HFACS
     occRestoreInvestigation(_occ.investigation);
@@ -18324,7 +18332,7 @@ function saveOccurrence(_silent){
 
   if(!date||!desc){if(!_silent&&fb){fb.textContent='Please fill Date and Description.';fb.style.color='#f85149';}return;}
 
-  var cfs=[...document.querySelectorAll('input[name="occ-cf"]:checked')].map(function(c){return c.value;});
+  var cfs=occCfCompute();
   var occs=getOccurrences();
 
   if(editId) {
@@ -26132,6 +26140,83 @@ function occRestoreARMS(arms){
   occUpdateARMSResult();
 }
 
+/* ══ CATÉGORIES DE FACTEURS (contributing_factors) ═══════════════════
+   Ancienne liste de 8 cases remplacée (nov. 2026) : les 4 niveaux HFACS
+   sont dérivés du bloc HFACS, seules Météo / Technique / Autre restent à
+   cocher. Le champ enregistré garde le même nom et le même vocabulaire
+   (Organizational factors, Supervision, Preconditions, Unsafe acts…) pour
+   que les exports et les fiches existantes restent compatibles.
+   Valeurs historiques :
+   - « Human factors » (sans équivalent) est conservé tel quel ;
+   - un niveau coché à l'ancienne est conservé tant que le bloc HFACS de
+     la fiche est vide ; dès qu'un facteur HFACS est coché, HFACS fait foi. */
+var OCC_CF_HFACS_MAP=[['L4','Organizational factors'],['L3','Supervision'],['L2','Preconditions'],['L1','Unsafe acts']];
+var OCC_CF_LEVEL_FR={'Organizational factors':'L4 Organisation / Organizational','Supervision':'L3 Supervision','Preconditions':'L2 Conditions préalables / Preconditions','Unsafe acts':'L1 Actes dangereux / Unsafe acts','Human factors':'Facteurs humains / Human factors (ancienne saisie)','Weather':'Météo','Technical':'Technique','Other':'Autre'};
+function occCfSetLegacy(list){
+  var el=document.getElementById('occ-cf-summary'); if(!el)return;
+  var keep=(list||[]).filter(function(v){return ['Weather','Technical','Other'].indexOf(v)<0;});
+  el.setAttribute('data-legacy',JSON.stringify(keep));
+  occCfRender();
+}
+function occCfCompute(){
+  var out=[];
+  var hfacsAny=document.querySelectorAll('.hfacs-cb:checked').length>0;
+  OCC_CF_HFACS_MAP.forEach(function(m){
+    if(document.querySelector('.hfacs-cb[data-level="'+m[0]+'"]:checked'))out.push(m[1]);
+  });
+  var legacy=[]; try{legacy=JSON.parse((document.getElementById('occ-cf-summary')||{}).getAttribute?document.getElementById('occ-cf-summary').getAttribute('data-legacy')||'[]':'[]');}catch(e){}
+  legacy.forEach(function(v){
+    var isLevel=OCC_CF_HFACS_MAP.some(function(m){return m[1]===v;});
+    if(isLevel&&hfacsAny)return;          // HFACS renseigné : il fait foi
+    if(out.indexOf(v)<0)out.push(v);
+  });
+  document.querySelectorAll('input[name="occ-cf"]:checked').forEach(function(c){if(out.indexOf(c.value)<0)out.push(c.value);});
+  return out;
+}
+function occCfRender(){
+  var el=document.getElementById('occ-cf-summary'); if(!el)return;
+  var hf=OCC_CF_HFACS_MAP.map(function(m){return m[1];});
+  var list=occCfCompute().filter(function(v){return ['Weather','Technical','Other'].indexOf(v)<0;});
+  el.innerHTML=list.length
+    ? list.map(function(v){var lv=hf.indexOf(v)>=0;return '<span class="occ-cfsum-chip'+(lv?'':' legacy')+'">'+occHtmlEsc(OCC_CF_LEVEL_FR[v]||v)+'</span>';}).join('')
+    : '<span class="occ-cfsum-empty">Aucun niveau HFACS coché / No HFACS level selected</span>';
+}
+document.addEventListener('change',function(e){
+  var t=e.target; if(t&&t.classList&&(t.classList.contains('hfacs-cb')||t.name==='occ-cf'))occCfRender();
+},true);
+
+/* Libellés bilingues des cases HFACS — la valeur enregistrée (value=) reste l'anglais d'origine */
+var OCC_HFACS_FR={
+ 'Resource Management — Staffing':'Gestion des ressources — Effectifs',
+ 'Resource Management — Training':'Gestion des ressources — Formation',
+ 'Resource Management — Equipment/facilities':'Gestion des ressources — Équipements / installations',
+ 'Organizational Climate — Culture of safety':'Climat organisationnel — Culture de sécurité',
+ 'Organizational Climate — Policies':'Climat organisationnel — Politiques',
+ 'Organizational Process — Operations':'Processus organisationnel — Opérations',
+ 'Organizational Process — Procedures':'Processus organisationnel — Procédures',
+ 'Organizational Process — Oversight':'Processus organisationnel — Surveillance',
+ 'Inadequate Supervision — Guidance':'Supervision inadéquate — Encadrement',
+ 'Inadequate Supervision — Oversight':'Supervision inadéquate — Surveillance',
+ 'Inadequate Supervision — Training opportunities':'Supervision inadéquate — Possibilités de formation',
+ 'Planned Inappropriate Operations — Risk management':'Opérations planifiées inadaptées — Gestion des risques',
+ 'Planned Inappropriate Operations — Crew pairing':'Opérations planifiées inadaptées — Composition d’équipage',
+ 'Failed to Correct — Known problem':'Absence de correction — Problème connu',
+ 'Failed to Correct — Rule violations':'Absence de correction — Violations des règles',
+ 'Supervisory Violations — Rules/regulations':'Violations par l’encadrement — Règles / réglementation',
+ 'Environmental — Physical (weather, terrain)':'Environnement — Physique (météo, relief)',
+ 'Environmental — Technological (equip design)':'Environnement — Technologique (conception des équipements)',
+ 'Condition of Operator — Adverse mental (stress, fatigue)':'État de l’opérateur — Mental défavorable (stress, fatigue)',
+ 'Condition of Operator — Adverse physiological':'État de l’opérateur — Physiologique défavorable',
+ 'Condition of Operator — Physical/mental limitation':'État de l’opérateur — Limitation physique / mentale',
+ 'Personnel Factors — CRM breakdown':'Facteurs personnels — Défaillance CRM',
+ 'Personnel Factors — Personal readiness':'Facteurs personnels — Aptitude personnelle',
+ 'Errors — Skill-based (slip/lapse)':'Erreurs — D’habileté (raté / lapsus)',
+ 'Errors — Decision error':'Erreurs — De décision',
+ 'Errors — Perceptual error':'Erreurs — De perception',
+ 'Violations — Routine':'Violations — Routinières',
+ 'Violations — Exceptional':'Violations — Exceptionnelles'
+};
+function occHfacsLbl(f){var fr=OCC_HFACS_FR[f];return fr?('<span>'+fr+'<br><span style="opacity:.7;">'+f+'</span></span>'):f;}
 function occGetHFACS(){
   var L4=[],L3=[],L2=[],L1=[];
   document.querySelectorAll('.hfacs-cb[data-level="L4"]:checked').forEach(function(cb){L4.push(cb.value);});
@@ -26143,6 +26228,7 @@ function occGetHFACS(){
   return{triggered:triggered,L4:L4,L3:L3,L2:L2,L1:L1,narrative:narrative};
 }
 function occRestoreHFACS(hfacs,severity){
+  setTimeout(function(){if(typeof occCfRender==='function')occCfRender();},0);
   var sev=(severity||'').toLowerCase();
   var show=(sev==='accident'||sev==='serious'||sev==='incident')||(hfacs&&hfacs.triggered);
   var wrap=document.getElementById('occ-hfacs-wrap');if(wrap)wrap.style.display=show?'':'none';
