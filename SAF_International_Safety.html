@@ -18528,25 +18528,26 @@ function renderOccurrenceList() {
     }
     pendingTag += '<span title="ECCAIRS mandatory completion" style="display:inline-block;background:rgba(74,159,224,.12);border:1px solid rgba(74,159,224,.35);color:var(--steel-bright);border-radius:3px;padding:1px 5px;font-family:var(--font-mono);font-size:8px;font-weight:700;letter-spacing:.5px;margin-left:4px;">ECCAIRS '+eccComp.done+'/'+eccComp.total+'</span>';
     html += '<tr style="'+rowStyle+'">'
-      + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);">' + o.id + pendingTag + '</td>'
-      + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;">' + o.date + '</td>'
-      + '<td style="padding:8px 14px;"><span style="background:' + sc + '22;color:' + sc + ';border:1px solid ' + sc + '55;border-radius:3px;padding:2px 7px;font-family:var(--font-mono);font-size:9px;font-weight:700;">' + sl + '</span></td>'
-      + '<td style="padding:8px 14px;color:var(--grey-200);">' + (o.title ? '<strong style="color:var(--white);">' + occHtmlEsc(o.title).slice(0, 80) + '</strong>' : (o.description || '').slice(0, 55)) + '</td>'
-      + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--gold-light);">' + (occRiskLinks(o).join(', ') || '—') + '</td>'
-      + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);">' + (o.catalog_event_id || '—') + '</td>'
+      + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);">' + occHtmlEsc(o.id) + pendingTag + '</td>'
+      + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;">' + occHtmlEsc(o.date) + '</td>'
+      + '<td style="padding:8px 14px;"><span style="background:' + sc + '22;color:' + sc + ';border:1px solid ' + sc + '55;border-radius:3px;padding:2px 7px;font-family:var(--font-mono);font-size:9px;font-weight:700;">' + occHtmlEsc(sl) + '</span></td>'
+      + '<td style="padding:8px 14px;color:var(--grey-200);">' + (o.title ? '<strong style="color:var(--white);">' + occHtmlEsc(String(o.title).slice(0, 80)) + '</strong>' : occHtmlEsc(String(o.description || '').slice(0, 55))) + '</td>'
+      + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--gold-light);">' + occHtmlEsc(occRiskLinks(o).join(', ') || '—') + '</td>'
+      + '<td style="padding:8px 14px;font-family:var(--font-mono);font-size:10px;color:var(--steel-bright);">' + occHtmlEsc(o.catalog_event_id || '—') + '</td>'
       + '<td style="padding:8px 14px;text-align:center;">' + (function(){
           var arc = o.arms && o.arms.arc_class;
           if(!arc) return '<span style="color:var(--grey-600);font-family:var(--font-mono);font-size:9px;">—</span>';
           var info = ARMS_CLASS_INFO[arc];
+          if(!info) return '<span style="font-family:var(--font-mono);font-size:9px;">'+occHtmlEsc(arc)+'</span>';
           return '<span title="'+info.label+'" style="display:inline-block;min-width:20px;text-align:center;font-family:var(--font-mono);font-size:11px;font-weight:800;border-radius:4px;padding:2px 7px;background:'+info.color+';color:'+occArmsClassTextColor(info.color)+';">'+arc+'</span>';
         })() + '</td>'
-      + '<td style="padding:8px 14px;">' + (o.classification ? '<span class="occ-class-pill '+o.classification+'">'+occClassificationLabel(o.classification)+'</span>' : '<span style="color:var(--grey-600);font-family:var(--font-mono);font-size:9px;">—</span>') + '</td>'
+      + '<td style="padding:8px 14px;">' + (o.classification ? '<span class="occ-class-pill '+(['ind','vio','err'].indexOf(o.classification)>=0?o.classification:'')+'">'+occClassificationLabel(o.classification)+'</span>' : '<span style="color:var(--grey-600);font-family:var(--font-mono);font-size:9px;">—</span>') + '</td>'
       + '<td style="padding:8px 14px;white-space:nowrap;">'
-      + '<button class="occ-pdf-btn" data-id="' + o.id + '" style="padding:3px 8px;background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.4);border-radius:4px;color:#4A9FE0;font-family:var(--font-mono);font-size:10px;cursor:pointer;margin-right:3px;" title="Export PDF">PDF</button>'
-      + '<button class="occ-csv-btn" data-id="' + o.id + '" style="padding:3px 8px;background:rgba(63,185,80,.12);border:1px solid rgba(63,185,80,.35);border-radius:4px;color:#3fb950;font-family:var(--font-mono);font-size:10px;cursor:pointer;margin-right:3px;" title="Export CSV">CSV</button>'
-      + '<button class="occ-e5x-btn" data-id="' + o.id + '" style="padding:3px 8px;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.4);border-radius:4px;color:#F0C040;font-family:var(--font-mono);font-size:10px;cursor:pointer;" title="Export E5X ECCAIRS">E5X</button>'
+      + '<button class="occ-pdf-btn" data-id="' + occHtmlEsc(o.id) + '" style="padding:3px 8px;background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.4);border-radius:4px;color:#4A9FE0;font-family:var(--font-mono);font-size:10px;cursor:pointer;margin-right:3px;" title="Export PDF">PDF</button>'
+      + '<button class="occ-csv-btn" data-id="' + occHtmlEsc(o.id) + '" style="padding:3px 8px;background:rgba(63,185,80,.12);border:1px solid rgba(63,185,80,.35);border-radius:4px;color:#3fb950;font-family:var(--font-mono);font-size:10px;cursor:pointer;margin-right:3px;" title="Export CSV">CSV</button>'
+      + '<button class="occ-e5x-btn" data-id="' + occHtmlEsc(o.id) + '" style="padding:3px 8px;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.4);border-radius:4px;color:#F0C040;font-family:var(--font-mono);font-size:10px;cursor:pointer;" title="Export E5X ECCAIRS">E5X</button>'
       + '</td>'
-      + '<td style="padding:8px 14px;white-space:nowrap;"><div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;"><button class="edit-occ-btn" data-id="' + o.id + '" style="padding:2px 8px;background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.3);border-radius:4px;color:var(--steel-bright);font-family:var(--font-mono);font-size:10px;cursor:pointer;white-space:nowrap;">✎ Edit</button><button class="del-occ-btn" data-id="' + o.id + '" title="Supprimer l’occurrence / Delete occurrence" style="background:none;border:none;color:#f85149;cursor:pointer;font-size:13px;padding:0 2px;">&#10005;</button></div></td>'
+      + '<td style="padding:8px 14px;white-space:nowrap;"><div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;"><button class="edit-occ-btn" data-id="' + occHtmlEsc(o.id) + '" style="padding:2px 8px;background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.3);border-radius:4px;color:var(--steel-bright);font-family:var(--font-mono);font-size:10px;cursor:pointer;white-space:nowrap;">✎ Edit</button><button class="del-occ-btn" data-id="' + occHtmlEsc(o.id) + '" title="Supprimer l’occurrence / Delete occurrence" style="background:none;border:none;color:#f85149;cursor:pointer;font-size:13px;padding:0 2px;">&#10005;</button></div></td>'
       + '</tr>';
   });
 
@@ -25850,7 +25851,9 @@ setTimeout(function(){
       var reportIdMap = {};
       res.data.forEach(function(row){
         var occ = row.report_data;
-        if(!occ || existingIds.has(occ.id)) return; // déjà importé
+        if(!occ || typeof occ!=='object') return;
+        occ.id = row.report_id; // identifiant imposé par le serveur, jamais repris du contenu déposé (audit cyber 03.11.2026)
+        if(existingIds.has(occ.id)) return; // déjà importé
         if(!occ.reporter_notification_datetime && row.submitted_at) occ.reporter_notification_datetime = row.submitted_at;
         if(!occ.awareness_datetime && row.submitted_at) occ.awareness_datetime = row.submitted_at;
         occ.reporter_identity_restricted = true;
