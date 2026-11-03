@@ -16988,19 +16988,7 @@ function occFwExtentPick(v){
   try{sel.dispatchEvent(new Event('input',{bubbles:true}));sel.dispatchEvent(new Event('change',{bubbles:true}));}catch(e){}
   occFwExtentSync();
 }
-(function(){
-  function hook(){
-    var sel=document.getElementById('occ-fw-cf-extent'); if(!sel||sel._cfxHooked)return;
-    sel._cfxHooked=true;
-    // Toute affectation programmatique (restauration, remise à zéro du formulaire) resynchronise les boutons
-    var d=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value');
-    try{Object.defineProperty(sel,'value',{configurable:true,get:function(){return d.get.call(this);},set:function(x){d.set.call(this,x);setTimeout(occFwExtentSync,0);}});}catch(e){}
-    try{new MutationObserver(occFwExtentSync).observe(sel,{attributes:true,attributeFilter:['disabled']});}catch(e){}
-    occFwExtentSync();
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',hook);else hook();
-  setTimeout(hook,1500);
-})();
+// Synchronisation des boutons : appelée par occFwExtentPick() et par occRestoreFiveWhys() à chaque ouverture de fiche.
 function occFwExtentLabel(x){return x==='systemic'?'Systemic':(x==='recurrent'?'Recurrent':(x==='isolated'?'Isolated':'To be determined'));}
 function occFwHasCf(fw){fw=fw||{};return !!(fw.cf_occurred||fw.cf_detection||fw.cf_extent||fw.cf_extent_note);}
 // Lignes de tableau « Why n / Answer n » pour les impressions
@@ -17080,6 +17068,7 @@ function occRestoreFiveWhys(fw){
   }
   var rc=document.getElementById('occ-fw-root-cause'); if(rc)rc.value=fw.root_cause||'';
   [['occ-fw-cf-occurred','cf_occurred'],['occ-fw-cf-detection','cf_detection'],['occ-fw-cf-extent','cf_extent'],['occ-fw-cf-extent-note','cf_extent_note']].forEach(function(p){var e=document.getElementById(p[0]);if(e)e.value=fw[p[1]]||'';});
+  if(typeof occFwExtentSync==='function')occFwExtentSync();
   occFwCascade();
   var rcm=document.getElementById('fw-root-cause'); if(rcm)rcm.value=fw.root_cause||'';
   var nt=document.getElementById('occ-fw-notes'); if(nt)nt.value=fw.notes||'';
