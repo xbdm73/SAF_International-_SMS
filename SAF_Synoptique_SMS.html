@@ -679,11 +679,22 @@ dialog .err{color:#ff9a9a;font-size:13.5px;min-height:1.2em;margin:8px 0 0}
 })();
 
 </script>
+<style id="saf-syn-light-labels">
+/* 03.11.2026 — fond clair (bleu ciel) : les libellés gardaient le liseré sombre (#13233a) prévu
+   pour l'ancien fond nuit, d'où un texte foncé sur liseré foncé, illisible. Liseré blanc, texte encre. */
+svg .node .t{fill:#0b1a2b !important;stroke:rgba(255,255,255,.95) !important;stroke-width:5px !important;font-weight:700 !important;font-size:14.5px !important}
+svg .edge .lbl{fill:#0b1a2b !important;stroke:rgba(255,255,255,.95) !important;stroke-width:5px !important;font-weight:600 !important}
+svg .orbit{stroke:rgba(40,80,120,.22) !important}
+</style>
+<script>/* Accueil du SMS sous le portail : /sms/accueil (ni /sms/index.html, réécrit en « / », ni /sms/) */
+document.addEventListener('DOMContentLoaded',function(){ if(location.pathname.indexOf('/sms/')!==0)return;
+  document.querySelectorAll('a[data-saf-tool="home"],a[href="index.html"]').forEach(function(a){a.setAttribute('href','/sms/accueil');}); });
+</script>
 </head>
 <body>
 <nav class="topnav" aria-label="Outils de la suite">
   <a href="https://saf-international-portail.netlify.app/" title="Portail SAF International">◂ Portail</a>
-  <a href="index.html">⌂ Accueil</a>
+  <a href="index.html" data-saf-tool="home">⌂ Accueil</a>
   <a href="SAF_International_Safety.html">🛡️ Safety</a>
   <a href="SAF_International_Compliance_Monitoring_System.html">📋 CMS</a>
   <a href="SAF_International_Appendices_OMM.html">📁 OMM</a>
