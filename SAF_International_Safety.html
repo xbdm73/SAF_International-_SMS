@@ -1512,6 +1512,8 @@ details.occ-own-pick>summary:focus-visible{outline:2px solid #e3b341;outline-off
 .occ-cfsum-hint{font-size:10px;opacity:.65;margin-top:6px;font-style:italic;}
 .occ-hfacs-regen{padding:3px 10px;font-size:10px;border:1px solid rgba(227,179,65,.6);background:rgba(227,179,65,.12);color:inherit;border-radius:5px;cursor:pointer;white-space:nowrap;}
 .occ-hfacs-regen:hover{background:rgba(227,179,65,.25);}
+.occ-hfacs-lvl-hint{font-size:11px;font-style:italic;margin:-4px 0 10px;padding:0 10px;opacity:.85;}
+.occ-hfacs-lvl-hint span{opacity:.7;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -18084,24 +18086,28 @@ function showOccurrenceForm(editId){
         <div style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);margin-bottom:16px;padding:8px 12px;background:rgba(227,179,65,.06);border-left:3px solid rgba(227,179,65,.4);border-radius:0 6px 6px 0;">HFACS (Wiegmann &amp; Shappell) — 4 niveaux. Cocher tous les facteurs applicables. / 4 levels. Tick all applicable factors.</div>
         <div style="margin-bottom:18px;">
           <div style="font-family:var(--font-mono);font-size:10px;color:#f85149;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding:6px 10px;background:rgba(248,81,73,.08);border-radius:4px;">L4 — Influences organisationnelles / Organizational Influences</div>
+          <div class="occ-hfacs-lvl-hint">On analyse les facteurs organisationnels plus profonds. <span>/ The deeper organisational factors are analysed.</span></div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
             ${['Resource Management — Staffing','Resource Management — Training','Resource Management — Equipment/facilities','Organizational Climate — Culture of safety','Organizational Climate — Policies','Organizational Process — Operations','Organizational Process — Procedures','Organizational Process — Oversight'].map(f=>'<label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--grey-200);cursor:pointer;padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;"><input type="checkbox" class="hfacs-cb" data-level="L4" value="'+f+'" style="width:auto;margin-top:2px;flex-shrink:0;"/> '+occHfacsLbl(f)+'</label>').join('')}
           </div>
         </div>
         <div style="margin-bottom:18px;">
           <div style="font-family:var(--font-mono);font-size:10px;color:#e05000;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding:6px 10px;background:rgba(224,80,0,.08);border-radius:4px;">L3 — Supervision inadéquate / Unsafe Supervision</div>
+          <div class="occ-hfacs-lvl-hint">On examine si l’encadrement a contribué à la situation. <span>/ We examine whether supervision contributed to the situation.</span></div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
             ${['Inadequate Supervision — Guidance','Inadequate Supervision — Oversight','Inadequate Supervision — Training opportunities','Planned Inappropriate Operations — Risk management','Planned Inappropriate Operations — Crew pairing','Failed to Correct — Known problem','Failed to Correct — Rule violations','Supervisory Violations — Rules/regulations'].map(f=>'<label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--grey-200);cursor:pointer;padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;"><input type="checkbox" class="hfacs-cb" data-level="L3" value="'+f+'" style="width:auto;margin-top:2px;flex-shrink:0;"/> '+occHfacsLbl(f)+'</label>').join('')}
           </div>
         </div>
         <div style="margin-bottom:18px;">
           <div style="font-family:var(--font-mono);font-size:10px;color:#e3b341;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding:6px 10px;background:rgba(227,179,65,.08);border-radius:4px;">L2 — Conditions préalables aux actes dangereux / Preconditions for Unsafe Acts</div>
+          <div class="occ-hfacs-lvl-hint">On cherche pourquoi l’opérateur a pu commettre cette erreur. <span>/ We look for why the operator could make this error.</span></div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
             ${['Environmental — Physical (weather, terrain)','Environmental — Technological (equip design)','Condition of Operator — Adverse mental (stress, fatigue)','Condition of Operator — Adverse physiological','Condition of Operator — Physical/mental limitation','Personnel Factors — CRM breakdown','Personnel Factors — Personal readiness'].map(f=>'<label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--grey-200);cursor:pointer;padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;"><input type="checkbox" class="hfacs-cb" data-level="L2" value="'+f+'" style="width:auto;margin-top:2px;flex-shrink:0;"/> '+occHfacsLbl(f)+'</label>').join('')}
           </div>
         </div>
         <div style="margin-bottom:18px;">
           <div style="font-family:var(--font-mono);font-size:10px;color:#3fb950;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;padding:6px 10px;background:rgba(63,185,80,.08);border-radius:4px;">L1 — Actes dangereux / Unsafe Acts</div>
+          <div class="occ-hfacs-lvl-hint">On recherche ce que l’opérateur a fait ou omis de faire. <span>/ We look for what the operator did or failed to do.</span></div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
             ${['Errors — Skill-based (slip/lapse)','Errors — Decision error','Errors — Perceptual error','Violations — Routine','Violations — Exceptional'].map(f=>'<label style="display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--grey-200);cursor:pointer;padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;"><input type="checkbox" class="hfacs-cb" data-level="L1" value="'+f+'" style="width:auto;margin-top:2px;flex-shrink:0;"/> '+occHfacsLbl(f)+'</label>').join('')}
           </div>
