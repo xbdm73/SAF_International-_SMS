@@ -5,7 +5,16 @@
 <script>/* Porte d'entrée unique (30.10.2026) : ce bloc s'ouvre par le portail SAF, qui le sert à /sms/
    (même adresse, donc même session). Ouvert depuis son ancienne adresse, il y est renvoyé. */
 (function(){ if(location.hostname==='saf-international-sms.netlify.app')
-  location.replace('https://saf-international-portail.netlify.app/sms'+location.pathname+location.search+location.hash); })();</script>
+  location.replace('https://saf-international-portail.netlify.app/sms'+location.pathname+location.search+location.hash); })();
+/* Retour à l'accueil du SMS (03.11.2026) : servi par le portail sous /sms/, « index.html » est réécrit
+   par le site du SMS (pretty URLs) en une 301 vers « / », que le proxy relaie : on atterrissait sur le portail.
+   /sms/ est servi directement (200), sans redirection. */
+window.safHomeUrl=function(){ var p=location.pathname;
+  if(p.indexOf('/sms/')===0) return '/sms/';
+  return (p.indexOf('/Archives/')!==-1?'../':'')+'index.html'; };
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('a[data-saf-tool="home"],a[href="index.html"]').forEach(function(a){ a.setAttribute('href',window.safHomeUrl()); });
+});</script>
 
 <link rel="manifest" href="manifest.webmanifest"/>
 <link rel="apple-touch-icon" href="cms-icon-180.png"/>
@@ -22192,7 +22201,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     e.preventDefault(); e.stopImmediatePropagation();
     var ov = document.getElementById('saf-export-overlay');
     if (ov) ov.classList.remove('open');
-    location.href = (location.pathname.indexOf('/Archives/') !== -1 ? '../' : '') + 'index.html';
+    location.href = window.safHomeUrl();
   }, true);
   /* Filet : le panneau ne s'ouvre pas pour un rôle non autorisé, quel que soit le chemin. */
   var ov = document.getElementById('saf-export-overlay');

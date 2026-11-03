@@ -1205,7 +1205,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   function applyGuestRole(){
     // Porte d'entrée unique : sans session, la connexion se fait sur le portail, qui renvoie ensuite ici.
     if(location.pathname.indexOf('/sms/')===0){
-      location.replace('/?next=' + encodeURIComponent('/sms/' + (SAF_NEXT || 'index.html'))); return;
+      location.replace('/?next=' + encodeURIComponent('/sms/' + (SAF_NEXT || ''))); return;   // /sms/ et non /sms/index.html, réécrit en « / » par le proxy
     }
     // Connexion obligatoire — plus d'accès invité (RLS : lecture réservée aux comptes déclarés)
     overlay.style.display = 'flex';
