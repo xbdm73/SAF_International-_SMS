@@ -23208,7 +23208,8 @@ function _occPreparePrint(id){
   // Mark editing-only controls (buttons, dropdown carets) so the print
   // stylesheet below can hide them without touching the on-screen look
   wrap.querySelectorAll('button').forEach(function(b){
-    if(!b.classList.contains('occ-msel-btn')) b.classList.add('occ-print-hide');
+    // Les boutons Isolé / Récurrent / Systématique (Q3 facteurs contributifs) portent la réponse : ils restent imprimés
+    if(!b.classList.contains('occ-msel-btn') && !b.classList.contains('occ-cfx-btn')) b.classList.add('occ-print-hide');
   });
   var style=document.getElementById('occ-print-style');
   if(!style){ style=document.createElement('style'); style.id='occ-print-style'; document.head.appendChild(style); }
@@ -23230,6 +23231,8 @@ function _occPreparePrint(id){
     +'  #occ-form-wrap .occ-print-hide-original { display:none !important; }'
     +'  #occ-form-wrap .occ-print-text-clone { display:block !important; }'
     +'  #occ-form-wrap .occ-print-photos { display:block !important; }'
+    +'  #occ-form-wrap .occ-cfx-btn { opacity:1 !important; }'
+    +'  #occ-form-wrap .occ-cfx-btn:not(.on) { opacity:.45 !important; }'
     +'  #occ-form-wrap input, #occ-form-wrap select { color:#1a2535 !important; }'
     +'  #occ-form-wrap * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }'
     +'}';
