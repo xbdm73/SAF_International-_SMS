@@ -1496,6 +1496,15 @@ details.occ-own-pick>summary:focus-visible{outline:2px solid #e3b341;outline-off
 .at-chk{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;color:var(--grey-400);white-space:nowrap;}
 .at-empty{color:var(--grey-400);font-family:var(--font-mono);font-size:12px;padding:20px;text-align:center;border:1px dashed rgba(255,255,255,.1);border-radius:8px;}
 @media (max-width:900px){.at-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
+.occ-cfx-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.occ-cfx-btn{display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 4px;border:1.5px solid var(--grey-400,#8a96a8);border-radius:6px;background:transparent;color:inherit;font-weight:700;font-size:12px;cursor:pointer;line-height:1.2;}
+.occ-cfx-btn small{font-weight:400;font-size:10px;opacity:.75;}
+.occ-cfx-btn:hover:not(:disabled){border-color:#4A9FE0;}
+.occ-cfx-btn.on[data-v="isolated"]{background:#2e9e5b;border-color:#2e9e5b;color:#fff;}
+.occ-cfx-btn.on[data-v="recurrent"]{background:#d9901a;border-color:#d9901a;color:#fff;}
+.occ-cfx-btn.on[data-v="systemic"]{background:#c63b3b;border-color:#c63b3b;color:#fff;}
+.occ-cfx-btn:disabled{cursor:default;opacity:.7;}
+.occ-cfx-hint{font-size:10px;opacity:.65;margin-top:4px;font-style:italic;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -16951,7 +16960,41 @@ function occFwCascade(){
   show('occ-fw-remove-last', n>5);
   show('occ-fw-rootcause-wrap', !!v('occ-fw-because-0')||!!v('occ-fw-root-cause'));
 }
-function occFwExtentLabel(x){return x==='systemic'?'Systemic':(x==='isolated'?'Isolated':'To be determined');}
+// ── Q3 Facteurs contributifs : 3 boutons séparés (Isolé / Récurrent / Systématique) ──
+// Le <select id="occ-fw-cf-extent"> est conservé (masqué) comme source de la valeur :
+// lecture, sauvegarde et restauration inchangées. Les boutons ne font que le piloter.
+function occFwExtentSync(){
+  var sel=document.getElementById('occ-fw-cf-extent'), box=document.getElementById('occ-fw-cf-extent-btns');
+  if(!sel||!box)return;
+  var v=sel.value||'', dis=!!sel.disabled;
+  box.querySelectorAll('.occ-cfx-btn').forEach(function(b){
+    var on=b.getAttribute('data-v')===v;
+    b.classList.toggle('on',on); b.setAttribute('aria-pressed',on?'true':'false');
+    b.disabled=dis;
+  });
+  var h=document.getElementById('occ-fw-cf-extent-hint');
+  if(h)h.style.display=v?'none':'';
+}
+function occFwExtentPick(v){
+  var sel=document.getElementById('occ-fw-cf-extent'); if(!sel||sel.disabled)return;
+  sel.value=(sel.value===v)?'':v;   // second clic sur le bouton actif = retour à « À déterminer »
+  try{sel.dispatchEvent(new Event('input',{bubbles:true}));sel.dispatchEvent(new Event('change',{bubbles:true}));}catch(e){}
+  occFwExtentSync();
+}
+(function(){
+  function hook(){
+    var sel=document.getElementById('occ-fw-cf-extent'); if(!sel||sel._cfxHooked)return;
+    sel._cfxHooked=true;
+    // Toute affectation programmatique (restauration, remise à zéro du formulaire) resynchronise les boutons
+    var d=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value');
+    try{Object.defineProperty(sel,'value',{configurable:true,get:function(){return d.get.call(this);},set:function(x){d.set.call(this,x);setTimeout(occFwExtentSync,0);}});}catch(e){}
+    try{new MutationObserver(occFwExtentSync).observe(sel,{attributes:true,attributeFilter:['disabled']});}catch(e){}
+    occFwExtentSync();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',hook);else hook();
+  setTimeout(hook,1500);
+})();
+function occFwExtentLabel(x){return x==='systemic'?'Systemic':(x==='recurrent'?'Recurrent':(x==='isolated'?'Isolated':'To be determined'));}
 function occFwHasCf(fw){fw=fw||{};return !!(fw.cf_occurred||fw.cf_detection||fw.cf_extent||fw.cf_extent_note);}
 // Lignes de tableau « Why n / Answer n » pour les impressions
 function occFwRowsHTML(fw){
@@ -16969,7 +17012,7 @@ function occFwCfPrintHTML(fw){
     +'<div style="font-size:10px;font-weight:700;color:#2a6fb0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Contributing factors</div>'
     +'<div style="margin:4px 0;"><b>1 — Why did it happen?</b><br>'+occFwEsc(fw.cf_occurred||'—')+'</div>'
     +'<div style="margin:4px 0;"><b>2 — Why was it not detected?</b><br>'+occFwEsc(fw.cf_detection||'—')+'</div>'
-    +'<div style="margin:4px 0;"><b>3 — Isolated or systemic case?</b> '+occFwExtentLabel(fw.cf_extent)+(fw.cf_extent_note?'<br>'+occFwEsc(fw.cf_extent_note):'')+'</div></div>';
+    +'<div style="margin:4px 0;"><b>3 — Isolated, recurrent or systemic case?</b> '+occFwExtentLabel(fw.cf_extent)+(fw.cf_extent_note?'<br>'+occFwEsc(fw.cf_extent_note):'')+'</div></div>';
 }
 function occAddWhyRow(){
   var chain=document.getElementById('occ-fw-chain'); if(!chain)return;
@@ -17970,7 +18013,7 @@ function showOccurrenceForm(editId){
               <div class="form-field" style="margin:0 0 8px;"><label class="field-label">1 — Pourquoi est-ce arrivé ? / 1 — Why did it happen?</label><textarea id="occ-fw-cf-occurred" rows="2" placeholder="Facteurs ayant conduit à l’événement : procédure, formation, ressources, charge de travail, communication, organisation… / Factors that led to the event: procedure, training, resources, workload, communication, organisation…"></textarea></div>
               <div class="form-field" style="margin:0 0 8px;"><label class="field-label">2 — Pourquoi ne s’en est-on pas rendu compte ? / 2 — Why was it not detected?</label><textarea id="occ-fw-cf-detection" rows="2" placeholder="Contrôle, supervision, revue ou barrière qui aurait dû détecter ou arrêter l’événement et ne l’a pas fait — et pourquoi / Check, supervision, review or barrier that should have detected or stopped the event and did not — and why"></textarea></div>
               <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start;">
-                <div class="form-field" style="margin:0;"><label class="field-label">3 — Cas isolé ou systématique ? / 3 — Isolated or systemic case?</label><select id="occ-fw-cf-extent" style="width:100%;"><option value="">— À déterminer / — To be determined —</option><option value="isolated">Cas isolé / Isolated case</option><option value="systemic">Systématique / Systemic</option></select></div>
+                <div class="form-field" style="margin:0;"><label class="field-label">3 — Cas isolé, récurrent ou systématique ? / 3 — Isolated, recurrent or systemic case?</label><select id="occ-fw-cf-extent" style="display:none;"><option value="">— À déterminer / — To be determined —</option><option value="isolated">Cas isolé / Isolated case</option><option value="recurrent">Récurrent / Recurrent</option><option value="systemic">Systématique / Systemic</option></select><div id="occ-fw-cf-extent-btns" class="occ-cfx-btns"><button type="button" class="occ-cfx-btn" data-v="isolated" onclick="occFwExtentPick('isolated')">Isolé<small>Isolated</small></button><button type="button" class="occ-cfx-btn" data-v="recurrent" onclick="occFwExtentPick('recurrent')">Récurrent<small>Recurrent</small></button><button type="button" class="occ-cfx-btn" data-v="systemic" onclick="occFwExtentPick('systemic')">Systématique<small>Systemic</small></button></div><div id="occ-fw-cf-extent-hint" class="occ-cfx-hint">À déterminer / To be determined</div></div>
                 <div class="form-field" style="margin:0;"><label class="field-label">Justification et périmètre vérifié / Justification and extent checked</label><textarea id="occ-fw-cf-extent-note" rows="2" placeholder="Ce qui a été vérifié pour conclure : autres bases, équipages, aéronefs, périodes, dossiers échantillonnés… / What was checked to conclude: other bases, crews, aircraft, periods, records sampled…"></textarea></div>
               </div>
             </div>
@@ -18603,7 +18646,7 @@ function openFiveWhys(occId){
       fwAddArrow();fwBuildRow(n,'','');
     });
     addBtn.style.display='none';chain.appendChild(addBtn);
-    if(occFwHasCf(saved))chain.insertAdjacentHTML('beforeend','<div style="margin-top:14px;padding:12px 14px;border:1px solid rgba(74,159,224,.35);border-radius:8px;"><div style="font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:1px;color:#4A9FE0;margin-bottom:8px;">🧩 '+occFwEsc("Facteurs contributifs / Contributing factors")+'</div>'+[["1 \u2014 Pourquoi est-ce arriv\u00e9 ? / 1 \u2014 Why did it happen?",saved.cf_occurred],["2 \u2014 Pourquoi ne s\u2019en est-on pas rendu compte ? / 2 \u2014 Why was it not detected?",saved.cf_detection],["3 \u2014 Cas isol\u00e9 ou syst\u00e9matique ? / 3 \u2014 Isolated or systemic case?",occFwExtentLabel(saved.cf_extent)+(saved.cf_extent_note?' — '+saved.cf_extent_note:'')]].map(function(q){return '<div style="margin-bottom:8px;font-size:11px;"><div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-bottom:3px;">'+occFwEsc(q[0])+'</div><div>'+occFwEsc(q[1]||'—')+'</div></div>';}).join('')+'</div>');
+    if(occFwHasCf(saved))chain.insertAdjacentHTML('beforeend','<div style="margin-top:14px;padding:12px 14px;border:1px solid rgba(74,159,224,.35);border-radius:8px;"><div style="font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:1px;color:#4A9FE0;margin-bottom:8px;">🧩 '+occFwEsc("Facteurs contributifs / Contributing factors")+'</div>'+[["1 \u2014 Pourquoi est-ce arriv\u00e9 ? / 1 \u2014 Why did it happen?",saved.cf_occurred],["2 \u2014 Pourquoi ne s\u2019en est-on pas rendu compte ? / 2 \u2014 Why was it not detected?",saved.cf_detection],["3 \u2014 Cas isol\u00e9, r\u00e9current ou syst\u00e9matique ? / 3 \u2014 Isolated, recurrent or systemic case?",occFwExtentLabel(saved.cf_extent)+(saved.cf_extent_note?' — '+saved.cf_extent_note:'')]].map(function(q){return '<div style="margin-bottom:8px;font-size:11px;"><div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-bottom:3px;">'+occFwEsc(q[0])+'</div><div>'+occFwEsc(q[1]||'—')+'</div></div>';}).join('')+'</div>');
   }
   const rc=document.getElementById('fw-root-cause');if(rc)rc.value=saved.root_cause||'';
   const rci=document.getElementById('occ-fw-root-cause');if(rci&&saved.root_cause)rci.value=saved.root_cause;
@@ -22400,7 +22443,7 @@ function _buildSafNotes(occ, uncoded){
   L.push('');
   L.push('=== 5 Whys Root Cause Analysis ===');
   whys.forEach(function(w,i){ var b=(fw.becauses||[])[i]||''; if(w||b){ L.push('Why '+(i+1)+': '+(w||'')); L.push('Answer '+(i+1)+': '+b); } });
-  if(occFwHasCf(fw)){ L.push('Contributing factors — 1 Why did it happen: '+(fw.cf_occurred||'')); L.push('Contributing factors — 2 Why was it not detected: '+(fw.cf_detection||'')); L.push('Contributing factors — 3 Isolated or systemic: '+occFwExtentLabel(fw.cf_extent)+(fw.cf_extent_note?' — '+fw.cf_extent_note:'')); }
+  if(occFwHasCf(fw)){ L.push('Contributing factors — 1 Why did it happen: '+(fw.cf_occurred||'')); L.push('Contributing factors — 2 Why was it not detected: '+(fw.cf_detection||'')); L.push('Contributing factors — 3 Isolated, recurrent or systemic: '+occFwExtentLabel(fw.cf_extent)+(fw.cf_extent_note?' — '+fw.cf_extent_note:'')); }
   L.push('Root Cause: '+(fw.root_cause||''));
   L.push('Corrective Actions: '+(occFWActionDisplayList(fw.corrective_actions||[]).join(' | ')));
   L.push('Notes: '+(fw.notes||''));
@@ -22763,7 +22806,7 @@ function exportOccurrenceCSV(id){
     ['5W - WHY 3',(fw.whys||[])[2]||''],['5W - WHY 4',(fw.whys||[])[3]||''],
     ['5W - WHY 5',(fw.whys||[])[4]||''],
     ['5W - ANSWER 1',(fw.becauses||[])[0]||''],['5W - ANSWER 2',(fw.becauses||[])[1]||''],['5W - ANSWER 3',(fw.becauses||[])[2]||''],['5W - ANSWER 4',(fw.becauses||[])[3]||''],['5W - ANSWER 5',(fw.becauses||[])[4]||''],
-    ['CF1 - Why did it happen',fw.cf_occurred||''],['CF2 - Why not detected',fw.cf_detection||''],['CF3 - Isolated / systemic',fw.cf_extent?occFwExtentLabel(fw.cf_extent):''],['CF3 - Extent checked',fw.cf_extent_note||''],['Root Cause',fw.root_cause||''],
+    ['CF1 - Why did it happen',fw.cf_occurred||''],['CF2 - Why not detected',fw.cf_detection||''],['CF3 - Isolated / recurrent / systemic',fw.cf_extent?occFwExtentLabel(fw.cf_extent):''],['CF3 - Extent checked',fw.cf_extent_note||''],['Root Cause',fw.root_cause||''],
     ['Corrective Actions',occFWActionDisplayList(fw.corrective_actions||[]).join(' | ')],
     ['Linked Safety Alerts / Communications',occLLLinks(occ).map(function(id){var l=getLessons().find(function(x){return x.id===id;});return l?occLLLabel(l):id;}).join(' | ')],
     ['5W Notes',fw.notes||''],
