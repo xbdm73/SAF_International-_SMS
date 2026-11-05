@@ -18077,7 +18077,7 @@ function showOccurrenceForm(editId){
             </div>
             <div class="form-field" style="margin:0;">
               <label class="field-label">Commentaire</label>
-              <input type="text" id="occ-invest-comment-text" placeholder="Observation, fait, hypothèse, conclusion…" style="width:100%;"/>
+              <textarea id="occ-invest-comment-text" rows="3" placeholder="Observation, fait, hypothèse, conclusion…" style="width:100%;resize:vertical;"></textarea>
             </div>
             <button type="button" onclick="occAddInvestComment()" style="padding:8px 14px;background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.4);border-radius:6px;color:#4A9FE0;font-family:var(--font-mono);font-size:11px;cursor:pointer;white-space:nowrap;">+ Ajouter</button>
           </div>
@@ -22876,7 +22876,7 @@ function exportOccurrencePDF(id){
   var invStatusLabel={open:'🔴 Ouvert',ongoing:'🟡 En cours',closed:'🟢 Clos'}[inv.status]||'—';
   var invComments=(inv.comments||[]).map(function(c){
     var ts=c.ts?new Date(c.ts).toLocaleString('en-GB'):'';
-    return '<div style="padding:7px 10px;background:#f8fbfd;border-left:3px solid #4A9FE0;border-radius:0 4px 4px 0;margin-bottom:6px;"><div style="font-size:9px;color:#8896a0;font-family:monospace;margin-bottom:3px;">'+occHtmlEsc(c.author||'')+(ts?' — '+ts:'')+'</div><div style="font-size:11px;color:#1a2535;">'+occHtmlEsc(c.text||'')+'</div></div>';
+    return '<div style="padding:7px 10px;background:#f8fbfd;border-left:3px solid #4A9FE0;border-radius:0 4px 4px 0;margin-bottom:6px;"><div style="font-size:9px;color:#8896a0;font-family:monospace;margin-bottom:3px;">'+occHtmlEsc(c.author||'')+(ts?' — '+ts:'')+'</div><div style="font-size:11px;color:#1a2535;white-space:pre-wrap;word-break:break-word;">'+occHtmlEsc(c.text||'')+'</div></div>';
   }).join('');
   var investigationHTML='<p style="margin:0 0 8px;"><strong>Status:</strong> '+invStatusLabel+'</p>'
     +(invComments?invComments:'<p style="color:#8896a0;font-size:11px;">No comments recorded.</p>');
@@ -26030,7 +26030,7 @@ function occAddInvestComment(commentObj){
   div.dataset.commentTs=ts;div.dataset.commentAuthor=author;div.dataset.commentText=text;
   div.style.cssText='padding:10px 12px;background:rgba(74,159,224,.07);border:1px solid rgba(74,159,224,.18);border-left:3px solid rgba(74,159,224,.5);border-radius:0 6px 6px 0;position:relative;';
   div.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;"><span style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:#4A9FE0;">'+author+'</span><span style="font-family:var(--font-mono);font-size:9px;color:var(--grey-400);">'+dtStr+'</span></div>'
-    +'<div style="font-size:12px;color:var(--grey-200);line-height:1.5;">'+(text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>'
+    +'<div style="font-size:12px;color:var(--grey-200);line-height:1.5;white-space:pre-wrap;word-break:break-word;">'+(text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>'
     +'<button type="button" onclick="safRemoveComment(this)" style="position:absolute;top:6px;right:6px;background:none;border:none;color:var(--grey-600);cursor:pointer;font-size:12px;">✕</button>';
   container.appendChild(div);
   container.scrollTop=container.scrollHeight;
