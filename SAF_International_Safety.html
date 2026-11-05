@@ -1396,7 +1396,11 @@ select[id$="-status"].status-clos{border-left-color:#3fb950;}
 .occ-fw-row textarea,.occ-fw-side textarea,.occ-fw-action-input{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--white);font-size:11px;padding:8px 10px;resize:vertical;}
 .occ-fw-row textarea{border-left:3px solid #e3b341;border-radius:0 6px 6px 0;}
 .occ-fw-root{border-color:rgba(232,160,32,.45)!important;background:rgba(232,160,32,.06)!important;}
-.occ-fw-action-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;}
+.occ-fw-action-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px;}
+/* Texte de l'action sur sa propre ligne, pleine largeur ; contrôles en dessous */
+.occ-fw-action-row > .occ-fw-action-input,.occ-fw-action-row > :first-child{flex:1 1 100%;width:100%;max-width:100%;min-width:0;box-sizing:border-box;}
+textarea.occ-fw-action-input{min-height:38px;line-height:1.45;resize:vertical;overflow:hidden;font-family:inherit;}
+@media print{.occ-fw-action-row > .occ-fw-action-input,.occ-fw-action-row > :first-child{flex-basis:100%!important;width:100%!important;}}
 .occ-fw-summary{margin-top:12px;padding:12px;border:1px solid rgba(232,160,32,.35);border-radius:8px;background:rgba(232,160,32,.08);}
 @media(max-width:1100px){.occ-fw-grid{grid-template-columns:1fr}.occ-fw-row{grid-template-columns:1fr}.occ-fw-arrow{padding-left:0}}
 
@@ -16928,7 +16932,7 @@ function occAddFWAction(value){
   var val=occFWActionText(value);
   var owners=occFWActionOwners(value);
   var status=occFWActionStatus(value);
-  row.innerHTML='<input type="text" class="occ-fw-action-input" placeholder="Corrective / preventive action…" value="'+val.replace(/"/g,'&quot;')+'"/>'
+  row.innerHTML='<textarea class="occ-fw-action-input" rows="2" placeholder="Corrective / preventive action…" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\';">'+String(val||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>'
     +occOwnerPickerHTML(owners,'occ-fw-action-owners')
     +'<input type="text" class="occ-fw-action-owner-custom" placeholder="Name / function…" value="'+occFWActionOwnerCustom(value).replace(/"/g,'&quot;')+'" style="display:'+(owners.indexOf('To be specified')>-1?'block':'none')+';flex-shrink:0;width:150px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--white);font-family:var(--font-mono);font-size:10px;padding:8px 8px;"/>'
     +'<span class="occ-fw-action-sent"></span>'
@@ -16940,7 +16944,8 @@ function occAddFWAction(value){
   list.appendChild(row);
   occUpdateActionStatusStyle(row.querySelector('.occ-fw-action-status'));
   occActionSentRefresh(row);
-  if(typeof value!=='string' && !(typeof value==='object'&&value!==null)) row.querySelector('input').focus();
+  var _ta=row.querySelector('.occ-fw-action-input');if(_ta){setTimeout(function(){_ta.style.height='auto';_ta.style.height=Math.max(38,_ta.scrollHeight)+'px';},0);}
+  if(typeof value!=='string' && !(typeof value==='object'&&value!==null) && _ta) _ta.focus();
 }
 function occRemoveFWAction(btn){
   var row=btn.closest('.occ-fw-action-row'); var list=document.getElementById('occ-fw-actions-list');
