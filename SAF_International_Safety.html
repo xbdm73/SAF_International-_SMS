@@ -18416,7 +18416,7 @@ function saveOccurrence(_silent){
       five_whys:    occGetFiveWhys()||existing.five_whys||null,
       linked_lessons: occLLFormGet(),
       eccairs:      occGetEccairsFields(),
-      investigation: occGetInvestigation(),
+      investigation: occGetInvestigation(!_silent),
       hfacs:        occGetHFACS(),
       arms:         occGetARMS(),
       ...occGetNotifDates(),
@@ -18471,7 +18471,7 @@ function saveOccurrence(_silent){
       five_whys:   occGetFiveWhys(),
       linked_lessons: occLLFormGet(),
       eccairs:     occGetEccairsFields(),
-      investigation: occGetInvestigation(),
+      investigation: occGetInvestigation(!_silent),
       hfacs:        occGetHFACS(),
       arms:         occGetARMS(),
       ...occGetNotifDates(),
@@ -26065,11 +26065,14 @@ function occAddInvestComment(commentObj){
   container.appendChild(div);
   container.scrollTop=container.scrollHeight;
 }
-function occGetInvestigation(){
+function occGetInvestigation(flushPending){
   // Un commentaire saisi mais pas encore ajouté au journal (bouton « + Ajouter » oublié)
-  // est versé automatiquement au journal à l'enregistrement, au lieu d'être perdu.
-  var _pending=document.getElementById('occ-invest-comment-text');
-  if(_pending && (_pending.value||'').trim()){ try{ occAddInvestComment(); }catch(e){} }
+  // est versé au journal UNIQUEMENT lors d'un enregistrement explicite (Save) —
+  // jamais pendant l'autosave silencieux déclenché au fil de la frappe.
+  if(flushPending===true){
+    var _pending=document.getElementById('occ-invest-comment-text');
+    if(_pending && (_pending.value||'').trim()){ try{ occAddInvestComment(); }catch(e){} }
+  }
   var status=document.getElementById('occ-invest-status')?.value||'open';
   var comments=[];
   document.querySelectorAll('#occ-invest-comments [data-comment-ts]').forEach(function(el){
