@@ -17815,9 +17815,10 @@ function renderECCAIRSTracker(){
   var countPill='<span id="ecc-tracker-count" title="'+overdueOccCount+' événement(s) hors délai" style="display:'+(_collapsed?'inline-flex':'none')+';align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 7px;margin-left:10px;border-radius:11px;font-family:var(--font-mono);font-size:12px;font-weight:800;vertical-align:middle;'
     +(overdueOccCount?'background:#f85149;color:#fff;':'background:rgba(63,185,80,.18);color:#3fb950;')+'">'+overdueOccCount+'</span>';
   wrap.innerHTML = '<div class="chart-card" style="padding:18px 20px;">'
-    +'<div onclick="eccTrackerToggle()" title="Replier / déplier" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer;user-select:none;">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">'
     +'<div><div class="chart-title" style="margin:0;"><span id="ecc-tracker-chev" style="display:inline-block;width:14px;transition:transform .15s;transform:rotate('+(_collapsed?'-90':'0')+'deg);">▼</span> 📅 Suivi des délais de notification ECCAIRS2'+countPill+'</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-top:2px;">Règl. (UE) 376/2014 art. 4 & 13 · 72 h après connaissance SAF · suivi 30 jours / 3 mois depuis notification du reporter lorsque l’Art. 13 est déclenché</div></div>'
-    +'<div id="ecc-tracker-badge" style="display:'+(_collapsed?'none':'block')+';">'+badge+'</div></div>'
+    +'<div style="display:flex;align-items:center;gap:10px;"><div id="ecc-tracker-badge" style="display:'+(_collapsed?'none':'block')+';">'+badge+'</div>'
+    +'<button type="button" id="ecc-tracker-btn" class="occ-panel-toggle" onclick="eccTrackerToggle()" title="Replier / déplier le suivi ECCAIRS2"><span class="occ-panel-chevron" style="display:inline-block;transition:transform .15s;transform:rotate('+(_collapsed?'-90':'0')+'deg);">▼</span> '+(_collapsed?'Déplier':'Replier')+'</button></div></div>'
     +'<div id="ecc-tracker-body" style="display:'+(_collapsed?'none':'block')+';margin-top:12px;">'
     +'<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:11px;">'
     +'<thead><tr style="border-bottom:1px solid rgba(255,255,255,.12);">'
@@ -17845,6 +17846,8 @@ function eccTrackerToggle(){
   if(bd) bd.style.display=c?'none':'block';
   if(n) n.style.display=c?'inline-flex':'none';
   if(ch) ch.style.transform='rotate('+(c?'-90':'0')+'deg)';
+  var btn=document.getElementById('ecc-tracker-btn');
+  if(btn) btn.innerHTML='<span class="occ-panel-chevron" style="display:inline-block;transition:transform .15s;transform:rotate('+(c?'-90':'0')+'deg);">▼</span> '+(c?'Déplier':'Replier');
 }
 window.eccTrackerToggle = eccTrackerToggle;
 window.renderECCAIRSTracker = renderECCAIRSTracker;
