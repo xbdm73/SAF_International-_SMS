@@ -17769,8 +17769,9 @@ function renderECCAIRSTracker(){
   });
   if(!occs.length){ wrap.innerHTML=''; return; }
   occs.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
-  var overdueCount=0, warnCount=0;
+  var overdueCount=0, warnCount=0, overdueOccCount=0;
   var rows = occs.map(function(o){
+    var _ovBefore=overdueCount;
     var dl=occEccairsDeadlines(o.awareness_datetime||'', o.reporter_notification_datetime||'', !!o.followup_required);
 
     // Col 1 — initial ECCAIRS2 notification (72 h after SAF awareness)
@@ -17797,6 +17798,7 @@ function renderECCAIRSTracker(){
       if(stFinal.level==='overdue') overdueCount++; else if(stFinal.level==='critical'||stFinal.level==='warning') warnCount++;
       cellFinal='<td style="padding:8px 10px;text-align:center;border-left:1px solid rgba(255,255,255,.06);">'+occEccairsDeadlineSpanHtml(dl?dl.final:null, o.notif_final_date)+'</td>';
     }
+    if(overdueCount>_ovBefore) overdueOccCount++;
 
     return '<tr style="border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer;" onclick="showOccurrenceForm(\''+o.id.replace(/'/g,"\\'")+'\')" title="Ouvrir l\'occurrence">'
       +'<td style="padding:8px 10px;font-family:var(--font-mono);font-size:11px;color:var(--white);font-weight:700;">'+occHtmlEsc(o.id)+'</td>'
@@ -17809,10 +17811,14 @@ function renderECCAIRSTracker(){
     : (warnCount
       ? '<span style="margin-left:10px;padding:2px 10px;border-radius:10px;font-size:10px;font-family:var(--font-mono);font-weight:700;background:rgba(227,179,65,.18);color:#e3b341;">'+warnCount+' échéance(s) proche(s)</span>'
       : '<span style="margin-left:10px;padding:2px 10px;border-radius:10px;font-size:10px;font-family:var(--font-mono);font-weight:700;background:rgba(63,185,80,.15);color:#3fb950;">Tout est à jour</span>');
+  var _collapsed=eccTrackerIsCollapsed();
+  var countPill='<span id="ecc-tracker-count" title="'+overdueOccCount+' événement(s) hors délai" style="display:'+(_collapsed?'inline-flex':'none')+';align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 7px;margin-left:10px;border-radius:11px;font-family:var(--font-mono);font-size:12px;font-weight:800;vertical-align:middle;'
+    +(overdueOccCount?'background:#f85149;color:#fff;':'background:rgba(63,185,80,.18);color:#3fb950;')+'">'+overdueOccCount+'</span>';
   wrap.innerHTML = '<div class="chart-card" style="padding:18px 20px;">'
-    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">'
-    +'<div><div class="chart-title" style="margin:0;">📅 Suivi des délais de notification ECCAIRS2</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-top:2px;">Règl. (UE) 376/2014 art. 4 & 13 · 72 h après connaissance SAF · suivi 30 jours / 3 mois depuis notification du reporter lorsque l’Art. 13 est déclenché</div></div>'
-    +'<div>'+badge+'</div></div>'
+    +'<div onclick="eccTrackerToggle()" title="Replier / déplier" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer;user-select:none;">'
+    +'<div><div class="chart-title" style="margin:0;"><span id="ecc-tracker-chev" style="display:inline-block;width:14px;transition:transform .15s;transform:rotate('+(_collapsed?'-90':'0')+'deg);">▼</span> 📅 Suivi des délais de notification ECCAIRS2'+countPill+'</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-top:2px;">Règl. (UE) 376/2014 art. 4 & 13 · 72 h après connaissance SAF · suivi 30 jours / 3 mois depuis notification du reporter lorsque l’Art. 13 est déclenché</div></div>'
+    +'<div id="ecc-tracker-badge" style="display:'+(_collapsed?'none':'block')+';">'+badge+'</div></div>'
+    +'<div id="ecc-tracker-body" style="display:'+(_collapsed?'none':'block')+';margin-top:12px;">'
     +'<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:11px;">'
     +'<thead><tr style="border-bottom:1px solid rgba(255,255,255,.12);">'
     +'<th style="text-align:left;padding:6px 10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);text-transform:uppercase;letter-spacing:.06em;">ID</th>'
@@ -17823,8 +17829,24 @@ function renderECCAIRSTracker(){
     +'<th style="text-align:center;padding:6px 10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-400);text-transform:uppercase;letter-spacing:.06em;border-left:1px solid rgba(255,255,255,.06);">Analyse finale<br/>3 mois</th>'
     +'</tr></thead><tbody>'+rows+'</tbody></table></div>'
     +'<div style="margin-top:10px;font-family:var(--font-mono);font-size:9px;color:var(--grey-600);">Cliquez sur une ligne pour ouvrir l\'occurrence et compléter les horodatages réglementaires applicables.</div>'
-    +'</div>';
+    +'</div></div>';
 }
+// Repli du bloc ECCAIRS2 — état mémorisé sur le poste (stockage natif, hors données SMS)
+var ECC_TRACKER_KEY='saf_eccairs_tracker_collapsed';
+function eccTrackerIsCollapsed(){
+  try{ var ls=window._nativeLocalStorage||window.localStorage; return ls.getItem(ECC_TRACKER_KEY)==='1'; }catch(e){ return false; }
+}
+function eccTrackerToggle(){
+  var c=!eccTrackerIsCollapsed();
+  try{ var ls=window._nativeLocalStorage||window.localStorage; ls.setItem(ECC_TRACKER_KEY,c?'1':'0'); }catch(e){}
+  var b=document.getElementById('ecc-tracker-body'), bd=document.getElementById('ecc-tracker-badge'),
+      n=document.getElementById('ecc-tracker-count'), ch=document.getElementById('ecc-tracker-chev');
+  if(b) b.style.display=c?'none':'block';
+  if(bd) bd.style.display=c?'none':'block';
+  if(n) n.style.display=c?'inline-flex':'none';
+  if(ch) ch.style.transform='rotate('+(c?'-90':'0')+'deg)';
+}
+window.eccTrackerToggle = eccTrackerToggle;
 window.renderECCAIRSTracker = renderECCAIRSTracker;
 window.occRefreshEccairsDeadlinePreview = occRefreshEccairsDeadlinePreview;
 
@@ -18082,7 +18104,7 @@ function showOccurrenceForm(editId){
             </div>
             <div class="form-field" style="margin:0;">
               <label class="field-label">Commentaire</label>
-              <textarea id="occ-invest-comment-text" rows="3" placeholder="Observation, fait, hypothèse, conclusion…" style="width:100%;resize:vertical;"></textarea>
+              <textarea id="occ-invest-comment-text" rows="3" placeholder="Observation, fait, hypothèse, conclusion… (Ctrl+Entrée pour ajouter)" onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();occAddInvestComment();}" style="width:100%;resize:vertical;"></textarea>
             </div>
             <button type="button" onclick="occAddInvestComment()" style="padding:8px 14px;background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.4);border-radius:6px;color:#4A9FE0;font-family:var(--font-mono);font-size:11px;cursor:pointer;white-space:nowrap;">+ Ajouter</button>
           </div>
@@ -26041,6 +26063,10 @@ function occAddInvestComment(commentObj){
   container.scrollTop=container.scrollHeight;
 }
 function occGetInvestigation(){
+  // Un commentaire saisi mais pas encore ajouté au journal (bouton « + Ajouter » oublié)
+  // est versé automatiquement au journal à l'enregistrement, au lieu d'être perdu.
+  var _pending=document.getElementById('occ-invest-comment-text');
+  if(_pending && (_pending.value||'').trim()){ try{ occAddInvestComment(); }catch(e){} }
   var status=document.getElementById('occ-invest-status')?.value||'open';
   var comments=[];
   document.querySelectorAll('#occ-invest-comments [data-comment-ts]').forEach(function(el){
