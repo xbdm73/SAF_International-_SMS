@@ -459,7 +459,7 @@ const CONFIG = {
   // à créer sur openaip.net (profil > API Clients). Vide = surcouche non proposée.
   openAipKey: "ef688ca41028ff1b71c6a1834026a858",
 };
-// Chantiers du jour : table fleet_worksites du projet SMS, copiée depuis l'agenda Operations
+// Chantiers du jour : table fleet_worksites du projet SMS, copiée depuis les Day Plans par hélicoptère (application Operations)
 const WORKSITES = { table:"fleet_worksites", nearKm:2, tz:"Europe/Paris" };
 const BASES = [
   {name:"LFKA Albertville", lat:45.6276, lon:6.3297},
@@ -792,12 +792,12 @@ function opsDrawRoute(p){
   box.hidden = false;
 }
 
-/* ---------- missions (agenda Operations, via fleet_worksites) ---------- */
+/* ---------- missions (Day Plans Operations, via fleet_worksites) ---------- */
 async function opsMissions(){
   if(Date.now()-OPSX.missionsAt < 5*60000) return OPSX.missions;
   try{
-    const r = await sb.from("fleet_worksites").select("site_id,work_date,name,mission_no,reg,lat,lon,features,route,status,start_time")
-      .gte("work_date", todayLocal()).order("work_date").order("start_time",{nullsFirst:false}).limit(300);
+    const r = await sb.from("fleet_worksites").select("site_id,work_date,name,mission_no,reg,lat,lon,features,route,status,start_time,seq")
+      .gte("work_date", todayLocal()).order("work_date").order("reg",{nullsFirst:false}).order("seq",{nullsFirst:false}).limit(300);
     if(r.error) throw r.error;
     const by = new Map();
     for(const w of r.data||[]){ if(w.status==="annulé") continue; if(!by.has(w.site_id)) by.set(w.site_id, {...w, days:[w.work_date]}); else by.get(w.site_id).days.push(w.work_date); }
@@ -1237,9 +1237,9 @@ function renderPrediction(pane,reg,last,prev,st){
   }).addTo(group);
 }
 /* ---------- Navigation vers le prochain chantier : ETE, ETA et route ----------
-   Destination = chantier du jour attribué à l'appareil (agenda Operations), hors annulés et terminés,
-   dont l'horaire de fin n'est pas passé et sur lequel l'appareil n'est pas déjà venu puis reparti aujourd'hui.
-   S'il en reste plusieurs : celui qui est dans l'axe de la route suivie (±60°), sinon le plus tôt dans la journée.
+   06.11.2026 — Destination = prochain chantier du Day Plan de l'appareil, dans l'ordre du plan :
+   le premier qui n'est ni annulé, ni terminé, ni déjà travaillé puis quitté aujourd'hui.
+   Les horaires des fiches mission ne servent plus à choisir (ils peuvent contredire l'ordre du Day Plan).
    Point visé : la LZ du chantier si elle existe, sinon son point principal.
    Vitesse sol calculée entre les deux derniers points (sans vent), entre 20 et 200 kt, sinon pas d'ETE. */
 function bearingDeg(a,b){
@@ -1260,20 +1260,13 @@ function navFor(reg){
   const kt=currentKt(s.prev,last);
   const midnight=new Date(todayLocal()+"T00:00:00");   // approximatif (heure du navigateur), suffit pour « aujourd'hui »
   const today=(s.all||[]).filter(p=>new Date(p.fix_time)>=midnight-2*3600e3);
-  const nowHM=localHM();
-  let cands=sitesFor(reg).filter(w=>w.status!=="terminé" && !(w.end_time && tShort(w.end_time)<nowHM));
+  let cands=sitesFor(reg).filter(w=>w.status!=="terminé");
   // Chantier déjà travaillé puis quitté aujourd'hui : écarté
   cands=cands.filter(w=>!(today.some(p=>siteDist(w,p)<=WORKSITES.nearKm) && siteDist(w,last)>WORKSITES.nearKm));
   // Appareil déjà sur zone : pas de navigation
   if(cands.some(w=>siteDist(w,last)<=WORKSITES.nearKm)) return null;
   if(!cands.length) return null;
-  let trk=s.prev&&haversineKm(s.prev,last)>0.05?bearingDeg(s.prev,last):hdgOf(last);
-  let pick=null;
-  if(cands.length>1 && Number.isFinite(trk)){
-    const aligned=cands.map(w=>({w,d:angDiff(bearingDeg(last,siteTarget(w)),trk)})).filter(x=>x.d<=60).sort((a,b)=>a.d-b.d);
-    if(aligned.length) pick=aligned[0].w;
-  }
-  if(!pick) pick=cands.slice().sort((a,b)=>String(a.start_time||"99").localeCompare(String(b.start_time||"99")))[0];
+  const pick=cands[0];   // déjà trié dans l'ordre du Day Plan
   const tgt=siteTarget(pick), km=haversineKm(last,tgt);
   const okKt=Number.isFinite(kt)&&kt>=20&&kt<=200;
   const eteMin=okKt?km/(kt*1.852)*60:null;
@@ -1487,17 +1480,18 @@ function detailsHTML(reg){
   return h+`</div>`;
 }
 
-/* ---------- Chantiers du jour (agenda Operations) ----------
+/* ---------- Chantiers du jour (Day Plan par hélicoptère) ----------
    Lecture de fleet_worksites (même session, même RLS que fleet_positions).
-   Données copiées de l'agenda « SAF International — Operations » par la fonction ops-worksites-sync :
-   point principal (1re DZ, sinon LZ, sinon lieu), points DZ/LZ (features) et trajet (route).
+   06.11.2026 — Données copiées des Day Plans de l'application « SAF International — Operations »
+   par la fonction ops-worksites-sync : appareil, jour et ordre (seq / plan_count) du Day Plan,
+   point principal (1re DZ, sinon LZ, sinon lieu), points DZ/LZ (features) et trajet (route) de la mission.
    Le survol d'un marqueur affiche le détail ; un appui l'affiche aussi sur écran tactile. */
 let worksites=[], wsOff=false;
 const todayLocal=()=>new Intl.DateTimeFormat("sv-SE",{timeZone:WORKSITES.tz}).format(new Date());
 const tShort=t=>t?String(t).slice(0,5):"";
 async function loadWorksites(){
   if(wsOff) return;
-  const r=await sb.from(WORKSITES.table).select("*").eq("work_date",todayLocal()).order("start_time",{ascending:true,nullsFirst:false});
+  const r=await sb.from(WORKSITES.table).select("*").eq("work_date",todayLocal()).order("reg",{nullsFirst:false}).order("seq",{ascending:true,nullsFirst:false});
   if(r.error){
     // Table pas encore créée : la couche reste vide, sans message d'erreur
     if(/PGRST205|42P01|does not exist|Could not find the table/i.test(String(r.error.code)+" "+r.error.message)){ wsOff=true; worksites=[]; return; }
@@ -1505,7 +1499,10 @@ async function loadWorksites(){
   }
   worksites=(r.data||[]).filter(w=>isFinite(+w.lat)&&isFinite(+w.lon));
 }
-const sitesFor=reg=>worksites.filter(w=>w.reg&&String(w.reg).toUpperCase()===reg.toUpperCase()&&w.status!=="annulé");
+// Chantiers d'un appareil dans l'ordre de son Day Plan
+const sitesFor=reg=>worksites.filter(w=>w.reg&&String(w.reg).toUpperCase()===reg.toUpperCase()&&w.status!=="annulé")
+  .sort((a,b)=>(a.seq??999)-(b.seq??999));
+const seqTxt=w=>w.seq!=null&&w.plan_count?`${w.seq}/${w.plan_count}`:"";
 function siteClass(w){ return w.status==="terminé"?"done":w.status==="annulé"?"off":["standby","demande","devis"].includes(w.status)?"tent":""; }
 const sitePts=w=>(Array.isArray(w.features)?w.features:[]).filter(p=>isFinite(+p.lat)&&isFinite(+p.lon));
 // Distance de l'appareil au chantier : au plus proche de ses points (DZ, LZ, point principal)
@@ -1518,6 +1515,7 @@ function siteTip(w){
   const rows=[];
   const row=(k,v,raw)=>{ if(v!=null&&String(v).trim()!=="") rows.push(`<tr><th>${k}</th><td>${raw?v:esc(v)}</td></tr>`); };
   row("Mission",w.mission_no);
+  row("Day Plan",seqTxt(w)?`chantier ${seqTxt(w)}${w.reg?" de "+w.reg:""}`:null);
   row("Horaire",w.start_time||w.end_time?`${tShort(w.start_time)||"?"} – ${tShort(w.end_time)||"?"} (heure locale)`:null);
   row("Appareil",w.reg);
   row("Équipage",w.crew);
@@ -1897,7 +1895,7 @@ function render(ps){
       else facts+=`<div>Hors base – départ non enregistré</div>`;
       if(nav) facts+=`<div class="nav">→ ${esc(nav.site.name||"Chantier")}${nav.tgt.name?" ("+esc(nav.tgt.name)+")":""} : ${Math.round(nav.km)} km · ETE ${fmtEte(nav.eteMin)}`+
         (nav.eta?` · ETA ${hm(nav.eta)} UTC (${fmtLocal(nav.eta)} loc.)`:` · vitesse sol non exploitable`)+(nav.night?`<br><b class="nwarn">⚠ ${nav.night.txt} à destination (nuit à ${nHM(nav.night.start)} UTC)</b>`:"")+`</div>`;
-      for(const w of sitesFor(a.reg)) facts+=`<div class="ws">Chantier du jour : <b>${esc(w.name||"—")}</b>${w.start_time?` · ${esc(tShort(w.start_time))}`:""} · ${Math.round(siteDist(w,last)*10)/10} km</div>`;
+      for(const w of sitesFor(a.reg)) facts+=`<div class="ws">${seqTxt(w)?esc(seqTxt(w))+" · ":""}Chantier du jour : <b>${esc(w.name||"—")}</b>${w.start_time?` · ${esc(tShort(w.start_time))}`:""} · ${Math.round(siteDist(w,last)*10)/10} km</div>`;
       if(st.k==="live"||st.k==="ground"){ const st0=sessionStart(a.reg);
         if(st0 && minsAgo(st0)<=60) facts+=`<div class="ws">Mis en route vers <b>${hm(st0)} UTC</b></div>`; }
       const n24=an.flights.filter(f=>new Date(f.ldTo||f.toTo)>=Date.now()-24*3600e3).length;
