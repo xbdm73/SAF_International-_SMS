@@ -1,0 +1,2636 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<script>/* Porte d'entrée unique (30.10.2026) : ce bloc s'ouvre par le portail SAF, qui le sert à /sms/
+   (même adresse, donc même session). Ouvert depuis son ancienne adresse, il y est renvoyé. */
+(function(){ if(location.hostname==='saf-international-sms.netlify.app')
+  location.replace('https://saf-international-portail.netlify.app/sms'+location.pathname+location.search+location.hash); })();</script>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SAF – Suivi flotte AS 332</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --ink:#F4F6F8; --ink-2:#9AA7B4; --paper:#0A1420; --panel:#0D1B2A; --line:rgba(255,255,255,.09);
+  --live:#3CC882; --ground:#5B9BE0; --stale:#6C7784; --lost:#E5484D; --signal:#F0C040; --gold:#C9A227;
+  --font:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --cond:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:var(--font);color:var(--ink);background:var(--paper);font-size:15px;line-height:1.4}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+
+#app{display:grid;grid-template-columns:340px 1fr;height:100%}
+#side{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;
+  padding-top:env(safe-area-inset-top,0px)}
+#map-area{display:flex;flex-direction:column;min-width:0;min-height:0;height:100%}
+#as332-ribbon{flex:0 0 auto;display:flex;gap:6px;align-items:center;overflow-x:auto;white-space:nowrap;padding:8px 10px;background:var(--panel);border-bottom:1px solid var(--line);scrollbar-width:thin}
+#as332-ribbon .ribbon-label{color:var(--ink-2);font-size:12px;font-weight:600;flex-shrink:0}
+#as332-ribbon button{flex:0 0 auto;border:1px solid rgba(255,255,255,.2);background:#1d2d3d;color:#e5ebf0;border-radius:5px;padding:5px 8px;font:600 13px var(--cond);cursor:pointer}
+#as332-ribbon button[data-tracker="on"]{background:#F0C040;border-color:#D39B19;color:#111827}
+#as332-ribbon button[aria-pressed="true"]{outline:2px solid #fff;outline-offset:-2px}
+#map-area #maps{flex:1;min-height:0;height:auto}
+@media(max-width:760px){#map-area{grid-row:1}#map-area #maps{grid-row:auto}}
+#maps{height:100%;width:100%;display:grid;gap:2px;background:var(--line);grid-template-columns:1fr;grid-template-rows:1fr}
+#maps[data-n="2"]{grid-template-columns:1fr 1fr}
+#maps[data-n="3"]{grid-template-columns:1fr 1fr 1fr}
+#maps[data-n="4"]{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.pane{position:relative;min-width:0;min-height:0;background:var(--paper)}
+.pane .map{position:absolute;inset:0}
+.pane-bar{position:absolute;z-index:800;left:10px;top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;
+  background:rgba(13,27,42,.92);border:1px solid var(--line);border-radius:6px;padding:5px 8px;max-width:calc(100% - 80px);font-size:13px}
+.pane-bar select{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:3px 6px;font-weight:600}
+.pane-bar .pst{color:var(--ink-2);white-space:nowrap}
+.pane-bar .pst b{font-weight:600}
+.pane-bar .pst[data-st=live] b{color:var(--live)} .pane-bar .pst[data-st=ground] b{color:var(--ground)} .pane-bar .pst[data-st=lost] b{color:var(--lost)}
+.pane-bar button{background:var(--signal);color:#111;border:0;border-radius:4px;padding:3px 8px;font-weight:600;cursor:pointer}
+.pane-bar button[hidden]{display:none}
+
+header{padding:18px 20px 12px;border-bottom:1px solid var(--line)}
+header h1{font-family:var(--cond);font-weight:700;font-size:26px;letter-spacing:.01em;margin:0;line-height:1;color:var(--signal)}
+header .home{display:inline-block;margin-bottom:10px;font-size:13px;color:var(--gold);text-decoration:none}
+header .home:hover{color:var(--signal)}
+header p{margin:4px 0 0;color:var(--ink-2);font-size:13px}
+
+#controls{display:flex;gap:8px;padding:10px 20px;border-bottom:1px solid var(--line);align-items:center;flex-wrap:wrap}
+#controls label{font-size:13px;color:var(--ink-2)}
+#controls select{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:4px 6px}
+#controls button{background:none;border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer}
+
+#list{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1}
+.ac{display:grid;grid-template-columns:6px 1fr;cursor:pointer;border-bottom:1px solid var(--line)}
+.ac:hover,.ac.sel{background:rgba(255,255,255,.04)}
+.ac .bar{background:var(--stale)}
+.ac[data-st=live] .bar{background:var(--live)} .ac[data-st=ground] .bar{background:var(--ground)}
+.ac[data-st=lost] .bar{background:var(--lost)}
+.ac.tracker-active,.ac.tracker-active:hover,.ac.tracker-active.sel{background:#F0C040;color:#111827}
+/* Fond jaune (traceur actif) : tout le texte de la fiche passe en sombre, y compris les lignes ajoutées
+   (chantier du jour, route ETE/ETA, nuit aéronautique, détails METAR) qui gardaient des couleurs prévues pour le fond sombre */
+.ac.tracker-active .body *{color:#111827}
+.ac.tracker-active .bar{background:#B57C00}
+.ac.tracker-active .type,.ac.tracker-active dt,.ac.tracker-active small,.ac.tracker-active .when,.ac.tracker-active .muted{color:#374151}
+.ac.tracker-active .st,.ac.tracker-active[data-st=live] .st,.ac.tracker-active[data-st=ground] .st{color:#111827}
+.ac.tracker-active .more,.ac.tracker-active .det h3{color:#463500}
+.ac.tracker-active .det{border-top-color:rgba(0,0,0,.18)}
+.ac.tracker-active .facts .ws{color:#5A3E00;font-weight:600}
+.ac.tracker-active .facts .nav{color:#86104F}
+.ac.tracker-active .facts .ngt.soon,.ac.tracker-active .facts .nwarn{color:#9A3412}
+.ac.tracker-active .facts .ngt.on{color:#1E3A8A}
+.ac.tracker-active .det tr.sum td{color:#374151;border-bottom-color:rgba(0,0,0,.18)}
+.ac .body{padding:12px 16px 12px 14px}
+.ac .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ac .reg{font-family:var(--cond);font-weight:700;font-size:30px;line-height:1}
+.ac .type{color:var(--ink-2);font-size:13px}
+.ac .st{font-weight:600;font-size:14px;margin-top:4px}
+.ac[data-st=live] .st{color:var(--live)} .ac[data-st=ground] .st{color:var(--ground)}
+.ac[data-st=lost] .st{color:var(--lost)} .ac[data-st=none] .st,.ac[data-st=stale] .st{color:var(--stale)}
+.ac dl{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px;margin:10px 0 0}
+.ac dt{font-size:12px;color:var(--ink-2)} .ac dd{margin:0;font-family:var(--cond);font-weight:600;font-size:19px}
+.ac dd small{font-family:var(--font);font-weight:400;font-size:12px;color:var(--ink-2)}
+.ac .when{font-size:12px;color:var(--ink-2);margin-top:8px}
+
+.ac .facts{font-size:13px;margin-top:8px;display:grid;gap:2px}
+.ac .facts b{font-weight:600}
+.ac .more{margin-top:8px;font-size:12px;color:var(--gold)}
+.det{margin-top:12px;border-top:1px solid var(--line);padding-top:4px;font-size:13px;cursor:default}
+.det h3{font-family:var(--cond);font-size:15px;font-weight:600;margin:12px 0 4px;color:var(--signal)}
+.det p{margin:0 0 6px}
+.det .muted{color:var(--ink-2)}
+.det .note{font-size:11.5px;margin-top:6px}
+.det table{width:100%;border-collapse:collapse}
+.det td{padding:3px 0}
+.det tr.sum td{padding-bottom:8px;border-bottom:1px solid var(--line);color:var(--ink-2)}
+.det .metar{font-family:var(--cond);font-size:13.5px;line-height:1.35}
+/* Filtre par type et ouverture automatique d'une carte à la mise en route */
+#filters{display:flex;gap:8px 12px;padding:8px 20px 10px;border-bottom:1px solid var(--line);align-items:center;flex-wrap:wrap;font-size:13px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.seg button{background:none;border:0;border-right:1px solid var(--line);padding:4px 10px;cursor:pointer;color:var(--ink-2);font-size:13px}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--signal);color:#111;font-weight:600}
+.seg button .n{opacity:.75;font-size:11.5px;margin-left:3px}
+#filters label.chk{display:inline-flex;gap:6px;align-items:center;color:var(--ink-2);cursor:pointer}
+#filters input[type=checkbox]{accent-color:var(--signal);width:15px;height:15px;margin:0}
+.pane.flash{animation:saf-pane-flash 1.2s ease-in-out 4}
+@keyframes saf-pane-flash{0%,100%{box-shadow:inset 0 0 0 0 rgba(240,192,64,0)}50%{box-shadow:inset 0 0 0 4px var(--signal)}}
+.pane.flash .map{z-index:0}
+.pane .pane-bar .auto{color:var(--signal);font-weight:600}
+#toasts{position:fixed;z-index:1200;right:14px;top:14px;display:grid;gap:8px;width:min(340px,calc(100vw - 28px));pointer-events:none;
+  padding-top:env(safe-area-inset-top,0px)}
+.toast{pointer-events:auto;background:var(--panel);border:1px solid var(--signal);border-left:6px solid var(--signal);border-radius:6px;
+  padding:10px 12px;box-shadow:0 6px 20px rgba(0,0,0,.5);font-size:13.5px;cursor:pointer}
+.toast b{font-family:var(--cond);font-size:17px;color:var(--signal);font-weight:700}
+.toast .muted{color:var(--ink-2);font-size:12px;margin-top:2px}
+footer{padding:10px 20px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);font-size:12px;color:var(--ink-2)}
+footer .err{color:var(--lost)}
+
+/* Session absente ou rôle non autorisé */
+#gate{position:fixed;inset:0;display:none;place-items:center;align-content:center;gap:14px;background:var(--paper);z-index:2000;padding:20px;text-align:center}
+#gate p{margin:0;max-width:420px;color:var(--ink-2)}
+#gate a{color:var(--signal)}
+
+/* Marqueurs */
+.acm{position:relative}
+.acm .heli-icon{position:absolute;left:-22px;top:-22px;width:44px;height:44px;transform-origin:22px 22px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.7))}
+.acm .heli-icon svg{display:block;width:44px;height:44px;overflow:visible}
+.acm .heli-rotor{transform-box:view-box;transform-origin:22px 22px;animation:saf-heli-spin .22s linear infinite}
+.acm:not(.live) .heli-rotor{animation-play-state:paused}
+@keyframes saf-heli-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.acm .lbl{position:absolute;left:25px;top:-11px;white-space:nowrap;font-family:var(--cond);font-weight:700;font-size:15px;
+  background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:3px;padding:0 5px;line-height:20px}
+.acm.lost .lbl{background:var(--lost);color:#fff;border-color:var(--lost)}
+/* ETE / ETA sous l'immatriculation d'un appareil en vol vers un chantier */
+.acm .eta{position:absolute;left:25px;white-space:nowrap;font:600 12px/17px var(--cond);color:#fff;background:#B0177A;
+  border:1px solid #fff;border-radius:3px;padding:0 5px;box-shadow:0 1px 3px rgba(0,0,0,.45)}
+.navdst{white-space:nowrap;font:600 12px/17px var(--cond);color:#fff;background:#B0177A;border:1px solid #fff;border-radius:3px;
+  padding:0 5px;transform:translate(10px,-50%);display:inline-block;box-shadow:0 1px 3px rgba(0,0,0,.45)}
+.facts .nav{color:#B0177A;font-weight:600}
+/* Légende du danger feux FWI (EFFIS) */
+.fwi-legend{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:12px;line-height:1.35;box-shadow:0 1px 4px rgba(0,0,0,.35);max-width:210px}
+.fwi-legend b{display:block;font-family:var(--cond);font-size:13px;margin-bottom:4px}
+.fwi-legend .r{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.fwi-legend .sw{width:14px;height:10px;border-radius:2px;border:1px solid rgba(0,0,0,.35);flex:none}
+.fwi-legend .v{margin-left:auto;padding-left:8px;opacity:.75;font-variant-numeric:tabular-nums}
+.fwi-legend img{display:none;max-width:100%;margin-top:4px;background:#fff;border-radius:3px}
+.fwi-legend.img-ok .rows{display:none} .fwi-legend.img-ok img{display:block}
+.fwi-legend small{display:block;margin-top:4px;opacity:.7}
+/* METAR / TAF : pastille par aérodrome selon la catégorie de vol */
+.wxst{position:relative}
+.wxst i{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.45)}
+.wxst span{position:absolute;left:9px;top:-8px;font:600 11px/16px var(--cond);color:#fff;background:rgba(10,20,32,.72);border-radius:3px;padding:0 3px;white-space:nowrap}
+.wxst.old i{opacity:.45}
+.leaflet-tooltip.wxtt,.wxpop .leaflet-popup-content{font-size:12px;line-height:1.35;max-width:340px;white-space:normal}
+.wxtt pre,.wxpop pre{margin:3px 0 0;white-space:pre-wrap;font:12.5px/1.35 ui-monospace,Menlo,Consolas,monospace}
+.wxtt .cat,.wxpop .cat{display:inline-block;color:#fff;border-radius:3px;padding:0 5px;font-weight:700;margin-left:4px}
+/* Chantiers du jour (agenda Operations) */
+.wsm{position:relative}
+.wsm svg{position:absolute;left:-11px;top:-11px;width:22px;height:22px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.wsm .wl{position:absolute;left:14px;top:-9px;white-space:nowrap;font-family:var(--cond);font-weight:600;font-size:12.5px;line-height:17px;
+  color:#111;background:var(--signal);border-radius:3px;padding:0 5px}
+.wsm.tent svg{opacity:.75} .wsm.tent .wl{background:transparent;color:var(--signal);border:1px dashed var(--signal)}
+.wsm.done .wl{background:var(--stale);color:var(--ink)} .wsm.off .wl{background:var(--lost);color:#fff;text-decoration:line-through}
+.wsl{font-family:var(--cond);font-weight:600;font-size:11.5px;color:var(--signal);white-space:nowrap}
+.leaflet-tooltip.wst{background:var(--panel);color:var(--ink);border:1px solid var(--signal);border-radius:6px;padding:10px 12px;
+  box-shadow:0 4px 16px rgba(0,0,0,.5);white-space:normal;width:280px;font-size:13px;line-height:1.4}
+.leaflet-tooltip.wst::before{display:none}
+.wst h4{margin:0;font-family:var(--cond);font-weight:700;font-size:17px;color:var(--signal);line-height:1.15}
+.wst .sub{color:var(--ink-2);font-size:12px;margin:2px 0 8px}
+.wst table{border-collapse:collapse;width:100%}
+.wst th{text-align:left;font-weight:400;color:var(--ink-2);padding:2px 10px 2px 0;vertical-align:top;white-space:nowrap;width:1%}
+.wst td{padding:2px 0;vertical-align:top}
+.wst .prox{margin-top:8px;padding-top:6px;border-top:1px solid var(--line);font-weight:600}
+.wst .prox.on{color:var(--live)} .wst .prox.off{color:var(--ink-2);font-weight:400}
+.ac .facts .ws{color:var(--signal)}
+.base{font-family:var(--cond);font-weight:600;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.leaflet-container{font-family:var(--font)}
+
+@media (max-width:760px){
+  #app{grid-template-columns:1fr;grid-template-rows:55% 45%}
+  #maps{grid-row:1} #side{grid-row:2;border-right:0;border-top:1px solid var(--line);padding-top:0}
+  #maps[data-n="2"],#maps[data-n="3"]{grid-template-columns:1fr;grid-auto-rows:1fr}
+  #maps[data-n="4"]{grid-template-columns:1fr 1fr}
+  header{padding:10px 16px 8px} header h1{font-size:22px}
+}
+/* Profil du relief, panneau indépendant des cartes Leaflet */
+#terrain-panel{position:fixed;right:14px;bottom:14px;z-index:1100;width:min(730px,calc(100vw - 28px));background:#0D1B2A;border:1px solid rgba(240,192,64,.5);border-radius:8px;box-shadow:0 10px 32px rgba(0,0,0,.5);padding:12px 14px}
+#terrain-panel[hidden]{display:none}
+.terrain-head{display:flex;align-items:center;gap:12px;font-size:14px}
+.terrain-head strong{color:var(--signal);font-family:var(--cond);font-size:19px}
+.terrain-head span{color:var(--ink-2);font-size:12px;margin-left:auto}
+.terrain-head button{background:none;border:1px solid var(--line);padding:3px 9px;border-radius:4px;cursor:pointer}
+.terrain-stat{font-size:13px;margin:8px 0 2px;min-height:20px}
+.terrain-plot{height:240px;width:100%;min-height:100px}
+.terrain-plot svg{height:100%;width:100%;display:block;touch-action:pan-y}
+.terrain-foot{color:var(--ink-2);font-size:11px;line-height:1.35}
+@media(max-width:760px){#terrain-panel{left:8px;right:8px;bottom:8px;width:auto;padding:9px} .terrain-plot{height:175px}}
+
+/* Historique des vols */
+#hist{position:fixed;inset:0;z-index:1500;background:var(--paper);display:grid;grid-template-rows:auto 1fr;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#hist[hidden]{display:none}
+#hist .hbar{display:flex;gap:10px 14px;align-items:end;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+#hist h2{font-family:var(--cond);font-weight:700;font-size:24px;margin:0 12px 2px 0;color:var(--signal);line-height:1}
+#hist .fld{display:grid;gap:3px;font-size:12px;color:var(--ink-2)}
+#hist select,#hist input{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:4px 6px;color-scheme:dark}
+#hist button{background:none;border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer}
+#hist button.go{background:var(--signal);color:#111;border-color:var(--signal);font-weight:600}
+#hist button:disabled{opacity:.45;cursor:default}
+#hist .presets{display:flex;gap:4px}
+#hist .close{margin-left:auto}
+#hist .hbody{display:grid;grid-template-columns:minmax(380px,46%) 1fr;min-height:0}
+#hist .hlist{overflow:auto;border-right:1px solid var(--line);font-size:13px}
+#hist .hsum{padding:10px 20px;border-bottom:1px solid var(--line);color:var(--ink-2);display:grid;gap:3px}
+#hist .hsum b{color:var(--ink);font-weight:600}
+#hist .hsum .warn{color:var(--signal)}
+#hist table{width:100%;border-collapse:collapse}
+#hist th{position:sticky;top:0;background:var(--panel);text-align:left;font-weight:600;font-size:12px;color:var(--ink-2);padding:6px 8px;border-bottom:1px solid var(--line)}
+#hist td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+#hist tr.day td{background:rgba(255,255,255,.03);font-family:var(--cond);font-weight:600;font-size:14px;color:var(--signal);padding-top:10px}
+#hist tr.fl{cursor:pointer} #hist tr.fl:hover td{background:rgba(255,255,255,.04)}
+#hist tr.fl.on td{background:rgba(240,192,64,.12)}
+#hist td .reg{font-family:var(--cond);font-weight:700;font-size:16px}
+#hist td .muted{color:var(--ink-2);font-size:12px}
+#hist .hmap{position:relative;min-height:0} #hist .hmap .map{position:absolute;inset:0}
+#hist .empty{padding:24px 20px;color:var(--ink-2)}
+@media (max-width:760px){
+  #hist .hbody{grid-template-columns:1fr;grid-template-rows:40% 60%}
+  #hist .hmap{grid-row:1} #hist .hlist{grid-row:2;border-right:0;border-top:1px solid var(--line)}
+  #hist .hbar{padding:10px 14px}
+}
+/* Analyse d'un vol */
+#ana{position:fixed;inset:0;z-index:1600;background:var(--paper);display:grid;grid-template-rows:auto 1fr;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#ana[hidden]{display:none}
+#ana .abar{display:flex;gap:10px 14px;align-items:end;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+#ana h2{font-family:var(--cond);font-weight:700;font-size:24px;margin:0 6px 2px 0;color:var(--signal);line-height:1}
+#ana .asub{color:var(--ink-2);font-size:13px;align-self:center}
+#ana .fld{display:grid;gap:3px;font-size:12px;color:var(--ink-2)}
+#ana input[type=number]{width:84px;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:4px 6px;color-scheme:dark}
+#ana button{background:none;border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer;color:var(--ink)}
+#ana button:disabled{opacity:.45;cursor:default}
+#ana .close{margin-left:auto}
+#ana .abody{display:grid;grid-template-columns:1fr 340px;grid-template-rows:minmax(220px,1fr) auto;min-height:0}
+#ana .amap{position:relative;min-height:0;grid-column:1;grid-row:1} #ana .amap .map{position:absolute;inset:0}
+#ana .aside{grid-column:2;grid-row:1/3;overflow:auto;border-left:1px solid var(--line);padding:12px 16px;font-size:13px;min-height:0}
+#ana .aside>*{margin:0 0 14px}
+#ana .acharts{grid-column:1;grid-row:2;border-top:1px solid var(--line);padding:8px 14px 10px;display:grid;gap:6px}
+#ana .ctitle{font-size:12px;color:var(--ink-2);display:flex;gap:14px;flex-wrap:wrap}
+#ana .ctitle i{font-style:normal;font-weight:600}
+#ana .chart{height:150px;width:100%} #ana .chart svg{width:100%;height:100%;display:block;touch-action:pan-y;cursor:crosshair}
+#ana .play{display:flex;gap:8px;align-items:center} #ana .play input{flex:1;accent-color:var(--signal)}
+#ana .read{font-family:var(--cond);font-size:15px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 10px;min-height:96px}
+#ana .read b{color:var(--signal)}
+#ana dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0}
+#ana dt{color:var(--ink-2)} #ana dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+#ana dd.bad{color:var(--lost);font-weight:600} #ana dd.warn{color:var(--signal)}
+#ana h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2);margin:0 0 6px;font-weight:600}
+#ana .exp{display:flex;gap:6px;flex-wrap:wrap}
+#ana .note{color:var(--ink-2);font-size:11.5px;line-height:1.4}
+#ana .lowlist{display:grid;gap:4px} #ana .lowlist button{text-align:left;font-size:12.5px}
+@media (max-width:760px){
+  #ana .abody{grid-template-columns:1fr;grid-template-rows:42vh auto auto;overflow:auto}
+  #ana .amap{grid-row:1} #ana .acharts{grid-row:2} #ana .aside{grid-column:1;grid-row:3;border-left:0;border-top:1px solid var(--line)}
+  #ana .abar{padding:10px 14px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* Outils de carte repris de SAF Operations */
+.opsx{position:absolute;inset:0;pointer-events:none;z-index:790}
+.opsx button,.opsx select{pointer-events:auto;font-family:var(--font)}
+.opsx button{display:flex;align-items:center;justify-content:center;gap:6px;width:34px;height:34px;padding:0;border-radius:7px;cursor:pointer;
+  background:#fff;color:#111;border:1px solid rgba(0,0,0,.25);box-shadow:0 1px 4px rgba(0,0,0,.35);font:700 16px/1 var(--font)}
+.opsx button svg{width:18px;height:18px;flex:none}
+.opsx button.on{background:#1E8BD6;color:#fff;border-color:#1572b3}
+.opsx button.dim{opacity:.55}
+.opsx button em{display:none;font-style:normal;font-weight:600;font-size:12.5px;white-space:nowrap}
+.opsx.labels .opsx-col button{width:auto;justify-content:flex-start;padding:0 10px 0 8px}
+.opsx.labels .opsx-col button em{display:inline}
+.opsx-top{position:absolute;top:48px;left:10px;display:flex;gap:6px;align-items:center}
+.opsx-top select{pointer-events:auto;height:34px;max-width:min(320px,45vw);border-radius:17px;border:0;padding:0 30px 0 14px;
+  background:#0D1B2A;color:#fff;font-weight:700;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.opsx-col{position:absolute;top:92px;left:10px;display:flex;flex-direction:column;gap:6px}
+.opsx-col [data-a="flights"]{width:auto;padding:0 8px;font-size:13px}
+.opsx-col [data-a="flights"].shake{animation:opsx-sh .4s}
+@keyframes opsx-sh{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.opsx-bot{position:absolute;left:10px;bottom:34px;display:flex;flex-direction:column;gap:6px}
+.opsx-box{pointer-events:auto;position:absolute;top:48px;left:236px;max-width:min(330px,calc(100% - 250px));background:var(--panel);color:var(--ink);
+  border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+.opsx-box table{border-collapse:collapse;width:100%;margin:5px 0;font-variant-numeric:tabular-nums}
+.opsx-box th,.opsx-box td{text-align:right;padding:1px 6px;border-bottom:1px solid var(--line)} .opsx-box th:first-child,.opsx-box td:first-child{text-align:left}
+.opsx-bh{display:flex;flex-direction:column;gap:2px} .opsx-bh span{color:var(--signal);font-weight:600}
+.opsx-eur{margin:4px 0;color:#fff} .opsx-eur small{color:var(--ink-2)}
+.opsx-bb{display:flex;gap:6px;margin-top:6px} .opsx-bb button{width:auto;height:26px;padding:0 9px;font-size:12px}
+.opsx-cross{cursor:crosshair!important}
+.opsx-pt{position:relative;font:700 11px/1 var(--cond);white-space:nowrap}
+.opsx-pt span{position:absolute;left:8px;top:-8px;padding:1px 4px;border-radius:3px;background:#fff;color:#1d3f8f;border:1.5px solid #2F6FD0}
+.opsx-pt.oad i{position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:#2F6FD0;border:1px solid #fff}
+.opsx-pt.oad span{left:-14px;top:-9px} .opsx-pt.oad.obig span{background:#fff;border-color:#1d3f8f}
+.opsx-pt.ohp b{position:absolute;left:-8px;top:-8px;width:16px;height:16px;border-radius:50%;background:#fff;color:#7a1d8f;border:1.5px solid #7a1d8f;display:grid;place-items:center;font-size:10px}
+.opsx-pt.ohp span{color:#7a1d8f;border-color:#7a1d8f}
+.opsx-pt.onv b{position:absolute;left:-7px;top:-8px;color:#1d6f3f;font-size:15px;text-shadow:0 0 2px #fff}
+.opsx-pt.onv span{color:#1d6f3f;border-color:#1d6f3f}
+.opsx-pt.obase b{position:absolute;left:-10px;top:-10px;width:20px;height:20px;border-radius:5px;display:grid;place-items:center;font-size:14px;color:#fff;background:#1E8BD6;border:1.5px solid #fff}
+.opsx-pt.obase.oaff b{background:#C0392B} .opsx-pt.obase.ooff b{background:#6C7784}
+.opsx-pt.obase span{left:12px;top:-8px;background:#0D1B2A;color:#fff;border-color:#0D1B2A}
+.opsx-pt.ofuel b{position:absolute;left:-10px;top:-10px;width:20px;height:20px;border-radius:5px;display:grid;place-items:center;font-size:13px;background:#E5484D;border:1.5px solid #fff}
+.opsx-pt.osite b{position:absolute;left:-6px;top:-6px;width:12px;height:12px;transform:rotate(45deg);border:1.5px solid #0A1420;background:#F0C040}
+.opsx-pt.osite.olz b{background:#5B9BE0} .opsx-pt.osite.orf b{background:#E5484D}
+.opsx-pt.ovenue b{position:absolute;left:-8px;top:-9px;color:#0D1B2A;font-size:15px;text-shadow:0 0 2px #fff}
+.opsx-pt.omis b{position:absolute;left:-9px;top:-11px;color:#F0C040;font-size:20px;text-shadow:0 0 3px #000}
+.opsx-pt.omis span{left:12px;top:-9px;background:#0D1B2A;color:#fff;border-color:#F0C040;font-size:12px}
+/* Contrôles Leaflet du bas à gauche (échelle, légendes) décalés pour laisser la place aux boutons */
+.pane .leaflet-bottom.leaflet-left{left:50px}
+/* Nuit aéronautique */
+.facts .ngt{color:var(--ink-2)} .facts .ngt b{color:var(--ink)}
+.facts .ngt small{display:block;opacity:.8}
+.facts .ngt.soon{color:#F5A524} .facts .nwarn{color:#F5A524} .facts .ngt.on{color:#9DB8FF}
+.acm .nb{position:absolute;top:-30px;left:25px;white-space:nowrap;font:700 12px/16px var(--cond);padding:0 4px;border-radius:3px;border:1px solid #fff}
+.acm .nb.on{background:#13224A;color:#C9D8FF} .acm .nb.soon{background:#F5A524;color:#1B1200}
+.acm .eta.night{background:#13224A} .acm .eta.soon{background:#C2610C}
+.navdst.night{background:#13224A} .navdst.soon{background:#C2610C}
+
+/* Panneau gauche rétractable (08.11.2026) — plus de place pour la carte */
+#app{transition:grid-template-columns .25s ease,grid-template-rows .25s ease}
+#map-area{position:relative}
+#app.side-off{grid-template-columns:0 1fr}
+#app.side-off #side{visibility:hidden;overflow:hidden;min-width:0;border-right:0}
+#sidetoggle{position:absolute;left:0;top:50%;transform:translateY(-50%);z-index:1000;width:22px;height:64px;padding:0;
+  border:1px solid var(--line);border-left:0;border-radius:0 6px 6px 0;background:var(--panel);color:var(--signal);
+  font:700 18px/1 var(--cond);cursor:pointer;box-shadow:2px 0 8px rgba(0,0,0,.35)}
+#sidetoggle:hover{background:#1d2d3d}
+@media (max-width:760px){
+  #app.side-off{grid-template-columns:1fr;grid-template-rows:100% 0}
+  #app.side-off #side{border-top:0}
+  #sidetoggle{top:auto;bottom:0;left:50%;transform:translateX(-50%);width:64px;height:22px;
+    border:1px solid var(--line);border-bottom:0;border-radius:6px 6px 0 0;box-shadow:0 -2px 8px rgba(0,0,0,.35)}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <header>
+      <a class="home" href="https://saf-international-portail.netlify.app/">← Portail SAF International</a>
+      <h1>Suivi flotte AS 332</h1>
+      <p id="sub">Chargement…</p>
+    </header>
+    <div id="controls">
+      <label for="win">Trace</label>
+      <select id="win">
+        <option value="1">1 h</option>
+        <option value="3" selected>3 h</option>
+        <option value="12">12 h</option>
+        <option value="24">24 h</option>
+      </select>
+      <label for="split">Vue</label>
+      <select id="split" title="Découper l'écran pour suivre plusieurs appareils">
+        <option value="1">1 carte</option>
+        <option value="2">2 cartes</option>
+        <option value="3">3 cartes</option>
+        <option value="4">4 cartes</option>
+      </select>
+      <button id="fit" type="button">Toute la flotte</button>
+      <button id="histbtn" type="button">Historique des vols</button>
+       <button id="terrainbtn" type="button" aria-expanded="false">Profil relief / AGL</button>
+      <button id="logout" type="button">Déconnexion</button>
+    </div>
+    <div id="filters">
+      <label class="chk" id="autoopen-lbl"><input type="checkbox" id="autoopen"> <span>Carte auto à la mise en route</span></label>
+    </div>
+    <ul id="list"></ul>
+    <footer id="foot">—</footer>
+  </aside>
+  <div id="map-area"><button id="sidetoggle" type="button" aria-controls="side" aria-expanded="true">‹</button><nav id="as332-ribbon" aria-label="État des traceurs AS332"><span class="ribbon-label">Traceurs AS332</span></nav><div id="maps" data-n="1"></div></div>
+</div>
+
+<div id="hist" hidden role="dialog" aria-modal="true" aria-labelledby="h-title">
+  <div class="hbar">
+    <h2 id="h-title">Historique des vols</h2>
+    <label class="fld">Appareil<select id="h-reg"></select></label>
+    <label class="fld">Du<input type="date" id="h-from"></label>
+    <label class="fld">Au<input type="date" id="h-to"></label>
+    <div class="fld">Période<div class="presets">
+      <button type="button" data-d="0">Aujourd'hui</button><button type="button" data-d="7">7 j</button><button type="button" data-d="30">30 j</button><button type="button" data-d="60">60 j</button>
+    </div></div>
+    <button type="button" class="go" id="h-load">Afficher</button>
+    <button type="button" id="h-csv" disabled>Exporter CSV</button>
+    <button type="button" class="go" id="h-ana" disabled title="Sélectionnez d'abord un vol dans la liste">Analyser ce vol</button>
+    <button type="button" class="close" id="h-close">Fermer</button>
+  </div>
+  <div class="hbody">
+    <div class="hlist" id="h-list"><p class="empty">Choisissez un appareil et une période, puis « Afficher ».</p></div>
+    <div class="hmap"><div class="map" id="h-map"></div></div>
+  </div>
+</div>
+<div id="ana" hidden role="dialog" aria-modal="true" aria-labelledby="a-title">
+  <div class="abar">
+    <h2 id="a-title">Analyse du vol</h2>
+    <span class="asub" id="a-sub">—</span>
+    <label class="fld">Hauteur sol mini (ft)<input type="number" id="a-thr" min="0" max="5000" step="50" value="500"></label>
+    <button type="button" class="close" id="a-close">← Retour à l'historique</button>
+  </div>
+  <div class="abody">
+    <div class="amap"><div class="map" id="a-map"></div></div>
+    <div class="acharts">
+      <div class="ctitle"><span>Profil vertical (ft)</span><i style="color:#4bd6a0">— Hélicoptère (alt. GPS)</i><i style="color:#e0ad57">▆ Relief</i><i style="color:#F0C040">┄ Relief + seuil</i><i style="color:#E5484D">● Sous le seuil</i></div>
+      <div class="chart" id="a-prof"></div>
+      <div class="ctitle"><span>Vitesses</span><i style="color:#5B9BE0">— Vitesse sol (kt, axe gauche)</i><i style="color:#c792ea">— Vitesse verticale (ft/min, axe droit)</i></div>
+      <div class="chart" id="a-spd"></div>
+      <div class="play"><button type="button" id="a-play" aria-label="Rejouer le vol">▶</button><input type="range" id="a-slider" min="0" max="0" value="0" aria-label="Position dans le vol"></div>
+    </div>
+    <div class="aside">
+      <div class="read" id="a-read" aria-live="polite">—</div>
+      <div><h3>Synthèse</h3><dl id="a-stats"></dl></div>
+      <div><h3>Passages sous le seuil</h3><div class="lowlist" id="a-low"><span class="note">—</span></div></div>
+      <div><h3>Exporter</h3><div class="exp">
+        <button type="button" id="a-csv">CSV points</button><button type="button" id="a-gpx">GPX</button><button type="button" id="a-kml">KML 3D (Google Earth)</button>
+      </div></div>
+      <p class="note" id="a-note"></p>
+    </div>
+  </div>
+</div>
+<section id="terrain-panel" hidden aria-label="Profil du relief et hauteur sol">
+  <div class="terrain-head"><strong id="terrain-name">Profil relief / AGL</strong><span id="terrain-status">—</span><button id="terrain-close" type="button" aria-label="Fermer le profil">Fermer</button></div>
+  <div class="terrain-stat" id="terrain-stat">Choisissez un hélicoptère.</div>
+  <div class="terrain-plot" id="terrain-plot"></div>
+  <div class="terrain-foot">Altitude hélicoptère (GPS) / terrain (EU-DEM 25 m ou Copernicus GLO-90 90 m en secours). AGL indicative : référentiels altimétriques NSE non vérifiés. Points réels reçus uniquement, aucune interpolation du vol. Non utilisable pour la navigation.</div>
+</section>
+<div id="toasts" aria-live="polite"></div>
+<div id="gate" role="alert"><p id="gate-msg">Vérification de la session…</p><a href="https://saf-international-portail.netlify.app/">Retour au portail</a></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* ---------- Périmètre de la page ----------
+   Même code pour les deux pages, seule cette ligne change :
+   SAF_Suivi_Flotte.html -> "332" (AS 332 Super Puma) · SAF_Suivi_B3.html -> "350" (AS 350 B3) */
+const SCOPE = "332";
+const SELF = (location.pathname.split("/").pop() || "SAF_Suivi_Flotte.html");
+const LOGIN = location.pathname.indexOf("/sms/")===0 ? "/?next=" + encodeURIComponent(location.pathname) : "index.html?next=" + encodeURIComponent(SELF);
+// Mise en route : AS 332 = ouverture d'une carte ; AS 350 B3 (12 appareils) = simple signalement, sans carte
+const AUTO_MAP = SCOPE === "332";
+const CONFIG = {
+  url: "https://qaqehmxoehcvzcojcqkm.supabase.co",
+  key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q",
+  refreshMs: 60000,     // secours si Realtime muet (les nouvelles positions arrivent par Realtime en ~5 s)
+  hiddenMs: 120000,     // onglet caché / écran verrouillé : cycle allégé (positions + alertes) toutes les 2 min
+  refMs: 300000,        // appareils, bases, chantiers, contrôle de nuit : relus toutes les 5 min (scan de nuit = 5 min)
+  fullMs: 600000,       // relecture complète des traces toutes les 10 min (resynchronisation)
+  lateMs: 180000,       // marge pour les points arrivés en retard (traceurs à mémoire tampon)
+  liveMaxMin: 5,        // point plus récent que 5 min = en direct
+  lostAfterMin: 45,     // en mouvement puis plus de point depuis 45 min = signal perdu
+  movingSpeed: 5,
+  // Mise en route : le traceur (alimenté par l'appareil) émet de nouveau après au moins gapMin de silence.
+  // Une carte ne s'ouvre que si cette reprise date de moins de recentMin (pas de rattrapage d'anciens vols).
+  startGapMin: 20,
+  startRecentMin: 10,
+  // Carte OACI France (IGN SCAN OACI, accès restreint) : clé transitoire IGN par défaut,
+  // à remplacer par la clé obtenue auprès de l'IGN (cartes.gouv.fr) si elle cesse de fonctionner.
+  ignOaciKey: "ign_scan_ws",
+  // Surcouche openAIP (espaces aériens, aérodromes, obstacles…) : clé « API Client » gratuite
+  // à créer sur openaip.net (profil > API Clients). Vide = surcouche non proposée.
+  openAipKey: "ef688ca41028ff1b71c6a1834026a858",
+};
+// Chantiers du jour : table fleet_worksites du projet SMS, copiée depuis les Day Plans par hélicoptère (application Operations)
+const WORKSITES = { table:"fleet_worksites", nearKm:2, tz:"Europe/Paris" };
+const BASES = [
+  {name:"LFKA Albertville", lat:45.6276, lon:6.3297},
+  {name:"LSGS Sion", lat:46.2196, lon:7.3268},
+];
+const COLORS = {live:"#3CC882", ground:"#5B9BE0", stale:"#6C7784", lost:"#E5484D", none:"#6C7784"};
+
+// Même client et même stockage de session que index.html : pas de seconde connexion
+const sb = supabase.createClient(CONFIG.url, CONFIG.key);
+
+/* ---------- Cartes (écran découpable en 1 à 4 cartes) ----------
+   Chaque carte suit soit toute la flotte (vue libre), soit un appareil choisi :
+   elle se recentre sur lui à chaque actualisation, jusqu'à ce qu'on la déplace à la main. */
+function makeLayers(){
+  return {
+    "Topo (OpenTopoMap)": L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"© OpenTopoMap, © OSM"}),
+    "Plan (OSM)": L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}),
+    "swisstopo": L.tileLayer("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg",{maxZoom:18,attribution:"© swisstopo"}),
+    "OACI France (IGN)": L.tileLayer("https://data.geopf.fr/private/wmts?apikey="+encodeURIComponent(CONFIG.ignOaciKey)+"&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN-OACI&STYLE=normal&FORMAT=image/jpeg&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}",{minZoom:6,maxNativeZoom:11,maxZoom:15,attribution:"© IGN / SIA – carte OACI-VFR, ne pas utiliser pour la navigation"}),
+    "OACI Suisse (swisstopo)": L.tileLayer("https://wmts.geo.admin.ch/1.0.0/ch.bazl.luftfahrtkarten-icao/default/current/3857/{z}/{x}/{y}.png",{maxNativeZoom:12,maxZoom:15,attribution:"© OFAC/BAZL, swisstopo – carte OACI, ne pas utiliser pour la navigation"}),
+    "Satellite (Esri)": L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"© Esri"}),
+    // Image satellite du jour (MODIS Terra, NASA GIBS) : nuages et panaches de fumée. Avant 14 h UTC, image de la veille.
+    "Satellite du jour (NASA MODIS)": L.tileLayer("https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/"+ymdUTC(new Date().getUTCHours()<14?-1:0)+"/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg",{maxNativeZoom:9,maxZoom:15,attribution:"© NASA GIBS – MODIS Terra"}),
+  };
+}
+/* ---------- Surcouches météo et feux de forêt ----------
+   Dates en UTC. Les couches datées se remettent à jour toutes les heures tant qu'elles sont affichées
+   (une page laissée ouverte passe ainsi le changement de jour). */
+const ymdUTC=(d=0)=>new Date(Date.now()+d*864e5).toISOString().slice(0,10);
+// EFFIS ne publie pas EPSG:3857 sous ce nom mais sous son ancien alias EPSG:900913 (même projection).
+const EPSG900913=L.extend({},L.CRS.EPSG3857,{code:"EPSG:900913"});
+function datedWms(url,opts,timeFn){
+  const lyr=L.tileLayer.wms(url,Object.assign({format:"image/png",transparent:true,TIME:timeFn()},opts));
+  let t=null;
+  lyr.on("add",()=>{ lyr.setParams({TIME:timeFn()}); t=setInterval(()=>lyr.setParams({TIME:timeFn()}),3600000); });
+  lyr.on("remove",()=>{ clearInterval(t); t=null; });
+  return lyr;
+}
+const EFFIS_URL="https://maps.effis.emergency.copernicus.eu/effis";
+const EFFIS_ATT='© <a href="https://forest-fire.emergency.copernicus.eu/" target="_blank" rel="noopener">EFFIS</a> – Copernicus EMS / JRC';
+const effis=(layers,timeFn,extra)=>datedWms(EFFIS_URL,Object.assign({layers,version:"1.1.1",crs:EPSG900913,zIndex:9,attribution:EFFIS_ATT},extra),timeFn);
+// NASA GIBS (données LANCE/FIRMS) : anomalies thermiques VIIRS, sans clé. Une couche par jour (hier + aujourd'hui).
+const GIBS_WMS="https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi";
+const GIBS_ATT='© NASA <a href="https://earthdata.nasa.gov/gibs" target="_blank" rel="noopener">GIBS</a> / LANCE FIRMS';
+function nasaFires(){
+  const layers="VIIRS_NOAA20_Thermal_Anomalies_375m_All,VIIRS_SNPP_Thermal_Anomalies_375m_All";
+  const o={layers,version:"1.1.1",zIndex:9,attribution:GIBS_ATT};
+  return L.layerGroup([datedWms(GIBS_WMS,o,()=>ymdUTC(-1)),datedWms(GIBS_WMS,o,()=>ymdUTC(0))]);
+}
+// Radar RainViewer : on lit l'index public et on n'utilise que le chemin qu'il renvoie (dernière image, rafraîchie toutes les 5 min).
+// Gratuit pour un usage personnel/éducatif, zoom natif limité à 7, mention obligatoire.
+function rainRadar(){
+  const g=L.layerGroup(); let tl=null,t=null;
+  async function refresh(){
+    try{
+      const r=await fetch("https://api.rainviewer.com/public/weather-maps.json",{cache:"no-store"});
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      const j=await r.json(); const past=(j.radar&&j.radar.past)||[]; const f=past[past.length-1];
+      if(!f||!j.host) return;
+      const url=j.host+f.path+"/256/{z}/{x}/{y}/2/1_0.png";   // 2 = Universal Blue (seul schéma public), lissé, sans neige
+      if(tl) tl.setUrl(url);
+      else{ tl=L.tileLayer(url,{maxNativeZoom:7,maxZoom:19,opacity:.7,zIndex:8,
+              attribution:'Weather data by <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">Rain Viewer</a>'}); g.addLayer(tl); }
+    }catch(e){ console.warn("Radar RainViewer indisponible :",e); }
+  }
+  g.on("add",()=>{ refresh(); t=setInterval(refresh,300000); });
+  g.on("remove",()=>{ clearInterval(t); t=null; });
+  return g;
+}
+// Légende FWI : classes officielles EFFIS. On tente d'afficher la légende fournie par le serveur EFFIS
+// (couleurs exactes) ; si elle ne se charge pas, le tableau de classes reste affiché avec des couleurs indicatives.
+const FWI_CLASSES=[["Faible","#2DB34A","< 11,2"],["Modéré","#F2E33A","11,2 – 21,3"],["Élevé","#F59A23","21,3 – 38"],
+  ["Très élevé","#E2231A","38 – 50"],["Extrême","#8B1A1A","50 – 70"],["Très extrême","#3D0B3D","> 70"]];
+function fwiLegend(){
+  const c=L.control({position:"bottomleft"});
+  c.onAdd=()=>{
+    const d=L.DomUtil.create("div","fwi-legend");
+    d.innerHTML=`<b>Danger feux – FWI (EFFIS)</b><div class="rows">`+
+      FWI_CLASSES.map(([n,col,v])=>`<div class="r"><span class="sw" style="background:${col}"></span>${n}<span class="v">${v}</span></div>`).join("")+
+      `<small>Couleurs indicatives</small></div><img alt="Légende EFFIS du FWI">`+
+      `<small>Prévision ECMWF du ${ymdUTC(0).split("-").reverse().join("/")}</small>`;
+    const img=d.querySelector("img");
+    img.onload=()=>{ if(img.naturalWidth>20&&img.naturalHeight>20) d.classList.add("img-ok"); };
+    img.src=EFFIS_URL+"?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetLegendGraphic&FORMAT=image/png&LAYER=ecmwf007.fwi";
+    L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d);
+    return d;
+  };
+  return c;
+}
+function withLegend(lyr,makeCtl){
+  let ctl=null;
+  lyr.on("add",e=>{ const m=e.target._map; if(m&&!ctl){ ctl=makeCtl(); ctl.addTo(m); } });
+  lyr.on("remove",()=>{ if(ctl){ ctl.remove(); ctl=null; } });
+  return lyr;
+}
+// METAR / TAF via le relais Supabase « fleet-metar » (aviationweather.gov, données NOAA) :
+// stations de la zone visible, rafraîchies toutes les 10 min et à chaque déplacement de carte (zoom ≥ 6).
+const WX_CAT={VFR:["#2DB34A","VFR – plafond > 3000 ft et visi > 5 SM"],MVFR:["#2F7DE1","MVFR – plafond 1000–3000 ft ou visi 3–5 SM"],
+  IFR:["#E2231A","IFR – plafond 500–999 ft ou visi 1–3 SM"],LIFR:["#C026D3","LIFR – plafond < 500 ft ou visi < 1 SM"]};
+const WX_NONE="#8A94A0";
+function wxCatLegend(){
+  const c=L.control({position:"bottomleft"});
+  c.onAdd=()=>{ const d=L.DomUtil.create("div","fwi-legend");
+    d.innerHTML=`<b>METAR – catégorie de vol</b>`+Object.entries(WX_CAT).map(([k,[col,t]])=>
+      `<div class="r"><span class="sw" style="background:${col};border-radius:50%"></span>${esc(t)}</div>`).join("")+
+      `<div class="r"><span class="sw" style="background:${WX_NONE};border-radius:50%"></span>Indéterminée</div>`+
+      `<small>Pastille pâle : METAR de plus de 90 min. Zoom ≥ 6 requis.</small>`;
+    L.DomEvent.disableClickPropagation(d); return d; };
+  return c;
+}
+function metarTafLayer(){
+  const g=L.layerGroup(); let map=null,timer=null,deb=null,seq=0;
+  const ageMin=t=>t?Math.round((Date.now()-new Date(t))/60000):null;
+  const html=st=>{
+    const [col]=WX_CAT[st.cat]||[WX_NONE]; const a=ageMin(st.time);
+    return `<b>${esc(st.id)}</b>${st.name?" – "+esc(st.name):""}<span class="cat" style="background:${col}">${esc(st.cat||"?")}</span>`+
+      `<br><span class="muted">METAR ${st.time?hm(st.time)+" UTC":""}${a!=null?" (il y a "+a+" min)":""}</span><pre>${esc(st.raw||"—")}</pre>`+
+      (st.taf?`<span class="muted">TAF</span><pre>${esc(st.taf)}</pre>`:`<span class="muted">Pas de TAF publié.</span>`);
+  };
+  // Emprise demandée : zone visible + 10 %, ramenée autour du centre si elle dépasse ce que le relais accepte
+  // (20° x 30°). Les pastilles affichées restent en place tant qu'une nouvelle réponse valide n'est pas arrivée.
+  let lastBox=null,lastT=0,lastZ=null;
+  const MAXLAT=19,MAXLON=29;
+  function wantedBox(){
+    const b=map.getBounds().pad(0.1), c=map.getCenter();
+    let s=b.getSouth(),n=b.getNorth(),w=b.getWest(),e=b.getEast();
+    if(n-s>MAXLAT){ s=c.lat-MAXLAT/2; n=c.lat+MAXLAT/2; }
+    if(e-w>MAXLON){ w=c.lng-MAXLON/2; e=c.lng+MAXLON/2; }
+    return [Math.max(-89,s),Math.max(-180,w),Math.min(89,n),Math.min(180,e)];
+  }
+  const inside=(a,b)=>b&&a[0]>=b[0]&&a[1]>=b[1]&&a[2]<=b[2]&&a[3]<=b[3];
+  async function load(force){
+    if(!map) return;
+    const z=map.getZoom();
+    if(z<6){ g.clearLayers(); lastBox=null; return; }
+    const box=wantedBox();
+    // Simple recentrage (suivi automatique d'un appareil) : rien à recharger si la zone est déjà couverte et récente.
+    if(!force&&inside(box,lastBox)&&Date.now()-lastT<600000&&(z>=8)===(lastZ>=8)) return;
+    const my=++seq;
+    try{
+      const {data,error}=await sb.functions.invoke("fleet-metar",{body:{bbox:box}});
+      if(error) throw error;
+      if(my!==seq||!map) return;
+      g.clearLayers(); lastBox=box; lastT=Date.now(); lastZ=z;
+      for(const st of (data&&data.stations)||[]){
+        const [col]=WX_CAT[st.cat]||[WX_NONE]; const old=(ageMin(st.time)??999)>90;
+        const icon=L.divIcon({className:"",iconSize:[0,0],html:`<div class="wxst${old?" old":""}"><i style="background:${col}"></i>${z>=8?`<span>${esc(st.id)}</span>`:""}</div>`});
+        const mk=L.marker([st.lat,st.lon],{icon,keyboard:false,zIndexOffset:-200,title:st.id});
+        mk.bindTooltip(html(st),{className:"wxtt",direction:"top",offset:[0,-8]});
+        mk.bindPopup(html(st),{className:"wxpop",maxWidth:360});
+        g.addLayer(mk);
+      }
+    }catch(e){ console.warn("METAR/TAF indisponibles (pastilles précédentes conservées) :",e); }
+  }
+  const onMove=()=>{ clearTimeout(deb); deb=setTimeout(load,600); };
+  g.on("add",e=>{ map=e.target._map; map.on("moveend",onMove); lastBox=null; load(true); timer=setInterval(()=>load(true),600000); });
+  g.on("remove",()=>{ if(map) map.off("moveend",onMove); clearInterval(timer); clearTimeout(deb); timer=null; map=null; });
+  return g;
+}
+function makeOverlays(){
+  const o={};
+  if(CONFIG.openAipKey) o["Espaces aériens (openAIP)"]=L.tileLayer("https://{s}.api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.png?apiKey="+encodeURIComponent(CONFIG.openAipKey),{subdomains:"abc",maxNativeZoom:14,maxZoom:19,zIndex:10,attribution:"© openAIP (données communautaires, non officielles)"});
+  o["✈ METAR / TAF (catégorie de vol)"]=withLegend(metarTafLayer(),wxCatLegend);
+  o["🌧 Radar précipitations (RainViewer)"]=rainRadar();
+  o["🔥 Feux actifs 24 h (EFFIS, VIIRS)"]=effis("viirs.hs",()=>ymdUTC(-1)+"/"+ymdUTC(0));
+  o["🔥 Feux actifs 7 j (EFFIS, VIIRS)"]=effis("viirs.hs",()=>ymdUTC(-6)+"/"+ymdUTC(0));
+  o["🔥 Anomalies thermiques hier + aujourd'hui (NASA)"]=nasaFires();
+  o["⬛ Surfaces brûlées 30 j (EFFIS)"]=effis("modis.ba.poly",()=>ymdUTC(-29)+"/"+ymdUTC(0),{opacity:.8});
+  o["⚠ Danger feux FWI du jour (EFFIS)"]=withLegend(effis("ecmwf007.fwi",()=>ymdUTC(0),{opacity:.5,zIndex:7}),fwiLegend);
+  o["⚠ Danger feux Suisse (OFEV)"]=L.tileLayer.wms("https://wms.geo.admin.ch/",{layers:"ch.bafu.gefahren-waldbrand_warnung",format:"image/png",transparent:true,version:"1.3.0",opacity:.6,zIndex:7,attribution:"© OFEV/BAFU – danger d'incendie de forêt"});
+  o["☾ Nuit aéronautique (limite jour/nuit)"]=nightLayer();
+  return o;
+}
+const VIEW_KEY="saf_fleet_view"+(SCOPE==="332"?"":"_"+SCOPE);
+function loadView(){ try{ const v=JSON.parse(localStorage.getItem(VIEW_KEY)||"null"); if(v&&v.n>=1&&v.n<=4&&Array.isArray(v.follow)) return v; }catch(e){} return {n:1,follow:[null,null,null,null]}; }
+function saveView(){ try{ localStorage.setItem(VIEW_KEY,JSON.stringify({n:panes.length,follow:viewFollow})); }catch(e){} }
+let viewFollow=loadView().follow.concat([null,null,null,null]).slice(0,4);
+const panes=[];
+/* ===================================================================
+   OUTILS DE CARTE REPRIS DE « SAF OPERATIONS » (30.10.2026)
+   Barre d'outils à gauche de chaque carte, comme dans l'application OPS :
+   en haut  ☰ libellés · trait (route avec ETE) · règle (mesure 2 points) · € (coût) · liste des missions
+   colonne  aérodromes · hélistations · balises · espaces aériens · LZ/DZ · zones réglementées ·
+            lieux · bases · carburant · appareils en vol
+   en bas   zoom + / − · plein écran
+   Données : relais « ops-map » (projet SMS), qui lit l'application OPS en lecture seule.
+   =================================================================== */
+const OPSX = {
+  key: "saf_ops_layers_" + (typeof SCOPE !== "undefined" ? SCOPE : "x"),
+  settings: null, stat: {}, statAt: 0, missions: [], missionsAt: 0,
+  btns: [
+    {k:"aerodromes", t:"Aérodromes", minZ:7, bbox:true, ic:'<path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="currentColor"/>'},
+    {k:"heliports",  t:"Hélistations et altiports", minZ:8, bbox:true, ic:'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 7.5v9M15.5 7.5v9M8.5 12h7" stroke="currentColor" stroke-width="2.2"/>'},
+    {k:"navaids",    t:"Balises radio (VOR, NDB, DME)", minZ:7, bbox:true, ic:'<circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/>'},
+    {k:"airspaces",  t:"Espaces aériens (CTR, TMA, ATZ, RMZ…)", minZ:7, bbox:true, ic:'<path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z" fill="none" stroke="currentColor" stroke-width="2"/>'},
+    {k:"sites",      t:"LZ / DZ enregistrées", minZ:0, ic:'<path d="M12 3l9 9-9 9-9-9z" fill="currentColor"/>'},
+    {k:"zones",      t:"Zones R, P, D, TRA, réserves, vol à voile", minZ:7, bbox:true, ic:'<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/>'},
+    {k:"venues",     t:"Lieux (chantiers, hôtels, prestataires)", minZ:0, ic:'<rect x="4" y="5" width="16" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 10h16" stroke="currentColor" stroke-width="2"/>'},
+    {k:"bases",      t:"Bases SAF et bases AFF", minZ:0, ic:'<path d="M3 11.5L12 4l9 7.5M6 10v10h12V10" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'},
+    {k:"fuel",       t:"Stocks carburant", minZ:0, ic:'<path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16zM5 10h10M15 8l3 2v8a1.5 1.5 0 0 0 3 0v-7l-3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'}
+  ]
+};
+try{ OPSX.on = new Set(JSON.parse(localStorage.getItem(OPSX.key) || '[]')); }catch(e){ OPSX.on = new Set(); }
+const opsSave = () => { try{ localStorage.setItem(OPSX.key, JSON.stringify([...OPSX.on])); }catch(e){} };
+const opsKm = (a,b) => { const R=6371,r=x=>x*Math.PI/180,dLat=r(b.lat-a.lat),dLon=r(b.lon-a.lon);
+  const s=Math.sin(dLat/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLon/2)**2; return 2*R*Math.asin(Math.sqrt(s)); };
+const opsBrg = (a,b) => { const r=x=>x*Math.PI/180, y=Math.sin(r(b.lon-a.lon))*Math.cos(r(b.lat)),
+  x=Math.cos(r(a.lat))*Math.sin(r(b.lat))-Math.sin(r(a.lat))*Math.cos(r(b.lat))*Math.cos(r(b.lon-a.lon));
+  return (Math.atan2(y,x)*180/Math.PI+360)%360; };
+const opsFmtMin = m => !isFinite(m) ? "–" : m<60 ? Math.round(m)+" min" : Math.floor(m/60)+" h "+String(Math.round(m%60)).padStart(2,"0");
+const opsE = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const opsFt = m => m==null||m==="" ? "" : Math.round(+m*3.28084).toLocaleString("fr-FR")+" ft";
+
+async function opsCall(body){
+  const {data,error} = await sb.functions.invoke("ops-map", {body});
+  if(error) throw error; if(data && data.error) throw new Error(data.error); return data || {};
+}
+async function opsStatic(){
+  // Couches peu volumineuses et réglages : une lecture toutes les 30 min, partagée par toutes les cartes
+  if(Date.now()-OPSX.statAt < 30*60000 && OPSX.settings) return;
+  try{
+    const d = await opsCall({layers:["settings","bases","fuel","sites","venues"]});
+    OPSX.settings = d.settings || OPSX.settings || {cruise_kt:120};
+    OPSX.stat = {bases:d.bases||[], fuel:d.fuel||[], sites:d.sites||[], venues:d.venues||[]};
+    OPSX.statAt = Date.now();
+  }catch(e){ console.warn("Couches OPS indisponibles :", e); OPSX.settings = OPSX.settings || {cruise_kt:120}; }
+}
+
+/* ---------- dessin des couches ---------- */
+function opsIcon(cls, html){ return L.divIcon({className:"", iconSize:null, iconAnchor:[0,0], html:`<div class="opsx-pt ${cls}">${html}</div>`}); }
+function opsDrawStatic(p, k){
+  const g = p.opsx.g[k]; g.clearLayers();
+  const pane = "opsxPts";
+  if(k==="bases") OPSX.stat.bases.forEach(b => L.marker([+b.lat,+b.lon],{pane, keyboard:false, icon:opsIcon("obase "+(b.kind==="saf_base"?"osaf":b.kind==="aff_base"?"oaff":"ooff"),
+      `<b>⌂</b><span>${opsE(b.code || b.name)}</span>`)}).bindTooltip(`<b>${opsE(b.name)}</b><br>${b.kind==="aff_base"?"Base AFF":b.kind==="office"?"Bureau":"Base SAF"}${b.elevation_m?" · "+opsFt(b.elevation_m):""}`).addTo(g));
+  if(k==="fuel") OPSX.stat.fuel.forEach(f => L.marker([+f.lat,+f.lon],{pane, keyboard:false, icon:opsIcon("ofuel",'<b>⛽</b>')})
+      .bindTooltip(`<b>${opsE(f.name)}</b><br>${opsE(f.fuel||"")} · ${f.kind==="tank"?"cuve":f.kind==="drums"?"fûts":opsE(f.kind)}${f.capacity_l?" · "+(+f.capacity_l).toLocaleString("fr-FR")+" L":""}${f.owner?"<br>"+opsE(f.owner):""}${f.notes?"<br><i>"+opsE(f.notes)+"</i>":""}`).addTo(g));
+  if(k==="sites") OPSX.stat.sites.forEach(s => L.marker([+s.lat,+s.lon],{pane, keyboard:false, icon:opsIcon("osite "+(s.kind==="lz"?"olz":s.kind==="refuel"?"orf":"odz"),'<b></b>')})
+      .bindTooltip(`<b>${opsE(s.name)}</b> · ${opsE((s.kind||"").toUpperCase())}${s.elevation_m!=null?" · "+opsFt(s.elevation_m):""}${s.surface?"<br>Surface : "+opsE(s.surface):""}${s.slope?" · pente : "+opsE(s.slope):""}${s.notes?"<br><i>"+opsE(s.notes)+"</i>":""}`).addTo(g));
+  if(k==="venues") OPSX.stat.venues.forEach(v => L.marker([+v.lat,+v.lon],{pane, keyboard:false, icon:opsIcon("ovenue",'<b>▣</b>')})
+      .bindTooltip(`<b>${opsE(v.name)}</b><br>${opsE({worksite:"Chantier / LZ",hotel:"Hôtel",provider:"Prestataire",training:"Centre de formation",other:"Autre"}[v.kind]||v.kind)}${v.elevation_m?" · "+opsFt(v.elevation_m):""}${v.lz_notes?"<br><i>"+opsE(v.lz_notes)+"</i>":""}${v.phone?"<br>"+opsE(v.phone):""}`).addTo(g));
+}
+const OPS_AS_STYLE = t => {
+  const T=String(t||"");
+  if(T==="CTR") return {color:"#D33A3A",weight:1.6,dashArray:"6 4",fillOpacity:.04};
+  if(/^(TMA|CTA|26|15)$/.test(T)) return {color:"#2F6FD0",weight:1.3,fillOpacity:.03};
+  if(/^(ATZ|MATZ)$/.test(T)) return {color:"#2F6FD0",weight:1.3,dashArray:"4 3",fillOpacity:.03};
+  if(/^(RMZ|TMZ)$/.test(T)) return {color:"#8E44AD",weight:1.3,dashArray:"2 3",fillOpacity:.03};
+  if(T==="P") return {color:"#C0392B",weight:1.6,fillColor:"#C0392B",fillOpacity:.12};
+  if(T==="R"||T==="TRA"||T==="TSA") return {color:"#E05A2B",weight:1.3,fillColor:"#E05A2B",fillOpacity:.07};
+  if(T==="D") return {color:"#E0A02B",weight:1.3,fillColor:"#E0A02B",fillOpacity:.06};
+  if(T==="Nature reserve") return {color:"#2E9E5B",weight:1.2,dashArray:"5 4",fillColor:"#2E9E5B",fillOpacity:.06};
+  if(T==="Gliding") return {color:"#C9A227",weight:1.2,dashArray:"5 4",fillOpacity:.04};
+  return {color:"#5B7FA6",weight:1,fillOpacity:.02};
+};
+function opsDrawBbox(p, k, list){
+  const g = p.opsx.g[k]; g.clearLayers();
+  const z = p.map.getZoom(), lbl = z >= 9;
+  if(k==="aerodromes") list.forEach(a => {
+    const big = a.subtype==="Airport", id = a.icao || "";
+    const info = a.info || {};
+    L.marker([+a.lat,+a.lon],{pane:"opsxPts", keyboard:false, icon:opsIcon("oad"+(big?" obig":""), lbl||big ? `<span>${opsE(id || "·")}</span>` : "<i></i>")})
+      .bindTooltip(`<b>${opsE(id)}</b> ${opsE(a.name)}<br>${opsE(a.subtype||"")}${a.elevation_m!=null?" · "+opsFt(a.elevation_m):""}${(info.rwy||[]).length?"<br>Piste "+opsE(info.rwy.join(", ")):""}${(info.freq||[]).length?"<br>"+opsE(info.freq.join(" · ")):""}`).addTo(g);
+  });
+  if(k==="heliports") list.forEach(a => L.marker([+a.lat,+a.lon],{pane:"opsxPts", keyboard:false, icon:opsIcon("ohp",`<b>H</b>${lbl&&a.icao?`<span>${opsE(a.icao)}</span>`:""}`)})
+      .bindTooltip(`<b>${opsE(a.icao||"")}</b> ${opsE(a.name)}${a.elevation_m!=null?"<br>"+opsFt(a.elevation_m):""}`).addTo(g));
+  if(k==="navaids") list.forEach(a => { const info=a.info||{};
+    L.marker([+a.lat,+a.lon],{pane:"opsxPts", keyboard:false, icon:opsIcon("onv",`<b>⊙</b>${lbl?`<span>${opsE(a.icao||"")}</span>`:""}`)})
+      .bindTooltip(`<b>${opsE(a.icao||"")}</b> ${opsE(a.name)}<br>${opsE(a.subtype||"")}${(info.freq||[]).length?" · "+opsE(info.freq.join(" / ")):""}`).addTo(g); });
+  if(k==="airspaces" || k==="zones") list.forEach(a => {
+    const pts = (Array.isArray(a.poly)?a.poly:[]).filter(c => Array.isArray(c) && isFinite(c[0]) && isFinite(c[1]));
+    if(pts.length < 3) return;
+    L.polygon(pts,{pane:"opsxZones", ...OPS_AS_STYLE(a.type), interactive:true})
+      .bindTooltip(`<b>${opsE(a.name)}</b><br>${opsE(a.type)}${a.icao_class?" · classe "+opsE(a.icao_class):""}<br>${opsE(a.lower_txt||"?")} → ${opsE(a.upper_txt||"?")}`,{sticky:true}).addTo(g);
+  });
+}
+async function opsRefresh(p){
+  const m = p.map, z = m.getZoom(), want = OPSX.btns.filter(b => b.bbox && OPSX.on.has(b.k));
+  // Couches non découpées
+  await opsStatic();
+  OPSX.btns.filter(b => !b.bbox).forEach(b => { if(OPSX.on.has(b.k)) opsDrawStatic(p,b.k); else p.opsx.g[b.k].clearLayers(); });
+  // Couches découpées selon la zone visible, au-dessus du zoom minimal de chacune
+  OPSX.btns.filter(b => b.bbox).forEach(b => { if(!OPSX.on.has(b.k) || z < b.minZ) p.opsx.g[b.k].clearLayers(); });
+  const ask = want.filter(b => z >= b.minZ).map(b => b.k);
+  opsMark(p);
+  if(!ask.length) return;
+  const bb = m.getBounds().pad(0.15), seq = ++p.opsx.seq;
+  try{
+    const d = await opsCall({layers:ask, bbox:[bb.getSouth(),bb.getWest(),bb.getNorth(),bb.getEast()]});
+    if(seq !== p.opsx.seq) return;
+    ask.forEach(k => opsDrawBbox(p, k, d[k] || []));
+  }catch(e){ console.warn("Couches OPS :", e); }
+}
+
+/* ---------- route (trait), mesure (règle) et coût (€) ---------- */
+function opsToolOff(p){
+  const t = p.opsx.tool; p.opsx.tool = null; p.map.doubleClickZoom.enable();
+  p.map.getContainer().classList.remove("opsx-cross");
+  p.opsx.el.querySelectorAll(".opsx-top [data-tool]").forEach(b => b.classList.toggle("on", false));
+  return t;
+}
+function opsToolOn(p, tool){
+  const was = opsToolOff(p);
+  if(was === tool) return;           // second appui : outil désactivé (le tracé reste affiché)
+  p.opsx.tool = tool; p.map.doubleClickZoom.disable();
+  p.map.getContainer().classList.add("opsx-cross");
+  p.opsx.el.querySelector(`.opsx-top [data-tool="${tool}"]`).classList.add("on");
+  if(tool === "ruler"){ p.opsx.rpts = []; }
+  opsDrawRoute(p);
+}
+function opsDrawRoute(p){
+  const g = p.opsx.route; g.clearLayers();
+  const box = p.opsx.box, cruise = +(OPSX.settings?.cruise_kt) || 120, eur = +(OPSX.settings?.transit_eur_min) || null;
+  const pts = p.opsx.tool === "ruler" ? p.opsx.rpts : p.opsx.wpts;
+  if(!pts.length){ box.hidden = true; return; }
+  const ll = pts.map(q => [q.lat,q.lon]);
+  L.polyline(ll,{pane:"opsxPts", color:"#fff", weight:6, opacity:.85, interactive:false}).addTo(g);
+  L.polyline(ll,{pane:"opsxPts", color: p.opsx.tool==="ruler" ? "#F0C040" : "#B0177A", weight:3, dashArray: p.opsx.tool==="ruler" ? "6 5" : null, interactive:false}).addTo(g);
+  pts.forEach((q,i) => L.circleMarker([q.lat,q.lon],{pane:"opsxPts", radius:5, color:"#0A1420", weight:2, fillColor:"#fff", fillOpacity:1, interactive:false}).addTo(g));
+  let tot = 0; const legs = [];
+  for(let i=1;i<pts.length;i++){ const km = opsKm(pts[i-1],pts[i]); tot += km; legs.push({km, brg:opsBrg(pts[i-1],pts[i])}); }
+  const nm = tot/1.852, min = nm/cruise*60;
+  const rows = legs.map((l,i) => `<tr><td>${i+1}</td><td>${String(Math.round(l.brg)%360).padStart(3,"0")}°</td><td>${(l.km/1.852).toFixed(1)} NM</td><td>${opsFmtMin(l.km/1.852/cruise*60)}</td></tr>`).join("");
+  const cost = p.opsx.euro && eur ? `<div class="opsx-eur">Coût transit estimé : <b>${Math.round(min*eur).toLocaleString("fr-FR")} €</b> <small>(${eur} €/min, réglage OPS)</small></div>` : "";
+  box.innerHTML = `<div class="opsx-bh"><b>${p.opsx.tool==="ruler" ? "Mesure" : "Route"}</b>
+      <span>${nm.toFixed(1)} NM · ${tot.toFixed(1)} km · ETE ${opsFmtMin(min)} à ${cruise} kt</span></div>
+    ${legs.length ? `<table><tr><th>#</th><th>Route</th><th>Dist.</th><th>Temps</th></tr>${rows}</table>` : `<small>Cliquez le point suivant sur la carte.</small>`}
+    ${cost}
+    <div class="opsx-bb"><button type="button" data-a="undo">↶ Dernier point</button><button type="button" data-a="clear">Effacer</button></div>`;
+  box.hidden = false;
+}
+
+/* ---------- missions (Day Plans Operations, via fleet_worksites) ---------- */
+async function opsMissions(){
+  if(Date.now()-OPSX.missionsAt < 5*60000) return OPSX.missions;
+  try{
+    const r = await sb.from("fleet_worksites").select("site_id,work_date,name,mission_no,reg,lat,lon,features,route,status,start_time,seq")
+      .gte("work_date", todayLocal()).order("work_date").order("reg",{nullsFirst:false}).order("seq",{nullsFirst:false}).limit(300);
+    if(r.error) throw r.error;
+    const by = new Map();
+    for(const w of r.data||[]){ if(w.status==="annulé") continue; if(!by.has(w.site_id)) by.set(w.site_id, {...w, days:[w.work_date]}); else by.get(w.site_id).days.push(w.work_date); }
+    OPSX.missions = [...by.values()]; OPSX.missionsAt = Date.now();
+  }catch(e){ console.warn("Missions :", e); }
+  return OPSX.missions;
+}
+async function opsFillMissions(p){
+  const sel = p.opsx.msel, cur = sel.value, list = await opsMissions();
+  const d = s => s.slice(8,10)+"/"+s.slice(5,7);
+  sel.innerHTML = `<option value="">Mission…</option>` + list.map(w => `<option value="${opsE(w.site_id)}">${d(w.days[0])}${w.days.length>1?"→"+d(w.days[w.days.length-1]):""} · ${opsE(w.mission_no||"")} ${opsE(w.name)}${w.reg?" · "+opsE(w.reg):""}</option>`).join("");
+  sel.value = cur;
+}
+function opsShowMission(p, id){
+  const g = p.opsx.mis; g.clearLayers();
+  const w = OPSX.missions.find(x => String(x.site_id) === String(id)); if(!w) return;
+  const pts = (Array.isArray(w.features)?w.features:[]).filter(q => isFinite(+q.lat) && isFinite(+q.lon));
+  (Array.isArray(w.route)?w.route:[]).forEach(r => Array.isArray(r) && r.length>1 && L.polyline(r.map(c=>[+c[0],+c[1]]),{pane:"opsxPts",color:"#F0C040",weight:3,dashArray:"6 5",interactive:false}).addTo(g));
+  const all = [[+w.lat,+w.lon], ...pts.map(q => [+q.lat,+q.lon])];
+  pts.forEach(q => L.marker([+q.lat,+q.lon],{pane:"opsxPts",keyboard:false,icon:opsIcon("osite "+(q.kind==="lz"?"olz":"odz"),"<b></b>")})
+    .bindTooltip(`<b>${opsE(q.name)}</b> · ${opsE(w.name)}${q.elev_m!=null?" · "+opsFt(q.elev_m):""}`).addTo(g));
+  L.marker([+w.lat,+w.lon],{pane:"opsxPts",keyboard:false,icon:opsIcon("omis",`<b>◆</b><span>${opsE(w.mission_no||"")} ${opsE(w.name)}${w.reg?" · "+opsE(w.reg):""}</span>`)}).addTo(g);
+  if(p.follow){ p.moved = true; if(p.btn) p.btn.hidden = false; }      // la carte arrête de suivre l'appareil
+  p.map.fitBounds(L.latLngBounds(all).pad(0.4), {maxZoom:13});
+}
+
+/* ---------- appareils en vol ---------- */
+function opsLive(){ try{ return (fleet||[]).filter(a => a.active && state[a.reg] && status(state[a.reg].last).k==="live"); }catch(e){ return []; } }
+function opsMark(p){
+  const z = p.map.getZoom();
+  p.opsx.el.querySelectorAll(".opsx-col [data-k]").forEach(b => {
+    const d = OPSX.btns.find(x => x.k === b.dataset.k), on = OPSX.on.has(d.k);
+    b.classList.toggle("on", on); b.classList.toggle("dim", on && z < d.minZ);
+    b.title = d.t + (on && z < d.minZ ? " — zoomez pour afficher (niveau " + d.minZ + ")" : "");
+  });
+  const n = opsLive().length, f = p.opsx.el.querySelector('[data-a="flights"]');
+  f.querySelector("span").textContent = n; f.classList.toggle("on", n > 0);
+}
+
+/* ---------- construction de la barre pour une carte ---------- */
+function opsTools(p){
+  const m = p.map;
+  if(!m.getPane("opsxZones")){ m.createPane("opsxZones").style.zIndex = 350; m.createPane("opsxPts").style.zIndex = 450; }
+  const ic = s => `<svg viewBox="0 0 24 24" aria-hidden="true">${s}</svg>`;
+  const el = document.createElement("div"); el.className = "opsx";
+  el.innerHTML = `
+    <div class="opsx-top">
+      <button type="button" data-a="labels" title="Afficher les libellés des boutons">${ic('<path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>')}</button>
+      <button type="button" data-tool="route" title="Tracer une route (distance, cap, ETE)">${ic('<path d="M5 19L19 5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>')}</button>
+      <button type="button" data-tool="ruler" title="Mesurer entre deux points">${ic('<path d="M3 17L17 3l4 4L7 21z" fill="#E0B23A" stroke="#7a5a10" stroke-width="1"/><path d="M8 12l2 2M11 9l2 2M14 6l2 2" stroke="#7a5a10" stroke-width="1.4"/>')}</button>
+      <button type="button" data-a="euro" title="Afficher le coût estimé de la route">€</button>
+      <select class="opsx-mis" aria-label="Mission"><option value="">Mission…</option></select>
+    </div>
+    <div class="opsx-col">
+      ${OPSX.btns.map(b => `<button type="button" data-k="${b.k}" title="${opsE(b.t)}">${ic(b.ic)}<em>${opsE(b.t)}</em></button>`).join("")}
+      <button type="button" data-a="flights" title="Appareils en vol : appuyer pour passer de l'un à l'autre">${ic('<path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="currentColor"/>')}<span>0</span><em>Appareils en vol</em></button>
+    </div>
+    <div class="opsx-box" hidden></div>
+    <div class="opsx-bot">
+      <button type="button" data-a="zin" title="Zoom avant">+</button>
+      <button type="button" data-a="zout" title="Zoom arrière">−</button>
+      <button type="button" data-a="full" title="Plein écran">${ic('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>')}</button>
+    </div>`;
+  p.el.appendChild(el);
+  L.DomEvent.disableClickPropagation(el); L.DomEvent.disableScrollPropagation(el);
+  p.opsx = { el, g:{}, seq:0, tool:null, wpts:[], rpts:[], euro:false, idx:0,
+             box:el.querySelector(".opsx-box"), msel:el.querySelector(".opsx-mis"),
+             route:L.layerGroup().addTo(m), mis:L.layerGroup().addTo(m) };
+  OPSX.btns.forEach(b => p.opsx.g[b.k] = L.layerGroup().addTo(m));
+
+  el.querySelector(".opsx-col").addEventListener("click", e => {
+    const b = e.target.closest("[data-k]"); if(!b) return;
+    const k = b.dataset.k;
+    if(OPSX.on.has(k)) OPSX.on.delete(k); else OPSX.on.add(k);
+    opsSave(); panes.forEach(q => q.opsx && opsRefresh(q));
+  });
+  el.addEventListener("click", e => {
+    const t = e.target.closest("[data-tool]"); if(t){ opsToolOn(p, t.dataset.tool); return; }
+    const a = e.target.closest("[data-a]"); if(!a) return;
+    const act = a.dataset.a;
+    if(act==="labels"){ el.classList.toggle("labels"); a.classList.toggle("on"); }
+    if(act==="euro"){ p.opsx.euro = !p.opsx.euro; a.classList.toggle("on", p.opsx.euro); opsDrawRoute(p); }
+    if(act==="zin") m.zoomIn(); if(act==="zout") m.zoomOut();
+    if(act==="full"){ const d=document; if(d.fullscreenElement) d.exitFullscreen(); else (p.el.requestFullscreen||p.el.webkitRequestFullscreen||(()=>{})).call(p.el); }
+    if(act==="undo"){ const arr = p.opsx.tool==="ruler" ? p.opsx.rpts : p.opsx.wpts; arr.pop(); opsDrawRoute(p); }
+    if(act==="clear"){ p.opsx.wpts = []; p.opsx.rpts = []; opsToolOff(p); opsDrawRoute(p); }
+    if(act==="flights"){
+      const live = opsLive(); if(!live.length){ a.classList.add("shake"); setTimeout(()=>a.classList.remove("shake"),500); return; }
+      const ac = live[p.opsx.idx++ % live.length], last = state[ac.reg].last;
+      if(p.follow){ p.moved = true; if(p.btn) p.btn.hidden = false; }
+      m.setView([last.lat,last.lon], Math.max(m.getZoom(), 10));
+    }
+  });
+  p.opsx.msel.addEventListener("focus", () => opsFillMissions(p));
+  p.opsx.msel.addEventListener("change", () => opsShowMission(p, p.opsx.msel.value));
+  m.on("click", ev => {
+    if(!p.opsx.tool) return;
+    const q = {lat:ev.latlng.lat, lon:ev.latlng.lng};
+    if(p.opsx.tool==="ruler"){ if(p.opsx.rpts.length >= 2) p.opsx.rpts = []; p.opsx.rpts.push(q); }
+    else p.opsx.wpts.push(q);
+    opsDrawRoute(p);
+  });
+  document.addEventListener("keydown", e => { if(e.key==="Escape" && p.opsx.tool) opsToolOff(p); });
+  document.addEventListener("fullscreenchange", () => setTimeout(() => m.invalidateSize(), 150));
+  let deb = null;
+  m.on("moveend zoomend", () => { clearTimeout(deb); deb = setTimeout(() => opsRefresh(p), 500); opsMark(p); });
+  setInterval(() => opsMark(p), 5000);
+  opsRefresh(p); opsFillMissions(p);
+}
+
+/* ===================================================================
+   NUIT AÉRONAUTIQUE (30.10.2026)
+   Référence : SERA / EASA — la nuit va de la fin du crépuscule civil du soir au début de
+   l'aube civile du matin (centre du soleil à 6° sous l'horizon). Calcul local, horizon dégagé.
+   Repère secondaire affiché : forme simplifiée admise en France (coucher + 30 min / lever − 30 min
+   entre 30° et 60° de latitude ; 15 min en dessous de 30°).
+   Algorithme : position du soleil (formules astronomiques usuelles, précision ~1 min).
+   =================================================================== */
+const SUN = (() => {
+  const rad = Math.PI/180, dayMs = 864e5, J1970 = 2440588, J2000 = 2451545, e = rad*23.4397, J0 = 0.0009;
+  const toJ = d => d.valueOf()/dayMs - 0.5 + J1970, fromJ = j => new Date((j + 0.5 - J1970)*dayMs), toDays = d => toJ(d) - J2000;
+  const dec = l => Math.asin(Math.sin(e)*Math.sin(l));
+  const ra = l => Math.atan2(Math.sin(l)*Math.cos(e), Math.cos(l));
+  const M = d => rad*(357.5291 + 0.98560028*d);
+  const L = m => m + rad*(1.9148*Math.sin(m) + 0.02*Math.sin(2*m) + 0.0003*Math.sin(3*m)) + rad*102.9372 + Math.PI;
+  function altitude(date, lat, lon){
+    const d = toDays(date), m = M(d), l = L(m), lw = rad*-lon, phi = rad*lat;
+    const H = rad*(280.16 + 360.9856235*d) - lw - ra(l), dc = dec(l);
+    return Math.asin(Math.sin(phi)*Math.sin(dc) + Math.cos(phi)*Math.cos(dc)*Math.cos(H)) / rad;
+  }
+  function times(date, lat, lon){
+    const lw = rad*-lon, phi = rad*lat, d = toDays(date), n = Math.round(d - J0 - lw/(2*Math.PI));
+    const ds = J0 + lw/(2*Math.PI) + n, m = M(ds), l = L(m), dc = dec(l);
+    const Jnoon = J2000 + ds + 0.0053*Math.sin(m) - 0.0069*Math.sin(2*l);
+    const pair = h0 => {
+      const c = (Math.sin(h0*rad) - Math.sin(phi)*Math.sin(dc)) / (Math.cos(phi)*Math.cos(dc));
+      if(c < -1 || c > 1) return [null, null];          // pas de passage à cette hauteur ce jour-là
+      const w = Math.acos(c), a = J0 + (w + lw)/(2*Math.PI) + n;
+      const Jset = J2000 + a + 0.0053*Math.sin(m) - 0.0069*Math.sin(2*l);
+      return [fromJ(Jnoon - (Jset - Jnoon)), fromJ(Jset)];
+    };
+    const [sunrise, sunset] = pair(-0.833), [dawn, dusk] = pair(-6);
+    return { sunrise, sunset, dawn, dusk };
+  }
+  return { altitude, times };
+})();
+// État jour/nuit à un point et à un instant, avec la prochaine bascule
+function nightAt(lat, lon, t){
+  t = t ? new Date(t) : new Date(nowMs());
+  const ev = [-1,0,1,2].map(k => SUN.times(new Date(t.getTime() + k*864e5), lat, lon));
+  const dusks = ev.map(x => x.dusk).filter(Boolean).sort((a,b) => a-b);
+  const dawns = ev.map(x => x.dawn).filter(Boolean).sort((a,b) => a-b);
+  const sets  = ev.map(x => x.sunset).filter(Boolean).sort((a,b) => a-b);
+  const rises = ev.map(x => x.sunrise).filter(Boolean).sort((a,b) => a-b);
+  const night = SUN.altitude(t, lat, lon) < -6;
+  const next = arr => arr.find(x => x > t) || null, prev = arr => [...arr].reverse().find(x => x <= t) || null;
+  const frMin = Math.abs(lat) <= 30 ? 15 : 30;
+  const nextSet = next(sets), nextRise = next(rises);
+  return { night, t,
+    start: night ? prev(dusks) : next(dusks),      // début de la nuit (en cours ou à venir)
+    end:   night ? next(dawns) : null,             // fin de la nuit en cours
+    sunset: nextSet && (!night) ? nextSet : prev(sets), sunrise: nextRise,
+    frStart: nextSet ? new Date(nextSet.getTime() + frMin*60000) : null, frMin };
+}
+const nHM = d => d ? d.toISOString().slice(11,16) : "–";
+const nLoc = d => d ? d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Paris"}) : "–";
+const nIn = d => { const m = (d - nowMs())/60000; return m < 60 ? Math.max(0,Math.round(m))+" min" : Math.floor(m/60)+" h "+String(Math.round(m%60)).padStart(2,"0"); };
+// Ligne de la fiche appareil
+function nightFact(last){
+  if(!last) return "";
+  const n = nightAt(last.lat, last.lon);
+  if(n.night) return `<div class="ngt on">☾ <b>De nuit</b> depuis ${nHM(n.start)} UTC (${nLoc(n.start)} loc.)${n.end?` · aube civile ${nHM(n.end)} UTC`:""}</div>`;
+  if(!n.start) return `<div class="ngt">☀ Pas de nuit aéronautique dans les prochaines 24 h à cette position</div>`;
+  const soon = (n.start - nowMs()) < 30*60000;
+  return `<div class="ngt${soon?" soon":""}">${soon?"◐":"☀"} Nuit aéronautique à <b>${nHM(n.start)} UTC</b> (${nLoc(n.start)} loc.) · dans ${nIn(n.start)}`+
+    `<small>Coucher du soleil ${nHM(n.sunset)} UTC · règle FR simplifiée (coucher + ${n.frMin} min) : ${nHM(n.frStart)} UTC</small></div>`;
+}
+// Pastille sur l'étiquette de l'hélicoptère
+function nightBadge(last){
+  if(!last) return "";
+  const n = nightAt(last.lat, last.lon);
+  if(n.night) return `<span class="nb on" title="De nuit (aéronautique)">☾</span>`;
+  if(n.start && n.start - nowMs() < 30*60000) return `<span class="nb soon" title="Nuit aéronautique dans ${nIn(n.start)}">◐ ${nIn(n.start)}</span>`;
+  return "";
+}
+// Arrivée à destination par rapport à la nuit au point d'arrivée
+function nightAtEta(tgt, eta){
+  if(!tgt || !eta) return null;
+  const n = nightAt(tgt.lat, tgt.lon, eta);
+  if(n.night) return { k:"night", txt:"arrivée de nuit", start:n.start };
+  if(n.start && n.start - eta < 30*60000) return { k:"soon", txt:"arrivée < 30 min avant la nuit", start:n.start };
+  return null;
+}
+// Surcouche : zone déjà dans la nuit aéronautique (soleil à plus de 6° sous l'horizon)
+function nightLayer(){
+  const g = L.layerGroup(); let t = null;
+  function draw(){
+    g.clearLayers();
+    const now = new Date(), pts = [];
+    const southNight = SUN.altitude(now, -89, 0) < -6 && SUN.altitude(now, -89, 180) < -6;
+    for(let lon = -180; lon <= 180; lon += 2){
+      let b = southNight ? -89 : 89;
+      for(let lat = -88; lat <= 88; lat += 0.5){
+        const a1 = SUN.altitude(now, lat, lon) < -6, a2 = SUN.altitude(now, lat + 0.5, lon) < -6;
+        if(a1 !== a2){ b = lat + 0.25; if(southNight ? a1 : a2) break; }
+      }
+      pts.push([b, lon]);
+    }
+    const pole = southNight ? -89 : 89;
+    L.polygon([...pts, [pole, 180], [pole, -180]], {color:"#0A1A3A", weight:1, opacity:.6, fillColor:"#0A1A3A", fillOpacity:.32, interactive:false, smoothFactor:2}).addTo(g);
+    L.polyline(pts, {color:"#7FA7FF", weight:1.5, dashArray:"6 5", interactive:false}).bindTooltip("Limite de la nuit aéronautique (fin du crépuscule civil)",{sticky:true}).addTo(g);
+  }
+  g.on("add", () => { draw(); t = setInterval(draw, 300000); });
+  g.on("remove", () => { clearInterval(t); t = null; });
+  return g;
+}
+
+function createPane(i){
+  const el=document.createElement("div"); el.className="pane";
+  el.innerHTML=`<div class="map"></div><div class="pane-bar"><select aria-label="Appareil suivi sur cette carte"></select><span class="pst"></span><button type="button" hidden>Recentrer</button></div>`;
+  document.getElementById("maps").appendChild(el);
+  const m=L.map(el.querySelector(".map"),{zoomControl:false}).setView([45.9,6.8],8);
+  // Zoom et plein écran : boutons de la barre OPS, en bas à gauche
+  const lay=makeLayers(); lay["Topo (OpenTopoMap)"].addTo(m);
+  const sites=L.layerGroup().addTo(m);
+  m.on("click",()=>sites.eachLayer(l=>l.closeTooltip&&l.closeTooltip()));   // toucher ailleurs = fermer
+  const ov=makeOverlays(); ov["Chantiers du jour"]=sites;
+  L.control.layers(lay,ov,{position:"topright"}).addTo(m);
+  L.control.scale({imperial:false,position:"bottomleft"}).addTo(m);
+  BASES.forEach(b => L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null}),keyboard:false}).addTo(m));
+  const pane={i,el,map:m,markers:{},trails:{},predicts:{},navs:{},sites,follow:viewFollow[i]||null,moved:false,fitted:false,
+    sel:el.querySelector("select"),pst:el.querySelector(".pst"),btn:el.querySelector("button")};
+  // Déplacement à la main : on arrête de suivre jusqu'au clic sur « Recentrer »
+  m.on("dragstart",()=>{ if(pane.follow){ pane.moved=true; pane.btn.hidden=false; } });
+  pane.btn.onclick=()=>{ pane.moved=false; pane.btn.hidden=true; centerPane(pane,true); };
+  pane.sel.onchange=()=>{ pane.autoAt=0; pane.follow=pane.sel.value||null; viewFollow[i]=pane.follow; saveView();
+    pane.moved=false; pane.btn.hidden=true; pane.fitted=false; centerPane(pane,true); render(lastPs); };
+  L.DomEvent.disableClickPropagation(el.querySelector(".pane-bar"));
+  L.DomEvent.disableScrollPropagation(el.querySelector(".pane-bar"));
+  opsTools(pane);
+  return pane;
+}
+function setSplit(n){
+  n=Math.max(1,Math.min(4,+n||1));
+  // Proposer d'office un appareil différent dans chaque nouvelle carte
+  while(panes.length<n){
+    const i=panes.length;
+    if(i>0 && !viewFollow[i] && fleet.length){
+      const used=new Set(viewFollow.slice(0,i).filter(Boolean));
+      const next=fleet.find(a=>a.active && passFilter(a) && !used.has(a.reg) && state[a.reg]?.last);
+      viewFollow[i]=next?next.reg:null;
+    }
+    panes.push(createPane(i));
+  }
+  while(panes.length>n){ const p=panes.pop(); p.map.remove(); p.el.remove(); }
+  document.getElementById("maps").dataset.n=n;
+  document.getElementById("split").value=String(n);
+  saveView();
+  setTimeout(()=>{ panes.forEach(p=>{ p.map.invalidateSize(); centerPane(p,false); }); if(lastPs) render(lastPs); },60);
+}
+function predictionBounds(reg){
+  const s=state[reg],last=s?.last;
+  if(!last || status(last).k!=="live")return null;
+  const kt=currentKt(s.prev,last);
+  if(!Number.isFinite(kt)||kt<=0)return null;
+  const radius=predictionRadiusKm(kt,30)*1000;
+  if(!(radius>0))return null;
+  // Emprise calculée sans passer par une couche : L.circle(...).getBounds() exige un cercle déjà posé sur
+  // une carte et levait « Cannot read properties of undefined (reading 'layerPointToLatLng') ».
+  return L.latLng(last.lat,last.lon).toBounds(radius*2);
+}
+function centerPane(pane,force){
+  if(pane.follow){
+    const last=state[pane.follow]?.last; if(!last) return;
+    if(pane.moved && !force) return;
+    const bounds=predictionBounds(pane.follow);
+    if(bounds){
+      // Conserver l'intégralité des trois cercles visibles, même sur les petites cartes.
+      // N'ajuster le zoom que si le cercle externe sortirait du cadre actuel.
+      const desiredZoom=pane.map.getBoundsZoom(bounds,{padding:[28,28]});
+      const z=force||!pane.fitted?Math.min(11,desiredZoom):Math.min(pane.map.getZoom(),desiredZoom);
+      pane.map.setView([last.lat,last.lon],z,{animate:false});
+    }else{
+      const z=pane.fitted?pane.map.getZoom():Math.max(pane.map.getZoom(),11);
+      pane.map.setView([last.lat,last.lon],z,{animate:false});
+    }
+    pane.fitted=true;
+  } else if(force || !pane.fitted){
+    const ll=Object.values(state).filter(s=>s.last && passFilter(s.ac)).map(s=>[s.last.lat,s.last.lon]);
+    if(ll.length){ pane.map.fitBounds(L.latLngBounds(ll).pad(.3),{maxZoom:11}); pane.fitted=true; }
+  }
+}
+function paneBars(){
+  for(const p of panes){
+    const opts=[`<option value="">Toute la flotte</option>`].concat(fleet.filter(a=>visibleIn(a,p)).map(a=>`<option value="${esc(a.reg)}"${!a.active?" disabled":""}>${esc(a.reg)}${!a.active?" (non suivi)":""}</option>`));
+    const html=opts.join("");
+    if(p.sel.dataset.h!==html){ p.sel.innerHTML=html; p.sel.dataset.h=html; }
+    p.sel.value=p.follow||"";
+    if(p.follow){
+      const a=fleet.find(x=>x.reg===p.follow), last=state[p.follow]?.last;
+      const st=a&&a.active?status(last):{k:"none",t:"Suivi non activé"};
+      p.pst.dataset.st=st.k;
+      p.pst.innerHTML=`<b>${esc(st.t)}</b>${last?` · ${esc(ago(last.fix_time))}`:""}${p.autoAt?` · <span class="auto">ouverte à la mise en route</span>`:""}`;
+    } else { p.pst.dataset.st=""; p.pst.textContent=""; }
+  }
+}
+let fleet = [], state = {}, selected = null, firstFit = true;
+
+/* ---------- Filtre par type (AS 332 / AS 350 / tous) ---------- */
+const FILTER_KEY="saf_fleet_filter";
+const FAM_LABEL={all:"Tous",332:"AS 332",350:"AS 350"};
+const famOf=a=>/332|H215|super\s*puma/i.test(a?.type||"")?"332":/350|H125|[eé]cureuil/i.test(a?.type||"")?"350":"autre";
+let typeFilter="all";   // la flotte est déjà restreinte au périmètre de la page (SCOPE)
+const passFilter=a=>typeFilter==="all"||famOf(a)===typeFilter;
+// Un appareil filtré reste visible sur une carte qui le suit explicitement
+const visibleIn=(a,p)=>passFilter(a)||p.follow===a.reg;
+function setFilter(f){
+  typeFilter=f in FAM_LABEL?f:"all";
+  try{ localStorage.setItem(FILTER_KEY,typeFilter); }catch(e){}
+  if(selected && !passFilter(fleet.find(a=>a.reg===selected))) selected=null;
+  panes.forEach(p=>{ if(!p.follow){ p.fitted=false; } });
+  if(lastOk) render(lastPs);
+  panes.forEach(p=>{ if(!p.follow) centerPane(p,true); });
+}
+function filterBar(){
+  document.querySelectorAll("#filters .seg button").forEach(b=>{
+    const f=b.dataset.f;
+    b.setAttribute("aria-pressed",String(f===typeFilter));
+    b.querySelector(".n").textContent=fleet.length?"("+fleet.filter(a=>f==="all"||famOf(a)===f).length+")":"";
+  });
+}
+document.querySelectorAll("#filters .seg button").forEach(b=>b.onclick=()=>setFilter(b.dataset.f));
+
+/* ---------- Utilitaires ---------- */
+// Cap en degrés. NSE envoie « headland » = cap en degrés × 57,29578 (et non en centièmes de degré) :
+// vérifié le 30.10.2026 sur 2 496 points en vol (écart médian 2° avec la route réellement suivie, contre 83° en /100).
+// Le relais fleet-poll écrit désormais heading_deg correct pour toutes les sources ; repli si la colonne est vide.
+const NSE_HDG_DIV = 57.29578;
+const normHeading = h => h == null ? null : ((h/NSE_HDG_DIV) % 360);
+const hdgOf = p => {
+  if(!p) return null;
+  if(p.heading_deg!=null && isFinite(+p.heading_deg)) return ((+p.heading_deg % 360)+360)%360;
+  if(p.heading==null) return null;
+  return p.source==="nse" || !p.source ? normHeading(+p.heading) : ((+p.heading % 360)+360)%360;
+};
+/* Horloge : l'écran (ex. Maxhub) peut être à l'heure fausse ou sur un mauvais fuseau. L'âge des positions,
+   le passage en jaune « traceur actif », l'état en vol et la nuit aéronautique se calculent donc avec
+   l'heure du serveur Supabase (fonction fleet_server_now), relue toutes les 30 min. */
+let CLOCK_OFFSET = 0;                       // ms : heure serveur − heure de l'écran
+const nowMs = () => Date.now() + CLOCK_OFFSET;
+async function syncClock(){
+  try{
+    const t0 = Date.now(); const r = await sb.rpc("fleet_server_now"); const t1 = Date.now();
+    if(r.error || !r.data) return;
+    const srv = new Date(r.data).getTime();
+    if(isFinite(srv) && t1 - t0 < 5000) CLOCK_OFFSET = srv - (t0 + t1)/2;
+  }catch(e){}
+}
+const minsAgo = t => (nowMs() - new Date(t).getTime())/60000;
+function ago(t){
+  const m = minsAgo(t);
+  if (m < 1) return "à l'instant";
+  if (m < 60) return `il y a ${Math.round(m)} min`;
+  if (m < 48*60) return `il y a ${Math.floor(m/60)} h ${String(Math.round(m%60)).padStart(2,"0")}`;
+  return `il y a ${Math.round(m/1440)} j`;
+}
+const hhmm = t => new Date(t).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"UTC"})+" UTC";
+function haversineKm(a,b){
+  const R=6371, r=x=>x*Math.PI/180, dLat=r(b.lat-a.lat), dLon=r(b.lon-a.lon);
+  const s=Math.sin(dLat/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+// Vitesse sol calculée entre les deux derniers points (si espacés de 20 s à 5 min)
+function computedGs(p1,p0){
+  if(!p1||!p0) return null;
+  const dt=(new Date(p0.fix_time)-new Date(p1.fix_time))/3600000;
+  if(dt<20/3600||dt>5/60) return null;
+  return haversineKm(p1,p0)/dt;
+}
+function currentKt(prev,last){
+  const calc=computedGs(prev,last);
+  if(Number.isFinite(calc) && calc>0) return calc/1.852;
+  const raw=Number(last?.speed);
+  return Number.isFinite(raw)&&raw>0?raw:null;
+}
+function destPoint(lat,lon,bearingDeg,km){
+  const R=6371, brg=bearingDeg*Math.PI/180, φ1=lat*Math.PI/180, λ1=lon*Math.PI/180, δ=km/R;
+  const sinφ1=Math.sin(φ1), cosφ1=Math.cos(φ1), sinδ=Math.sin(δ), cosδ=Math.cos(δ);
+  const sinφ2=sinφ1*cosδ + cosφ1*sinδ*Math.cos(brg);
+  const φ2=Math.asin(Math.max(-1,Math.min(1,sinφ2)));
+  const y=Math.sin(brg)*sinδ*cosφ1;
+  const x=cosδ - sinφ1*Math.sin(φ2);
+  const λ2=λ1 + Math.atan2(y,x);
+  return {lat:φ2*180/Math.PI, lon:((λ2*180/Math.PI+540)%360)-180};
+}
+function predictionRadiusKm(kt,min){ return kt*1.852*min/60; }
+function renderPrediction(pane,reg,last,prev,st){
+  let group=pane.predicts[reg];
+  const hd=hdgOf(last), kt=currentKt(prev,last);
+  if(!(last && st.k==="live" && Number.isFinite(hd) && Number.isFinite(kt) && kt>0)){
+    if(group){ group.remove(); delete pane.predicts[reg]; }
+    return;
+  }
+  // Ne recalculer le dessin que lorsque la dernière position, le cap ou la vitesse changent.
+  const signature=[last.fix_time,last.lat,last.lon,hd,kt].join("|");
+  if(group && group.predictionSignature===signature) return;
+  if(!group){ group=L.layerGroup().addTo(pane.map); pane.predicts[reg]=group; }
+  group.predictionSignature=signature;
+  group.clearLayers();
+  const center=[last.lat,last.lon];
+  // Style ForeFlight : trait blanc fin (3 px) et liseré noir très discret (0,5 px de chaque côté).
+  const rings=[
+    {min:10,color:"#FFFFFF"},
+    {min:20,color:"#FFFFFF"},
+    {min:30,color:"#FFFFFF"}
+  ];
+  rings.forEach(({min,color})=>{
+    const radiusKm=predictionRadiusKm(kt,min), radius=radiusKm*1000;
+    L.circle(center,{radius,color:"#080808",weight:4,opacity:1,fill:false,interactive:false}).addTo(group);
+    L.circle(center,{radius,color,weight:3,opacity:1,fill:false,interactive:false}).addTo(group);
+    const tag=destPoint(last.lat,last.lon,45,radiusKm);
+    const html=`<div style="padding:1px 5px;border-radius:10px;background:rgba(8,8,8,.78);border:1px solid rgba(255,255,255,.9);color:#fff;font:600 11px/1.25 var(--font);white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.35)">${min} min</div>`;
+    L.marker([tag.lat,tag.lon],{
+      icon:L.divIcon({className:"",html,iconSize:null,iconAnchor:[0,0]}),
+      interactive:false,
+      keyboard:false,
+      zIndexOffset:1200
+    }).addTo(group);
+  });
+  const end=destPoint(last.lat,last.lon,hd,predictionRadiusKm(kt,50));
+  // Ligne bleu marine avec sous-couche blanche pour l'isoler de la topographie.
+  L.polyline([center,[end.lat,end.lon]],{
+    color:"#FFFFFF",weight:9,opacity:.95,interactive:false
+  }).addTo(group);
+  L.polyline([center,[end.lat,end.lon]],{
+    color:"#001F54",weight:5,opacity:1,interactive:false
+  }).addTo(group);
+}
+/* ---------- Navigation vers le prochain chantier : ETE, ETA et route ----------
+   06.11.2026 — Destination = prochain chantier du Day Plan de l'appareil, dans l'ordre du plan :
+   le premier qui n'est ni annulé, ni terminé, ni déjà travaillé puis quitté aujourd'hui.
+   Les horaires des fiches mission ne servent plus à choisir (ils peuvent contredire l'ordre du Day Plan).
+   Point visé : la LZ du chantier si elle existe, sinon son point principal.
+   Vitesse sol calculée entre les deux derniers points (sans vent), entre 20 et 200 kt, sinon pas d'ETE. */
+function bearingDeg(a,b){
+  const r=x=>x*Math.PI/180, φ1=r(a.lat), φ2=r(b.lat), Δλ=r(b.lon-a.lon);
+  const y=Math.sin(Δλ)*Math.cos(φ2), x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+const angDiff=(a,b)=>{ const d=Math.abs(a-b)%360; return d>180?360-d:d; };
+const localHM=()=>new Intl.DateTimeFormat("fr-FR",{timeZone:WORKSITES.tz,hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date());
+const fmtLocal=t=>new Date(t).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",timeZone:WORKSITES.tz});
+function siteTarget(w){
+  const lz=sitePts(w).find(p=>p.kind==="lz");
+  return lz?{lat:+lz.lat,lon:+lz.lon,name:lz.name}:{lat:+w.lat,lon:+w.lon,name:null};
+}
+function navFor(reg){
+  const s=state[reg], last=s?.last;
+  if(!last || status(last).k!=="live") return null;
+  const kt=currentKt(s.prev,last);
+  const midnight=new Date(todayLocal()+"T00:00:00");   // approximatif (heure du navigateur), suffit pour « aujourd'hui »
+  const today=(s.all||[]).filter(p=>new Date(p.fix_time)>=midnight-2*3600e3);
+  let cands=sitesFor(reg).filter(w=>w.status!=="terminé");
+  // Chantier déjà travaillé puis quitté aujourd'hui : écarté
+  cands=cands.filter(w=>!(today.some(p=>siteDist(w,p)<=WORKSITES.nearKm) && siteDist(w,last)>WORKSITES.nearKm));
+  // Appareil déjà sur zone : pas de navigation
+  if(cands.some(w=>siteDist(w,last)<=WORKSITES.nearKm)) return null;
+  if(!cands.length) return null;
+  const pick=cands[0];   // déjà trié dans l'ordre du Day Plan
+  const tgt=siteTarget(pick), km=haversineKm(last,tgt);
+  const okKt=Number.isFinite(kt)&&kt>=20&&kt<=200;
+  const eteMin=okKt?km/(kt*1.852)*60:null;
+  const eta=okKt?new Date(new Date(last.fix_time).getTime()+eteMin*60000):null;
+  return {site:pick,tgt,km,kt:okKt?kt:null,eteMin,eta,brg:bearingDeg(last,tgt),night:nightAtEta(tgt,eta)};
+}
+const fmtEte=m=>m==null?"–":m<60?Math.round(m)+" min":Math.floor(m/60)+" h "+String(Math.round(m%60)).padStart(2,"0");
+function navLine(nav){
+  return `ETE ${fmtEte(nav.eteMin)}`+(nav.eta?` · ETA ${hm(nav.eta)}Z`:"")+(nav.night?` · ⚠ ${nav.night.txt}`:"");
+}
+function renderNav(pane,reg,nav,last){
+  let g=pane.navs[reg];
+  if(!nav||!last){ if(g){ g.remove(); delete pane.navs[reg]; } return; }
+  const sig=[last.fix_time,nav.site.id??nav.site.name,nav.tgt.lat,nav.tgt.lon,Math.round(nav.eteMin??-1)].join("|");
+  if(g && g.navSig===sig) return;
+  if(!g){ g=L.layerGroup().addTo(pane.map); pane.navs[reg]=g; }
+  g.navSig=sig; g.clearLayers();
+  // Route directe, découpée en arc de grand cercle (lisible sur les longues distances)
+  const n=Math.max(2,Math.min(64,Math.ceil(nav.km/10))), pts=[];
+  for(let i=0;i<=n;i++){ const q=destPoint(last.lat,last.lon,nav.brg,nav.km*i/n); pts.push([q.lat,q.lon]); }
+  pts[pts.length-1]=[nav.tgt.lat,nav.tgt.lon];
+  L.polyline(pts,{color:"#FFFFFF",weight:7,opacity:.9,interactive:false}).addTo(g);
+  L.polyline(pts,{color:"#B0177A",weight:4,opacity:1,dashArray:"10 7",interactive:false}).addTo(g);
+  const txt=`${esc(nav.site.name||"Chantier")}${nav.tgt.name?" · "+esc(nav.tgt.name):""} – ${Math.round(nav.km)} km · ${navLine(nav)}`;
+  L.marker([nav.tgt.lat,nav.tgt.lon],{interactive:false,keyboard:false,zIndexOffset:1300,
+    icon:L.divIcon({className:"",iconSize:null,iconAnchor:[0,0],html:`<span class="navdst${nav.night?" "+nav.night.k:""}">${txt}</span>`})}).addTo(g);
+}
+function status(last){
+  if(!last) return {k:"none",t:"Aucune position reçue"};
+  const m=minsAgo(last.fix_time), moving=(last.speed??0)>CONFIG.movingSpeed;
+  if(moving && m>CONFIG.lostAfterMin) return {k:"lost",t:`Signal perdu en vol – ${ago(last.fix_time)}`};
+  if(moving) return {k:"live",t:m<=CONFIG.liveMaxMin?"En vol":"En vol – dernier point "+ago(last.fix_time)};
+  if(m<=CONFIG.liveMaxMin) return {k:"ground",t:"Au sol, traceur actif"};
+  return {k:"stale",t:"Au sol / traceur éteint"};
+}
+function arrowSvg(color,heading){
+  // Silhouette AS 332 Super Puma vue de dessus : nez vers le nord avant rotation selon le cap.
+  // Nez arrondi, cabine longue, carénage moteurs, sponsons de train, poutre de queue,
+  // plan horizontal à gauche et rotor de queue à droite. Rotor principal 4 pales, seul élément animé.
+  const rot=Number.isFinite(heading)?heading:0;
+  return `<span class="heli-icon" style="transform:rotate(${rot}deg)"><svg viewBox="0 0 44 44" aria-hidden="true">
+    <g stroke="#fff" stroke-linejoin="round">
+      <path d="M20.4 29.5 L23.6 29.5 L22.9 40.5 L21.1 40.5 Z" fill="${color}" stroke-width=".8"/>
+      <path d="M21.1 37.6 L15.6 37 L15.6 39.4 L21.1 39.8 Z" fill="${color}" stroke-width=".9"/>
+      <path d="M21.1 39.4 L22.9 39.4 L22.6 43.6 L21.4 43.6 Z" fill="${color}" stroke-width=".9"/>
+      <path d="M22.9 40.4 H25.4" stroke-width="1.1"/>
+      <path d="M25.6 37.4 V43.4" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M18.7 20.5 L15.4 21.6 Q14.5 25 15.4 28.3 L18.7 28.9 Z M25.3 20.5 L28.6 21.6 Q29.5 25 28.6 28.3 L25.3 28.9 Z" fill="${color}" stroke-width="1"/>
+      <path d="M22 7.4 C24.7 7.4 25.7 10.2 25.7 13.4 L25.7 27.2 C25.7 29.4 24.4 31 22 31 C19.6 31 18.3 29.4 18.3 27.2 L18.3 13.4 C18.3 10.2 19.3 7.4 22 7.4 Z" fill="${color}" stroke-width="1.1"/>
+      <rect x="20.1" y="14.6" width="3.8" height="14.4" rx="1.6" fill="#0A1420" fill-opacity=".28" stroke-width=".6"/>
+      <path d="M19.3 12.4 Q22 8.7 24.7 12.4 L24.4 14.4 L19.6 14.4 Z" fill="#d4f4ff" stroke-width=".6"/>
+    </g>
+    <circle cx="21.1" cy="27.6" r=".8" fill="#0A1420"/><circle cx="22.9" cy="27.6" r=".8" fill="#0A1420"/>
+    <g class="heli-rotor" stroke="#fff" stroke-width="1.9" stroke-linecap="round">
+      <path d="M9.3 9.3 L34.7 34.7 M34.7 9.3 L9.3 34.7"/>
+      <circle cx="22" cy="22" r="2.2" fill="${color}" stroke="#0A1420" stroke-width="1.1"/>
+    </g>
+  </svg></span>`;
+}
+const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- Référentiel aérodromes (distance à vol d'oiseau, coordonnées approchées) ---------- */
+// metar:true = aérodrome publiant un METAR
+const AERODROMES = [
+  {icao:"LFKA",name:"Albertville",lat:45.6276,lon:6.3297,base:true},
+  {icao:"LSGS",name:"Sion",lat:46.2196,lon:7.3268,base:true,metar:true},
+  {icao:"LFLB",name:"Chambéry Aix-les-Bains",lat:45.6381,lon:5.8802,metar:true},
+  {icao:"LFLE",name:"Chambéry Challes",lat:45.5611,lon:5.9758},
+  {icao:"LFLP",name:"Annecy",lat:45.9308,lon:6.1064,metar:true},
+  {icao:"LSGG",name:"Genève",lat:46.2381,lon:6.1090,metar:true},
+  {icao:"LFLS",name:"Grenoble Isère",lat:45.3629,lon:5.3294,metar:true},
+  {icao:"LFLG",name:"Grenoble Le Versoud",lat:45.2192,lon:5.8497},
+  {icao:"LFHM",name:"Megève",lat:45.8208,lon:6.6522},
+  {icao:"LFLJ",name:"Courchevel",lat:45.3967,lon:6.6347},
+  {icao:"LFKX",name:"Méribel",lat:45.4070,lon:6.5806},
+  {icao:"LFHU",name:"L'Alpe d'Huez",lat:45.0883,lon:6.0847},
+  {icao:"LSGB",name:"Bex",lat:46.2583,lon:6.9864},
+  {icao:"LSGT",name:"Gruyères",lat:46.5942,lon:7.0944},
+  {icao:"LFLY",name:"Lyon Bron",lat:45.7272,lon:4.9444,metar:true},
+  {icao:"LFLL",name:"Lyon Saint-Exupéry",lat:45.7256,lon:5.0811,metar:true},
+  {icao:"LFLU",name:"Valence Chabeuil",lat:44.9216,lon:4.9699,metar:true},
+  {icao:"LIMW",name:"Aoste",lat:45.7385,lon:7.3687},
+  {icao:"LIMF",name:"Turin Caselle",lat:45.2008,lon:7.6497,metar:true},
+];
+const BASE_RADIUS_KM = 2;
+function bearingDeg(a,b){
+  const r=x=>x*Math.PI/180, y=Math.sin(r(b.lon-a.lon))*Math.cos(r(b.lat));
+  const x=Math.cos(r(a.lat))*Math.sin(r(b.lat))-Math.sin(r(a.lat))*Math.cos(r(b.lat))*Math.cos(r(b.lon-a.lon));
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+const CARD=["N","NE","E","SE","S","SO","O","NO"];
+function nearestAds(p,filter=()=>true,n=1){
+  return AERODROMES.filter(filter).map(ad=>({ad,km:haversineKm(p,ad)})).sort((a,b)=>a.km-b.km).slice(0,n);
+}
+function placeLabel(p){
+  const {ad,km}=nearestAds(p)[0];
+  if(km<BASE_RADIUS_KM) return `${ad.icao} ${ad.name}`;
+  return `${km<10?km.toFixed(1):Math.round(km)} km ${CARD[Math.round(bearingDeg(ad,p)/45)%8]} de ${ad.icao} ${ad.name}`;
+}
+const atBase = p => nearestAds(p,ad=>ad.base)[0].km < BASE_RADIUS_KM;
+const isAir = p => (p.speed??0) > CONFIG.movingSpeed;
+const hm = t => new Date(t).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",timeZone:"UTC"});
+function dur(min){ min=Math.max(0,Math.round(min)); return min<60?`${min} min`:`${Math.floor(min/60)} h ${String(min%60).padStart(2,"0")}`; }
+
+/* ---------- Analyse des positions : vols, dernière pose, temps hors base ---------- */
+// Les points NSE sont espacés (jusqu'à ~40 min) : les heures de décollage et d'atterrissage
+// sont donc encadrées entre deux points, jamais connues exactement.
+function analyze(pts){
+  const flights=[]; let cur=null, lastLanding=null;
+  for(let i=0;i<pts.length;i++){
+    const p=pts[i], prev=pts[i-1]||null;
+    if(isAir(p)){
+      if(!cur){
+        const fromGround = prev && !isAir(prev) && (new Date(p.fix_time)-new Date(prev.fix_time)) < 12*3600e3;
+        cur={toFrom:fromGround?prev.fix_time:null, toTo:p.fix_time, toPlace:fromGround?prev:null, pts:fromGround?[prev,p]:[p]};
+      } else cur.pts.push(p);
+    } else if(cur){
+      cur.ldFrom=cur.pts[cur.pts.length-1].fix_time; cur.ldTo=p.fix_time; cur.ldPlace=p; cur.pts.push(p);
+      flights.push(cur); lastLanding={place:p,from:cur.ldFrom,to:p.fix_time}; cur=null;
+    }
+  }
+  if(cur) flights.push(cur); // vol en cours
+  for(const f of flights){
+    f.km=f.pts.slice(1).reduce((s,p,i)=>s+haversineKm(f.pts[i],p),0);
+    const a0=f.toFrom?new Date(f.toFrom):null, a1=new Date(f.toTo);
+    const b0=f.ldFrom?new Date(f.ldFrom):null, b1=f.ldTo?new Date(f.ldTo):null;
+    if(b1){ f.minMin=(b0-a1)/60000; f.maxMin=a0?(b1-a0)/60000:null; }
+  }
+  // Temps hors base
+  let outside=null;
+  const last=pts[pts.length-1];
+  if(last && !atBase(last)){
+    let i=pts.length-1; while(i>=0 && !atBase(pts[i])) i--;
+    outside = i>=0 ? {since:pts[i+1].fix_time, leftFrom:pts[i]} : {since:null};
+  }
+  return {flights, lastLanding, outside};
+}
+
+/* ---------- Météo (à la demande, pour l'appareil sélectionné) ---------- */
+const wxCache={}, metarCache={};
+const WX_TTL=10*60e3;
+async function ensureDetails(reg){
+  const last=state[reg]?.last; if(!last) return;
+  let changed=false;
+  const w=wxCache[reg];
+  if(!w || Date.now()-w.t>WX_TTL || haversineKm(w,last)>5){
+    wxCache[reg]={t:Date.now(),lat:last.lat,lon:last.lon,loading:true};
+    try{
+      const u=`https://api.open-meteo.com/v1/forecast?latitude=${last.lat.toFixed(4)}&longitude=${last.lon.toFixed(4)}`+
+        `&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,visibility&wind_speed_unit=kn&timezone=UTC`;
+      const r=await fetch(u); wxCache[reg].data=(await r.json()).current;
+    }catch(e){ wxCache[reg].err=String(e.message||e); }
+    wxCache[reg].loading=false; changed=true;
+  }
+  const m=metarCache[reg];
+  if(!m || Date.now()-m.t>WX_TTL || haversineKm(m,last)>5){
+    const ids=nearestAds(last,ad=>ad.metar,2).map(x=>x.ad.icao);
+    metarCache[reg]={t:Date.now(),lat:last.lat,lon:last.lon,ids,loading:true};
+    try{
+      const {data,error}=await sb.functions.invoke("fleet-metar",{body:{ids}});
+      if(error) throw error; metarCache[reg].data=data.metars;
+    }catch(e){ metarCache[reg].err=String(e.message||e); }
+    metarCache[reg].loading=false; changed=true;
+  }
+  if(changed && selected===reg) render(lastPs);
+}
+
+function detailsHTML(reg){
+  const s=state[reg], an=s.an, last=s.last;
+  if(!last) return "";
+  const near=nearestAds(last,()=>true,1)[0];
+  const since24=Date.now()-24*3600e3;
+  const fl=an.flights.filter(f=>new Date(f.ldTo||f.toTo)>=since24).reverse();
+  let h=`<div class="det">`;
+  h+=`<h3>Position</h3><p>${esc(placeLabel(last))}<br><span class="muted">Aérodrome le plus proche : ${esc(near.ad.icao)} ${esc(near.ad.name)}, ${near.km.toFixed(1)} km</span></p>`;
+  h+=`<h3>Vols des dernières 24 h</h3>`;
+  if(!fl.length) h+=`<p class="muted">Aucun vol enregistré sur la période.</p>`;
+  else{
+    h+=`<table><tbody>`;
+    for(const f of fl){
+      const to = f.toFrom ? `entre ${hm(f.toFrom)} et ${hm(f.toTo)}` : `avant ${hm(f.toTo)}`;
+      const toPl = f.toPlace ? placeLabel(f.toPlace) : "lieu non enregistré";
+      const ld = f.ldTo ? `entre ${hm(f.ldFrom)} et ${hm(f.ldTo)}` : "vol en cours";
+      const ldPl = f.ldPlace ? placeLabel(f.ldPlace) : "—";
+      const d = !f.ldTo ? "—" : f.maxMin!=null ? `${dur(f.minMin)} à ${dur(f.maxMin)}` : f.minMin>=5 ? `au moins ${dur(f.minMin)}` : "inconnue (décollage non enregistré)";
+      h+=`<tr><td><b>Départ</b> ${esc(toPl)}<br><span class="muted">${to} UTC</span></td></tr>
+          <tr><td><b>Arrivée</b> ${esc(ldPl)}<br><span class="muted">${ld}${f.ldTo?" UTC":""}</span></td></tr>
+          <tr class="sum"><td>Durée ${d} · distance ≥ ${Math.round(f.km)} km</td></tr>`;
+    }
+    h+=`</tbody></table><p class="muted note">Heures encadrées entre deux points NSE ; la distance suit les seuls points reçus.</p>`;
+  }
+  const w=wxCache[reg];
+  h+=`<h3>Météo au point</h3>`;
+  if(!w||w.loading) h+=`<p class="muted">Chargement…</p>`;
+  else if(w.err||!w.data) h+=`<p class="muted">Météo indisponible.</p>`;
+  else{
+    const c=w.data;
+    const vis=c.visibility!=null?(c.visibility>=10000?"≥ 10 km":(c.visibility/1000).toFixed(1)+" km"):"–";
+    h+=`<p>Vent ${String(Math.round(c.wind_direction_10m)).padStart(3,"0")}° / ${Math.round(c.wind_speed_10m)} kt`+
+       `${c.wind_gusts_10m>c.wind_speed_10m+5?`, rafales ${Math.round(c.wind_gusts_10m)} kt`:""} · ${Math.round(c.temperature_2m)} °C · nébulosité ${c.cloud_cover} % · visibilité ${vis}`+
+       `<br><span class="muted">Modèle Open-Meteo à ${hm(c.time+"Z")} UTC, pas une observation.</span></p>`;
+  }
+  const m=metarCache[reg];
+  h+=`<h3>METAR les plus proches</h3>`;
+  if(!m||m.loading) h+=`<p class="muted">Chargement…</p>`;
+  else if(m.err||!m.data) h+=`<p class="muted">METAR indisponibles.</p>`;
+  else for(const id of m.ids){
+    const x=m.data[id], ad=AERODROMES.find(a=>a.icao===id);
+    h+=`<p class="metar"><b>${id}</b> <span class="muted">${esc(ad.name)}, ${Math.round(haversineKm(last,ad))} km</span><br>${x?esc(x.raw):"<span class='muted'>pas de METAR récent</span>"}</p>`;
+  }
+  return h+`</div>`;
+}
+
+/* ---------- Chantiers du jour (Day Plan par hélicoptère) ----------
+   Lecture de fleet_worksites (même session, même RLS que fleet_positions).
+   06.11.2026 — Données copiées des Day Plans de l'application « SAF International — Operations »
+   par la fonction ops-worksites-sync : appareil, jour et ordre (seq / plan_count) du Day Plan,
+   point principal (1re DZ, sinon LZ, sinon lieu), points DZ/LZ (features) et trajet (route) de la mission.
+   Le survol d'un marqueur affiche le détail ; un appui l'affiche aussi sur écran tactile. */
+let worksites=[], wsOff=false;
+const todayLocal=()=>new Intl.DateTimeFormat("sv-SE",{timeZone:WORKSITES.tz}).format(new Date());
+const tShort=t=>t?String(t).slice(0,5):"";
+async function loadWorksites(){
+  if(wsOff) return;
+  const r=await sb.from(WORKSITES.table).select("*").eq("work_date",todayLocal()).order("reg",{nullsFirst:false}).order("seq",{ascending:true,nullsFirst:false});
+  if(r.error){
+    // Table pas encore créée : la couche reste vide, sans message d'erreur
+    if(/PGRST205|42P01|does not exist|Could not find the table/i.test(String(r.error.code)+" "+r.error.message)){ wsOff=true; worksites=[]; return; }
+    throw r.error;
+  }
+  worksites=(r.data||[]).filter(w=>isFinite(+w.lat)&&isFinite(+w.lon));
+}
+// Chantiers d'un appareil dans l'ordre de son Day Plan
+const sitesFor=reg=>worksites.filter(w=>w.reg&&String(w.reg).toUpperCase()===reg.toUpperCase()&&w.status!=="annulé")
+  .sort((a,b)=>(a.seq??999)-(b.seq??999));
+const seqTxt=w=>w.seq!=null&&w.plan_count?`${w.seq}/${w.plan_count}`:"";
+function siteClass(w){ return w.status==="terminé"?"done":w.status==="annulé"?"off":["standby","demande","devis"].includes(w.status)?"tent":""; }
+const sitePts=w=>(Array.isArray(w.features)?w.features:[]).filter(p=>isFinite(+p.lat)&&isFinite(+p.lon));
+// Distance de l'appareil au chantier : au plus proche de ses points (DZ, LZ, point principal)
+function siteDist(w,last){ return Math.min(haversineKm(last,{lat:+w.lat,lon:+w.lon}),...sitePts(w).map(p=>haversineKm(last,{lat:+p.lat,lon:+p.lon}))); }
+function siteSvg(){
+  return `<svg viewBox="0 0 22 22" aria-hidden="true"><rect x="4" y="4" width="14" height="14" rx="2" transform="rotate(45 11 11)" fill="#F0C040" stroke="#0D1B2A" stroke-width="2"/><circle cx="11" cy="11" r="2.6" fill="#0D1B2A"/></svg>`;
+}
+const elevTxt=m=>m==null||m===""?"":` · ${Math.round(+m).toLocaleString("fr-FR")} m / ${Math.round(+m*3.28084).toLocaleString("fr-FR")} ft`;
+function siteTip(w){
+  const rows=[];
+  const row=(k,v,raw)=>{ if(v!=null&&String(v).trim()!=="") rows.push(`<tr><th>${k}</th><td>${raw?v:esc(v)}</td></tr>`); };
+  row("Mission",w.mission_no);
+  row("Day Plan",seqTxt(w)?`chantier ${seqTxt(w)}${w.reg?" de "+w.reg:""}`:null);
+  row("Horaire",w.start_time||w.end_time?`${tShort(w.start_time)||"?"} – ${tShort(w.end_time)||"?"} (heure locale)`:null);
+  row("Appareil",w.reg);
+  row("Équipage",w.crew);
+  row("Client",w.client);
+  row("Travaux",w.work_type);
+  const ch=[w.loads!=null?`${w.loads} charge${w.loads>1?"s":""}`:null,
+            w.max_load_kg!=null?`max ${(+w.max_load_kg).toLocaleString("fr-FR")} kg`:null,
+            w.longline_m!=null?`longline ${w.longline_m} m`:null].filter(Boolean).join(" · ");
+  row("Charges",ch);
+  row("Contact",w.contact);
+  row("Statut",w.status);
+  const pts=sitePts(w);
+  if(pts.length) row("Points",pts.map(p=>`<b>${esc(p.name)}</b>${esc(elevTxt(p.elev_m))}`).join("<br>"),true);
+  row("Remarques",w.details);
+  let prox="";
+  const last=w.reg?state[String(w.reg).toUpperCase()]?.last:null;
+  if(w.reg&&last){
+    const d=siteDist(w,last);
+    prox=d<=WORKSITES.nearKm
+      ?`<div class="prox on">${esc(w.reg)} sur zone (${d<1?Math.round(d*1000)+" m":d.toFixed(1)+" km"})</div>`
+      :`<div class="prox off">${esc(w.reg)} à ${d<10?d.toFixed(1):Math.round(d)} km · dernier point ${esc(ago(last.fix_time))}</div>`;
+  }
+  return `<h4>${esc(w.name||"Chantier")}</h4><div class="sub">${esc(w.location||"")}${w.location?" · ":""}${(+w.lat).toFixed(5)}, ${(+w.lon).toFixed(5)}</div>
+    <table>${rows.join("")}</table>${prox}`;
+}
+function renderWorksites(){
+  // Reconstruction seulement si les chantiers ont changé (sinon une infobulle ouverte se fermerait à chaque cycle)
+  const sig=JSON.stringify(worksites);
+  for(const p of panes){
+    if(p.sitesSig===sig) continue;
+    p.sitesSig=sig;
+    p.sites.clearLayers();
+    for(const w of worksites){
+      const ll=[+w.lat,+w.lon], cls=siteClass(w), off=cls==="off";
+      const line={color:"#F0C040",weight:2,opacity:off?.35:.75,dashArray:"5 6",interactive:false};
+      // Trajet saisi dans l'agenda, sinon liaison LZ → DZ
+      const pts=sitePts(w), routes=Array.isArray(w.route)?w.route.filter(r=>Array.isArray(r)&&r.length>1):[];
+      if(routes.length) routes.forEach(r=>L.polyline(r.map(c=>[+c[0],+c[1]]),line).addTo(p.sites));
+      else { const lz=pts.find(x=>x.kind==="lz"); if(lz) pts.filter(x=>x.kind==="dz").forEach(dz=>L.polyline([[+lz.lat,+lz.lon],[+dz.lat,+dz.lon]],line).addTo(p.sites)); }
+      for(const q of pts){
+        if(Math.abs(q.lat-ll[0])<1e-6&&Math.abs(q.lon-ll[1])<1e-6) continue;   // déjà le marqueur principal
+        const isLz=q.kind==="lz";
+        L.circleMarker([+q.lat,+q.lon],{radius:isLz?6:5,color:"#0D1B2A",weight:2,fillColor:isLz?"#5B9BE0":"#F0C040",fillOpacity:off?.4:1})
+          .bindTooltip(`<b>${esc(q.name)}</b> · ${esc(w.name||"")}${esc(elevTxt(q.elev_m))}`,{direction:"top",offset:[0,-6]})
+          .addTo(p.sites);
+      }
+      const icon=L.divIcon({className:"",iconSize:[0,0],
+        html:`<div class="wsm ${cls}">${siteSvg()}<span class="wl">${esc(w.name||"Chantier")}${w.reg?" · "+esc(w.reg):""}</span></div>`});
+      const mk=L.marker(ll,{icon,keyboard:true,title:w.name||"Chantier",zIndexOffset:-100}).addTo(p.sites);
+      mk.bindTooltip(()=>siteTip(w),{className:"wst",direction:"top",offset:[0,-14],opacity:1});
+      // Écran tactile : Leaflet ouvre déjà l'infobulle au toucher ; un toucher sur la carte la referme
+      // Infobulle sous le marqueur quand il est dans la moitié haute de la carte, pour qu'elle reste visible
+      mk.on("tooltipopen",e=>{ const up=p.map.latLngToContainerPoint(ll).y>p.map.getSize().y/2, tt=e.tooltip;
+        tt.options.direction=up?"top":"bottom"; tt.options.offset=L.point(0,up?-14:14); tt.update(); });
+    }
+  }
+}
+
+/* ---------- Données ---------- */
+let lastPs=null, loading=false, lastOk=0, pendingRealtimeLoad=false;
+let posCache={at:0}, refAt=0;   // cache des traces (lecture incrémentale) et horodatage des données de référence
+let realtimeChannel=null, realtimeLoadTimer=null;
+// À chaque INSERT/UPDATE en base, relire les dernières positions ; le polling 30 s reste un secours.
+function scheduleRealtimeLoad(){
+  if(realtimeLoadTimer) return;
+  if(document.visibilityState==="hidden") return;   // onglet caché : le cycle allégé prend le relais
+  realtimeLoadTimer=setTimeout(()=>{
+    realtimeLoadTimer=null;
+    if(loading){ pendingRealtimeLoad=true; return; }
+    load();
+  },5000);
+}
+function subscribeFleetPositions(){
+  if(realtimeChannel) return;
+  realtimeChannel=sb.channel("saf-fleet-positions-live")
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"fleet_positions"},scheduleRealtimeLoad)
+    .on("postgres_changes",{event:"UPDATE",schema:"public",table:"fleet_positions"},scheduleRealtimeLoad)
+    .subscribe(status=>{
+      if(status==="CHANNEL_ERROR" || status==="TIMED_OUT")
+        console.warn("Supabase Realtime indisponible : actualisation automatique toutes les 30 s maintenue.");
+    });
+}
+function isAuthError(e){ const m=String(e&&(e.message||e.code)||e||""); return /jwt|token|401|PGRST30/i.test(m); }
+async function load(retried){
+  if(loading) return;
+  // 02.11.2026 — Onglet caché ou écran verrouillé : une lecture allégée toutes les 2 min seulement,
+  // pour garder les notifications de mise en route sans interroger la base en continu.
+  const hiddenNow=document.visibilityState==="hidden";
+  if(hiddenNow && lastOk && Date.now()-lastOk<CONFIG.hiddenMs) return;
+  loading=true;
+  const hours=+document.getElementById("win").value;
+  const winStart=Date.now()-hours*3600e3;
+  const since=new Date(Math.min(winStart, Date.now()-36*3600e3)).toISOString(); // 36 h pour le journal
+  try{
+    // Données de référence (appareils, bases, chantiers, nuit) : toutes les 5 min, pas à chaque cycle.
+    const refDue=!fleet.length || (!hiddenNow && Date.now()-refAt>CONFIG.refMs);
+    const [ac,ps]=await Promise.all([
+      refDue ? sb.from("fleet_aircraft").select("reg,type,imei,provider,active").order("reg") : Promise.resolve(null),
+      sb.from("fleet_poll_state").select("last_poll,last_result").eq("id",1).maybeSingle(),
+    ]);
+    if(ac){ if(ac.error) throw ac.error; fleet=ac.data.filter(a=>famOf(a)===SCOPE); }
+    // Une lecture par appareil : avec 15 appareils, une requête unique plafonnée à 1000 points
+    // tronquerait les traces dès qu'une partie de la flotte vole.
+    const PCOLS="reg,fix_time,lat,lon,alt_m,heading,heading_deg,source,speed";
+    const regsKey=fleet.map(a=>a.reg).join(",");
+    const fullDue=!posCache.at || Date.now()-posCache.at>CONFIG.fullMs || Date.parse(since)<posCache.since-60000 || posCache.regs!==regsKey;
+    if(fullDue){
+      const [lasts,wins]=await Promise.all([
+        Promise.all(fleet.map(a=>sb.from("fleet_positions").select(PCOLS).eq("reg",a.reg).order("fix_time",{ascending:false}).limit(2))),
+        Promise.all(fleet.map(a=>sb.from("fleet_positions").select(PCOLS).eq("reg",a.reg).gte("fix_time",since).order("fix_time",{ascending:false}).limit(1000))),
+      ]);
+      const bad=[...lasts,...wins].find(r=>r.error); if(bad) throw bad.error;
+      state={};
+      fleet.forEach((a,i)=>{
+        const two=lasts[i].data||[];
+        const all=(wins[i].data||[]).slice().reverse();   // ordre chronologique pour les traces et l'analyse des vols
+        state[a.reg]={ac:a,last:two[0]||null,prev:two[1]||null,all,
+          trail:all.filter(p=>new Date(p.fix_time)>=winStart), an:analyze(all)};
+      });
+      posCache={at:Date.now(), since:Date.parse(since), regs:regsKey, max:{}};
+      fleet.forEach(a=>{ const s=state[a.reg]; posCache.max[a.reg]=s&&s.last?s.last.fix_time:null; });
+    } else {
+      // 02.11.2026 — Une seule requête pour tous les appareils : les points postérieurs au dernier
+      // connu de chacun (moins une marge pour les points arrivés en retard), au lieu de 2 requêtes par appareil.
+      const conds=fleet.map(a=>{
+        const mx=posCache.max[a.reg];
+        const t=mx?new Date(Date.parse(mx)-CONFIG.lateMs).toISOString():since;
+        return `and(reg.eq."${a.reg}",fix_time.gt."${t}")`;
+      });
+      const r=await sb.from("fleet_positions").select(PCOLS).or(conds.join(",")).order("fix_time",{ascending:true}).limit(1000);
+      if(r.error) throw r.error;
+      if((r.data||[]).length>=1000){ posCache.at=0; loading=false; return load(retried); }   // trop de points : relecture complète
+      const byReg={};
+      (r.data||[]).forEach(p=>{ (byReg[p.reg]=byReg[p.reg]||[]).push(p); });
+      const sinceMs=Date.parse(since);
+      fleet.forEach(a=>{
+        const s=state[a.reg]; if(!s) return;
+        let all=s.all, last=s.last, prev=s.prev;
+        if(byReg[a.reg]){
+          const mp=new Map(all.map(p=>[p.fix_time,p]));
+          byReg[a.reg].forEach(p=>mp.set(p.fix_time,p));
+          all=[...mp.values()].sort((u,v)=>Date.parse(u.fix_time)-Date.parse(v.fix_time));
+          const n=all.length, nl=all[n-1];
+          if(nl && (!last || Date.parse(nl.fix_time)>=Date.parse(last.fix_time))){
+            prev=n>1?all[n-2]:(last&&last.fix_time!==nl.fix_time?last:prev); last=nl;
+            posCache.max[a.reg]=last.fix_time;
+          }
+        }
+        all=all.filter(p=>Date.parse(p.fix_time)>=sinceMs);
+        state[a.reg]={...s,ac:a,last,prev,all,trail:all.filter(p=>new Date(p.fix_time)>=winStart),an:analyze(all)};
+      });
+    }
+    lastPs=ps.data; lastOk=Date.now();
+    if(refDue){
+      try{ await loadWorksites(); }catch(e){ console.warn("Chantiers du jour :",e); }
+      refAt=Date.now();
+    }
+    render(lastPs);
+    checkStarts();
+    // Même cycle de données NSE pour les projections sur la carte et le profil AGL.
+    // Les altitudes de terrain manquantes sont demandées, les autres restent en cache.
+    if(terrain.visible) updateTerrain();
+    if(selected) ensureDetails(selected);
+  }catch(e){
+    if(!retried && isAuthError(e)){
+      // Jeton expiré (onglet en veille, PC sorti de veille) : renouvellement puis nouvel essai
+      loading=false;
+      const r=await sb.auth.refreshSession().catch(()=>({error:true}));
+      if(r && !r.error && r.data && r.data.session) return load(true);
+      location.replace(LOGIN); return;
+    }
+    document.getElementById("foot").innerHTML=`<span class="err">Lecture impossible : ${esc(e.message||e)}. Nouvel essai dans ${CONFIG.refreshMs/1000} s.</span>`;
+  }finally{
+    loading=false;
+    if(pendingRealtimeLoad){ pendingRealtimeLoad=false; scheduleRealtimeLoad(); }
+  }
+}
+/* Les navigateurs ralentissent ou suspendent les minuteries des onglets en arrière-plan
+   et des ordinateurs en veille : on relit immédiatement au retour, puis on relance le cycle. */
+function restartCycle(){ clearInterval(timer); load(); timer=setInterval(load,CONFIG.refreshMs); }
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && Date.now()-lastOk>CONFIG.refreshMs/2) restartCycle(); });
+window.addEventListener("focus",()=>{ if(Date.now()-lastOk>CONFIG.refreshMs) restartCycle(); });
+window.addEventListener("online",restartCycle);
+/* Garde-fou visible : si l'affichage n'a pas pu être actualisé depuis plus de 2 cycles */
+setInterval(()=>{
+  if(!lastOk || document.visibilityState!=="visible") return;
+  const late=Date.now()-lastOk;
+  if(late>2*CONFIG.refreshMs){
+    const f=document.getElementById("foot");
+    if(!f.querySelector(".stale")) f.innerHTML+=` <span class="err stale">Affichage non actualisé depuis ${Math.round(late/60000)||1} min — nouvel essai en cours.</span>`;
+    load();
+  }
+},10000);
+
+/* ---------- Profil relief et hauteur sol (affichage consultatif) ---------- */
+const terrain={visible:false, reg:null, elevations:new Map(), lastFetch:0, fetching:false, pending:false, token:0, retryTimer:null, source:""};
+const terrainPanel=document.getElementById("terrain-panel");
+const terrainPlot=document.getElementById("terrain-plot");
+const terrainKey=p=>`${(+p.lat).toFixed(5)},${(+p.lon).toFixed(5)}`;
+const terrainFmt=v=>Number.isFinite(v)?Math.round(v).toLocaleString("fr-FR")+" m":"—";
+function terrainPoints(){
+  const reg=terrain.reg||selected;
+  const pts=(state[reg]?.trail||[]).filter(p=>Number.isFinite(+p.lat)&&Number.isFinite(+p.lon)&&Number.isFinite(+p.alt_m));
+  // Montrer au maximum 80 positions réelles, sans créer de points fictifs.
+  if(pts.length<=80) return pts;
+  return Array.from({length:80},(_,i)=>pts[Math.round(i*(pts.length-1)/79)]);
+}
+function chooseTerrainReg(){
+  if(selected && state[selected]?.last) return selected;
+  return fleet.find(a=>a.active && passFilter(a) && state[a.reg]?.last)?.reg||null;
+}
+function openTerrain(){
+  terrain.visible=true; terrain.reg=chooseTerrainReg(); terrainPanel.hidden=false;
+  document.getElementById("terrainbtn").setAttribute("aria-expanded","true");
+  updateTerrain();
+}
+function closeTerrain(){
+  terrain.visible=false;terrainPanel.hidden=true;
+  document.getElementById("terrainbtn").setAttribute("aria-expanded","false");
+}
+document.getElementById("terrainbtn").onclick=()=>terrain.visible?closeTerrain():openTerrain();
+document.getElementById("terrain-close").onclick=closeTerrain;
+async function fetchTerrain(pts){
+  if(terrain.fetching){terrain.pending=true;return;}
+  const missing=[...new Map(pts.filter(p=>!terrain.elevations.has(terrainKey(p))).map(p=>[terrainKey(p),p])).values()];
+  if(!missing.length)return;
+  if(Date.now()-terrain.lastFetch<1500){
+    if(!terrain.retryTimer)terrain.retryTimer=setTimeout(()=>{terrain.retryTimer=null;if(terrain.visible)updateTerrain();},1600);
+    return;
+  }
+  terrain.fetching=true;terrain.lastFetch=Date.now();
+  const statusEl=document.getElementById("terrain-status");
+  statusEl.textContent="Chargement du relief…";
+  const batch=missing.slice(0,80);
+  async function readJson(url){
+    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);
+    try{
+      const response=await fetch(url,{signal:ctrl.signal,cache:"no-store"});
+      if(!response.ok)throw Error("HTTP "+response.status);
+      return await response.json();
+    }finally{clearTimeout(timer);}
+  }
+  try{
+    let heights=null,source="";
+    try{
+      const loc=batch.map(p=>terrainKey(p)).join("|");
+      const j=await readJson("https://api.opentopodata.org/v1/eudem25m?locations="+encodeURIComponent(loc));
+      if(j.status!=="OK"||!Array.isArray(j.results)||j.results.length!==batch.length)throw Error(j.error||"Réponse EU-DEM invalide");
+      heights=j.results.map(v=>v.elevation);
+      if(!heights.some(Number.isFinite))throw Error("Aucune altitude EU-DEM");
+      source="EU-DEM 25 m";
+    }catch(firstErr){
+      console.warn("EU-DEM indisponible, tentative Open-Meteo :",firstErr);
+      const lat=batch.map(p=>(+p.lat).toFixed(5)).join(",");
+      const lon=batch.map(p=>(+p.lon).toFixed(5)).join(",");
+      const j=await readJson("https://api.open-meteo.com/v1/elevation?latitude="+encodeURIComponent(lat)+"&longitude="+encodeURIComponent(lon));
+      if(!Array.isArray(j.elevation)||j.elevation.length!==batch.length)throw Error(j.reason||"Réponse Copernicus invalide");
+      heights=j.elevation;
+      source="Copernicus GLO-90 (90 m)";
+    }
+    batch.forEach((p,i)=>terrain.elevations.set(terrainKey(p),Number.isFinite(heights[i])?heights[i]:null));
+    terrain.source=source;
+    statusEl.textContent="Relief : "+source;
+  }catch(e){
+    statusEl.textContent="Relief indisponible : "+String(e.message||e);
+    console.warn("Relief : échec des deux services :",e);
+    // Ne pas bloquer les futures tentatives si les services sont momentanément indisponibles.
+  }finally{
+    terrain.fetching=false;
+    if(terrain.visible)drawTerrain();
+    if(terrain.pending||missing.length>batch.length){
+      terrain.pending=false;
+      if(!terrain.retryTimer)terrain.retryTimer=setTimeout(()=>{terrain.retryTimer=null;if(terrain.visible)updateTerrain();},1700);
+    }
+  }
+}
+function updateTerrain(){
+  if(!terrain.visible)return;
+  if(selected && state[selected]?.last)terrain.reg=selected;
+  if(!terrain.reg || !state[terrain.reg]?.last)terrain.reg=chooseTerrainReg();
+  drawTerrain();
+  if(terrain.reg)fetchTerrain(terrainPoints());
+}
+function drawTerrain(){
+  if(!terrain.visible)return;
+  const pts=terrainPoints();
+  document.getElementById("terrain-name").textContent=`Profil relief / AGL · ${terrain.reg||"—"}`;
+  const summary=document.getElementById("terrain-stat");
+  if(!pts.length){summary.textContent="Aucune position disponible pour la période choisie.";terrainPlot.replaceChildren();return;}
+  const pairs=pts.map(p=>({p,ground:terrain.elevations.get(terrainKey(p))}));
+  const known=pairs.filter(x=>Number.isFinite(x.ground));
+  const last=pairs[pairs.length-1];
+  const agl=Number.isFinite(last.ground)?Number(last.p.alt_m)-last.ground:null;
+  summary.textContent=`Dernier point : ${hhmm(last.p.fix_time)} · Alt. GPS : ${terrainFmt(+last.p.alt_m)} · Relief : ${terrainFmt(last.ground)} · AGL indicative : ${agl===null?"—":terrainFmt(agl)}${agl!==null && agl<0?" (incohérence altimétrique)":""}`;
+  if(pts.length<2){terrainPlot.textContent="Au moins deux positions sont nécessaires pour tracer le profil.";return;}
+  const W=700,H=240, L=53,R=14,T=15,B=35;
+  const values=pts.map(p=>+p.alt_m).concat(known.map(x=>x.ground));
+  let lo=Math.floor((Math.min(...values)-100)/100)*100,hi=Math.ceil((Math.max(...values)+100)/100)*100;
+  if(hi<=lo)hi=lo+100;
+  const x=i=>L+i*(W-L-R)/(pts.length-1),y=v=>T+(hi-v)*(H-T-B)/(hi-lo);
+  const poly=(arr)=>arr.map(z=>z.join(",")).join(" ");
+  const heli=poly(pairs.map((o,i)=>[x(i).toFixed(1),y(+o.p.alt_m).toFixed(1)]));
+  const terrainSegments=[];let seg=[];
+  pairs.forEach((o,i)=>{if(Number.isFinite(o.ground))seg.push([x(i).toFixed(1),y(o.ground).toFixed(1)]);else if(seg.length){terrainSegments.push(seg);seg=[];}});
+  if(seg.length)terrainSegments.push(seg);
+  let svg=`<svg role="img" aria-label="Profil de relief sous la trajectoire de ${esc(terrain.reg)}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
+  for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4,Y=y(v);svg+=`<line x1="${L}" x2="${W-R}" y1="${Y}" y2="${Y}" stroke="#415062" stroke-dasharray="3 5"/><text x="${L-6}" y="${Y+4}" fill="#bac5cf" text-anchor="end" font-size="11">${Math.round(v)}</text>`;}
+  svg+=`<text x="4" y="11" fill="#bac5cf" font-size="10">m</text>`;
+  for(const seg of terrainSegments){if(seg.length>1){const bottom=H-B;svg+=`<polygon points="${seg[0][0]},${bottom} ${poly(seg)} ${seg[seg.length-1][0]},${bottom}" fill="#8C7044" fill-opacity=".55"/><polyline points="${poly(seg)}" fill="none" stroke="#e0ad57" stroke-width="2.5"/>`;}}
+  svg+=`<polyline points="${heli}" fill="none" stroke="#4bd6a0" stroke-width="2.7"/>`;
+  const ticks=[0,Math.floor((pts.length-1)/2),pts.length-1];
+  ticks.forEach(i=>svg+=`<text x="${x(i)}" y="${H-10}" text-anchor="${i===0?"start":i===pts.length-1?"end":"middle"}" fill="#bac5cf" font-size="11">${hm(pts[i].fix_time)} UTC</text>`);
+  svg+=`<circle cx="${x(pts.length-1)}" cy="${y(+last.p.alt_m)}" r="4" fill="#4bd6a0" stroke="white" stroke-width="1"/>`;
+  svg+=`<text x="${L+3}" y="${T+12}" fill="#4bd6a0" font-size="11">— Hélicoptère</text><text x="${L+125}" y="${T+12}" fill="#e0ad57" font-size="11">— Relief</text>`;
+  svg+=`<rect id="terrain-hit" x="${L}" y="${T+24}" width="${W-L-R}" height="${H-T-B-24}" fill="transparent" style="cursor:crosshair"/></svg>`;
+  terrainPlot.innerHTML=svg;
+  const hit=terrainPlot.querySelector("#terrain-hit");
+  hit?.addEventListener("pointermove",e=>{
+    const rect=hit.ownerSVGElement.getBoundingClientRect();
+    const index=Math.max(0,Math.min(pairs.length-1,Math.round(((e.clientX-rect.left)/rect.width*W-L)/(W-L-R)*(pairs.length-1))));
+    const o=pairs[index], a=Number.isFinite(o.ground)?+o.p.alt_m-o.ground:null;
+    summary.textContent=`${hhmm(o.p.fix_time)} · GPS : ${terrainFmt(+o.p.alt_m)} · Terrain : ${terrainFmt(o.ground)} · AGL indicative : ${a===null?"—":terrainFmt(a)}${a!==null&&a<0?" (incohérence)":""}`;
+  });
+}
+
+function renderAS332Ribbon(){
+  const bar=document.getElementById("as332-ribbon");if(!bar)return;
+  const scroll=bar.scrollLeft,active=document.activeElement?.dataset?.reg;
+  bar.replaceChildren();
+  const label=document.createElement("span");label.className="ribbon-label";label.textContent="Traceurs AS332";bar.appendChild(label);
+  for(const a of fleet){
+    const last=state[a.reg]?.last;
+    const recent=!!(a.active && last && minsAgo(last.fix_time)>=-1 && minsAgo(last.fix_time)<=CONFIG.liveMaxMin);
+    const b=document.createElement("button");b.type="button";b.textContent=a.reg;
+    b.dataset.reg=a.reg;b.dataset.tracker=recent?"on":"off";
+    b.setAttribute("aria-pressed",String(selected===a.reg));
+    b.title=recent?"Position GPS récente (5 min maximum)":"Pas de position GPS récente";
+    b.onclick=()=>{
+      selected=a.reg;
+      const pos=state[a.reg]?.last;
+      const pane=panes.find(p=>p.follow===a.reg)||panes[0];
+      // Ne pas recentrer HB-ZIP sur l'ancienne position NSE de juillet.
+      const usable=pos && Number.isFinite(+pos.lat) && Number.isFinite(+pos.lon) &&
+        !(a.reg==="HB-ZIP" && minsAgo(pos.fix_time)>1440);
+      if(pane && usable){
+        pane.follow=a.reg;viewFollow[pane.i]=a.reg;pane.moved=false;pane.fitted=false;pane.btn.hidden=true;
+        pane.map.setView([+pos.lat,+pos.lon],11,{animate:false});saveView();
+      }
+      render(lastPs);
+      if(pos)ensureDetails(a.reg);
+    };
+    bar.appendChild(b);
+  }
+  bar.scrollLeft=scroll;
+  if(active)bar.querySelectorAll("button").forEach(b=>{if(b.dataset.reg===active)b.focus({preventScroll:true});});
+}
+
+function render(ps){
+  renderAS332Ribbon();
+  const list=document.getElementById("list"); const scroll=list.scrollTop; list.innerHTML="";
+  let nLive=0, nLost=0, nShown=0;
+  const stackCount={}; // appareils posés au même endroit (~100 m) : étiquettes empilées
+
+  for(const a of fleet){
+    const s=state[a.reg], last=s.last, st=a.active?status(last):{k:"none",t:"Suivi non activé ("+a.provider+")"};
+    const shown=passFilter(a);
+    if(shown){ nShown++; if(st.k==="live") nLive++; if(st.k==="lost") nLost++; }
+    const hd=last?hdgOf(last):null;
+    const gs=computedGs(s.prev,last);
+    const nav=a.active&&shown?navFor(a.reg):null;
+    const an=s.an;
+    let facts="";
+    if(last){
+      if(an.lastLanding) facts+=`<div>Dernière pose : <b>${esc(placeLabel(an.lastLanding.place))}</b>, vers ${hm(an.lastLanding.to)} UTC</div>`;
+      if(atBase(last)) facts+=`<div>En base : <b>${esc(nearestAds(last,ad=>ad.base)[0].ad.icao)}</b></div>`;
+      else if(an.outside?.since) facts+=`<div>Hors base depuis au moins <b>${dur(minsAgo(an.outside.since))}</b> (départ de ${esc(nearestAds(an.outside.leftFrom,ad=>ad.base)[0].ad.icao)})</div>`;
+      else facts+=`<div>Hors base – départ non enregistré</div>`;
+      if(nav) facts+=`<div class="nav">→ ${esc(nav.site.name||"Chantier")}${nav.tgt.name?" ("+esc(nav.tgt.name)+")":""} : ${Math.round(nav.km)} km · ETE ${fmtEte(nav.eteMin)}`+
+        (nav.eta?` · ETA ${hm(nav.eta)} UTC (${fmtLocal(nav.eta)} loc.)`:` · vitesse sol non exploitable`)+(nav.night?`<br><b class="nwarn">⚠ ${nav.night.txt} à destination (nuit à ${nHM(nav.night.start)} UTC)</b>`:"")+`</div>`;
+      for(const w of sitesFor(a.reg)) facts+=`<div class="ws">${seqTxt(w)?esc(seqTxt(w))+" · ":""}Chantier du jour : <b>${esc(w.name||"—")}</b>${w.start_time?` · ${esc(tShort(w.start_time))}`:""} · ${Math.round(siteDist(w,last)*10)/10} km</div>`;
+      if(st.k==="live"||st.k==="ground"){ const st0=sessionStart(a.reg);
+        if(st0 && minsAgo(st0)<=60) facts+=`<div class="ws">Mis en route vers <b>${hm(st0)} UTC</b></div>`; }
+      const n24=an.flights.filter(f=>new Date(f.ldTo||f.toTo)>=Date.now()-24*3600e3).length;
+      if(n24) facts+=`<div>${n24} vol${n24>1?"s":""} sur 24 h</div>`;
+    }
+    if(last) facts+=nightFact(last);
+    const li=document.createElement("li");
+    li.className="ac"+(selected===a.reg?" sel":"")+(a.active && last && minsAgo(last.fix_time)>=-1 && minsAgo(last.fix_time)<=CONFIG.liveMaxMin?" tracker-active":""); li.dataset.st=st.k; li.tabIndex=0;
+    li.innerHTML=`<div class="bar"></div><div class="body">
+      <div class="top"><span class="reg">${esc(a.reg)}</span><span class="type">${esc(a.type||"")}</span></div>
+      <div class="st">${esc(st.t)}</div>
+      ${last?`<dl>
+        <div><dt>Altitude</dt><dd>${Math.round(last.alt_m*3.28084).toLocaleString("fr-FR")} <small>ft</small></dd></div>
+        <div><dt>Cap</dt><dd>${hd==null?"–":String(Math.round(hd)%360).padStart(3,"0")+"°"}</dd></div>
+        <div><dt>${gs!=null?"Vit. sol calc.":"Vitesse (brute)"}</dt><dd>${gs!=null?Math.round(gs/1.852)+' <small>kt</small>':esc(last.speed)}</dd></div>
+      </dl>
+      <div class="facts">${facts}</div>
+      <div class="when">Dernier point ${hhmm(last.fix_time)} – ${ago(last.fix_time)}</div>
+      ${selected===a.reg?detailsHTML(a.reg):`<div class="more">Afficher vols et météo</div>`}`:""}
+    </div>`;
+    const go=()=>{
+      if(selected===a.reg){ selected=null; render(lastPs); return; }
+      selected=a.reg;
+      // Centrer la carte qui suit cet appareil, sinon la première carte
+      if(last){ const p=panes.find(x=>x.follow===a.reg)||panes[0];
+        if(p.follow===a.reg){ p.moved=false; p.btn.hidden=true; }
+        const b=predictionBounds(a.reg);
+        if(b) p.map.fitBounds(b,{padding:[35,35],maxZoom:11,animate:false});
+        else p.map.setView([last.lat,last.lon],Math.max(p.map.getZoom(),11)); }
+      render(lastPs); ensureDetails(a.reg);
+    };
+    li.onclick=e=>{ if(e.target.closest(".det")) return; go(); };
+    li.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};
+    if(shown) list.appendChild(li);
+
+    // Marqueur et trace, sur chaque carte
+    const spot=last?last.lat.toFixed(3)+","+last.lon.toFixed(3):null;
+    const idx=last?(stackCount[spot]=(stackCount[spot]??-1)+1):0;
+    const pts=s.trail.map(p=>[p.lat,p.lon]);
+    for(const p of panes){
+      if(!visibleIn(a,p)){
+        // Appareil hors filtre : retirer marqueur, trace et projection de cette carte
+        if(p.markers[a.reg]){ p.markers[a.reg].remove(); delete p.markers[a.reg]; }
+        if(p.trails[a.reg]){ p.trails[a.reg].remove(); delete p.trails[a.reg]; }
+        if(p.predicts[a.reg]){ p.predicts[a.reg].remove(); delete p.predicts[a.reg]; }
+        renderNav(p,a.reg,null,null);
+        continue;
+      }
+      // HB-ZIP : ne pas placer sur la carte la position NSE historique du 28/07/2026.
+      // Les autres appareils ne sont pas affectes ; une position recente le fera reapparaitre.
+      if(a.reg==="HB-ZIP" && (!last || minsAgo(last.fix_time)>1440)){
+        if(p.markers[a.reg]){p.markers[a.reg].remove();delete p.markers[a.reg];}
+        if(p.trails[a.reg]){p.trails[a.reg].remove();delete p.trails[a.reg];}
+        if(p.predicts[a.reg]){p.predicts[a.reg].remove();delete p.predicts[a.reg];}
+        renderNav(p,a.reg,null,null);
+        continue;
+      }
+      const focus=p.follow||selected;   // appareil mis en avant sur cette carte
+      if(last){
+        const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl" style="top:${-11+idx*23}px">${esc(a.reg)}</span>${nightBadge(last)}${nav?`<span class="eta${nav.night?" "+nav.night.k:""}" style="top:${11+idx*23}px">${navLine(nav)}</span>`:""}</div>`;
+        const icon=L.divIcon({className:"",html,iconSize:[0,0]});
+        if(p.markers[a.reg]) p.markers[a.reg].setLatLng([last.lat,last.lon]).setIcon(icon);
+        else p.markers[a.reg]=L.marker([last.lat,last.lon],{icon,keyboard:false}).addTo(p.map);
+        p.markers[a.reg].off("click").on("click",go);
+        p.markers[a.reg].setZIndexOffset(p.follow===a.reg?2000:st.k==="lost"?1000:st.k==="live"?500:0);
+      }
+      if(p.trails[a.reg]) p.trails[a.reg].setLatLngs(pts);
+      else p.trails[a.reg]=L.polyline(pts,{weight:3,opacity:.85}).addTo(p.map);
+      p.trails[a.reg].setStyle({color:COLORS[st.k],weight:focus===a.reg?5:3,opacity:focus&&focus!==a.reg?.35:.85});
+      renderPrediction(p,a.reg,last,s.prev,st);
+      renderNav(p,a.reg,nav,last);
+    }
+  }
+  list.scrollTop=scroll;
+  renderWorksites();
+  document.getElementById("sub").textContent=
+    `${nShown} appareil${nShown>1?"s":""}${typeFilter!=="all"?" "+FAM_LABEL[typeFilter]:""} · ${nLive} en vol`+(nLost?` · ${nLost} signal perdu`:"")+
+    (worksites.length?` · ${worksites.length} chantier${worksites.length>1?"s":""} du jour`:"");
+  const f=document.getElementById("foot");
+  f.textContent=(Math.abs(CLOCK_OFFSET)>60000?`⚠ Horloge de cet écran décalée de ${Math.round(CLOCK_OFFSET/60000)} min (corrigée automatiquement) · `:"")+`Affichage mis à jour ${new Date(nowMs()).toLocaleTimeString("fr-FR")}`+
+    (ps?.last_poll?` · relais NSE ${ago(ps.last_poll)}`:"");
+  if(ps?.last_poll && minsAgo(ps.last_poll)>5) f.innerHTML+=` <span class="err">Le relais ne tourne plus.</span>`;
+  paneBars(); filterBar();
+  if(!list.children.length) list.innerHTML=`<li style="padding:16px 20px;color:var(--ink-2)">Aucun appareil ${esc(FAM_LABEL[SCOPE]||"")} dans la flotte suivie.</li>`;
+  panes.forEach(p=>{
+    for(const reg of Object.keys(p.predicts)) if(!fleet.some(a=>a.reg===reg)) { p.predicts[reg].remove(); delete p.predicts[reg]; }
+    for(const reg of Object.keys(p.navs)) if(!fleet.some(a=>a.reg===reg)) renderNav(p,reg,null,null);
+    centerPane(p,false);
+  });   // les cartes qui suivent un appareil se recentrent
+  firstFit=false;
+}
+/* ---------- Carte automatique à la mise en route ----------
+   Les traceurs NSE sont alimentés par l'appareil : une reprise d'émission après au moins
+   CONFIG.startGapMin de silence est traitée comme une mise en route. Chaque mise en route n'ouvre
+   qu'une carte (mémorisée dans ce navigateur), seulement pour les types affichés par le filtre. */
+const AUTO_KEY="saf_fleet_autoopen_"+SCOPE, SEEN_KEY="saf_fleet_autoseen_"+SCOPE;
+let autoOpen=(()=>{ try{ return localStorage.getItem(AUTO_KEY)!=="0"; }catch(e){ return true; } })();
+let autoSeen=(()=>{ try{ return JSON.parse(localStorage.getItem(SEEN_KEY)||"{}")||{}; }catch(e){ return {}; } })();
+const autoBox=document.getElementById("autoopen");
+{ const lbl=document.getElementById("autoopen-lbl");
+  lbl.querySelector("span").textContent=AUTO_MAP?"Carte auto à la mise en route":"Signaler les mises en route";
+  lbl.title=AUTO_MAP?"Ouvre une carte qui suit l'hélicoptère dès que son traceur se rallume après un arrêt"
+    :"Affiche un bandeau quand le traceur d'un hélicoptère se rallume après un arrêt, sans ouvrir de carte"; }
+autoBox.checked=autoOpen;
+autoBox.onchange=()=>{
+  autoOpen=autoBox.checked;
+  try{ localStorage.setItem(AUTO_KEY,autoOpen?"1":"0"); }catch(e){}
+  // Notifications du navigateur quand l'onglet est en arrière-plan (autorisation demandée une fois)
+  if(autoOpen && "Notification" in window && Notification.permission==="default") Notification.requestPermission().catch(()=>{});
+};
+function sessionStart(reg){
+  const s=state[reg]; if(!s?.last) return null;
+  const pts=s.all||[]; if(!pts.length) return null;
+  for(let i=pts.length-1;i>0;i--){
+    if((new Date(pts[i].fix_time)-new Date(pts[i-1].fix_time))/60000>=CONFIG.startGapMin) return pts[i].fix_time;
+  }
+  return pts[0].fix_time;   // aucune coupure dans la fenêtre : début de la fenêtre (trop ancien pour déclencher)
+}
+function checkStarts(){
+  let dirty=false;
+  for(const a of fleet){
+    const last=state[a.reg]?.last;
+    if(!a.active || !last || minsAgo(last.fix_time)>CONFIG.liveMaxMin) continue;
+    const start=sessionStart(a.reg);
+    if(!start || minsAgo(start)>CONFIG.startRecentMin || autoSeen[a.reg]===start) continue;
+    autoSeen[a.reg]=start; dirty=true;
+    if(autoOpen && passFilter(a)) openAuto(a, start);
+  }
+  if(dirty){ try{ localStorage.setItem(SEEN_KEY,JSON.stringify(autoSeen)); }catch(e){} }
+}
+function openAuto(a,start){
+  if(!AUTO_MAP){ toast(a,start,""); return; }   // page B3 : signalement seul
+  let p=panes.find(x=>x.follow===a.reg), how="";
+  if(p){ how="carte déjà ouverte"; }
+  else if(panes.length<4){
+    viewFollow[panes.length]=a.reg;
+    setSplit(panes.length+1);
+    p=panes[panes.length-1]; how="nouvelle carte";
+  } else {
+    // 4 cartes : remplacer d'abord une carte dont l'appareil est éteint, puis une vue « toute la flotte »
+    // (sauf la première), puis une carte ouverte automatiquement dont l'appareil est au sol.
+    // Une carte qui suit un appareil en vol ou en perte de signal n'est jamais remplacée.
+    const rank=x=>{
+      if(!x.follow) return x.i>0?2:4;
+      const k=status(state[x.follow]?.last).k;
+      if(k==="none"||k==="stale") return 1;
+      if(k==="ground") return x.autoAt?3:5;
+      return 99;
+    };
+    const c=panes.map(x=>({x,r:rank(x)})).filter(o=>o.r<99).sort((u,v)=>u.r-v.r||(u.x.autoAt||0)-(v.x.autoAt||0))[0];
+    if(c){ p=c.x; how="carte "+(p.i+1)+" réaffectée"; }
+  }
+  if(p){
+    p.follow=a.reg; viewFollow[p.i]=a.reg; saveView();
+    p.autoAt=Date.now(); p.moved=false; p.btn.hidden=true; p.fitted=false;
+    centerPane(p,true); render(lastPs);
+    p.el.classList.remove("flash"); void p.el.offsetWidth; p.el.classList.add("flash");
+    setTimeout(()=>p.el.classList.remove("flash"),5200);
+  }
+  toast(a, start, p?how:"4 cartes déjà occupées par des appareils en vol");
+}
+function toast(a,start,how){
+  const box=document.getElementById("toasts"), el=document.createElement("div");
+  el.className="toast";
+  el.innerHTML=`<b>${esc(a.reg)}</b> mis en route <span class="muted">(${esc(a.type||"")})</span><div class="muted">Traceur actif depuis ${hm(start)} UTC${how?` · ${esc(how)}`:""}</div>`;
+  el.onclick=()=>el.remove();
+  box.prepend(el);
+  setTimeout(()=>el.remove(),20000);
+  if(document.visibilityState!=="visible" && "Notification" in window && Notification.permission==="granted"){
+    try{ new Notification(`${a.reg} mis en route`,{body:`${a.type||""} · traceur actif depuis ${hm(start)} UTC`,tag:"saf-start-"+a.reg}); }catch(e){}
+  }
+}
+function fitAll(){
+  // « Toute la flotte » : la première carte revient en vue libre sur l'ensemble
+  const p=panes[0]; if(!p) return;
+  p.follow=null; p.autoAt=0; viewFollow[0]=null; saveView(); p.moved=false; p.btn.hidden=true; p.fitted=false;
+  centerPane(p,true);
+}
+
+/* ---------- Session (partagée avec l'accueil) ---------- */
+let timer=null;
+function gate(msg){ clearInterval(timer); document.getElementById("gate-msg").textContent=msg; document.getElementById("gate").style.display="grid"; }
+async function boot(){
+  const {data}=await sb.auth.getSession();
+  const session=data.session;
+  if(!session){ location.replace(LOGIN); return; }
+  // Rôle lu comme dans index.html ; l'accès réel est décidé par la RLS (admin, editor, reader)
+  let role="reader";
+  try{
+    const r=await sb.from("user_roles").select("role").ilike("user_email",String(session.user.email||"").trim()).limit(1);
+    if(r.data&&r.data[0]&&r.data[0].role) role=String(r.data[0].role).toLowerCase();
+  }catch(e){}
+  if(!["admin","editor","reader"].includes(role)){ gate("Le suivi flotte n'est pas ouvert à ce compte."); return; }
+  subscribeFleetPositions();
+  restartCycle();
+}
+document.getElementById("logout").onclick=async()=>{await sb.auth.signOut(); location.replace("https://saf-international-portail.netlify.app/");};
+document.getElementById("win").onchange=()=>load();
+document.getElementById("split").onchange=e=>setSplit(e.target.value);
+setSplit(loadView().n);
+syncClock().then(()=>{ if(typeof lastPs!=="undefined" && lastPs) render(lastPs); });
+setInterval(syncClock, 30*60000);
+document.getElementById("fit").onclick=()=>{selected=null; fitAll(); load();};
+sb.auth.onAuthStateChange(ev=>{ if(ev==="SIGNED_OUT") location.replace("https://saf-international-portail.netlify.app/"); });
+/* ---------- Historique des vols ----------
+   Lit fleet_positions par appareil, par pages de 1000 points (plafond PostgREST),
+   puis reconstruit les vols avec analyze(). La base garde 180 jours (tâche fleet-purge-positions). */
+const HIST_MAX_DAYS=180, PAGE=1000;
+const hist={rows:[],map:null,layer:null,busy:false};
+const isoDay=d=>new Date(d).toISOString().slice(0,10);
+const dayLabel=t=>new Date(t).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"UTC"});
+const dmy=t=>new Date(t).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",timeZone:"UTC"});
+const COLS="reg,fix_time,lat,lon,alt_m,heading,speed";
+
+// Date du jour en heure locale (isoDay est en UTC : entre minuit et 1 h/2 h il donnerait la veille)
+const localDay=t=>{ const d=new Date(t); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+function histPreset(days){
+  document.getElementById("h-to").value=localDay(Date.now());
+  document.getElementById("h-from").value=localDay(Date.now()-days*864e5);
+}
+function openHist(){
+  const sel=document.getElementById("h-reg"), cur=sel.value;
+  sel.innerHTML=`<option value="">Toute la flotte</option>`+fleet.map(a=>`<option value="${esc(a.reg)}">${esc(a.reg)}</option>`).join("");
+  sel.value=cur||selected||"";
+  histPreset(0); // à chaque ouverture : la journée en cours
+  document.getElementById("hist").hidden=false;
+  if(!hist.map){
+    hist.map=L.map("h-map",{zoomControl:false}).setView([45.9,6.8],8);
+    L.control.zoom({position:"bottomright"}).addTo(hist.map);
+    const lay=makeLayers(); lay["Topo (OpenTopoMap)"].addTo(hist.map);
+    L.control.layers(lay,makeOverlays(),{position:"topright"}).addTo(hist.map);
+    L.control.scale({imperial:false,position:"bottomleft"}).addTo(hist.map);
+    BASES.forEach(b=>L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null}),keyboard:false}).addTo(hist.map));
+    hist.layer=L.layerGroup().addTo(hist.map);
+  }
+  setTimeout(()=>hist.map.invalidateSize(),60);
+  document.getElementById("h-load").focus();
+}
+function closeHist(){ document.getElementById("hist").hidden=true; document.getElementById("histbtn").focus(); }
+
+async function fetchPositions(reg,fromIso,toIso){
+  // Un point juste avant la période : il donne le lieu de décollage du premier vol
+  const before=await sb.from("fleet_positions").select(COLS).eq("reg",reg).lt("fix_time",fromIso).order("fix_time",{ascending:false}).limit(1);
+  if(before.error) throw before.error;
+  const out=[...(before.data||[])];
+  for(let i=0;;i+=PAGE){
+    const r=await sb.from("fleet_positions").select(COLS).eq("reg",reg).gte("fix_time",fromIso).lt("fix_time",toIso)
+      .order("fix_time",{ascending:true}).range(i,i+PAGE-1);
+    if(r.error) throw r.error;
+    out.push(...r.data);
+    if(r.data.length<PAGE) break;
+  }
+  return out;
+}
+
+async function loadHist(){
+  if(hist.busy) return;
+  const f=document.getElementById("h-from").value, t=document.getElementById("h-to").value;
+  const list=document.getElementById("h-list");
+  if(!f||!t||f>t){ list.innerHTML=`<p class="empty">Indiquez une date de début antérieure à la date de fin.</p>`; return; }
+  const fromIso=new Date(f+"T00:00:00Z").toISOString(), toIso=new Date(new Date(t+"T00:00:00Z").getTime()+864e5).toISOString();
+  if((Date.parse(toIso)-Date.parse(fromIso))/864e5>HIST_MAX_DAYS+1){ list.innerHTML=`<p class="empty">La base ne garde que ${HIST_MAX_DAYS} jours : réduisez la période.</p>`; return; }
+  const regSel=document.getElementById("h-reg").value;
+  const regs=regSel?[regSel]:fleet.map(a=>a.reg);
+  hist.busy=true; document.getElementById("h-load").disabled=true; document.getElementById("h-csv").disabled=true;
+  hist.sel=null; document.getElementById("h-ana").disabled=true;
+  list.innerHTML=`<p class="empty">Chargement des positions…</p>`; hist.layer.clearLayers();
+  try{
+    const rows=[], info=[];
+    for(const reg of regs){
+      const pts=await fetchPositions(reg,fromIso,toIso);
+      const inPeriod=pts.filter(p=>p.fix_time>=fromIso);
+      const fl=analyze(pts).flights.filter(x=>x.toTo>=fromIso);
+      fl.forEach(x=>rows.push({reg,f:x}));
+      info.push({reg,n:inPeriod.length,first:inPeriod[0]?.fix_time||null,flights:fl});
+    }
+    rows.sort((a,b)=>a.f.toTo<b.f.toTo?1:-1);
+    hist.rows=rows; renderHist(info,fromIso);
+    document.getElementById("h-csv").disabled=!rows.length;
+  }catch(e){
+    list.innerHTML=`<p class="empty">Lecture impossible : ${esc(e.message||e)}</p>`;
+  }finally{ hist.busy=false; document.getElementById("h-load").disabled=false; }
+}
+
+function durTxt(f){
+  if(!f.ldTo) return "vol en cours";
+  if(f.maxMin!=null) return Math.round(f.maxMin-f.minMin)<=2?dur((f.minMin+f.maxMin)/2):`${dur(f.minMin)} à ${dur(f.maxMin)}`;
+  return f.minMin>=5?`≥ ${dur(f.minMin)}`:"inconnue";
+}
+function renderHist(info,fromIso){
+  const list=document.getElementById("h-list");
+  let h=`<div class="hsum">`;
+  for(const i of info){
+    const done=i.flights.filter(f=>f.ldTo);
+    const lo=done.reduce((s,f)=>s+Math.max(0,f.minMin),0), hi=done.reduce((s,f)=>s+(f.maxMin??f.minMin),0);
+    const tt=Math.round(hi-lo)<=Math.max(5,done.length*2)?dur((lo+hi)/2):`${dur(lo)} à ${dur(hi)}`;
+    h+=`<div><b>${esc(i.reg)}</b> : ${i.flights.length} vol${i.flights.length>1?"s":""}${done.length?`, temps de vol estimé ${tt}`:""}</div>`;
+    if(!i.n) h+=`<div class="warn">${esc(i.reg)} : aucune position enregistrée sur la période.</div>`;
+    else if(Date.parse(i.first)-Date.parse(fromIso)>36*3600e3) h+=`<div class="warn">${esc(i.reg)} : pas de données avant le ${dmy(i.first)}.</div>`;
+  }
+  h+=`<div>Heures UTC, encadrées entre deux points du traceur. Cliquez un vol pour afficher sa trace.</div></div>`;
+  if(!hist.rows.length){ list.innerHTML=h+`<p class="empty">Aucun vol sur la période.</p>`; return; }
+  h+=`<table><thead><tr><th>Appareil</th><th>Départ</th><th>Arrivée</th><th>Durée</th><th>Dist.</th></tr></thead><tbody>`;
+  let day="";
+  hist.rows.forEach((r,idx)=>{
+    const f=r.f, d=isoDay(f.toTo);
+    if(d!==day){ day=d; h+=`<tr class="day"><td colspan="5">${esc(dayLabel(f.toTo))}</td></tr>`; }
+    const dep=f.toPlace?placeLabel(f.toPlace):"lieu non enregistré";
+    const arr=f.ldPlace?placeLabel(f.ldPlace):"—";
+    h+=`<tr class="fl" data-i="${idx}" tabindex="0"><td><span class="reg">${esc(r.reg)}</span></td>
+      <td>${esc(dep)}<br><span class="muted">${f.toFrom?hm(f.toFrom)+"–":"avant "}${hm(f.toTo)}</span></td>
+      <td>${esc(arr)}<br><span class="muted">${f.ldTo?hm(f.ldFrom)+"–"+hm(f.ldTo):""}</span></td>
+      <td>${esc(durTxt(f))}</td><td>${Math.round(f.km)} km</td></tr>`;
+  });
+  list.innerHTML=h+`</tbody></table>`;
+  list.querySelectorAll("tr.fl").forEach(tr=>{
+    const go=()=>showHistFlight(+tr.dataset.i);
+    tr.onclick=go; tr.ondblclick=()=>{ go(); openAna(+tr.dataset.i); }; tr.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } };
+  });
+  showHistAll();
+}
+function showHistAll(){
+  hist.layer.clearLayers(); const b=[];
+  hist.rows.forEach(r=>{ const ll=r.f.pts.map(p=>[p.lat,p.lon]); b.push(...ll);
+    L.polyline(ll,{color:COLORS.ground,weight:2,opacity:.6}).addTo(hist.layer); });
+  if(b.length) hist.map.fitBounds(L.latLngBounds(b).pad(.1),{maxZoom:12});
+}
+function showHistFlight(i){
+  const r=hist.rows[i]; if(!r) return;
+  hist.sel=i; const ab=document.getElementById("h-ana"); ab.disabled=false; ab.title=`Analyser le vol ${r.reg} du ${dmy(r.f.toTo)}`;
+  document.querySelectorAll("#h-list tr.fl").forEach(tr=>tr.classList.toggle("on",+tr.dataset.i===i));
+  hist.layer.clearLayers();
+  const ll=r.f.pts.map(p=>[p.lat,p.lon]);
+  L.polyline(ll,{color:COLORS.live,weight:4,opacity:.9}).addTo(hist.layer);
+  L.circleMarker(ll[0],{radius:6,color:"#fff",weight:2,fillColor:COLORS.live,fillOpacity:1}).bindTooltip("Départ").addTo(hist.layer);
+  if(r.f.ldTo) L.circleMarker(ll[ll.length-1],{radius:6,color:"#fff",weight:2,fillColor:COLORS.lost,fillOpacity:1}).bindTooltip("Arrivée").addTo(hist.layer);
+  hist.map.fitBounds(L.latLngBounds(ll).pad(.25),{maxZoom:13});
+}
+function exportHistCsv(){
+  const q=v=>{ v=v==null?"":String(v); return /[;"\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v; };
+  const t=x=>x?new Date(x).toISOString().replace("T"," ").slice(0,16):"";
+  const n=x=>x==null?"":String(Math.round(x));
+  const head=["date_utc","appareil","depart_lieu","decollage_apres","decollage_avant","arrivee_lieu","atterrissage_apres","atterrissage_avant","duree_min_min","duree_max_min","distance_km","depart_lat","depart_lon","arrivee_lat","arrivee_lon"];
+  const lines=[head.join(";")];
+  hist.rows.slice().reverse().forEach(({reg,f})=>{
+    lines.push([isoDay(f.toTo),reg,f.toPlace?placeLabel(f.toPlace):"",t(f.toFrom),t(f.toTo),f.ldPlace?placeLabel(f.ldPlace):"",t(f.ldFrom),t(f.ldTo),
+      f.ldTo?n(f.minMin):"",f.ldTo?n(f.maxMin):"",f.km.toFixed(1).replace(".",","),
+      f.pts[0].lat.toFixed(5),f.pts[0].lon.toFixed(5),f.ldPlace?f.ldPlace.lat.toFixed(5):"",f.ldPlace?f.ldPlace.lon.toFixed(5):""].map(q).join(";"));
+  });
+  const blob=new Blob(["\ufeff"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=`SAF_vols_${document.getElementById("h-reg").value||"flotte"}_${document.getElementById("h-from").value}_${document.getElementById("h-to").value}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+document.getElementById("histbtn").onclick=openHist;
+document.getElementById("h-close").onclick=closeHist;
+document.getElementById("h-load").onclick=loadHist;
+document.getElementById("h-csv").onclick=exportHistCsv;
+document.querySelectorAll("#hist .presets button").forEach(b=>b.onclick=()=>{ histPreset(+b.dataset.d); loadHist(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!document.getElementById("hist").hidden) closeHist(); });
+
+/* ---------- Analyse d'un vol (depuis l'historique) ----------
+   Tout est calculé à partir des points du traceur : altitude GPS, vitesse sol moyenne et
+   vitesse verticale moyenne ENTRE deux points. Le relief vient d'un MNT (EU-DEM 25 m, sinon
+   Copernicus 90 m). La hauteur sol est donc indicative : à exploiter pour repérer, pas pour conclure. */
+const M2FT=3.28084, ANA_GAP_S=180;
+const ana={map:null,layer:null,cursor:null,reg:null,f:null,rows:[],idx:0,timer:null,source:"",segs:[],marks:[]};
+const fmtN=(v,d=0)=>Number.isFinite(v)?v.toLocaleString("fr-FR",{maximumFractionDigits:d,minimumFractionDigits:d}):"—";
+const hms=t=>new Date(t).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit",timeZone:"UTC"});
+function anaThr(){ const v=+document.getElementById("a-thr").value; return Number.isFinite(v)&&v>=0?v:500; }
+
+function anaBuild(f){
+  const pts=f.pts.filter(p=>Number.isFinite(+p.lat)&&Number.isFinite(+p.lon));
+  return pts.map((p,i)=>{
+    const prev=pts[i-1], t=Date.parse(p.fix_time), alt=Number.isFinite(+p.alt_m)?+p.alt_m:null;
+    let dt=null,gs=null,vs=null;
+    if(prev){
+      dt=(t-Date.parse(prev.fix_time))/1000;
+      if(dt>0){
+        gs=haversineKm(prev,p)/(dt/3600)/1.852;
+        if(alt!=null&&Number.isFinite(+prev.alt_m)) vs=(alt-prev.alt_m)*M2FT/(dt/60);
+      }
+    }
+    const h=prev&&haversineKm(prev,p)>0.05?bearingDeg(prev,p):hdgOf(p), trk=Number.isFinite(h)?Math.round(h)%360:null;
+    return {p,t,i,air:isAir(p),alt,dt,gs,vs,trk,raw:Number.isFinite(+p.speed)?+p.speed:null,ground:null,agl:null,low:false};
+  });
+}
+async function anaJson(url){
+  const c=new AbortController(), tm=setTimeout(()=>c.abort(),15000);
+  try{ const r=await fetch(url,{signal:c.signal,cache:"no-store"}); if(!r.ok) throw Error("HTTP "+r.status); return await r.json(); }
+  finally{ clearTimeout(tm); }
+}
+async function anaGround(rows,progress){
+  const need=[...new Map(rows.filter(r=>!terrain.elevations.has(terrainKey(r.p))).map(r=>[terrainKey(r.p),r.p])).values()];
+  let source=ana.source||terrain.source||"";
+  for(let i=0;i<need.length;i+=80){
+    const batch=need.slice(i,i+80); let h;
+    if(i) await new Promise(r=>setTimeout(r,1100)); // opentopodata : 1 requête par seconde
+    try{
+      const j=await anaJson("https://api.opentopodata.org/v1/eudem25m?locations="+encodeURIComponent(batch.map(terrainKey).join("|")));
+      if(j.status!=="OK"||!Array.isArray(j.results)||j.results.length!==batch.length) throw Error(j.error||"EU-DEM");
+      h=j.results.map(v=>v.elevation); if(!h.some(Number.isFinite)) throw Error("EU-DEM vide");
+      source="EU-DEM 25 m";
+    }catch(e){
+      const j=await anaJson("https://api.open-meteo.com/v1/elevation?latitude="+encodeURIComponent(batch.map(p=>(+p.lat).toFixed(5)).join(","))+
+        "&longitude="+encodeURIComponent(batch.map(p=>(+p.lon).toFixed(5)).join(",")));
+      if(!Array.isArray(j.elevation)||j.elevation.length!==batch.length) throw Error(j.reason||"Copernicus");
+      h=j.elevation; source="Copernicus GLO-90 (90 m)";
+    }
+    batch.forEach((p,k)=>terrain.elevations.set(terrainKey(p),Number.isFinite(h[k])?h[k]:null));
+    progress?.(Math.min(need.length,i+80),need.length);
+  }
+  rows.forEach(r=>{ const g=terrain.elevations.get(terrainKey(r.p)); r.ground=Number.isFinite(g)?g:null; });
+  return source;
+}
+function anaClassify(){
+  const thr=anaThr();
+  ana.rows.forEach(r=>{ r.agl=(r.alt!=null&&r.ground!=null)?(r.alt-r.ground)*M2FT:null; r.low=r.air&&r.agl!=null&&r.agl<thr; });
+}
+function anaLowRuns(){
+  const runs=[]; let cur=null;
+  ana.rows.forEach((r,i)=>{
+    if(r.low){ if(!cur) cur={a:i,b:i,min:r.agl}; else { cur.b=i; cur.min=Math.min(cur.min,r.agl); } }
+    else if(cur){ runs.push(cur); cur=null; }
+  });
+  if(cur) runs.push(cur);
+  return runs;
+}
+
+async function openAna(i){
+  const r=hist.rows[i]; if(!r) return;
+  ana.reg=r.reg; ana.f=r.f; ana.rows=anaBuild(r.f); ana.idx=0; anaStop();
+  try{ const v=window.localStorage?.getItem("saf_ana_thr_ft"); if(v!=null&&v!=="") document.getElementById("a-thr").value=v; }catch(e){}
+  const f=r.f, dep=f.toPlace?placeLabel(f.toPlace):"départ non enregistré", arr=f.ldPlace?placeLabel(f.ldPlace):(f.ldTo?"—":"vol en cours");
+  document.getElementById("a-title").textContent=`Analyse du vol · ${r.reg}`;
+  document.getElementById("a-sub").textContent=`${dayLabel(f.toTo)} · ${dep} → ${arr} · ${durTxt(f)} · ${Math.round(f.km)} km`;
+  document.getElementById("ana").hidden=false;
+  if(!ana.map){
+    ana.map=L.map("a-map",{zoomControl:false}).setView([45.9,6.8],8);
+    L.control.zoom({position:"bottomright"}).addTo(ana.map);
+    const lay=makeLayers(); lay["Topo (OpenTopoMap)"].addTo(ana.map);
+    L.control.layers(lay,makeOverlays(),{position:"topright"}).addTo(ana.map);
+    L.control.scale({imperial:false,position:"bottomleft"}).addTo(ana.map);
+    BASES.forEach(b=>L.marker([b.lat,b.lon],{icon:L.divIcon({className:"base",html:"⌂ "+b.name,iconSize:null}),keyboard:false}).addTo(ana.map));
+    ana.layer=L.layerGroup().addTo(ana.map);
+  }
+  const sl=document.getElementById("a-slider"); sl.max=Math.max(0,ana.rows.length-1); sl.value=0;
+  setTimeout(()=>{ ana.map.invalidateSize(); anaFit(); anaDrawProfile(); anaDrawSpeed(); anaSeek(ana.idx); },60);
+  document.getElementById("a-read").textContent="Chargement du relief…";
+  anaClassify(); anaDraw();
+  if(ana.rows.length<2){ document.getElementById("a-read").textContent="Pas assez de positions pour analyser ce vol."; return; }
+  try{
+    ana.source=await anaGround(ana.rows,(n,t)=>{ document.getElementById("a-read").textContent=`Chargement du relief… ${n}/${t}`; });
+  }catch(e){
+    ana.source=""; console.warn("Analyse : relief indisponible",e);
+  }
+  if(document.getElementById("ana").hidden||ana.f!==f) return;
+  anaClassify(); anaDraw(); anaSeek(ana.idx);
+}
+function closeAna(){ anaStop(); document.getElementById("ana").hidden=true; document.getElementById("h-ana").focus(); }
+function anaFit(){ const ll=ana.rows.map(r=>[r.p.lat,r.p.lon]); if(ll.length) ana.map.fitBounds(L.latLngBounds(ll).pad(.15),{maxZoom:14}); }
+
+function anaDraw(){
+  anaDrawMap(); anaDrawProfile(); anaDrawSpeed(); anaStats();
+  const n=document.getElementById("a-note");
+  n.textContent=`Heures UTC. Altitude : GPS du traceur. Relief : ${ana.source||"indisponible (hauteur sol non calculée)"}. `+
+    `Vitesses moyennes entre deux points successifs ; au-delà de ${ANA_GAP_S/60} min d'écart, le tracé est en pointillé car le trajet réel entre les deux points n'est pas connu. `+
+    `La hauteur sol est indicative (précision GPS verticale et du modèle de terrain de l'ordre de plusieurs dizaines de mètres) : elle sert à repérer des passages à examiner, pas à établir un constat.`;
+}
+function anaColor(a,b){
+  if(!a.air&&!b.air) return COLORS.ground;
+  if(a.low||b.low) return COLORS.lost;
+  if(a.agl==null||b.agl==null) return "#9AA7B4";
+  return COLORS.live;
+}
+function anaDrawMap(){
+  ana.layer.clearLayers(); ana.marks=[];
+  const R=ana.rows;
+  for(let i=1;i<R.length;i++){
+    const a=R[i-1], b=R[i], gap=b.dt>ANA_GAP_S;
+    L.polyline([[a.p.lat,a.p.lon],[b.p.lat,b.p.lon]],{color:anaColor(a,b),weight:gap?2.5:4,opacity:.95,dashArray:gap?"6 6":null}).addTo(ana.layer);
+  }
+  R.forEach((r,i)=>{
+    const m=L.circleMarker([r.p.lat,r.p.lon],{radius:r.low?5:3,color:"#0A1420",weight:1,fillColor:r.low?COLORS.lost:(r.air?"#F4F6F8":COLORS.ground),fillOpacity:1});
+    m.on("mouseover click",()=>{ anaStop(); anaSeek(i); });
+    m.addTo(ana.layer); ana.marks.push(m);
+  });
+  if(R.length){
+    L.circleMarker([R[0].p.lat,R[0].p.lon],{radius:7,color:"#fff",weight:2,fillColor:COLORS.live,fillOpacity:1}).bindTooltip("Départ").addTo(ana.layer);
+    if(ana.f.ldTo){ const z=R[R.length-1]; L.circleMarker([z.p.lat,z.p.lon],{radius:7,color:"#fff",weight:2,fillColor:COLORS.lost,fillOpacity:1}).bindTooltip("Arrivée").addTo(ana.layer); }
+  }
+  ana.cursor=L.circleMarker(R.length?[R[0].p.lat,R[0].p.lon]:[0,0],{radius:9,color:"#F0C040",weight:3,fill:false,interactive:false}).addTo(ana.layer);
+}
+
+/* Graphiques SVG à échelle de temps (les points ne sont pas régulièrement espacés) */
+let ANA_W=900; const ANA_H=150, ANA_L=52, ANA_R=52, ANA_T=8, ANA_B=22;
+function anaX(t){ const R=ana.rows, t0=R[0].t, t1=R[R.length-1].t; return ANA_L+(t1>t0?(t-t0)/(t1-t0):0)*(ANA_W-ANA_L-ANA_R); }
+function anaTicks(){
+  const R=ana.rows; let s="";
+  [0,.25,.5,.75,1].forEach(k=>{ const t=R[0].t+k*(R[R.length-1].t-R[0].t), X=anaX(t);
+    s+=`<text x="${X}" y="${ANA_H-6}" fill="#9AA7B4" font-size="11" text-anchor="${k===0?"start":k===1?"end":"middle"}">${hm(t)}</text>`; });
+  return s;
+}
+function anaScale(lo,hi){ const Y=v=>ANA_T+(hi-v)*(ANA_H-ANA_T-ANA_B)/(hi-lo||1); return Y; }
+function anaStep(span,n){ const raw=span/n, p=10**Math.floor(Math.log10(raw)); return [1,2,2.5,5,10].map(m=>m*p).find(x=>x>=raw)||10*p; }
+function anaNice(lo,hi,n=4){ const st=anaStep(hi-lo||1,n); return {lo:Math.floor(lo/st)*st, hi:Math.ceil(hi/st)*st, st}; }
+function anaGrid(lo,hi,Y,side,col){
+  const st=anaStep(hi-lo||1,4);
+  let s=""; for(let v=Math.ceil(lo/st)*st; v<=hi+1e-9; v+=st){ const y=Y(v);
+    if(side==="l") s+=`<line x1="${ANA_L}" x2="${ANA_W-ANA_R}" y1="${y}" y2="${y}" stroke="#415062" stroke-dasharray="3 5"/>`;
+    s+=`<text x="${side==="l"?ANA_L-6:ANA_W-ANA_R+6}" y="${y+4}" fill="${col}" font-size="11" text-anchor="${side==="l"?"end":"start"}">${Math.round(v).toLocaleString("fr-FR")}</text>`; }
+  return s;
+}
+function anaPath(R,get,Y){
+  // Lignes pleines, coupées en pointillé là où l'écart entre deux points dépasse ANA_GAP_S
+  let solid="", dashed="", pen=false, prev=null;
+  R.forEach(r=>{ const v=get(r);
+    if(v==null||!Number.isFinite(v)){ pen=false; prev=null; return; }
+    const pt=`${anaX(r.t).toFixed(1)},${Y(v).toFixed(1)}`;
+    if(prev&&r.dt>ANA_GAP_S){ dashed+=`M${prev}L${pt}`; solid+=`M${pt}`; }
+    else solid+=(pen?"L":"M")+pt;
+    pen=true; prev=pt; });
+  return {solid,dashed};
+}
+function anaHook(el){
+  const svg=el.querySelector("svg"); if(!svg) return;
+  const go=e=>{ const b=svg.getBoundingClientRect(), X=(e.clientX-b.left)/b.width*ANA_W, R=ana.rows;
+    const t=R[0].t+(X-ANA_L)/(ANA_W-ANA_L-ANA_R)*(R[R.length-1].t-R[0].t);
+    let best=0; R.forEach((r,i)=>{ if(Math.abs(r.t-t)<Math.abs(R[best].t-t)) best=i; });
+    anaStop(); anaSeek(best); };
+  svg.addEventListener("pointermove",go); svg.addEventListener("pointerdown",go);
+}
+function anaDrawProfile(){
+  const el=document.getElementById("a-prof"), R=ana.rows; ANA_W=Math.max(300,Math.round(el.clientWidth||900));
+  if(R.length<2){ el.innerHTML=""; return; }
+  const thr=anaThr(), ft=v=>v*M2FT;
+  const vals=[]; R.forEach(r=>{ if(r.alt!=null) vals.push(ft(r.alt)); if(r.ground!=null) vals.push(ft(r.ground)+thr); });
+  if(!vals.length){ el.innerHTML=`<p class="note">Aucune altitude enregistrée.</p>`; return; }
+  const {lo,hi}=anaNice(Math.min(...R.filter(r=>r.ground!=null).map(r=>ft(r.ground)),...vals)-200, Math.max(...vals)+200);
+  const Y=anaScale(lo,hi);
+  let s=`<svg viewBox="0 0 ${ANA_W} ${ANA_H}" preserveAspectRatio="none" role="img" aria-label="Profil vertical du vol">`+anaGrid(lo,hi,Y,"l","#9AA7B4");
+  // Relief
+  const g=R.filter(r=>r.ground!=null);
+  if(g.length>1){
+    s+=`<polygon points="${anaX(g[0].t)},${ANA_H-ANA_B} ${g.map(r=>`${anaX(r.t).toFixed(1)},${Y(ft(r.ground)).toFixed(1)}`).join(" ")} ${anaX(g[g.length-1].t)},${ANA_H-ANA_B}" fill="#8C7044" fill-opacity=".55"/>`;
+    s+=`<polyline points="${g.map(r=>`${anaX(r.t).toFixed(1)},${Y(ft(r.ground)+thr).toFixed(1)}`).join(" ")}" fill="none" stroke="#F0C040" stroke-width="1.3" stroke-dasharray="5 4"/>`;
+  }
+  const p=anaPath(R,r=>r.alt!=null?ft(r.alt):null,Y);
+  s+=`<path d="${p.solid}" fill="none" stroke="#4bd6a0" stroke-width="2.4"/><path d="${p.dashed}" fill="none" stroke="#4bd6a0" stroke-width="1.6" stroke-dasharray="4 4"/>`;
+  R.forEach(r=>{ if(r.low&&r.alt!=null) s+=`<circle cx="${anaX(r.t)}" cy="${Y(ft(r.alt))}" r="3.5" fill="#E5484D"/>`; });
+  s+=anaTicks()+`<line id="a-cur1" x1="0" x2="0" y1="${ANA_T}" y2="${ANA_H-ANA_B}" stroke="#F0C040" stroke-width="1.5"/></svg>`;
+  el.innerHTML=s; anaHook(el);
+}
+function anaDrawSpeed(){
+  const el=document.getElementById("a-spd"), R=ana.rows; ANA_W=Math.max(300,Math.round(el.clientWidth||900));
+  if(R.length<2){ el.innerHTML=""; return; }
+  const gsv=R.filter(r=>r.dt<=ANA_GAP_S).map(r=>r.gs).filter(Number.isFinite), vsv=R.filter(r=>r.dt<=ANA_GAP_S).map(r=>r.vs).filter(Number.isFinite);
+  const ghi=anaNice(0,Math.max(40,...gsv)).hi;
+  const vm=anaNice(0,Math.max(500,...vsv.map(Math.abs))).hi;
+  const Yg=anaScale(0,ghi), Yv=anaScale(-vm,vm);
+  let s=`<svg viewBox="0 0 ${ANA_W} ${ANA_H}" preserveAspectRatio="none" role="img" aria-label="Vitesse sol et vitesse verticale">`+
+    anaGrid(0,ghi,Yg,"l","#5B9BE0")+anaGrid(-vm,vm,Yv,"r","#c792ea")+
+    `<line x1="${ANA_L}" x2="${ANA_W-ANA_R}" y1="${Yv(0)}" y2="${Yv(0)}" stroke="#c792ea" stroke-opacity=".35"/>`;
+  // Une vitesse moyenne vaut pour le segment : marche d'escalier entre les deux points
+  const step=(get,Y,col)=>{ let d=""; R.forEach((r,i)=>{ if(!i) return; const v=get(r); if(!Number.isFinite(v)) return;
+    if(r.dt>ANA_GAP_S) return; // moyenne sur un trou : non représentative
+    d+=`M${anaX(R[i-1].t).toFixed(1)},${Y(v).toFixed(1)}H${anaX(r.t).toFixed(1)}`; });
+    return `<path d="${d}" fill="none" stroke="${col}" stroke-width="2"/>`; };
+  s+=step(r=>r.vs,Yv,"#c792ea")+step(r=>r.gs,Yg,"#5B9BE0");
+  s+=anaTicks()+`<line id="a-cur2" x1="0" x2="0" y1="${ANA_T}" y2="${ANA_H-ANA_B}" stroke="#F0C040" stroke-width="1.5"/></svg>`;
+  el.innerHTML=s; anaHook(el);
+}
+function anaSeek(i){
+  const R=ana.rows; if(!R.length) return;
+  i=Math.max(0,Math.min(R.length-1,i)); ana.idx=i; const r=R[i];
+  document.getElementById("a-slider").value=i;
+  ["a-cur1","a-cur2"].forEach(id=>{ const c=document.getElementById(id); if(c){ const X=anaX(r.t); c.setAttribute("x1",X); c.setAttribute("x2",X); } });
+  ana.cursor?.setLatLng([r.p.lat,r.p.lon]);
+  if(ana.timer&&!ana.map.getBounds().pad(-.1).contains([r.p.lat,r.p.lon])) ana.map.panTo([r.p.lat,r.p.lon],{animate:false});
+  const thr=anaThr();
+  document.getElementById("a-read").innerHTML=
+    `<b>${hms(r.t)} UTC</b> · point ${i+1}/${R.length}${r.air?"":" · au sol"}<br>`+
+    `Alt. GPS ${r.alt!=null?fmtN(r.alt*M2FT)+" ft":"—"} · Relief ${r.ground!=null?fmtN(r.ground*M2FT)+" ft":"—"}<br>`+
+    `Hauteur sol <span style="color:${r.low?"var(--lost)":"inherit"}">${r.agl!=null?fmtN(r.agl)+" ft":"—"}</span>${r.low?` (seuil ${fmtN(thr)} ft)`:""}${r.agl!=null&&r.agl<0?" — incohérence altimétrique":""}<br>`+
+    `Vit. sol ${fmtN(r.gs)} kt · Vz ${r.vs!=null?(r.vs>0?"+":"")+fmtN(r.vs)+" ft/min":"—"}<br>`+
+    `<span class="note">${r.dt!=null?`${fmtN(r.dt)} s depuis le point précédent${r.dt>ANA_GAP_S?" (trou de données)":""}`:"premier point"} · route ${r.trk!=null?String(r.trk).padStart(3,"0")+"°":"—"}</span>`;
+}
+function anaStats(){
+  const R=ana.rows, A=R.filter(r=>r.air), thr=anaThr();
+  const dts=R.map(r=>r.dt).filter(Number.isFinite).sort((a,b)=>a-b);
+  const med=dts.length?dts[Math.floor(dts.length/2)]:null, gaps=dts.filter(d=>d>ANA_GAP_S).length;
+  const ok=r=>r.dt!=null&&r.dt<=ANA_GAP_S;
+  const mx=(arr,f)=>{ const v=arr.map(f).filter(Number.isFinite); return v.length?Math.max(...v):null; };
+  const mn=(arr,f)=>{ const v=arr.map(f).filter(Number.isFinite); return v.length?Math.min(...v):null; };
+  let lowS=0; for(let i=1;i<R.length;i++) if(R[i].low&&R[i-1].low&&ok(R[i])) lowS+=R[i].dt;
+  const minAgl=mn(A,r=>r.agl), runs=anaLowRuns();
+  const row=(k,v,c="")=>`<dt>${k}</dt><dd class="${c}">${v}</dd>`;
+  document.getElementById("a-stats").innerHTML=
+    row("Points enregistrés",`${R.length} (${A.length} en vol)`)+
+    row("Intervalle médian",med!=null?`${fmtN(med)} s`:"—",med>120?"warn":"")+
+    row("Trous > "+ANA_GAP_S/60+" min",gaps,gaps?"warn":"")+
+    row("Altitude max",(v=>v!=null?fmtN(v*M2FT)+" ft":"—")(mx(A,r=>r.alt)))+
+    row("Hauteur sol mini en vol",minAgl!=null?fmtN(minAgl)+" ft":"—",minAgl!=null&&minAgl<thr?"bad":"")+
+    row("Temps sous "+fmtN(thr)+" ft",ana.source?(lowS?"≈ "+dur(lowS/60):"0"):"—",lowS?"bad":"")+
+    row("Vitesse sol max",(v=>v!=null?fmtN(v)+" kt":"—")(mx(R.filter(ok),r=>r.gs)))+
+    row("Montée max",(v=>v!=null&&v>0?"+"+fmtN(v)+" ft/min":"—")(mx(R.filter(ok),r=>r.vs)))+
+    row("Descente max",(v=>v!=null&&v<0?fmtN(v)+" ft/min":"—")(mn(R.filter(ok),r=>r.vs)))+
+    row("Distance",`${fmtN(ana.f.km,1)} km`);
+  const box=document.getElementById("a-low");
+  if(!ana.source){ box.innerHTML=`<span class="note">Relief indisponible : hauteur sol non calculée.</span>`; return; }
+  if(!runs.length){ box.innerHTML=`<span class="note">Aucun point en vol sous ${fmtN(thr)} ft sol.</span>`; return; }
+  const tag=u=>(u.a>0&&!R[u.a-1].air)?" · montée initiale":(u.b<R.length-1&&!R[u.b+1].air)?" · approche finale":"";
+  box.innerHTML=runs.map(u=>`<button type="button" data-i="${u.a}">${hm(R[u.a].t)}${u.b>u.a?"–"+hm(R[u.b].t):""} UTC · mini ${fmtN(u.min)} ft · ${u.b-u.a+1} pt${u.b>u.a?"s":""}${tag(u)}</button>`).join("")+
+    `<span class="note">Les passages collés à un décollage ou à un atterrissage (poser, prise de charge) sont normaux ; ce sont les autres qui méritent d'être regardés.</span>`;
+  box.querySelectorAll("button").forEach(b=>b.onclick=()=>{ anaStop(); const i=+b.dataset.i; anaSeek(i); ana.map.setView([R[i].p.lat,R[i].p.lon],Math.max(ana.map.getZoom(),13)); });
+}
+
+/* Relecture */
+function anaStop(){ if(ana.timer){ clearInterval(ana.timer); ana.timer=null; } const b=document.getElementById("a-play"); if(b){ b.textContent="▶"; b.setAttribute("aria-label","Rejouer le vol"); } }
+function anaPlay(){
+  if(ana.timer){ anaStop(); return; }
+  if(ana.idx>=ana.rows.length-1) anaSeek(0);
+  const b=document.getElementById("a-play"); b.textContent="❚❚"; b.setAttribute("aria-label","Pause");
+  ana.timer=setInterval(()=>{ if(ana.idx>=ana.rows.length-1){ anaStop(); return; } anaSeek(ana.idx+1); },300);
+}
+
+/* Exports */
+function anaFileBase(){ return `SAF_vol_${ana.reg}_${new Date(ana.rows[0].t).toISOString().slice(0,16).replace(/[-:]/g,"").replace("T","_")}Z`; }
+function anaDownload(text,name,type){
+  const blob=new Blob([text],{type}), a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+const xml=s=>String(s).replace(/[<>&"]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]));
+function anaCsv(){
+  const n=(v,d=0)=>Number.isFinite(v)?v.toFixed(d).replace(".",","):"";
+  const lines=[["heure_utc","appareil","lat","lon","alt_gps_m","alt_gps_ft","relief_m","hauteur_sol_ft","sous_seuil","en_vol","vitesse_sol_kt","vitesse_verticale_ftmin","vitesse_brute_traceur","route_deg","ecart_s"].join(";")];
+  ana.rows.forEach(r=>lines.push([new Date(r.t).toISOString().replace("T"," ").slice(0,19),ana.reg,n(+r.p.lat,6),n(+r.p.lon,6),
+    n(r.alt),n(r.alt!=null?r.alt*M2FT:null),n(r.ground),n(r.agl),r.low?"oui":"",r.air?"oui":"non",n(r.gs),n(r.vs),n(r.raw),r.trk??"",n(r.dt)].join(";")));
+  lines.push(`# Seuil hauteur sol : ${anaThr()} ft · Relief : ${ana.source||"indisponible"} · Vitesses moyennes entre deux points`);
+  anaDownload("\ufeff"+lines.join("\r\n"),anaFileBase()+".csv","text/csv;charset=utf-8");
+}
+function anaGpx(){
+  const pts=ana.rows.map(r=>`<trkpt lat="${(+r.p.lat).toFixed(6)}" lon="${(+r.p.lon).toFixed(6)}">${r.alt!=null?`<ele>${r.alt.toFixed(1)}</ele>`:""}<time>${new Date(r.t).toISOString()}</time></trkpt>`).join("\n");
+  anaDownload(`<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="SAF International - Suivi flotte" xmlns="http://www.topografix.com/GPX/1/1">\n<trk><name>${xml(ana.reg)} ${xml(new Date(ana.rows[0].t).toISOString())}</name><trkseg>\n${pts}\n</trkseg></trk></gpx>\n`,anaFileBase()+".gpx","application/gpx+xml");
+}
+function anaKml(){
+  // gx:Track = relecture 3D animée avec le curseur temporel de Google Earth ; tronçons rouges = sous le seuil
+  const R=ana.rows.filter(r=>r.alt!=null), c=r=>`${(+r.p.lon).toFixed(6)},${(+r.p.lat).toFixed(6)},${r.alt.toFixed(1)}`;
+  const low=[]; let cur=null;
+  for(let i=1;i<R.length;i++){ const bad=R[i].low||R[i-1].low;
+    if(bad){ if(!cur){ cur=[R[i-1]]; } cur.push(R[i]); } else if(cur){ low.push(cur); cur=null; } }
+  if(cur) low.push(cur);
+  const k=`<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2"><Document>
+<name>${xml(ana.reg)} — ${xml(dayLabel(ana.rows[0].t))}</name>
+<description>Seuil hauteur sol ${anaThr()} ft · relief ${xml(ana.source||"indisponible")} · altitude GPS du traceur</description>
+<Style id="trk"><LineStyle><color>ff82c83c</color><width>3</width></LineStyle><PolyStyle><color>4082c83c</color></PolyStyle><IconStyle><Icon><href>https://maps.google.com/mapfiles/kml/shapes/heliport.png</href></Icon></IconStyle></Style>
+<Style id="low"><LineStyle><color>ff4d48e5</color><width>5</width></LineStyle><PolyStyle><color>804d48e5</color></PolyStyle></Style>
+<Placemark><name>Relecture ${xml(ana.reg)}</name><styleUrl>#trk</styleUrl><gx:Track><altitudeMode>absolute</altitudeMode><extrude>1</extrude>
+${R.map(r=>`<when>${new Date(r.t).toISOString()}</when>`).join("\n")}
+${R.map(r=>`<gx:coord>${c(r).replace(/,/g," ")}</gx:coord>`).join("\n")}
+</gx:Track></Placemark>
+${low.map((seg,i)=>`<Placemark><name>Sous le seuil ${i+1} (${hm(seg[0].t)} UTC)</name><styleUrl>#low</styleUrl><LineString><extrude>1</extrude><altitudeMode>absolute</altitudeMode><coordinates>${seg.map(c).join(" ")}</coordinates></LineString></Placemark>`).join("\n")}
+</Document></kml>\n`;
+  anaDownload(k,anaFileBase()+".kml","application/vnd.google-earth.kml+xml");
+}
+
+document.getElementById("h-ana").onclick=()=>{ if(hist.sel!=null) openAna(hist.sel); };
+document.getElementById("a-close").onclick=closeAna;
+document.getElementById("a-play").onclick=anaPlay;
+document.getElementById("a-slider").oninput=e=>{ anaStop(); anaSeek(+e.target.value); };
+document.getElementById("a-thr").onchange=()=>{ try{ window.localStorage?.setItem("saf_ana_thr_ft",String(anaThr())); }catch(e){} anaClassify(); anaDraw(); anaSeek(ana.idx); };
+document.getElementById("a-csv").onclick=anaCsv;
+let anaRz=null; window.addEventListener("resize",()=>{ if(document.getElementById("ana").hidden||!ana.rows.length) return;
+  clearTimeout(anaRz); anaRz=setTimeout(()=>{ anaDrawProfile(); anaDrawSpeed(); anaSeek(ana.idx); },150); });
+document.getElementById("a-gpx").onclick=anaGpx;
+document.getElementById("a-kml").onclick=anaKml;
+document.addEventListener("keydown",e=>{
+  if(document.getElementById("ana").hidden) return;
+  if(e.key==="Escape"){ e.stopImmediatePropagation(); closeAna(); }
+  else if(e.target.tagName!=="INPUT"&&(e.key==="ArrowRight"||e.key==="ArrowLeft")){ e.preventDefault(); anaStop(); anaSeek(ana.idx+(e.key==="ArrowRight"?1:-1)); }
+  else if(e.target.tagName!=="INPUT"&&e.key===" "){ e.preventDefault(); anaPlay(); }
+},true);
+
+boot();
+</script>
+<script>
+/* Panneau gauche rétractable (08.11.2026) : bouton sur le bord de la carte, touche « [ », état mémorisé */
+(function(){
+  const app=document.getElementById("app"),btn=document.getElementById("sidetoggle"),KEY="saf_flotte_side_off";
+  if(!app||!btn) return;
+  const mq=matchMedia("(max-width:760px)");
+  const isOff=()=>app.classList.contains("side-off");
+  function label(){
+    const off=isOff();
+    btn.textContent=mq.matches?(off?"▲":"▼"):(off?"›":"‹");
+    btn.title=(off?"Afficher le panneau":"Masquer le panneau")+" (touche [ )";
+    btn.setAttribute("aria-label",off?"Afficher le panneau":"Masquer le panneau");
+    btn.setAttribute("aria-expanded",String(!off));
+  }
+  function refit(){ try{ (typeof panes!=="undefined"?panes:[]).forEach(p=>p.map&&p.map.invalidateSize()); }catch(e){} }
+  function set(off,save){
+    app.classList.toggle("side-off",off); label();
+    if(save){ try{ localStorage.setItem(KEY,off?"1":"0"); }catch(e){} }
+    setTimeout(refit,320);
+  }
+  app.addEventListener("transitionend",e=>{ if(e.target===app) refit(); });
+  btn.addEventListener("click",()=>set(!isOff(),true));
+  document.addEventListener("keydown",e=>{
+    if(e.key!=="["||e.ctrlKey||e.metaKey||e.altKey) return;
+    const t=e.target; if(t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)||t.isContentEditable)) return;
+    if(!document.getElementById("hist")?.hidden || !document.getElementById("ana")?.hidden) return;
+    e.preventDefault(); set(!isOff(),true);
+  });
+  mq.addEventListener("change",label);
+  let off=false; try{ off=localStorage.getItem(KEY)==="1"; }catch(e){}
+  set(off,false);
+})();
+</script>
+</body>
+</html>
