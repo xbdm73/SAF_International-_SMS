@@ -332,6 +332,22 @@ footer .err{color:var(--lost)}
 .acm .nb.on{background:#13224A;color:#C9D8FF} .acm .nb.soon{background:#F5A524;color:#1B1200}
 .acm .eta.night{background:#13224A} .acm .eta.soon{background:#C2610C}
 .navdst.night{background:#13224A} .navdst.soon{background:#C2610C}
+
+/* Panneau gauche rétractable (08.11.2026) — plus de place pour la carte */
+#app{transition:grid-template-columns .25s ease,grid-template-rows .25s ease}
+#map-area{position:relative}
+#app.side-off{grid-template-columns:0 1fr}
+#app.side-off #side{visibility:hidden;overflow:hidden;min-width:0;border-right:0}
+#sidetoggle{position:absolute;left:0;top:50%;transform:translateY(-50%);z-index:1000;width:22px;height:64px;padding:0;
+  border:1px solid var(--line);border-left:0;border-radius:0 6px 6px 0;background:var(--panel);color:var(--signal);
+  font:700 18px/1 var(--cond);cursor:pointer;box-shadow:2px 0 8px rgba(0,0,0,.35)}
+#sidetoggle:hover{background:#1d2d3d}
+@media (max-width:760px){
+  #app.side-off{grid-template-columns:1fr;grid-template-rows:100% 0}
+  #app.side-off #side{border-top:0}
+  #sidetoggle{top:auto;bottom:0;left:50%;transform:translateX(-50%);width:64px;height:22px;
+    border:1px solid var(--line);border-bottom:0;border-radius:6px 6px 0 0;box-shadow:0 -2px 8px rgba(0,0,0,.35)}
+}
 </style>
 </head>
 <body>
@@ -368,7 +384,7 @@ footer .err{color:var(--lost)}
     <ul id="list"></ul>
     <footer id="foot">—</footer>
   </aside>
-  <div id="map-area"><nav id="as332-ribbon" aria-label="État des traceurs AS332"><span class="ribbon-label">Traceurs AS332</span></nav><div id="maps" data-n="1"></div></div>
+  <div id="map-area"><button id="sidetoggle" type="button" aria-controls="side" aria-expanded="true">‹</button><nav id="as332-ribbon" aria-label="État des traceurs AS332"><span class="ribbon-label">Traceurs AS332</span></nav><div id="maps" data-n="1"></div></div>
 </div>
 
 <div id="hist" hidden role="dialog" aria-modal="true" aria-labelledby="h-title">
@@ -2582,6 +2598,39 @@ document.addEventListener("keydown",e=>{
 },true);
 
 boot();
+</script>
+<script>
+/* Panneau gauche rétractable (08.11.2026) : bouton sur le bord de la carte, touche « [ », état mémorisé */
+(function(){
+  const app=document.getElementById("app"),btn=document.getElementById("sidetoggle"),KEY="saf_flotte_side_off";
+  if(!app||!btn) return;
+  const mq=matchMedia("(max-width:760px)");
+  const isOff=()=>app.classList.contains("side-off");
+  function label(){
+    const off=isOff();
+    btn.textContent=mq.matches?(off?"▲":"▼"):(off?"›":"‹");
+    btn.title=(off?"Afficher le panneau":"Masquer le panneau")+" (touche [ )";
+    btn.setAttribute("aria-label",off?"Afficher le panneau":"Masquer le panneau");
+    btn.setAttribute("aria-expanded",String(!off));
+  }
+  function refit(){ try{ (typeof panes!=="undefined"?panes:[]).forEach(p=>p.map&&p.map.invalidateSize()); }catch(e){} }
+  function set(off,save){
+    app.classList.toggle("side-off",off); label();
+    if(save){ try{ localStorage.setItem(KEY,off?"1":"0"); }catch(e){} }
+    setTimeout(refit,320);
+  }
+  app.addEventListener("transitionend",e=>{ if(e.target===app) refit(); });
+  btn.addEventListener("click",()=>set(!isOff(),true));
+  document.addEventListener("keydown",e=>{
+    if(e.key!=="["||e.ctrlKey||e.metaKey||e.altKey) return;
+    const t=e.target; if(t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)||t.isContentEditable)) return;
+    if(!document.getElementById("hist")?.hidden || !document.getElementById("ana")?.hidden) return;
+    e.preventDefault(); set(!isOff(),true);
+  });
+  mq.addEventListener("change",label);
+  let off=false; try{ off=localStorage.getItem(KEY)==="1"; }catch(e){}
+  set(off,false);
+})();
 </script>
 </body>
 </html>
