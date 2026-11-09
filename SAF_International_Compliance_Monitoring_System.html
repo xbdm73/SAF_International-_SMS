@@ -1278,6 +1278,22 @@ nav.cms-sidebar .cms-nav-title{font-size:11.7px;line-height:1.3;color:inherit;}
   #saf-subnav{margin-left:0 !important;}
 }
 @media print{ nav.cms-sidebar{display:none !important;} .panel{margin-left:0 !important;} .cms-layout main{margin-left:0 !important;} }
+/* Colonne de gauche rétractable (09.11.2026) — même principe que le suivi flotte et le Safety */
+nav.cms-sidebar{transition:transform .25s ease, visibility 0s linear 0s;}
+.panel, .cms-layout main, #saf-subnav{transition:margin-left .25s ease;}
+body.cms-side-off nav.cms-sidebar{transform:translateX(-100%);visibility:hidden;transition:transform .25s ease, visibility 0s linear .25s;}
+body.cms-side-off .panel, body.cms-side-off .cms-layout main, body.cms-side-off #saf-subnav{margin-left:0 !important;}
+body.cms-side-off .cms-layout main .panel{margin-left:0 !important;}
+#cms-side-toggle{position:fixed;left:248px;top:50%;transform:translateY(-50%);z-index:21;
+  width:22px;height:64px;padding:0;cursor:pointer;
+  border:1px solid rgba(201,162,39,.45);border-left:0;border-radius:0 6px 6px 0;
+  background:#0D1B2A;color:#C9A227;font:700 18px/1 'IBM Plex Mono',monospace;
+  box-shadow:2px 0 8px rgba(0,0,0,.25);transition:left .25s ease, background .15s;}
+#cms-side-toggle:hover{background:#1A2E42;}
+#cms-side-toggle:focus-visible{outline:2px solid #C9A227;outline-offset:2px;}
+body.cms-side-off #cms-side-toggle{left:0;}
+@media(max-width:900px){ #cms-side-toggle{display:none !important;} }
+@media print{ #cms-side-toggle{display:none !important;} }
 </style>
 <style id="srb-meta-large-style">
 .srb-meta-large{
@@ -2545,6 +2561,7 @@ function safExportPDF() {
 })();
 </script>
 <!-- ── END SAF INTER-TOOL NAV ── -->
+<button id="cms-side-toggle" type="button" aria-expanded="true">‹</button>
 <div class="cms-layout">
 <nav class="cms-sidebar">
 <div class="cms-nav-section">
@@ -25463,5 +25480,36 @@ setTimeout(function(){try{ensureDocsUI();}catch(e){}},2500);
 })();
 </script>
 
+<script>
+/* Colonne de gauche rétractable (09.11.2026) : bouton sur le bord, touche « [ », état mémorisé
+   dans le localStorage natif du navigateur (hors synchro cloud). */
+(function(){
+  var btn=document.getElementById('cms-side-toggle'); if(!btn) return;
+  var KEY='saf_cms_side_off', body=document.body;
+  var store=window._nativeLocalStorage||(function(){try{return window.localStorage;}catch(e){return null;}})();
+  function isOff(){ return body.classList.contains('cms-side-off'); }
+  function label(){
+    var off=isOff();
+    btn.textContent=off?'›':'‹';
+    btn.title=(off?'Afficher le menu':'Masquer le menu')+' (touche [ )';
+    btn.setAttribute('aria-label',off?'Afficher le menu':'Masquer le menu');
+    btn.setAttribute('aria-expanded',String(!off));
+  }
+  function set(off,save){
+    body.classList.toggle('cms-side-off',off); label();
+    if(save&&store){ try{ store.setItem(KEY,off?'1':'0'); }catch(e){} }
+    setTimeout(function(){ try{ window.dispatchEvent(new Event('resize')); }catch(e){} },300);
+  }
+  btn.addEventListener('click',function(){ set(!isOff(),true); });
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='['||e.ctrlKey||e.metaKey||e.altKey) return;
+    var t=e.target; if(t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)||t.isContentEditable)) return;
+    if(window.matchMedia('(max-width:900px)').matches) return;
+    e.preventDefault(); set(!isOff(),true);
+  });
+  var off=false; try{ off=!!store&&store.getItem(KEY)==='1'; }catch(e){}
+  set(off,false);
+})();
+</script>
 </body>
 </html>

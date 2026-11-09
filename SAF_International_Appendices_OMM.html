@@ -54,7 +54,8 @@ header{display:flex;align-items:center;padding:0 24px;background:var(--navy-mid)
 .main-wrap{display:flex;flex:1;overflow:hidden;}
 aside{position:relative;width:var(--sidebar-w);background:var(--navy-mid);border-right:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;transition:width .22s ease,min-width .22s ease;}
 aside.collapsed{width:0 !important;min-width:0 !important;overflow:hidden;border-right:none;}
-#sidebar-toggle{position:sticky;top:50%;align-self:flex-start;margin-top:calc(50vh - 26px);z-index:50;width:18px;height:52px;background:var(--navy-mid);border:1px solid rgba(201,162,39,.35);border-left:none;border-radius:0 8px 8px 0;color:var(--gold-light);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;transition:background .15s;}
+#sidebar-toggle{position:sticky;top:50%;align-self:flex-start;margin-top:calc(50vh - 32px);z-index:50;width:22px;height:64px;background:var(--navy-mid);border:1px solid rgba(201,162,39,.35);border-left:none;border-radius:0 8px 8px 0;color:var(--gold-light);font-size:18px;font-weight:700;font-family:var(--font-mono,monospace);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;transition:background .15s;}
+@media print{#sidebar-toggle{display:none !important;}}
 #sidebar-toggle:hover{background:rgba(201,162,39,.22);color:#fff;}
 .nav-section{padding:1.25rem 1rem .5rem;}
 .nav-label{font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;padding:0 .5rem .75rem;border-bottom:1px solid rgba(201,162,39,.2);margin-bottom:.5rem;}
@@ -1069,7 +1070,7 @@ button .bi, a .bi{vertical-align:middle;}
 <div class="nav-section"><div class="nav-label">Appendices O.M.M</div><div class="nav-item active" data-view="view-app01" onclick="showView('view-app01',this)"><span class="icon">📑</span><div class="nav-item-text"><span class="nav-app-code">APP01-OMM</span><span class="nav-app-title">List of Appendices</span></div></div><div class="nav-item" data-view="view-app02" onclick="showView('view-app02',this)"><span class="icon">🏢</span><div class="nav-item-text"><span class="nav-app-code">APP02-OMM</span><span class="nav-app-title">Facilities &amp; Infrastructure</span></div></div><div class="nav-item" data-view="view-app03" onclick="showView('view-app03',this)"><span class="icon">🗂️</span><div class="nav-item-text"><span class="nav-app-code">APP03-OMM</span><span class="nav-app-title">Organizational Chart</span></div></div><div class="nav-item" data-view="view-app04" onclick="showView('view-app04',this)"><span class="icon">👥</span><div class="nav-item-text"><span class="nav-app-code">APP04-OMM</span><span class="nav-app-title">List of Management Personnel</span></div></div><div class="nav-item" data-view="view-app13" onclick="showView('view-app13',this)"><span class="icon">📋</span><div class="nav-item-text"><span class="nav-app-code">APP05-OMM</span><span class="nav-app-title">Leasing Overview by FOCA</span></div></div><div class="nav-item" data-view="view-app14" onclick="showView('view-app14',this)"><span class="icon">🚁</span><div class="nav-item-text"><span class="nav-app-code">APP06-OMM</span><span class="nav-app-title">Aircraft being used</span></div></div><div class="nav-item" data-view="view-app07" onclick="showView('view-app07',this)"><span class="icon">🔴</span><div class="nav-item-text"><span class="nav-app-code">APP07-OMM</span><span class="nav-app-title">Safety Promotion</span></div></div><div class="nav-item" data-view="view-app08" onclick="showView('view-app08',this)"><span class="icon">🔗</span><div class="nav-item-text"><span class="nav-app-code">APP08-OMM</span><span class="nav-app-title">List of Subcontractors</span></div></div><div class="nav-item" data-view="view-app09" onclick="showView('view-app09',this)"><span class="icon">👤</span><div class="nav-item-text"><span class="nav-app-code">APP09-OMM</span><span class="nav-app-title">List of Auditors</span></div></div><div class="nav-item" data-view="view-app10" onclick="showView('view-app10',this)"><span class="icon">🎓</span><div class="nav-item-text"><span class="nav-app-code">APP10-OMM</span><span class="nav-app-title">List of Trainers</span></div></div></div>
 <div class="version-tag">SAF INTERNATIONAL<br/>OMM APPENDICES<br/>AS 332 C1 SUPER PUMA<br/>VER 3.0 · 01.01.2026</div>
 </aside>
-<button id="sidebar-toggle" onclick="toggleDesktopSidebar()" style="display: flex;" title="Réduire / Agrandir la sidebar">‹</button>
+<button id="sidebar-toggle" onclick="toggleDesktopSidebar()" style="display: flex;" title="Masquer le menu (touche [ )" aria-expanded="true">‹</button>
 <main>
 <div class="view active" id="view-app01">
 <div class="dash-header"><div><div class="dash-title">LIST OF APPENDICES</div>
@@ -1284,6 +1285,32 @@ button .bi, a .bi{vertical-align:middle;}
 <button type="button" class="btn btn-add" onclick="safAddAircraftRow()">+ Ajouter un aéronef</button>
 </div></div>
 <style>#view-app07 .tm-code{font-family:var(--font-mono);font-size:11px;letter-spacing:1px;color:var(--gold);white-space:nowrap;}#view-app07 .tm-name{font-weight:600;margin-top:3px;color:var(--white);}#view-app07 .tm-topics{margin:0;padding-left:18px;}#view-app07 .tm-topics li{margin:2px 0;line-height:1.4;}#view-app07 .tm-tbl td{vertical-align:top;}#view-app07 .tm-note{font-size:12px;color:var(--grey-400);margin:.2rem 0 0;}</style>
+<style id="app07-ll-style">
+/* APP07 §7 — miroir des Lessons Learned du Safety (09.11.2026) */
+#app07-ll-card .app07-ll-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:.2rem 0 .7rem;}
+#app07-ll-card .app07-ll-bar select,#app07-ll-card .app07-ll-bar input{font-family:var(--font-mono);font-size:11px;padding:6px 8px;border-radius:6px;border:1px solid rgba(143,168,192,.35);background:var(--navy);color:var(--white);}
+#app07-ll-card .app07-ll-bar input{flex:1;min-width:200px;}
+#app07-ll-card .app07-ll-open{text-decoration:none;display:inline-block;}
+#app07-ll-card .app07-ll-status{font-family:var(--font-mono);font-size:11px;color:var(--grey-400);margin:.2rem 0 .5rem;}
+#app07-ll-card .app07-ll-status.err{color:#f85149;}
+#app07-ll-card .ll-tag{display:inline-block;border-radius:3px;padding:1px 7px;font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.5px;white-space:nowrap;}
+#app07-ll-card .ll-tag.alert{background:rgba(204,34,0,.14);color:#e5533a;border:1px solid rgba(204,34,0,.45);}
+#app07-ll-card .ll-tag.communication{background:rgba(27,108,168,.14);color:#4a9fe0;border:1px solid rgba(27,108,168,.45);}
+#app07-ll-card .ll-ref{font-family:var(--font-mono);font-size:11px;color:var(--gold);white-space:nowrap;}
+#app07-ll-card .ll-ver{font-family:var(--font-mono);font-size:10px;color:var(--grey-400);white-space:nowrap;}
+#app07-ll-card .ll-title{font-weight:600;color:var(--white);}
+#app07-ll-card .ll-title-en{font-size:12px;color:var(--grey-400);margin-top:2px;}
+#app07-ll-card .ll-occ{font-family:var(--font-mono);font-size:10px;color:var(--grey-400);}
+#app07-ll-card .ll-acts{white-space:nowrap;}
+#app07-ll-card .ll-acts .btn{padding:3px 8px;font-size:10px;margin:0 2px;}
+#app07-ll-card tr.ll-detail > td{background:rgba(255,255,255,.025);}
+#app07-ll-card .ll-langs{display:flex;gap:6px;margin-bottom:8px;}
+#app07-ll-card .ll-body{background:#fff;color:#111;border-radius:6px;padding:16px 18px;line-height:1.5;font-size:13px;max-height:560px;overflow:auto;}
+#app07-ll-card .ll-body img{max-width:100%;height:auto;}
+#app07-ll-card .ll-body .ll-pg{border-top:1px dashed #bbb;margin-top:14px;padding-top:14px;}
+#app07-ll-card .ll-meta{font-family:var(--font-mono);font-size:10px;color:var(--grey-400);margin-top:8px;}
+@media print{#app07-ll-card .app07-ll-bar,#app07-ll-card .app07-ll-status{display:none !important;}}
+</style>
 <div class="view" id="view-app07">
 <div class="dash-header"><div><div class="dash-title">SAFETY PROMOTION</div>
 <div class="dash-subtitle">APP07-OMM · SMS training programme &amp; safety communication</div></div>
@@ -1331,6 +1358,18 @@ button .bi, a .bi{vertical-align:middle;}
 <tr><td>Non-SAF personnel on worksites (client ground teams, riggers, subcontractors)</td><td>Recorded site safety briefing before work</td><td>At each new worksite</td></tr>
 </tbody></table></div>
 <p class="tm-note">Training records are kept in Crew Training. The content of the TM08 ECP is reviewed each year at the SRB in the light of occurrences and trends.</p></div>
+<div class="card card-accent" id="app07-ll-card"><div class="section-title">7 — Lessons learned &amp; safety communications register</div>
+<div class="callout info app07-ll-intro" style="margin-top:.4rem">Live mirror of the <strong>Lessons Learned</strong> module of the Safety Management System (Safety Alerts and safety communications). Read-only here: issue, revise or withdraw a communication in the Safety Management System.</div>
+<div class="app07-ll-bar app07-ll-noprint">
+<select id="app07-ll-type" onchange="app07LLRender()"><option value="">All types</option><option value="alert">Safety Alerts</option><option value="communication">Communications</option></select>
+<select id="app07-ll-year" onchange="app07LLRender()"><option value="">All years</option></select>
+<input id="app07-ll-q" type="search" placeholder="Search reference, title, distribution…" oninput="app07LLRender()"/>
+<button class="btn" type="button" onclick="app07LLLoad(true)" title="Reload from the Safety Management System">↻ Refresh</button>
+<a class="btn gold app07-ll-open" href="SAF_International_Safety.html" target="_blank" rel="noopener" title="Open the Lessons Learned module in the Safety Management System">Open in Safety ↗</a>
+</div>
+<div id="app07-ll-status" class="app07-ll-status app07-ll-noprint">Sign in to load the register from the Safety Management System.</div>
+<div id="app07-ll-wrap" style="overflow-x:auto;"></div>
+</div>
 </div><!-- end view-app07 -->
 <!-- APP08-APP10: shared CMS registries; existing Supabase cms_data remains authoritative. -->
 <style>
@@ -1926,12 +1965,35 @@ function closeSidebar(){
   document.querySelector('aside').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.remove('open');
 }
+/* Colonne de gauche rétractable — harmonisée le 09.11.2026 avec le suivi flotte, le Safety et le CMS :
+   touche « [ », état mémorisé dans le localStorage natif (hors synchro cloud). */
+var SAF_OMM_SIDE_KEY='saf_omm_side_off';
+function _ommSideStore(){ return window._nativeLocalStorage||(function(){try{return window.localStorage;}catch(e){return null;}})(); }
+function setDesktopSidebar(off,save){
+  var aside=document.querySelector('aside'), btn=document.getElementById('sidebar-toggle');
+  if(!aside||!btn) return;
+  aside.classList.toggle('collapsed',off);
+  btn.innerHTML=off?'&#8250;':'&#8249;';
+  btn.title=(off?'Afficher le menu':'Masquer le menu')+' (touche [ )';
+  btn.setAttribute('aria-label',off?'Afficher le menu':'Masquer le menu');
+  btn.setAttribute('aria-expanded',String(!off));
+  if(save){ var st=_ommSideStore(); if(st){ try{ st.setItem(SAF_OMM_SIDE_KEY,off?'1':'0'); }catch(e){} } }
+  setTimeout(function(){ try{ window.dispatchEvent(new Event('resize')); }catch(e){} },260);
+}
 function toggleDesktopSidebar(){
   var aside=document.querySelector('aside');
-  var btn=document.getElementById('sidebar-toggle');
-  var isCollapsed=aside.classList.toggle('collapsed');
-  btn.innerHTML=isCollapsed?'&#8250;':'&#8249;';
+  setDesktopSidebar(!(aside&&aside.classList.contains('collapsed')),true);
 }
+document.addEventListener('keydown',function(e){
+  if(e.key!=='['||e.ctrlKey||e.metaKey||e.altKey) return;
+  var t=e.target; if(t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)||t.isContentEditable)) return;
+  if(window.innerWidth<=768) return;
+  e.preventDefault(); toggleDesktopSidebar();
+});
+(function(){
+  function init(){ var off=false, st=_ommSideStore(); try{ off=!!st&&st.getItem(SAF_OMM_SIDE_KEY)==='1'; }catch(e){} setDesktopSidebar(off,false); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
 // Hide desktop toggle on mobile
 function updateToggleVisibility(){
   var btn=document.getElementById('sidebar-toggle');
@@ -2635,7 +2697,7 @@ var SAF_APP_LOGO_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+UAA
     var view = document.getElementById(viewId);
     if (!view) return '';
     var clone = view.cloneNode(true);
-    clone.querySelectorAll('.edit-bar, .saf-edit-meta, .row-actions, button').forEach(function(el){ el.remove(); });
+    clone.querySelectorAll('.edit-bar, .saf-edit-meta, .row-actions, button, .app07-ll-noprint').forEach(function(el){ el.remove(); });
     clone.querySelectorAll('[contenteditable]').forEach(function(el){ el.removeAttribute('contenteditable'); });
     clone.querySelectorAll('select').forEach(function(sel){
       var span = document.createElement('span');
@@ -3248,6 +3310,7 @@ h1 {
   var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q";
   var MODULE = "omm_appendices";          // clé de stockage de CET outil dans saf_data
   var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  window.safOmmDb = db;   // lu par le registre Lessons Learned de l'APP07 (09.11.2026)
 
   var overlay = document.getElementById('saf-login-overlay');
   var bar     = document.getElementById('saf-cloud-bar');
@@ -3506,7 +3569,7 @@ h1 {
     });
     var inputSel = 'input:not([type="search"]):not([type="checkbox"]):not([type="radio"]), textarea, select';
     (root.matches && root.matches(inputSel) ? [root] : []).concat(Array.prototype.slice.call(root.querySelectorAll(inputSel))).forEach(function(el){
-      if(el.closest('#saf-cloud-bar') || el.closest('#saf-subnav') || el.closest('#saf-login-overlay') || el.closest('#saf-mfa-overlay')) return;
+      if(el.closest('#saf-cloud-bar') || el.closest('#saf-subnav') || el.closest('#saf-login-overlay') || el.closest('#saf-mfa-overlay') || el.closest('.app07-ll-bar')) return;   // filtres du registre Lessons Learned : simple consultation
       if(el.__safLocked) return;
       el.disabled = true; el.style.opacity = '0.5'; el.title = 'Lecture seule';
       el.__safLocked = true;
@@ -3687,6 +3750,7 @@ h1 {
     // Sinon la protection editor neutralise safImportAppendicesData et empeche le chargement.
     await cloudLoad();
     await loadAndApplyRole(session.user.email);
+    if(typeof window.app07LLLoad === 'function'){ try{ window.app07LLLoad(); }catch(e){ console.warn('APP07 LL', e); } }
     if(SAF_ROLE === 'admin' || SAF_ROLE === 'editor') activateAppendixEditing();
     if(window.safRefreshOrgEditor) window.safRefreshOrgEditor();
     ready = true;
@@ -3941,6 +4005,174 @@ h1 {
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply);
   else apply();
+})();
+</script>
+<script>
+/* ══ APP07 §7 — Registre Lessons Learned (miroir lecture seule du Safety) — 09.11.2026 ══
+   Source : saf_data, ligne « sms:safLessons » (SMS découpé par module), repli sur
+   l'ancienne ligne « sms_data ». Rien n'est écrit : l'APP07 n'est pas sérialisée
+   dans omm_appendices et ce registre ne fait que lire. Annexes PDF lues dans le
+   bucket « SMS Documents », comme dans le Safety. */
+(function(){
+  var LL = [], LOADED = false, LOADING = false;
+  var BUCKET = 'SMS Documents';
+  function $(id){ return document.getElementById(id); }
+  function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function status(txt, err){ var el = $('app07-ll-status'); if(!el) return; el.textContent = txt; el.classList.toggle('err', !!err); }
+  function fmtDate(d){ var m = String(d || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[3] + '.' + m[2] + '.' + m[1] : (d || ''); }
+  function parseVal(v){
+    if(v == null) return [];
+    if(typeof v === 'string'){ try{ v = JSON.parse(v); }catch(e){ return []; } }
+    return Array.isArray(v) ? v.filter(function(x){ return x && typeof x === 'object'; }) : [];
+  }
+  /* Le corps riche vient de l'éditeur du Safety : on retire scripts, gestionnaires
+     d'événements et liens javascript: avant de l'afficher. */
+  function clean(html){
+    var t = document.createElement('template'); t.innerHTML = String(html || '');
+    t.content.querySelectorAll('script,style,iframe,object,embed,link,meta').forEach(function(n){ n.remove(); });
+    t.content.querySelectorAll('*').forEach(function(n){
+      Array.prototype.slice.call(n.attributes).forEach(function(a){
+        var nm = a.name.toLowerCase();
+        if(nm.indexOf('on') === 0 || nm === 'contenteditable' || nm === 'data-ll-sel') n.removeAttribute(a.name);
+        else if((nm === 'href' || nm === 'src') && /^\s*javascript:/i.test(a.value)) n.removeAttribute(a.name);
+      });
+    });
+    return t.innerHTML.replace(/\u200B/g, '');
+  }
+
+  window.app07LLLoad = async function(manual){
+    var db = window.safOmmDb;
+    if(!db){ status('Supabase unavailable — sign in again.', true); return; }
+    if(LOADING) return; LOADING = true;
+    status('Loading the Lessons Learned register from the Safety Management System…');
+    try{
+      var res = await db.from('saf_data').select('module, data, updated_at').in('module', ['sms:safLessons', 'sms_data']);
+      if(res.error) throw new Error(res.error.message);
+      var rows = res.data || [], split = null, legacy = null;
+      rows.forEach(function(r){ if(r.module === 'sms:safLessons') split = r; else if(r.module === 'sms_data') legacy = r; });
+      var src = null, upd = null;
+      if(split){ LL = parseVal(split.data && split.data.v !== undefined ? split.data.v : split.data); src = 'sms:safLessons'; upd = split.updated_at; }
+      else if(legacy && legacy.data){ LL = parseVal(legacy.data.safLessons); src = 'sms_data'; upd = legacy.updated_at; }
+      else{
+        LL = []; LOADED = true; render();
+        status('No access to the Lessons Learned of the Safety Management System with this account (reserved to admin, editor and authority accounts).', true);
+        LOADING = false; return;
+      }
+      LOADED = true;
+      fillYears(); render();
+      status(LL.length + ' communication(s) — Safety Management System, updated ' + (upd ? new Date(upd).toLocaleString('fr-FR', {dateStyle:'short', timeStyle:'short'}) : '—') + (manual ? ' · refreshed' : ''));
+    }catch(e){
+      console.warn('APP07 Lessons Learned', e);
+      status('Unable to load the Lessons Learned: ' + e.message, true);
+    }
+    LOADING = false;
+  };
+
+  function fillYears(){
+    var sel = $('app07-ll-year'); if(!sel) return;
+    var cur = sel.value, years = {};
+    LL.forEach(function(l){ var m = String(l.date || '').match(/^(\d{4})/); if(m) years[m[1]] = 1; });
+    sel.innerHTML = '<option value="">All years</option>' + Object.keys(years).sort().reverse().map(function(y){ return '<option value="' + y + '">' + y + '</option>'; }).join('');
+    if(years[cur]) sel.value = cur;
+  }
+
+  function filtered(){
+    var ty = ($('app07-ll-type') || {}).value || '', yr = ($('app07-ll-year') || {}).value || '';
+    var q = (($('app07-ll-q') || {}).value || '').trim().toLowerCase();
+    return LL.filter(function(l){
+      if(ty && l.type !== ty) return false;
+      if(yr && String(l.date || '').slice(0, 4) !== yr) return false;
+      if(q){
+        var hay = [l.ref, l.fr_title, l.en_title, l.title, l.diffusion, l.risk_link].join(' ').toLowerCase();
+        if(hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    }).sort(function(a, b){ return String(b.date || '').localeCompare(String(a.date || '')); });
+  }
+
+  function render(){
+    var wrap = $('app07-ll-wrap'); if(!wrap) return;
+    if(!LOADED){ wrap.innerHTML = ''; return; }
+    var list = filtered();
+    if(!list.length){ wrap.innerHTML = '<div class="ll-meta" style="padding:12px 0">' + (LL.length ? 'No communication matches the filters.' : 'No communication published in the Safety Management System.') + '</div>'; return; }
+    var h = '<table class="tbl"><thead><tr><th>Type</th><th>Reference</th><th>Date</th><th>Title</th><th>Distribution</th><th>Linked risk</th><th class="ll-acts"></th></tr></thead><tbody>';
+    list.forEach(function(l, i){
+      var ty = l.type === 'alert' ? 'alert' : 'communication';
+      var tag = ty === 'alert' ? '⚠ SAFETY ALERT' : '📢 COMMUNICATION';
+      var ver = 'V' + ((+l.rev || 0) + 1) + (l.rev_date ? ' · ' + fmtDate(l.rev_date) : '');
+      var fr = l.fr_title || l.title || '', en = l.en_title || '';
+      var hasBody = !!(l.fr_body || l.en_body || l.description);
+      var hasPdf = !!l.pdf_path;
+      h += '<tr>'
+        + '<td><span class="ll-tag ' + ty + '">' + tag + '</span></td>'
+        + '<td><div class="ll-ref">' + esc(l.ref || '—') + '</div><div class="ll-ver">' + esc(ver) + '</div></td>'
+        + '<td style="white-space:nowrap">' + esc(fmtDate(l.date)) + '</td>'
+        + '<td><div class="ll-title">' + esc(fr) + '</div>' + (en && en !== fr ? '<div class="ll-title-en">' + esc(en) + '</div>' : '') + '</td>'
+        + '<td>' + esc(l.diffusion || '—') + '</td>'
+        + '<td>' + esc(l.risk_link || '—') + '</td>'
+        + '<td class="ll-acts">'
+        + (hasBody ? '<button class="btn" type="button" onclick="app07LLToggle(' + i + ',this)" title="Show the content">View</button>' : '')
+        + (hasPdf ? '<button class="btn gold" type="button" onclick="app07LLPdf(' + i + ')" title="' + esc(l.pdf_name || 'Annex') + '">📄 Annex</button>' : '')
+        + '</td></tr>'
+        + '<tr class="ll-detail" id="app07-ll-d' + i + '" style="display:none"><td colspan="7"></td></tr>';
+    });
+    wrap.innerHTML = h + '</tbody></table>';
+    wrap._list = list;
+  }
+  window.app07LLRender = render;
+
+  function bodyHTML(l, lang){
+    var b = lang === 'en' ? (l.en_body || '') : (l.fr_body || l.description || '');
+    var pages = lang === 'en' ? (l.en_extra_pages || []) : (l.fr_extra_pages || l.extra_pages || []);
+    var out = '<div>' + clean(b) + '</div>';
+    (Array.isArray(pages) ? pages : []).forEach(function(p){ out += '<div class="ll-pg">' + clean(p) + '</div>'; });
+    return out;
+  }
+
+  window.app07LLToggle = function(i, btn){
+    var wrap = $('app07-ll-wrap'), l = wrap && wrap._list ? wrap._list[i] : null;
+    var row = $('app07-ll-d' + i); if(!l || !row) return;
+    var open = row.style.display !== 'none';
+    if(open){ row.style.display = 'none'; if(btn) btn.textContent = 'View'; return; }
+    var td = row.firstElementChild, hasEn = !!l.en_body;
+    td.innerHTML = '<div class="ll-langs">'
+      + '<button class="btn gold" type="button" data-lang="fr">FR</button>'
+      + (hasEn ? '<button class="btn" type="button" data-lang="en">EN</button>' : '')
+      + '</div><div class="ll-body"></div>'
+      + '<div class="ll-meta">' + [
+          l.created_at ? 'Issued ' + fmtDate(String(l.created_at).slice(0, 10)) : '',
+          l.rev ? 'Revision V' + (l.rev + 1) + (l.rev_reason ? ' — ' + esc(l.rev_reason) : '') : '',
+          (l.revisions && l.revisions.length) ? l.revisions.length + ' previous version(s) kept in the Safety Management System' : ''
+        ].filter(Boolean).join(' · ') + '</div>';
+    var body = td.querySelector('.ll-body');
+    function show(lang){
+      body.innerHTML = bodyHTML(l, lang);
+      td.querySelectorAll('.ll-langs .btn').forEach(function(b){ b.classList.toggle('gold', b.getAttribute('data-lang') === lang); });
+    }
+    td.querySelectorAll('.ll-langs .btn').forEach(function(b){ b.addEventListener('click', function(){ show(b.getAttribute('data-lang')); }); });
+    show('fr');
+    row.style.display = '';
+    if(btn) btn.textContent = 'Hide';
+  };
+
+  window.app07LLPdf = async function(i){
+    var wrap = $('app07-ll-wrap'), l = wrap && wrap._list ? wrap._list[i] : null;
+    var db = window.safOmmDb;
+    if(!l || !l.pdf_path) return;
+    if(!db){ alert('Supabase unavailable — sign in again.'); return; }
+    var w = window.open('', '_blank');
+    if(w){ try{ w.document.write('<p style="font:14px Arial;padding:20px">Loading the annex…</p>'); }catch(e){} }
+    try{
+      var res = await db.storage.from(BUCKET).download(l.pdf_path);
+      if(res.error) throw new Error(res.error.message || String(res.error));
+      var url = URL.createObjectURL(new Blob([await res.data.arrayBuffer()], {type:'application/pdf'}));
+      if(w) w.location.href = url; else window.open(url, '_blank');
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 120000);
+    }catch(e){
+      if(w) try{ w.close(); }catch(_){}
+      alert('Annex unavailable (' + l.pdf_path + '): ' + e.message);
+    }
+  };
 })();
 </script>
 </body></html>
