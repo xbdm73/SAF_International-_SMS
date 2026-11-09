@@ -116,6 +116,22 @@ aside {
   height: 100%;
 }
 
+/* Colonne de gauche rétractable (09.11.2026) — même principe que le suivi flotte */
+.main-wrap { position: relative; }
+aside { transition: width .25s ease, min-width .25s ease; }
+.main-wrap.side-off > aside { width: 0; min-width: 0; overflow: hidden; visibility: hidden; border-right: 0;
+  transition: width .25s ease, min-width .25s ease, visibility 0s linear .25s; }
+#saf-side-toggle { position: absolute; left: var(--sidebar-w); top: 50%; transform: translateY(-50%); z-index: 90;
+  width: 22px; height: 64px; padding: 0; cursor: pointer;
+  border: 1px solid rgba(201,162,39,.45); border-left: 0; border-radius: 0 6px 6px 0;
+  background: var(--navy-mid); color: var(--gold);
+  font: 700 18px/1 var(--font-mono); box-shadow: 2px 0 8px rgba(0,0,0,.25);
+  transition: left .25s ease, background .15s; }
+#saf-side-toggle:hover { background: var(--navy-light); }
+#saf-side-toggle:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.main-wrap.side-off > #saf-side-toggle { left: 0; }
+@media print { #saf-side-toggle { display: none !important; } }
+
 .nav-section { padding: 1.25rem 1rem .5rem; }
 .nav-label {
   font-family: var(--font-mono);
@@ -2550,6 +2566,7 @@ nav { top: 118px !important; }
 })();
 </script>
 <div class="main-wrap">
+<button id="saf-side-toggle" type="button" aria-expanded="true">‹</button>
 <!-- ═══ SIDEBAR ══════════════════════════════════════════════════════════ -->
 <aside>
 <div class="nav-section saf-guest-hide">
@@ -32358,6 +32375,39 @@ window.ERP_V5 = {"base": "v5-20261021", "events": {"acc": {"g": "avi", "prof": "
     w.document.open(); w.document.write(html); w.document.close();
     toast(blank ? '✓ ERP vierge prêt — Imprimer → Enregistrer en PDF' : '✓ ERP complet prêt — Imprimer → Enregistrer en PDF', 'success');
   };
+})();
+</script>
+<script>
+/* Colonne de gauche rétractable (09.11.2026) : bouton sur le bord, touche « [ », état mémorisé.
+   L'état est stocké dans le localStorage natif (hors shim / hors synchro cloud). */
+(function(){
+  var wrap = document.querySelector('.main-wrap'), btn = document.getElementById('saf-side-toggle');
+  if(!wrap || !btn) return;
+  var KEY = 'saf_safety_side_off';
+  var store = window._nativeLocalStorage || (function(){ try{ return window.localStorage; }catch(e){ return null; } })();
+  function isOff(){ return wrap.classList.contains('side-off'); }
+  function label(){
+    var off = isOff();
+    btn.textContent = off ? '›' : '‹';
+    btn.title = (off ? 'Afficher le menu' : 'Masquer le menu') + ' (touche [ )';
+    btn.setAttribute('aria-label', off ? 'Afficher le menu' : 'Masquer le menu');
+    btn.setAttribute('aria-expanded', String(!off));
+  }
+  function refit(){ try{ window.dispatchEvent(new Event('resize')); }catch(e){} }
+  function set(off, save){
+    wrap.classList.toggle('side-off', off); label();
+    if(save && store){ try{ store.setItem(KEY, off ? '1' : '0'); }catch(e){} }
+    setTimeout(refit, 300);
+  }
+  btn.addEventListener('click', function(){ set(!isOff(), true); });
+  document.addEventListener('keydown', function(e){
+    if(e.key !== '[' || e.ctrlKey || e.metaKey || e.altKey) return;
+    var t = e.target;
+    if(t && (/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName) || t.isContentEditable)) return;
+    e.preventDefault(); set(!isOff(), true);
+  });
+  var off = false; try{ off = !!store && store.getItem(KEY) === '1'; }catch(e){}
+  set(off, false);
 })();
 </script>
 </body>
