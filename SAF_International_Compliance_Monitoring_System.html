@@ -16961,12 +16961,15 @@ function ap2Show(id,btn){
 <div class="cmsx-field"><label>1 — Pourquoi est-ce arrivé ? / Why did it happen?</label><textarea id="cmsx-f-cf-occurred" placeholder="Facteurs ayant conduit à l’écart : procédure, formation, ressources, charge de travail, communication, organisation… / Factors that led to the deviation: procedure, training, resources, workload, communication, organisation…"></textarea></div>
 <div class="cmsx-field"><label>2 — Pourquoi ne s’en est-on pas rendu compte ? / Why was it not detected?</label><textarea id="cmsx-f-cf-detection" placeholder="Contrôle, supervision, revue ou barrière qui aurait dû détecter l’écart et ne l’a pas fait — et pourquoi / Check, supervision, review or barrier that should have detected the deviation and did not — and why"></textarea></div>
 <div class="cmsx-grid2" style="align-items:start;">
-<div class="cmsx-field"><label>3 — Cas isolé ou systématique ? / Isolated or systemic case?</label>
-<select id="cmsx-f-cf-extent">
+<div class="cmsx-field"><label>3 — Cas isolé, récurrent ou systématique ? / Isolated, recurrent or systemic case?</label>
+<select id="cmsx-f-cf-extent" style="display:none" onchange="cmsxCfxSync()">
 <option value="">— À déterminer / To be determined —</option>
 <option value="isolated">Cas isolé / Isolated case</option>
+<option value="recurrent">Récurrent / Recurrent</option>
 <option value="systemic">Systématique / Systemic</option>
 </select>
+<div id="cmsx-f-cf-extent-btns" class="occ-cfx-btns"><button type="button" class="occ-cfx-btn" data-v="isolated" onclick="cmsxCfxPick('isolated')">Isolé<small>Isolated</small></button><button type="button" class="occ-cfx-btn" data-v="recurrent" onclick="cmsxCfxPick('recurrent')">Récurrent<small>Recurrent</small></button><button type="button" class="occ-cfx-btn" data-v="systemic" onclick="cmsxCfxPick('systemic')">Systématique<small>Systemic</small></button></div>
+<div id="cmsx-f-cf-extent-hint" class="occ-cfx-hint">À déterminer / To be determined</div>
 </div>
 <div class="cmsx-field"><label>Justification et périmètre vérifié / Justification and extent checked</label><textarea id="cmsx-f-cf-extent-note" placeholder="Ce qui a été vérifié pour conclure : autres bases, équipages, aéronefs, périodes, dossiers échantillonnés… / What was checked to conclude: other bases, crews, aircraft, periods, records sampled…"></textarea></div>
 </div>
@@ -17364,7 +17367,7 @@ function cmsxRenderFindings(){
       var orgLabel=org==='foca'?('🟣 Authority'+(f.focaRef?(' <span class="cmsx-ref" title="Authority reference">'+esc(f.focaRef)+'</span>'):'')):(org==='external'?('🟠 External auditor'+(f.focaRef?(' <span class="cmsx-ref" title="External audit reference">'+esc(f.focaRef)+'</span>'):'')):'🔵 Internal');
       var whyCount=['ans1','ans2','ans3','ans4','ans5'].filter(function(k){return f[k]&&f[k].trim();}).length;
       var rc, cfN=[f.cfOccurred,f.cfDetection,f.cfExtent].filter(function(v){return v&&String(v).trim();}).length;
-      var cfTag=f.cfExtent==='systemic'?' <span class="cmsx-badge late" title="Cas systématique / Systemic case">SYST.</span>':(f.cfExtent==='isolated'?' <span class="cmsx-badge ontime" title="Cas isolé / Isolated case">ISOLÉ</span>':'');
+      var cfTag=window.cmsxCfxChip?(' '+window.cmsxCfxChip(f.cfExtent)):'';
       var cfLine='<div style="font-size:10px;color:#6a82a5;margin-top:3px;" title="Facteurs contributifs renseignés / Contributing factors filled in">FC '+cfN+'/3'+cfTag+'</div>';
       if(f.rootCause && f.rootCause.trim()){
         rc='<span class="cmsx-badge verified" title="'+esc(f.rootCause)+'">✓ '+whyCount+'/5 Whys</span>';
@@ -17379,13 +17382,13 @@ function cmsxRenderFindings(){
         '<td style="max-width:180px;">'+esc(f.auditTitle||'—')+'</td>'+
         '<td><span class="cmsx-badge origin-'+org+'">'+orgLabel+'</span></td>'+
         '<td><span class="cmsx-badge '+(CMSX_LEVEL_CLS[f.level]||'lvl2')+'">'+(CMSX_LEVEL_LABEL[f.level]||f.level)+'</span></td>'+
-        '<td style="max-width:260px;">'+esc(f.desc||'—')+'</td>'+
-        '<td style="max-width:150px;">'+rc+cfLine+'</td>'+
+        '<td>'+esc(f.desc||'—')+'</td>'+
+        '<td>'+rc+cfLine+'</td>'+
         '<td>'+esc(f.np||'—')+'</td>'+
         '<td>'+esc(f.detected||'—')+'</td>'+
-        '<td style="max-width:200px;">'+esc(f.action||'—')+'</td>'+
+        '<td>'+esc(f.action||'—')+'</td>'+
         '<td><span class="cmsx-badge '+dly.cls+'">'+dly.label+'</span></td>'+
-        '<td><span class="cmsx-badge '+stCls+'">'+stLabel+'</span></td>'+
+        '<td>'+(window.cmsxStatePill?window.cmsxStatePill(f,isOverdue(f),stLabel):'<span class="cmsx-badge '+stCls+'">'+stLabel+'</span>')+'</td>'+
         '<td>'+notif+'</td>'+
         '<td>'+verif+'</td>'+
         '<td style="white-space:nowrap;"><button class="cmsx-del-row" title="Edit" onclick="cmsxOpenFindingModal(\''+f.id+'\')">✎</button><button class="cmsx-del-row" title="Pièces justificatives / Evidence" onclick="cmsxOpenFindingModal(\''+f.id+'\')">📎'+((f.files||[]).length||0)+'</button><button class="cmsx-del-row" title="Export to PDF" onclick="cmsxPrintFinding(\''+f.id+'\')">📄</button><button class="cmsx-del-row cmsx-del-danger" title="Delete" onclick="cmsxDeleteFinding(\''+f.id+'\')">🗑</button></td>'+
@@ -17541,7 +17544,7 @@ function cmsxOpenFindingModal(id){
   // Contributing factors
   document.getElementById('cmsx-f-cf-occurred').value=f?(f.cfOccurred||''):'';
   document.getElementById('cmsx-f-cf-detection').value=f?(f.cfDetection||''):'';
-  document.getElementById('cmsx-f-cf-extent').value=f?(f.cfExtent||''):'';
+  document.getElementById('cmsx-f-cf-extent').value=f?(f.cfExtent||''):''; if(typeof window.cmsxCfxSync==='function') window.cmsxCfxSync();
   document.getElementById('cmsx-f-cf-extent-note').value=f?(f.cfExtentNote||''):'';
   document.getElementById('cmsx-5w-body').style.display='block';
   document.getElementById('cmsx-5w-togglebtn').textContent='Hide ▲';
@@ -17962,7 +17965,7 @@ function cmsxFindingPrintBlock(f){
     ((f.cfOccurred||f.cfDetection||f.cfExtent||f.cfExtentNote)?('<h2>Contributing factors</h2>'+
       '<div style="margin:6px 0;"><b>1 — Why did it happen?</b><br>'+esc(f.cfOccurred||'—')+'</div>'+
       '<div style="margin:6px 0;"><b>2 — Why was it not detected?</b><br>'+esc(f.cfDetection||'—')+'</div>'+
-      '<div style="margin:6px 0;"><b>3 — Isolated or systemic case?</b> '+esc(f.cfExtent==='systemic'?'Systemic':(f.cfExtent==='isolated'?'Isolated':'To be determined'))+(f.cfExtentNote?('<br>'+esc(f.cfExtentNote)):'')+'</div>'):'')+
+      '<div style="margin:6px 0;"><b>3 — Isolated, recurrent or systemic case?</b> '+esc(f.cfExtent==='systemic'?'Systemic':(f.cfExtent==='recurrent'?'Recurrent':(f.cfExtent==='isolated'?'Isolated':'To be determined')))+(f.cfExtentNote?('<br>'+esc(f.cfExtentNote)):'')+'</div>'):'')+
     '<h2>Correction / Preventive action plan</h2><p>'+esc(f.action||'—')+'</p>';
 }
 // ── Export ONE corrective action to PDF (print dialog) ──
@@ -24813,6 +24816,69 @@ PD.shell = function(o){
   window.addEventListener('storage', function(){ if(visible()) window.pdCmsRender(); });
   function first(){ window.pdCmsRender(); setTimeout(window.pdCmsRender, 2500); setTimeout(window.pdCmsRender, 6000); }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', first); else first();
+})();
+</script>
+<style id="cmsx-state-style">
+/* 10.11.2026 — état des actions et étendue du cas : mêmes formes et couleurs que l'Occurrence Log du SMS */
+.occ-st-pill{display:inline-block;border-radius:3px;padding:2px 7px;font-family:var(--font-mono,ui-monospace,monospace);font-size:9px;font-weight:700;letter-spacing:.5px;white-space:nowrap}
+#cmsx-findings-table .occ-st-pill{font-size:10.5px;padding:3px 9px}
+.cmsx-st-sub{display:block;margin-top:4px;font-size:10px;font-weight:700;color:#c62f21;white-space:nowrap}
+.cmsx-st-obs{display:block;margin-top:4px;font-size:10px;color:#6a82a5}
+.occ-cfx-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.occ-cfx-btn{display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 4px;border:1.5px solid #8a96a8;border-radius:6px;background:transparent;color:inherit;font-weight:700;font-size:12px;cursor:pointer;line-height:1.2;font-family:inherit}
+.occ-cfx-btn small{font-weight:400;font-size:10px;opacity:.75;}
+.occ-cfx-btn:hover:not(:disabled){border-color:#4A9FE0;}
+.occ-cfx-btn.on[data-v="isolated"]{background:#2e9e5b;border-color:#2e9e5b;color:#fff;}
+.occ-cfx-btn.on[data-v="recurrent"]{background:#d9901a;border-color:#d9901a;color:#fff;}
+.occ-cfx-btn.on[data-v="systemic"]{background:#c63b3b;border-color:#c63b3b;color:#fff;}
+.occ-cfx-hint{font-size:10px;opacity:.65;margin-top:4px;font-style:italic;}
+.cmsx-cfx-chip{display:inline-block;margin-top:4px;padding:2px 8px;border-radius:6px;border:1.5px solid;font-size:10.5px;font-weight:700;line-height:1.3;white-space:nowrap}
+.cmsx-cfx-chip[data-v="isolated"]{background:#2e9e5b;border-color:#2e9e5b;color:#fff}
+.cmsx-cfx-chip[data-v="recurrent"]{background:#d9901a;border-color:#d9901a;color:#fff}
+.cmsx-cfx-chip[data-v="systemic"]{background:#c63b3b;border-color:#c63b3b;color:#fff}
+.cmsx-cfx-chip[data-v=""]{background:transparent;border-color:#8a96a8;color:#6a82a5;font-weight:600}
+</style>
+<script id="cmsx-state-script">
+(function(){
+  // État de l'action : OUVERTE (rouge) · EN COURS (orange) · ✓ FERMÉE (vert) — comme occInvestPill() du SMS
+  var ST = { open:['OUVERTE','#f85149'], ongoing:['EN COURS','#e3b341'], closed:['✓ FERMÉE','#3fb950'] };
+  window.cmsxStateOf = function(f){
+    var s = String(f && f.status || '').toLowerCase();
+    if(s === 'completed' || s === 'closed' || s === 'observation') return 'closed';
+    if(s === 'progress' || s === 'in progress' || s === 'en cours') return 'ongoing';
+    return 'open';
+  };
+  window.cmsxStatePill = function(f, overdue, label){
+    var k = window.cmsxStateOf(f), m = ST[k];
+    var h = '<span class="occ-st-pill" title="' + String(label || '').replace(/"/g, '&quot;') + '" style="background:' + m[1] + '22;color:' + m[1] + ';border:1px solid ' + m[1] + '66;">' + m[0] + '</span>';
+    if(k === 'closed' && String(f.status) === 'observation') h += '<span class="cmsx-st-obs">observation</span>';
+    if(k === 'closed' && f.status === 'completed' && !f.verified) h += '<span class="cmsx-st-obs">efficacité à vérifier</span>';
+    if(overdue && k !== 'closed'){
+      var d = f.deadline ? Math.round((new Date() - new Date(f.deadline + 'T12:00:00')) / 86400000) : 0;
+      h += '<span class="cmsx-st-sub">en retard' + (d > 0 ? ' ' + d + ' j' : '') + '</span>';
+    }
+    return h;
+  };
+  // Étendue du cas : Isolé (vert) · Récurrent (orange) · Systématique (rouge) — comme les boutons de l'Occurrence Log
+  var CFX = { isolated:'Isolé', recurrent:'Récurrent', systemic:'Systématique' };
+  window.cmsxCfxChip = function(v){
+    v = CFX[v] ? v : '';
+    return '<span class="cmsx-cfx-chip" data-v="' + v + '" title="Cas isolé, récurrent ou systématique / Isolated, recurrent or systemic case">' + (v ? CFX[v] : 'À déterminer') + '</span>';
+  };
+  window.cmsxCfxSync = function(){
+    var sel = document.getElementById('cmsx-f-cf-extent'); if(!sel) return;
+    var v = sel.value || '';
+    document.querySelectorAll('#cmsx-f-cf-extent-btns .occ-cfx-btn').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-v') === v); });
+    var h = document.getElementById('cmsx-f-cf-extent-hint');
+    if(h) h.textContent = v ? (CFX[v] + ' — cliquer à nouveau pour annuler / click again to clear') : 'À déterminer / To be determined';
+  };
+  window.cmsxCfxPick = function(v){
+    var sel = document.getElementById('cmsx-f-cf-extent'); if(!sel) return;
+    sel.value = (sel.value === v) ? '' : v;
+    window.cmsxCfxSync();
+    try{ sel.dispatchEvent(new Event('change', { bubbles:true })); sel.dispatchEvent(new Event('input', { bubbles:true })); }catch(e){}
+  };
+  if(typeof window.cmsxRenderFindings === 'function') setTimeout(function(){ try{ window.cmsxRenderFindings(); }catch(e){} }, 0);
 })();
 </script>
 </body>
