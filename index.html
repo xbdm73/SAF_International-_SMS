@@ -1169,15 +1169,27 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   }
 
   async function loadAndApplyRole(email){
+    // Même source d'autorisation que le Portail SAF : une seule décision serveur.
+    // Une erreur de lecture ne doit jamais transformer silencieusement ADMIN en READER.
     try {
-      // ilike + limit(1) : la casse de l'adresse ne doit pas décider du rôle
-      // (alignement sur SAF_International_Safety.html).
-      var res = await db.from('user_roles').select('role')
-                        .ilike('user_email', String(email||'').trim()).limit(1);
-      var row = res && res.data && res.data[0];
-      SAF_ROLE = (row && row.role) ? row.role : 'reader';
-    } catch(e) { SAF_ROLE = 'reader'; }
-    applyRole(SAF_ROLE, email);
+      var res = await db.rpc('portal_role');
+      if (res.error) throw res.error;
+      var role = String(res.data || '').trim().toLowerCase();
+      if (!Object.prototype.hasOwnProperty.call(SAF_ROLE_BADGE, role)) {
+        throw new Error('Rôle SMS non reconnu : ' + (role || '(vide)'));
+      }
+      applyRole(role, email);
+    } catch(e) {
+      SAF_ROLE = null;
+      var badge = document.getElementById('saf-role-badge');
+      if (badge) { badge.textContent = 'ACCÈS NON VÉRIFIÉ'; badge.style.display = 'inline-block'; }
+      var bar = document.getElementById('export-bar');
+      if (bar) bar.style.display = 'none';
+      document.querySelectorAll('.tool-card[data-module]').forEach(function(card){ card.style.display = 'none'; });
+      loginMsg.className = 'err';
+      loginMsg.textContent = 'Vérification des droits impossible. Rechargez la page ou contactez l’administrateur. / Unable to verify permissions.';
+      console.error('SAF role verification failed:', e);
+    }
   }
 
   // Retour après connexion (?next=…) : uniquement une page .html de ce site,
@@ -1485,6 +1497,12 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   // Session admin active → accès complet. Sinon → accès invité automatique.
   (async function(){
     var res = await db.auth.getSession();
+    // Une session expirée peut nécessiter son rafraîchissement après navigation
+    // depuis le portail. Ne pas afficher « Connexion utilisateur » prématurément.
+    if(!res.error && (!res.data || !res.data.session)){
+      var retry = await db.auth.getSession();
+      if(!retry.error) res = retry;
+    }
     if(SAF_RECOVERY_ERR){
       applyGuestRole();
       try { history.replaceState(null, '', location.pathname); } catch(e){}
