@@ -380,8 +380,6 @@ window.generateCertPDF = function() {
 #app > #saf-subnav > .saf-nav-row{position:relative!important;display:flex!important;align-items:center!important;min-height:38px!important;overflow-x:auto!important;overflow-y:hidden!important;flex-wrap:nowrap!important;}
 #app > .main-wrap{position:relative!important;min-height:0!important;flex:1 1 0!important;overflow:hidden!important;}
 #app > .main-wrap > main{min-width:0!important;min-height:0!important;overflow-y:auto!important;}
-#view-app08,#view-app09{position:relative;}
-#view-app08 .omm-shared-registry,#view-app09 .omm-shared-registry{display:block;position:relative;max-width:100%;z-index:0;}
 </style>
 </head><body>'
         + '<section class="page">'
@@ -1042,27 +1040,6 @@ button .bi, a .bi{vertical-align:middle;}
 </script>
 <!-- ── END SAF INTER-TOOL NAV ── -->
 
-<script id="saf-embedded-cms-nav-fix-v2">
-(function(){
- function fixFrame(frame){
-  try{
-   var d=frame.contentDocument;
-   if(!d||!d.head||d.getElementById('saf-embedded-omm-nav-v2'))return;
-   var st=d.createElement('style');
-   st.id='saf-embedded-omm-nav-v2';
-   st.textContent='#saf-subnav{display:none!important}#app>.main-wrap{flex:1 1 0!important;min-height:0!important}';
-   d.head.appendChild(st);
-  }catch(e){}
- }
- function init(){
-  document.querySelectorAll('#view-app08 iframe.omm-shared-registry,#view-app09 iframe.omm-shared-registry').forEach(function(fr){
-   fr.addEventListener('load',function(){fixFrame(fr)});
-   fixFrame(fr);
-  });
- }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
-})();
-</script>
 
 
 <div class="main-wrap">
@@ -1360,7 +1337,7 @@ button .bi, a .bi{vertical-align:middle;}
 <div id="app07-ll-wrap" style="overflow-x:auto;"></div>
 </div>
 </div><!-- end view-app07 -->
-<!-- APP08-APP09: shared CMS registries (APP10 List of Trainers supprimée le 09.11.2026); existing Supabase cms_data remains authoritative. -->
+<!-- APP08-APP09 : registres natifs des Appendices (10.11.2026, transférés du CMS ; APP10 List of Trainers supprimée le 09.11.2026). Données dans omm_appendices. -->
 <style>
 /* APP09: libellés complets, sans troncature dans le menu et le cartouche. */
 .nav-item[data-view="view-app09"] .nav-app-title{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:break-word;}
@@ -1369,9 +1346,77 @@ button .bi, a .bi{vertical-align:middle;}
 #view-app09 .dash-subtitle{white-space:normal;overflow-wrap:anywhere;}
 #view-app09{overflow:visible;}
 </style>
-<style>.omm-shared-registry{width:100%;height:calc(100vh - 210px);min-height:640px;border:1px solid rgba(74,159,224,.3);border-radius:10px;background:#0b1120}.omm-shared-info{font-size:12px;color:#9db8d6;margin:8px 0 16px}</style>
-<div class="view" id="view-app08"><div class="dash-header"><div><div class="dash-title">LIST OF SUBCONTRACTORS</div><div class="dash-subtitle">APP08-OMM · Shared controlled register</div></div></div><p class="omm-shared-info">This register is edited with the existing CMS permissions and stored in the same Supabase database. Changes are automatically shared with the SAF CMS.</p><iframe class="omm-shared-registry" title="APP08-OMM LIST OF SUBCONTRACTORS" loading="lazy" src="SAF_International_Compliance_Monitoring_System.html?saf_omm_registry=subcontractors"></iframe></div>
-<div class="view" id="view-app09"><div class="dash-header"><div><div class="dash-title">LIST OF AUDITORS</div><div class="dash-subtitle">APP09-OMM · Shared controlled register</div></div></div><p class="omm-shared-info">This register is edited with the existing CMS permissions and stored in the same Supabase database. Changes are automatically shared with the SAF CMS.</p><iframe class="omm-shared-registry" title="APP09-OMM LIST OF AUDITORS" loading="lazy" src="SAF_International_Compliance_Monitoring_System.html?saf_omm_registry=auditors"></iframe></div>
+<style id="omm-reg-style">
+/* APP08-OMM / APP09-OMM — registres natifs des Appendices (10.11.2026, transférés du CMS) */
+.omm-reg-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:.2rem 0 .7rem;}
+.omm-reg-bar input{flex:1;min-width:200px;font-family:var(--font-mono);font-size:11px;padding:7px 9px;border-radius:6px;border:1px solid rgba(143,168,192,.35);background:var(--navy);color:var(--white);}
+.omm-reg-status{font-family:var(--font-mono);font-size:11px;color:var(--grey-400);margin:.2rem 0 .5rem;min-height:14px;}
+.omm-reg-status.err{color:#f85149;}
+.omm-reg-wrap{overflow-x:auto;}
+.omm-reg-wrap .tbl td{white-space:normal;}
+.omm-reg-wrap .tbl td.nw{white-space:nowrap;}
+.omm-reg-ref{font-family:var(--font-mono);font-size:11px;color:var(--gold);white-space:nowrap;}
+.omm-reg-name{font-weight:600;}
+.omm-reg-dim{font-size:11.5px;color:var(--grey-200);}
+.omm-reg-tag{display:inline-block;border-radius:999px;padding:2px 8px;font-family:var(--font-mono);font-size:10px;font-weight:600;white-space:nowrap;border:1px solid currentColor;}
+.omm-reg-tag.ok{color:#1aa84a;} .omm-reg-tag.warn{color:#e09a00;} .omm-reg-tag.bad{color:#e5533a;} .omm-reg-tag.none{color:var(--grey-400);border-color:transparent;}
+.omm-reg-act{white-space:nowrap;}
+.omm-reg-act .btn{padding:4px 9px;font-size:11px;}
+.omm-reg-empty{padding:18px;text-align:center;color:var(--grey-400);font-size:12.5px;}
+#omm-reg-modal{position:fixed;inset:0;z-index:99990;background:rgba(3,8,16,.72);display:none;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto;}
+#omm-reg-modal.open{display:flex;}
+#omm-reg-modal .box{width:min(780px,100%);background:var(--navy-mid);color:var(--white);border:1px solid rgba(201,162,39,.35);border-radius:12px;padding:18px 20px;box-shadow:0 24px 70px rgba(0,0,0,.55);}
+#omm-reg-modal h3{font-family:var(--font-display);font-size:24px;letter-spacing:1px;color:var(--gold-light);margin:0 0 4px;}
+#omm-reg-modal .sub{font-family:var(--font-mono);font-size:10px;letter-spacing:1px;color:var(--grey-400);text-transform:uppercase;margin-bottom:12px;}
+#omm-reg-modal .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;}
+#omm-reg-modal .f{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+#omm-reg-modal .f.full{grid-column:1/-1;}
+#omm-reg-modal label{font-family:var(--font-mono);font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--gold);}
+#omm-reg-modal input,#omm-reg-modal select,#omm-reg-modal textarea{font-family:var(--font-body);font-size:13px;padding:8px 10px;border-radius:6px;border:1px solid rgba(143,168,192,.35);background:var(--navy);color:var(--white);width:100%;}
+#omm-reg-modal textarea{min-height:64px;resize:vertical;}
+#omm-reg-modal .chk{display:flex;gap:16px;flex-wrap:wrap;padding:6px 0;}
+#omm-reg-modal .chk label{display:flex;gap:6px;align-items:center;text-transform:none;letter-spacing:0;font-family:var(--font-body);font-size:13px;color:var(--white);cursor:pointer;}
+#omm-reg-modal .chk input{width:auto;}
+#omm-reg-modal .files{border:1px dashed rgba(201,162,39,.4);border-radius:8px;padding:10px 12px;margin-bottom:10px;}
+#omm-reg-modal .files .hint{font-size:11px;color:var(--grey-400);margin:2px 0 8px;}
+#omm-reg-modal .file{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid rgba(143,168,192,.2);border-radius:6px;margin:5px 0;font-size:12.5px;}
+#omm-reg-modal .file span{flex:1;overflow-wrap:anywhere;}
+#omm-reg-modal .file small{color:var(--grey-400);white-space:nowrap;}
+#omm-reg-modal .foot{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:6px;align-items:center;}
+#omm-reg-modal .foot .msg{flex:1;font-family:var(--font-mono);font-size:11px;color:var(--grey-400);}
+#omm-reg-modal .foot .msg.err{color:#f85149;}
+@media (max-width:700px){ #omm-reg-modal .g2{grid-template-columns:1fr;} }
+</style>
+<div class="view" id="view-app08">
+<div class="dash-header"><div><div class="dash-title">LIST OF SUBCONTRACTORS</div>
+<div class="dash-subtitle">APP08-OMM · Contracted organizations and their monitoring</div></div>
+<div class="doc-meta"><span class="meta-chip">APP08-OMM</span><button class="btn gold" style="margin-left:10px;" onclick="exportPDF('view-app08')" title="Export this appendix to PDF">📄 PDF</button></div></div>
+<div class="callout info">Contracted organizations (maintenance, training, handling, expertise). The operator remains responsible for contracted services (ORO.GEN.205) and monitors their compliance through the compliance monitoring function (AMC1 ORO.GEN.200(a)(6)). Each subcontractor is audited at the frequency defined below.</div>
+<div class="card card-accent">
+<div class="omm-reg-bar omm-reg-noprint">
+<button class="btn gold omm-reg-w" type="button" onclick="ommRegOpen('st')">＋ Add subcontractor</button>
+<input type="search" id="omm-st-q" placeholder="Search reference, organization, certificate…" oninput="ommRegRender()"/>
+<button class="btn" type="button" onclick="ommRegCSV('st')">⬇ CSV</button>
+</div>
+<div class="omm-reg-status omm-reg-noprint" id="omm-st-status">Sign in to load the register.</div>
+<div class="omm-reg-wrap" id="omm-st-wrap"></div>
+</div>
+</div>
+<div class="view" id="view-app09">
+<div class="dash-header"><div><div class="dash-title">LIST OF AUDITORS</div>
+<div class="dash-subtitle">APP09-OMM · Qualification, authorization and recurrent training of internal auditors</div></div>
+<div class="doc-meta"><span class="meta-chip">APP09-OMM</span><button class="btn gold" style="margin-left:10px;" onclick="exportPDF('view-app09')" title="Export this appendix to PDF">📄 PDF</button></div></div>
+<div class="callout info">Internal auditors of the compliance monitoring function must be competent, trained and independent of the audited domain (AMC1 ORO.GEN.200(a)(6)). An auditor does not audit his or her own area of work. The authorization remains valid as long as the recurrent training is up to date.</div>
+<div class="card card-accent">
+<div class="omm-reg-bar omm-reg-noprint">
+<button class="btn gold omm-reg-w" type="button" onclick="ommRegOpen('aud')">＋ Add auditor</button>
+<input type="search" id="omm-aud-q" placeholder="Search name, function, domain…" oninput="ommRegRender()"/>
+<button class="btn" type="button" onclick="ommRegCSV('aud')">⬇ CSV</button>
+</div>
+<div class="omm-reg-status omm-reg-noprint" id="omm-aud-status">Sign in to load the register.</div>
+<div class="omm-reg-wrap" id="omm-aud-wrap"></div>
+</div>
+</div>
 
 </main>
 </div>
@@ -1962,6 +2007,16 @@ button .bi, a .bi{vertical-align:middle;}
 <div class="lbl"><strong>APP07 — Safety Promotion</strong><span>Programme de formation SMS &amp; communication</span></div>
 <button class="saf-exp-mini json" onclick="exportJSON('view-app07')">📦 JSON</button>
 <button class="saf-exp-mini pdf" onclick="exportPDF('view-app07')">📄 PDF</button>
+</div>
+<div class="saf-exp-row">
+<div class="lbl"><strong>APP08 — List of Subcontractors</strong><span>Contracted organizations &amp; monitoring</span></div>
+<button class="saf-exp-mini json" onclick="ommRegCSV('st')">⬇ CSV</button>
+<button class="saf-exp-mini pdf" onclick="exportPDF('view-app08')">📄 PDF</button>
+</div>
+<div class="saf-exp-row">
+<div class="lbl"><strong>APP09 — List of Auditors</strong><span>Qualification &amp; recurrent training</span></div>
+<button class="saf-exp-mini json" onclick="ommRegCSV('aud')">⬇ CSV</button>
+<button class="saf-exp-mini pdf" onclick="exportPDF('view-app09')">📄 PDF</button>
 </div>
 <div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08);display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
 <button class="btn gold" onclick="saveHTML()">💾 Enregistrer le fichier (HTML)</button>
@@ -2671,6 +2726,13 @@ var SAF_APP_LOGO_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+UAA
       exportedAt: new Date().toISOString(),
       appendices: appendices
     };
+    // APP08 / APP09 (10.11.2026) : registres joints à l'export complet et à leur export propre
+    if (typeof window.ommRegData === 'function') {
+      var reg = window.ommRegData();
+      if (scope === 'all' || !scope) payload.registries = JSON.parse(JSON.stringify(reg));
+      else if (scope === 'view-app08') payload.registries = { subcontractors: reg.subcontractors.slice() };
+      else if (scope === 'view-app09') payload.registries = { auditors: reg.auditors.slice() };
+    }
 
     var stamp = new Date().toISOString().slice(0,10);
     var name = (scope === 'all' || !scope)
@@ -2708,14 +2770,16 @@ var SAF_APP_LOGO_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+UAA
     'view-app04':'APP04-OMM — List of Management Personnel',
     'view-app13':'APP05-OMM — Aircraft Leasing',
     'view-app14':'APP06-OMM — Aircraft being used',
-    'view-app07':'APP07-OMM — Safety Promotion'
+    'view-app07':'APP07-OMM — Safety Promotion',
+    'view-app08':'APP08-OMM — List of Subcontractors',
+    'view-app09':'APP09-OMM — List of Auditors'
   };
 
   function _cleanViewForPrint(viewId){
     var view = document.getElementById(viewId);
     if (!view) return '';
     var clone = view.cloneNode(true);
-    clone.querySelectorAll('.edit-bar, .saf-edit-meta, .row-actions, button, .app07-ll-noprint').forEach(function(el){ el.remove(); });
+    clone.querySelectorAll('.edit-bar, .saf-edit-meta, .row-actions, button, .app07-ll-noprint, .omm-reg-noprint').forEach(function(el){ el.remove(); });
     clone.querySelectorAll('[contenteditable]').forEach(function(el){ el.removeAttribute('contenteditable'); });
     clone.querySelectorAll('select').forEach(function(sel){
       var span = document.createElement('span');
@@ -2799,7 +2863,7 @@ var SAF_APP_LOGO_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+UAA
   window.exportPDF = function(scope){
     var ov = document.getElementById('saf-export-overlay');
     if (ov) ov.classList.remove('open');
-    var ids = (scope === 'all' || !scope) ? Object.keys(VIEW_TO_CODE) : [scope];
+    var ids = (scope === 'all' || !scope) ? Object.keys(VIEW_TO_CODE).concat(['view-app08','view-app09']) : [scope];
     var title = (scope === 'all' || !scope) ? 'OMM Appendices — All' : (VIEW_LABELS[scope] || scope);
     var bodyHTML = ids.map(function(id, idx){
       return (idx > 0 ? '<div class="appendix-divider"></div>' : '') + _cleanViewForPrint(id);
@@ -2812,7 +2876,7 @@ var SAF_APP_LOGO_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+UAA
   window.previewPDF = function(scope){
     var ov = document.getElementById('saf-export-overlay');
     if (ov) ov.classList.remove('open');
-    var ids = (scope === 'all' || !scope) ? Object.keys(VIEW_TO_CODE) : [scope];
+    var ids = (scope === 'all' || !scope) ? Object.keys(VIEW_TO_CODE).concat(['view-app08','view-app09']) : [scope];
     var title = (scope === 'all' || !scope) ? 'OMM Appendices — All' : (VIEW_LABELS[scope] || scope);
     var bodyHTML = ids.map(function(id, idx){
       return (idx > 0 ? '<div class="appendix-divider"></div>' : '') + _cleanViewForPrint(id);
@@ -3769,6 +3833,7 @@ h1 {
     await cloudLoad();
     await loadAndApplyRole(session.user.email);
     if(typeof window.app07LLLoad === 'function'){ try{ window.app07LLLoad(); }catch(e){ console.warn('APP07 LL', e); } }
+    if(typeof window.ommRegLoad === 'function'){ try{ window.ommRegLoad(); }catch(e){ console.warn('APP08/09', e); } }
     if(SAF_ROLE === 'admin' || SAF_ROLE === 'editor') activateAppendixEditing();
     if(window.safRefreshOrgEditor) window.safRefreshOrgEditor();
     ready = true;
@@ -4002,29 +4067,6 @@ h1 {
   } catch(e){}
 })();
 </script>
-<script id="saf-app09-visible-heading-fix">
-(function(){
-  function apply(){
-    var fr=document.querySelector('#view-app09 iframe.omm-shared-registry');
-    if(!fr)return;
-    function update(){
-      try{
-        var d=fr.contentDocument;
-        if(!d || !d.head)return;
-        if(d.getElementById('saf-app09-heading-style'))return;
-        var css=d.createElement('style');
-        css.id='saf-app09-heading-style';
-        css.textContent='#cmsx_auditeurs,#cmsx_auditeurs .cmsx-panel,#cmsx_auditeurs .cmsx-h2{overflow:visible!important;max-width:100%!important;white-space:normal!important;overflow-wrap:break-word!important}#cmsx_auditeurs .cmsx-h2{line-height:1.3!important}#cmsx_auditeurs .cmsx-panel{box-sizing:border-box!important;min-width:0!important;padding:12px!important}';
-        d.head.appendChild(css);
-      }catch(e){/* Cross-origin deployments keep the original CMS rendering. */}
-    }
-    fr.addEventListener('load',update);
-    update();
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply);
-  else apply();
-})();
-</script>
 <script>
 /* ══ APP07 §7 — Registre Lessons Learned (miroir lecture seule du Safety) — 09.11.2026 ══
    Source : saf_data, ligne « sms:safLessons » (SMS découpé par module), repli sur
@@ -4191,6 +4233,307 @@ h1 {
       alert('Annex unavailable (' + l.pdf_path + '): ' + e.message);
     }
   };
+})();
+</script>
+<script id="omm-registries">
+/* ══ APP08-OMM List of Subcontractors · APP09-OMM List of Auditors — 10.11.2026 ══
+   Transférés du Compliance Monitoring System : les registres vivent désormais ici.
+   Stockage : ligne « omm_appendices » de saf_data, clé « registries » ajoutée au
+   contenu sérialisé (safSerializeAppendices / safImportAppendicesData).
+   Reprise automatique, une seule fois, des anciennes données du CMS (ligne
+   « cms_data », clés saf_sous_traitants / saf_auditeurs) au premier chargement
+   par un administrateur ou un éditeur ; la copie du CMS est conservée telle quelle.
+   Pièces jointes : bucket « SMS Documents », dossier Compliance/Contractors, comme avant. */
+(function(){
+  'use strict';
+  var REG = { subcontractors:[], auditors:[], migrated_from_cms:null };
+  var LOADED = false;
+  var BUCKET = 'SMS Documents', ROOT = 'Compliance/Contractors', MAX = 100*1024*1024;
+  var EXT = ['pdf','docx','pptx','xlsx','jpg','jpeg','png'];
+  var MIME = {pdf:'application/pdf',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png'};
+
+  var SERVICE_TYPES = ['Maintenance (Part-145)','Training (ATO/DTO)','Handling','Navigation / Charting','Medical expertise','CRM/SMS training','Other'];
+  var SERVICE_FR = {'Maintenance (Part-145) / Maintenance (Part-145)':'Maintenance (Part-145)','Formation (ATO/DTO) / Training (ATO/DTO)':'Training (ATO/DTO)',
+    'Assistance en escale / Handling':'Handling','Navigation / cartographie / Navigation / Charting':'Navigation / Charting','Expertise médicale / Medical expertise':'Medical expertise',
+    'Formation CRM/SMS / CRM/SMS training':'CRM/SMS training','Autre / Other':'Other'};
+  var ST_STATUS = {conforme:['Compliant','ok'], surveillance:['Enhanced monitoring','warn'], suspendu:['Suspended','bad'], expire:['Certificate expired','bad']};
+  var DOMAINS = ['AIR-OPS','CAMO','Part 145'];
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+  function db(){ return window.safOmmDb || null; }
+  function role(){ return String(window.SAF_SESSION_ROLE || 'reader').toLowerCase(); }
+  function canWrite(){ var r = role(); return r === 'admin' || r === 'editor'; }
+  function fd(d){ if(!d) return '—'; var p = String(d).split('-'); return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0] : esc(d); }
+  function daysTo(d){ if(!d) return null; var t = new Date(d + 'T12:00:00'); if(isNaN(t)) return null; return Math.round((t - new Date()) / 86400000); }
+  function addMonths(d, m){ if(!d || !m) return ''; var t = new Date(d + 'T12:00:00'); if(isNaN(t)) return ''; t.setMonth(t.getMonth() + (parseInt(m, 10) || 0)); return t.toISOString().slice(0,10); }
+  function tag(days, okLabel){
+    if(days === null) return '<span class="omm-reg-tag none">—</span>';
+    if(days < 0) return '<span class="omm-reg-tag bad">Overdue ' + Math.abs(days) + ' d</span>';
+    if(days < 30) return '<span class="omm-reg-tag warn">⚠ ' + days + ' d</span>';
+    return '<span class="omm-reg-tag ok">' + esc(okLabel) + '</span>';
+  }
+  function svc(v){ v = String(v || ''); return SERVICE_FR[v] || v; }
+  function status(msg, err){ ['omm-st-status','omm-aud-status'].forEach(function(id){ var e = $(id); if(e){ e.textContent = msg || ''; e.classList.toggle('err', !!err); } }); }
+  function save(){ if(typeof window.safCloudScheduleSave === 'function') window.safCloudScheduleSave(); }
+  function normalize(r){
+    r = r && typeof r === 'object' ? r : {};
+    return { subcontractors: Array.isArray(r.subcontractors) ? r.subcontractors : [], auditors: Array.isArray(r.auditors) ? r.auditors : [], migrated_from_cms: r.migrated_from_cms || null };
+  }
+
+  /* ── Sérialisation dans omm_appendices ─────────────────────────────── */
+  var origSer = window.safSerializeAppendices;
+  if(typeof origSer === 'function') window.safSerializeAppendices = function(){
+    var out = origSer.apply(this, arguments) || {};
+    out.registries = JSON.parse(JSON.stringify(REG));
+    return out;
+  };
+  var origImp = window.safImportAppendicesData;
+  if(typeof origImp === 'function') window.safImportAppendicesData = function(data){
+    var hasReg = data && typeof data === 'object' && data.registries && typeof data.registries === 'object';
+    if(hasReg){ REG = normalize(data.registries); LOADED = true; }
+    var r;
+    try{ r = origImp.apply(this, arguments); }
+    catch(e){ if(!hasReg) throw e; r = 1; }
+    if(hasReg) render();
+    return r;
+  };
+
+  /* ── Chargement et reprise des données du CMS ─────────────────────── */
+  async function readCms(){
+    var c = db(); if(!c) return null;
+    var res = await c.from('saf_data').select('data').eq('module', 'cms_data').maybeSingle();
+    if(res.error || !res.data || !res.data.data) return null;
+    var d = res.data.data, p = function(v){ try{ var x = typeof v === 'string' ? JSON.parse(v) : v; return Array.isArray(x) ? x : []; }catch(e){ return []; } };
+    return { subcontractors: p(d.saf_sous_traitants), auditors: p(d.saf_auditeurs) };
+  }
+  function mergeById(dst, src){
+    var have = {}; dst.forEach(function(x){ if(x && x.id) have[x.id] = 1; });
+    var n = 0; src.forEach(function(x){ if(x && typeof x === 'object'){ if(!x.id) x.id = uid(); if(!have[x.id]){ dst.push(x); have[x.id] = 1; n++; } } }); return n;
+  }
+  function saveWhenReady(tries){
+    tries = tries || 0;
+    if(typeof window.safCloudScheduleSave === 'function') window.safCloudScheduleSave();
+    // safCloudScheduleSave ignore l'appel tant que la session n'est pas prête : on réessaie.
+    if(tries < 6) setTimeout(function(){ saveWhenReady(tries + 1); }, 1500);
+  }
+  window.ommRegLoad = async function(){
+    LOADED = true;
+    if(!REG.migrated_from_cms){
+      try{
+        var old = await readCms();
+        if(old){
+          if(canWrite()){
+            var n = mergeById(REG.subcontractors, old.subcontractors) + mergeById(REG.auditors, old.auditors);
+            REG.migrated_from_cms = new Date().toISOString();
+            saveWhenReady(0);
+            if(n) status(n + ' record(s) taken over from the Compliance Monitoring System.');
+          }else if(!REG.subcontractors.length && !REG.auditors.length){
+            REG.subcontractors = old.subcontractors; REG.auditors = old.auditors;   // lecture seule, avant reprise
+          }
+        }
+      }catch(e){ console.warn('APP08/09 reprise CMS', e); }
+    }
+    render();
+  };
+
+  /* ── Rendu ─────────────────────────────────────────────────────────── */
+  function q(id){ var e = $(id); return e ? String(e.value || '').toLowerCase().trim() : ''; }
+  function rowMatch(r, s){ return !s || JSON.stringify(r).toLowerCase().indexOf(s) !== -1; }
+  function render(){
+    var w = canWrite();
+    document.querySelectorAll('.omm-reg-w').forEach(function(b){ b.style.display = w ? '' : 'none'; });
+    var st = $('omm-st-wrap'), au = $('omm-aud-wrap');
+    if(!st || !au) return;
+    if(!LOADED){ return; }
+    status(w ? '' : 'Read only.');
+    // APP08
+    var sq = q('omm-st-q'), rows = REG.subcontractors.filter(function(r){ return rowMatch(r, sq); })
+      .sort(function(a,b){ return String(a.ref || a.name || '').localeCompare(String(b.ref || b.name || '')); });
+    st.innerHTML = '<table class="tbl"><thead><tr><th>Ref.</th><th>Organization</th><th>Service type</th><th>Regulatory ref.</th><th>Certificate / approval</th><th>Approval date</th><th>Certificate expiry</th><th>Audit frequency</th><th>Last audit</th><th>Next audit</th><th>Status</th><th>Documents</th>' + (w ? '<th class="omm-reg-noprint"></th>' : '') + '</tr></thead><tbody>'
+      + (rows.length ? rows.map(function(r){
+          var nxt = addMonths(r.lastAudit, r.period || 12), s = ST_STATUS[r.status] || [r.status || '—', 'none'], nf = (r.files || []).length;
+          return '<tr><td class="omm-reg-ref">' + esc(r.ref) + '</td><td class="omm-reg-name">' + esc(r.name) + '</td><td class="omm-reg-dim">' + esc(svc(r.type)) + '</td>'
+            + '<td class="omm-reg-dim">' + esc(r.reg) + '</td><td class="nw">' + esc(r.cert) + '</td><td class="nw">' + fd(r.certDate) + '</td>'
+            + '<td class="nw">' + fd(r.expiry) + '<br>' + tag(daysTo(r.expiry), 'Valid') + '</td><td class="nw">' + esc((r.period || 12) + ' months') + '</td>'
+            + '<td class="nw">' + fd(r.lastAudit) + '</td><td class="nw">' + (nxt ? fd(nxt) + '<br>' + tag(daysTo(nxt), 'Planned') : '—') + '</td>'
+            + '<td><span class="omm-reg-tag ' + s[1] + '">' + esc(s[0]) + '</span></td>'
+            + '<td class="nw">' + (nf ? (r.files || []).map(function(f, i){ return '<a href="#" onclick="ommRegFile(\'' + esc(r.id) + '\',' + i + ');return false;" title="' + esc(f.name) + '">📎 ' + esc(String(f.name || 'file').slice(0, 22)) + '</a>'; }).join('<br>') : '—') + '</td>'
+            + (w ? '<td class="omm-reg-act omm-reg-noprint"><button class="btn" type="button" onclick="ommRegOpen(\'st\',\'' + esc(r.id) + '\')" title="Edit">✏ Edit</button> <button class="btn danger" type="button" onclick="ommRegDel(\'st\',\'' + esc(r.id) + '\')" title="Delete">🗑</button></td>' : '')
+            + '</tr>';
+        }).join('') : '<tr><td colspan="' + (w ? 13 : 12) + '" class="omm-reg-empty">' + (sq ? 'No subcontractor matches the search.' : 'No subcontractor recorded.') + '</td></tr>')
+      + '</tbody></table>';
+    // APP09
+    var aq = q('omm-aud-q'), arows = REG.auditors.filter(function(r){ return rowMatch(r, aq); })
+      .sort(function(a,b){ return String(a.name || '').localeCompare(String(b.name || '')); });
+    au.innerHTML = '<table class="tbl"><thead><tr><th>Auditor</th><th>Main function</th><th>Initial audit training</th><th>Initial training date</th><th>Last recurrent training</th><th>Next recurrent training</th><th>Authorized domains</th><th>Excluded domains (independence)</th><th>Audits completed</th><th>Authorization</th>' + (w ? '<th class="omm-reg-noprint"></th>' : '') + '</tr></thead><tbody>'
+      + (arows.length ? arows.map(function(r){
+          var nxt = addMonths(r.recycleDate, r.period || 24), dn = daysTo(nxt), valid = !!r.recycleDate && dn !== null && dn >= 0;
+          return '<tr><td class="omm-reg-name">' + esc(r.name) + '</td><td class="omm-reg-dim">' + esc(r.role) + '</td><td class="omm-reg-dim">' + esc(r.training) + '</td>'
+            + '<td class="nw">' + fd(r.initDate) + '</td><td class="nw">' + fd(r.recycleDate) + '</td><td class="nw">' + (nxt ? fd(nxt) + '<br>' + tag(dn, 'Valid') : '—') + '</td>'
+            + '<td class="omm-reg-dim">' + esc((r.domains || []).join(', ')) + '</td><td class="omm-reg-dim">' + esc(r.exclusions) + '</td>'
+            + '<td class="nw" style="text-align:center">' + esc(String(r.auditCount || 0)) + '</td>'
+            + '<td><span class="omm-reg-tag ' + (valid ? 'ok' : 'bad') + '">' + (valid ? 'Authorized' : (r.recycleDate ? 'Expired' : 'No recurrent training')) + '</span></td>'
+            + (w ? '<td class="omm-reg-act omm-reg-noprint"><button class="btn" type="button" onclick="ommRegOpen(\'aud\',\'' + esc(r.id) + '\')" title="Edit">✏ Edit</button> <button class="btn danger" type="button" onclick="ommRegDel(\'aud\',\'' + esc(r.id) + '\')" title="Delete">🗑</button></td>' : '')
+            + '</tr>';
+        }).join('') : '<tr><td colspan="' + (w ? 11 : 10) + '" class="omm-reg-empty">' + (aq ? 'No auditor matches the search.' : 'No auditor recorded.') + '</td></tr>')
+      + '</tbody></table>';
+  }
+  window.ommRegRender = render;
+
+  /* ── Fiche (ajout / modification) ─────────────────────────────────── */
+  var EDIT = null;   // {kind, id, isNew, files:[], uploaded:[], folder}
+  function modal(){
+    var m = $('omm-reg-modal');
+    if(!m){ m = document.createElement('div'); m.id = 'omm-reg-modal'; document.body.appendChild(m);
+      m.addEventListener('mousedown', function(e){ if(e.target === m) ommRegClose(); });
+      document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && m.classList.contains('open')) ommRegClose(); }); }
+    return m;
+  }
+  function v(id){ var e = $(id); return e ? String(e.value || '').trim() : ''; }
+  function fld(id, label, val, attrs, full){ return '<div class="f' + (full ? ' full' : '') + '"><label for="' + id + '">' + label + '</label><input id="' + id + '" value="' + esc(val) + '" ' + (attrs || '') + '></div>'; }
+  function area(id, label, val){ return '<div class="f full"><label for="' + id + '">' + label + '</label><textarea id="' + id + '">' + esc(val) + '</textarea></div>'; }
+  function filesHTML(){
+    return EDIT.files.length ? EDIT.files.map(function(f, i){
+      return '<div class="file"><span>📎 ' + esc(f.name) + '</span><small>' + Math.max(1, Math.round((f.size || 0) / 1024)) + ' KB</small>'
+        + '<button class="btn" type="button" onclick="ommRegFileOpen(' + i + ')">Open</button><button class="btn danger" type="button" onclick="ommRegFileRemove(' + i + ')" title="Remove from this record">✕</button></div>';
+    }).join('') : '<div class="hint">No document attached.</div>';
+  }
+  window.ommRegOpen = function(kind, id){
+    if(!canWrite()){ alert('Read only.'); return; }
+    var list = kind === 'st' ? REG.subcontractors : REG.auditors;
+    var r = id ? list.find(function(x){ return x.id === id; }) : null;
+    r = r ? JSON.parse(JSON.stringify(r)) : {};
+    EDIT = { kind:kind, id:r.id || uid(), isNew:!id, files:(r.files || []).slice(), uploaded:[], folder:r.storageFolder || '' };
+    var h;
+    if(kind === 'st'){
+      var t = svc(r.type), opts = SERVICE_TYPES.concat(t && SERVICE_TYPES.indexOf(t) < 0 ? [t] : []);
+      h = '<h3>' + (id ? 'Subcontractor record' : 'New subcontractor') + '</h3><div class="sub">APP08-OMM · List of Subcontractors</div>'
+        + '<div class="g2">' + fld('or-ref', 'Internal reference', r.ref, 'placeholder="e.g. ST-2026-01"')
+        + '<div class="f"><label for="or-type">Service type</label><select id="or-type">' + opts.map(function(o){ return '<option' + (o === (t || 'Maintenance (Part-145)') ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select></div>'
+        + fld('or-name', 'Organization name', r.name, 'placeholder="e.g. Heli Maintenance SA"', true)
+        + fld('or-cert', 'Certificate / approval no.', r.cert, 'placeholder="e.g. CH.MF.0042"')
+        + fld('or-reg', 'Applicable regulatory reference', r.reg, 'placeholder="e.g. Part-145, ORO.GEN.205"')
+        + fld('or-cert-date', 'Approval / issue date', r.certDate, 'type="date"')
+        + fld('or-expiry', 'Certificate expiry date', r.expiry, 'type="date"')
+        + fld('or-period', 'Audit frequency (months)', r.period || '12', 'type="number" min="1" max="36"')
+        + fld('or-last', 'Last audit date', r.lastAudit, 'type="date"')
+        + area('or-scope', 'Service scope', r.scope)
+        + '<div class="f full"><label for="or-status">Monitoring status</label><select id="or-status">' + Object.keys(ST_STATUS).map(function(k){ return '<option value="' + k + '"' + ((r.status || 'conforme') === k ? ' selected' : '') + '>' + ST_STATUS[k][0] + '</option>'; }).join('') + '</select></div>'
+        + area('or-notes', 'Remarks / findings', r.notes) + '</div>'
+        + '<div class="files"><label>Attachments (contract, certificate, audit report)</label><div class="hint">PDF, DOCX, PPTX, XLSX, JPG, PNG — 100 MB max per file. Private storage; documents open through a link valid for 1 hour.</div>'
+        + '<div id="or-files">' + filesHTML() + '</div><input type="file" id="or-file" multiple accept=".pdf,.docx,.pptx,.xlsx,.jpg,.jpeg,.png" onchange="ommRegUpload(this)"></div>';
+    }else{
+      h = '<h3>' + (id ? 'Auditor record' : 'New auditor') + '</h3><div class="sub">APP09-OMM · List of Auditors</div>'
+        + '<div class="g2">' + fld('or-name', 'Last name & first name', r.name, 'placeholder="e.g. Martin Dupont"')
+        + fld('or-role', 'Main function', r.role, 'placeholder="e.g. Safety Manager, Captain, Technician"')
+        + fld('or-training', 'Initial audit training', r.training, 'placeholder="e.g. EASA internal auditor training — 2024"')
+        + fld('or-init', 'Initial training date', r.initDate, 'type="date"')
+        + fld('or-recycle', 'Last recurrent training date', r.recycleDate, 'type="date"')
+        + fld('or-period', 'Recurrent training frequency (months)', r.period || '24', 'type="number" min="12" max="60"')
+        + '<div class="f full"><label>Authorized domains</label><div class="chk">' + DOMAINS.map(function(d){ return '<label><input type="checkbox" data-dom="' + esc(d) + '"' + ((r.domains || []).indexOf(d) >= 0 ? ' checked' : '') + '> ' + esc(d) + '</label>'; }).join('') + '</div></div>'
+        + fld('or-excl', 'Excluded domains — independence principle', r.exclusions, 'placeholder="e.g. CAT.OP (line captain), ORO.FC (ongoing training)"', true)
+        + fld('or-count', 'Audits completed', r.auditCount || 0, 'type="number" min="0"')
+        + area('or-notes', 'Remarks / history', r.notes) + '</div>';
+    }
+    h += '<div class="foot"><span class="msg" id="or-msg"></span><button class="btn" type="button" onclick="ommRegClose()">Cancel</button><button class="btn gold" type="button" id="or-save" onclick="ommRegSave()">💾 Save</button></div>';
+    var m = modal(); m.innerHTML = '<div class="box" role="dialog" aria-modal="true">' + h + '</div>'; m.classList.add('open');
+    setTimeout(function(){ var f = $(kind === 'st' ? 'or-ref' : 'or-name'); if(f) f.focus(); }, 30);
+  };
+  function msg(t, err){ var e = $('or-msg'); if(e){ e.textContent = t || ''; e.classList.toggle('err', !!err); } }
+  window.ommRegClose = function(){
+    // Fichiers envoyés pendant cette saisie puis abandonnés : retirés du stockage.
+    if(EDIT && EDIT.uploaded.length && db()){ try{ db().storage.from(BUCKET).remove(EDIT.uploaded); }catch(e){} }
+    EDIT = null; var m = $('omm-reg-modal'); if(m){ m.classList.remove('open'); m.innerHTML = ''; }
+  };
+  window.ommRegSave = function(){
+    if(!EDIT || !canWrite()) return;
+    var list = EDIT.kind === 'st' ? REG.subcontractors : REG.auditors, rec;
+    if(EDIT.kind === 'st'){
+      if(!v('or-name')){ msg('Enter the organization name.', true); return; }
+      rec = { id:EDIT.id, ref:v('or-ref'), name:v('or-name'), type:v('or-type'), cert:v('or-cert'), reg:v('or-reg'), certDate:v('or-cert-date'), expiry:v('or-expiry'),
+              period:v('or-period') || '12', lastAudit:v('or-last'), scope:v('or-scope'), status:v('or-status') || 'conforme', notes:v('or-notes'),
+              files:EDIT.files, storageFolder:EDIT.folder || '' };
+    }else{
+      if(!v('or-name')){ msg('Enter the auditor name.', true); return; }
+      var doms = []; document.querySelectorAll('#omm-reg-modal [data-dom]').forEach(function(c){ if(c.checked) doms.push(c.getAttribute('data-dom')); });
+      rec = { id:EDIT.id, name:v('or-name'), role:v('or-role'), training:v('or-training'), initDate:v('or-init'), recycleDate:v('or-recycle'), period:v('or-period') || '24',
+              domains:doms, exclusions:v('or-excl'), auditCount:parseInt(v('or-count'), 10) || 0, notes:v('or-notes') };
+    }
+    var i = list.findIndex(function(x){ return x.id === rec.id; });
+    if(i >= 0) list[i] = Object.assign({}, list[i], rec); else list.push(rec);
+    EDIT.uploaded = []; ommRegClose(); render(); save();
+  };
+  window.ommRegDel = function(kind, id){
+    if(!canWrite()) return;
+    var list = kind === 'st' ? REG.subcontractors : REG.auditors, r = list.find(function(x){ return x.id === id; }); if(!r) return;
+    if(!confirm('Delete « ' + (r.name || r.ref || 'record') + ' » from the ' + (kind === 'st' ? 'List of Subcontractors' : 'List of Auditors') + '?' + (kind === 'st' && (r.files || []).length ? '\n\nIts attached documents are kept in storage.' : ''))) return;
+    list.splice(list.indexOf(r), 1); render(); save();
+  };
+
+  /* ── Pièces jointes (sous-traitants) ──────────────────────────────── */
+  function seg(s){ s = String(s == null ? '' : s); try{ s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }catch(e){} s = s.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').replace(/-+/g, '-'); return (s || 'item').slice(0, 110); }
+  function ext(n){ return (String(n || '').split('.').pop() || '').toLowerCase(); }
+  window.ommRegUpload = async function(input){
+    if(!EDIT || !canWrite()){ input.value = ''; return; }
+    var c = db(); if(!c){ msg('Storage unavailable — sign in again.', true); input.value = ''; return; }
+    if(!EDIT.folder) EDIT.folder = ROOT + '/' + new Date().getFullYear() + '/' + seg(v('or-ref') || v('or-name') || 'Contractor') + '-' + seg(EDIT.id);
+    var files = Array.from(input.files || []); input.value = '';
+    var btn = $('or-save'); if(btn) btn.disabled = true;
+    for(var i = 0; i < files.length; i++){
+      var f = files[i], x = ext(f.name);
+      if(EXT.indexOf(x) < 0){ msg('Unsupported format: ' + f.name, true); continue; }
+      if(f.size > MAX){ msg('File over 100 MB: ' + f.name, true); continue; }
+      var name = seg(f.name); if(name.toLowerCase().slice(-(x.length + 1)) !== '.' + x) name += '.' + x;
+      var path = EDIT.folder + '/' + new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14) + '-' + Math.random().toString(36).slice(2, 7) + '-' + name;
+      msg('Uploading « ' + f.name + ' »…');
+      var res = await c.storage.from(BUCKET).upload(path, f, { upsert:false, contentType:f.type || MIME[x] || 'application/octet-stream' });
+      if(res.error){ msg('Upload failed: ' + (res.error.message || res.error), true); continue; }
+      EDIT.files.push({ id:'f' + uid(), name:f.name, type:f.type || MIME[x] || '', size:f.size, path:path, bucket:BUCKET, uploaded_at:new Date().toISOString() });
+      EDIT.uploaded.push(path);
+      msg('« ' + f.name + ' » uploaded — save the record to keep it.');
+    }
+    if(btn) btn.disabled = false;
+    var box = $('or-files'); if(box) box.innerHTML = filesHTML();
+  };
+  async function openMeta(f){
+    if(!f) return;
+    if(f.data && !f.path){ var a = document.createElement('a'); a.href = f.data; a.target = '_blank'; a.rel = 'noopener'; a.click(); return; }
+    var c = db(); if(!c || !f.path){ alert('Document unavailable.'); return; }
+    var w = null; try{ w = window.open('about:blank', '_blank'); }catch(e){}
+    var res = await c.storage.from(f.bucket || BUCKET).createSignedUrl(f.path, 3600);
+    if(res.error){ if(w) w.close(); alert('Cannot open the document: ' + res.error.message); return; }
+    if(w) w.location.href = res.data.signedUrl; else window.location.href = res.data.signedUrl;
+  }
+  window.ommRegFileOpen = function(i){ if(EDIT) openMeta(EDIT.files[i]); };
+  window.ommRegFileRemove = function(i){
+    if(!EDIT) return; var f = EDIT.files[i]; if(!f) return;
+    if(!confirm('Remove « ' + f.name + ' » from this record?')) return;
+    EDIT.files.splice(i, 1); var box = $('or-files'); if(box) box.innerHTML = filesHTML();
+  };
+  window.ommRegFile = function(id, i){ var r = REG.subcontractors.find(function(x){ return x.id === id; }); if(r) openMeta((r.files || [])[i]); };
+
+  /* ── Export CSV ───────────────────────────────────────────────────── */
+  window.ommRegCSV = function(kind){
+    var head, rows;
+    var c = function(x){ return '"' + String(x == null ? '' : x).replace(/"/g, '""') + '"'; };
+    if(kind === 'st'){
+      head = ['Ref.','Organization','Service type','Regulatory ref.','Certificate / approval','Approval date','Certificate expiry','Audit frequency (months)','Last audit','Next audit','Status','Scope','Remarks','Documents'];
+      rows = REG.subcontractors.map(function(r){ return [r.ref, r.name, svc(r.type), r.reg, r.cert, r.certDate, r.expiry, r.period || 12, r.lastAudit, addMonths(r.lastAudit, r.period || 12), (ST_STATUS[r.status] || [r.status])[0], r.scope, r.notes, (r.files || []).map(function(f){ return f.name; }).join(' | ')]; });
+    }else{
+      head = ['Auditor','Main function','Initial audit training','Initial training date','Last recurrent training','Frequency (months)','Next recurrent training','Authorized domains','Excluded domains','Audits completed','Remarks'];
+      rows = REG.auditors.map(function(r){ return [r.name, r.role, r.training, r.initDate, r.recycleDate, r.period || 24, addMonths(r.recycleDate, r.period || 24), (r.domains || []).join(' | '), r.exclusions, r.auditCount || 0, r.notes]; });
+    }
+    if(!rows.length){ alert('No data.'); return; }
+    var csv = '\uFEFF' + [head].concat(rows).map(function(r){ return r.map(c).join(';'); }).join('\r\n');
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
+    a.download = kind === 'st' ? 'APP08-OMM_List_of_Subcontractors.csv' : 'APP09-OMM_List_of_Auditors.csv'; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  };
+
+  window.ommRegData = function(){ return REG; };   // contrôle en console
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render); else render();
 })();
 </script>
 </body></html>
