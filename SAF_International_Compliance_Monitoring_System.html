@@ -16662,6 +16662,7 @@ function ap2Show(id,btn){
   if(btn)btn.classList.add('ap-active');
 }
 </script>
+</div><!-- /audit_plan — 10.11.2026 : fermeture manquante ; sans elle, le plan d'actions, les audits, le rapport annuel, la matrice de conformité, la veille réglementaire et le pont SMS restaient cachés dans l'onglet du plan d'audit. -->
 <!-- ═══════════════════════════════════════════════════════════════════
      SAF INTERNATIONAL — EXTENSIONS CMS (conformité EASA)
      Modules ajoutés :
@@ -24637,7 +24638,11 @@ PD.days = function(iso){ if(!iso) return null; var d = new Date(String(iso).slic
 PD.fd = function(iso){ if(!iso) return '—'; var p = String(iso).slice(0,10).split('-'); return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0] : PD.esc(iso); };
 PD.CB = [];   // actions des éléments cliquables
 PD.cb = function(fn){ PD.CB.push(fn); return PD.CB.length - 1; };
-PD.go = function(i){ try{ (PD.CB[i] || function(){})(); }catch(e){ console.warn('PD', e); } };
+PD.go = function(i){
+  try{ (PD.CB[i] || function(){})(); }catch(e){ console.warn('PD', e); }
+  // On a quitté le tableau de bord : remonter en haut de la nouvelle page (sinon on reste au milieu, sur du vide)
+  setTimeout(function(){ var r = document.getElementById('pd-root'); if(r && !r.offsetParent){ window.scrollTo(0, 0); var m = document.querySelector('main'); if(m) m.scrollTop = 0; } }, 30);
+};
 PD.tile = function(t){
   var cls = t.cls || (t.n === null ? 'na' : (t.n === 0 ? 'ok' : (t.level || 'amber')));
   return '<button type="button" class="pd-tile ' + cls + '" onclick="PD.go(' + PD.cb(t.go) + ')" title="' + PD.esc(t.title || 'Ouvrir la liste') + '">'
