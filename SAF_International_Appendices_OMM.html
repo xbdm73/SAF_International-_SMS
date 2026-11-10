@@ -3787,9 +3787,19 @@ h1 {
     var res = await q;
     if(res.error){
       if(res.error.code === '23505') return { conflict:true };  // ligne créée entre-temps
+      if(res.error.code === '42501' || /row-level security|permission/i.test(res.error.message || '')) return { denied:true };
       return { error: res.error.message };
     }
-    if(!res.data || res.data.length === 0) return { conflict:true }; // updated_at périmé
+    if(!res.data || res.data.length === 0){
+      // 10.11.2026 : aucune ligne modifiée ne veut pas forcément dire « un autre administrateur ».
+      // Si la ligne est invisible, ou toujours à la version chargée, c'est la RLS qui a refusé
+      // l'écriture (session sans second facteur ou droits retirés) : ce n'est pas un conflit.
+      try{
+        var chk = await db.from('saf_data').select('updated_at').eq('module', MODULE).maybeSingle();
+        if(!chk.error && (!chk.data || chk.data.updated_at === CC_LAST_SYNC)) return { denied:true };
+      }catch(e){}
+      return { conflict:true }; // updated_at périmé
+    }
     CC_LAST_SYNC = res.data[0].updated_at;
     CC_ROW_EXISTS = true;
     return { ok:true };
@@ -3797,6 +3807,7 @@ h1 {
 
   // Écriture forcée (choix explicite de l'utilisateur : écraser le serveur).
   async function ccForce(payload){
+    if(!payload || !payload.registries) return { error:'listes APP08/APP09 non chargées — rechargez la page avant d’écraser' };
     var stamp = new Date().toISOString();
     var res = await db.from('saf_data')
       .upsert({ module: MODULE, data: payload, updated_at: stamp }, { onConflict:'module' })
@@ -3877,6 +3888,28 @@ h1 {
     + 'Vos modifications ne sont pas enregistrées et la sauvegarde automatique est suspendue.';
   }
 
+  // Refus d'écriture par la base (10.11.2026) : session sans second facteur ou droits insuffisants.
+  function ccShowDenied(payload){
+    var box = document.getElementById('saf-cc-box'); if(box) box.remove();
+    box = document.createElement('div');
+    box.id = 'saf-cc-box';
+    box.style.cssText = 'position:fixed;z-index:99999;left:50%;bottom:20px;transform:translateX(-50%);'
+      + 'width:calc(100% - 32px);max-width:600px;background:#2b241b;border:1px solid #c9a227;'
+      + 'border-radius:8px;padding:16px 18px;color:#f0ebe0;font-family:system-ui,-apple-system,sans-serif;'
+      + 'font-size:13px;line-height:1.55;box-shadow:0 10px 40px rgba(0,0,0,.55);';
+    box.innerHTML = '<div style="font-weight:600;color:#f0c040;margin-bottom:8px;">&#9888; Enregistrement refusé par la base</div>'
+      + '<div style="margin-bottom:14px;">Votre session n’a plus le droit d’écrire : en général, elle a été rouverte sans le <strong>code du second facteur</strong> '
+      + '(par exemple après une déconnexion dans un autre onglet). <strong>Rien n’a été écrasé</strong> sur le serveur. '
+      + 'Téléchargez vos modifications si besoin, puis reconnectez-vous avec votre code.</div>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap;"><button id="saf-cc-dl">Télécharger mes modifications</button>'
+      + '<button id="saf-cc-relog">Se reconnecter</button></div>';
+    document.body.appendChild(box);
+    document.getElementById('saf-cc-dl').style.cssText = ccBtn('#c9a227','#1a1a1a');
+    document.getElementById('saf-cc-relog').style.cssText = ccBtn('transparent','#f0e6c8');
+    document.getElementById('saf-cc-dl').onclick = function(){ ccDownload(payload || ccPayload()); };
+    document.getElementById('saf-cc-relog').onclick = async function(){ try{ await db.auth.signOut(); }catch(e){} location.reload(); };
+  }
+
   // Veille passive : prévient tôt qu'une nouvelle version existe sur le serveur.
   async function ccPoll(){
     if(CC_CONFLICT || !CC_ROW_EXISTS || !CC_LAST_SYNC) return;
@@ -3902,8 +3935,10 @@ h1 {
     saving = true; setBar('saving','Sauvegarde…');
     try{
       var payload = window.safSerializeAppendices();
+      if(!payload || !payload.registries){ saving = false; setBar('ok','⚠ Listes APP08/APP09 non chargées — enregistrement suspendu (rechargez la page)'); return; }
       var out = await ccWrite(payload);
-      if(out.conflict){ CC_CONFLICT = true; ccShowConflict(payload); setBar('ok','⚠ Conflit de version — sauvegarde suspendue'); }
+      if(out.denied){ CC_CONFLICT = true; ccShowDenied(payload); setBar('ok','⚠ Enregistrement refusé — reconnexion nécessaire'); }
+      else if(out.conflict){ CC_CONFLICT = true; ccShowConflict(payload); setBar('ok','⚠ Conflit de version — sauvegarde suspendue'); }
       else if(out.error) setBar('ok','Erreur sauvegarde: '+out.error);
       else setBar('ok','Synchronisé ✓ '+new Date().toLocaleTimeString());
     }catch(e){ setBar('ok','Sauvegarde impossible: '+e.message); }
