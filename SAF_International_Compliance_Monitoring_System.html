@@ -16566,27 +16566,42 @@ const label=n=>M[(n-1)%12]+' '+(n>12?'2028':'2027');
 for(let y=1;y<=2;y++){let h='';for(let m=1;m<=12;m++){let n=(y-1)*12+m,r=A.filter(x=>x[5]===n).map(x=>x[0]).join(', ')||'—',o=A.filter(x=>x[6]===n).map(x=>x[0]).join(', ')||'—';h+='<div class="month '+(m>=4&&m<=11?'o':'')+'"><b>'+M[m-1]+'</b><small>RCA '+r+'</small><small>OCA '+o+'</small></div>'}document.getElementById('aoccal'+y).innerHTML=h}
 function render(){const y=document.getElementById('aocYear').value,q=document.getElementById('aocSearch').value.toLowerCase();document.getElementById('aocRows').innerHTML=A.filter(x=>(y==='all'||(x[5]>12?2:1)===+y)&&x.join(' ').toLowerCase().includes(q)).map(x=>'<tr><td>'+x[0]+'</td><td>'+esc(x[1])+'</td><td>'+label(x[5])+'</td><td>'+label(x[6])+'</td><td class="ref">'+esc(x[2])+'</td><td><button type="button" data-id="'+x[0]+'">Détails</button> <button type="button" data-grid="'+x[0]+'">Créer grille</button></td></tr>').join('')}
 document.getElementById('aocYear').addEventListener('change',render);document.getElementById('aocSearch').addEventListener('input',render);
-document.getElementById('aocRows').addEventListener('click',e=>{let c=e.target.closest('button[data-grid]');if(c){window.safAoc24CreateGrid(c.dataset.grid);return;}let b=e.target.closest('button[data-id]');if(!b)return;let x=A.find(a=>a[0]===b.dataset.id);document.getElementById('aocDetail').innerHTML='<div class="more"><b>Audit '+x[0]+' — '+esc(x[1])+'</b><p><b>RCA :</b> '+label(x[5])+' · <b>OCA :</b> '+label(x[6])+'</p><p><b>IR / familles à vérifier :</b> '+esc(x[2])+'</p><p><b>Documentation :</b> '+esc(x[3])+'</p><p><b>Preuves opérationnelles :</b> '+esc(x[4])+'</p><p><small>Articles IR identifiés par numéro dans la base EASA du CMS. Vérifier l’applicabilité, les sous-paragraphes et AMC associés avant chaque audit.</small></p></div>'});
+document.getElementById('aocRows').addEventListener('click',e=>{let c=e.target.closest('button[data-grid]');if(c){window.safAoc24CreateGrid(c.dataset.grid);return;}let b=e.target.closest('button[data-id]');if(!b)return;let x=A.find(a=>a[0]===b.dataset.id);document.getElementById('aocDetail').innerHTML='<div class="more"><b>Audit '+x[0]+' — '+esc(x[1])+'</b><p><b>RCA :</b> '+label(x[5])+' · <b>OCA :</b> '+label(x[6])+'</p><p><b>Articles IR à vérifier (grille EASA CMS) :</b> '+esc(x[2])+'</p><p><b>Documentation :</b> '+esc(x[3])+'</p><p><b>Preuves opérationnelles :</b> '+esc(x[4])+'</p><p><small>Articles IR identifiés par numéro dans la base EASA du CMS. Vérifier l’applicabilité, les sous-paragraphes et AMC associés avant chaque audit.</small></p></div>'});
 
 window.safAoc24CreateGrid=function(id){
  const x=A.find(a=>a[0]===id);if(!x)return;
  if(typeof window.safCMSCanWrite==='function'&&!window.safCMSCanWrite()){alert('Lecture seule / Read-only');return;}
- if(typeof window.safLaunchGrid!=='function'){alert('Grille d’audit indisponible.');return;}
- const refs=x[2].split(';').map(v=>v.trim()).filter(Boolean);
- if(!refs.length){alert('Aucune référence réglementaire disponible.');return;}
- const rows=refs.map((ref,i)=>({idx:i,ref:ref,reg:'PLAN',part:'APP15-OMM — Audit '+id,sub:'',variant:'RCA / OCA',title:x[1]+' — '+ref,ir:'RCA : conformité réglementaire et documentaire. OCA : conformité des opérations aux procédures. Documents : '+x[3]+'. Preuves : '+x[4],amcBlocks:[],noSubRow:true,planId:'AOC24-'+id,status:'',obs:'',refdoc:'',action:'',resp:''}));
+ if(typeof window.safLaunchGrid!=='function'||typeof DB==='undefined'){alert('Grille EASA du CMS indisponible.');return;}
+ const refs=[...new Set(x[2].split(';').map(v=>v.trim()).filter(Boolean))];
+ const found=refs.filter(ref=>Object.prototype.hasOwnProperty.call(DB,ref));
+ const missing=refs.filter(ref=>!Object.prototype.hasOwnProperty.call(DB,ref));
+ if(!found.length){alert('Aucune référence APP15 ne correspond à la base réglementaire du CMS. Vérifier les références.');return;}
+ if(missing.length && !confirm('Certaines références APP15 ne figurent pas dans la base du CMS et ne seront pas considérées comme vérifiées :\\n'+missing.join(', ')+'\\n\\nCréer la grille avec les '+found.length+' articles trouvés ?'))return;
+ // Each regulatory requirement reuses its actual IR and AMC from the CMS EASA dataset.
+ // Stable reference IDs permit reconciliation with the audit register.
+ const rows=found.map((ref,i)=>{const d=DB[ref];return {
+   idx:i,ref:ref,reg:d.reg,part:d.part,sub:d.sub,variant:d.variant||'',
+   title:d.title,ir:d.ir,amcBlocks:d.amc||[],noSubRow:false,
+   planId:'AOC24-'+id,status:'',obs:'',refdoc:'',action:'',resp:''
+ };});
  window.safLaunchGrid(rows);
  try{
-   var el=document.getElementById('g-audit-title');if(el)el.value='APP15-OMM · '+id+' · '+x[1];
+   const title='APP15-OMM · '+id+' · '+x[1];
+   const el=document.getElementById('g-audit-title');if(el)el.value=title;
    if(typeof g_autosave==='function')g_autosave();
    if(typeof g_loadAudits==='function'&&typeof g_saveAudits==='function'){
-     var list=g_loadAudits(),rec=list.find(v=>v.id===g_currentAuditId);
-     if(rec){rec.source='plan';rec.plan={ids:['AOC24-'+id],panels:['APP15-OMM'],aocAuditId:id};
+     const list=g_loadAudits(),rec=list.find(v=>v.id===g_currentAuditId);
+     if(rec){
+       rec.source='plan';rec.plan={ids:['AOC24-'+id],panels:['APP15-OMM'],aocAuditId:id,regulatoryRefs:found,unmatchedRefs:missing};
        rec.wf=Object.assign(rec.wf||{},{status:'prepare',planned_start:(x[5]>12?'2028':'2027')+'-'+String((x[5]-1)%12+1).padStart(2,'0')+'-01'});
-       rec.title='APP15-OMM · '+id+' · '+x[1];g_saveAudits(list);}
+       rec.title=title;g_saveAudits(list);
+     }
    }
+   if(missing.length)console.warn('APP15 references absent from CMS database',missing);
+   if(typeof renderPlanTracking==='function')renderPlanTracking();
  }catch(e){console.warn('APP15 liaison grille',e);}
 };
+
 document.getElementById('aocCSV').addEventListener('click',()=>{let rows=[['Audit','Domaine','IR','Documents','Preuves','RCA','OCA'],...A.map(x=>[x[0],x[1],x[2],x[3],x[4],label(x[5]),label(x[6])])],csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n'),url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),l=document.createElement('a');l.href=url;l.download='APP15_OMM_AOC_AuditPlan_2027_2028.csv';l.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});
 render();
 })();</script>
