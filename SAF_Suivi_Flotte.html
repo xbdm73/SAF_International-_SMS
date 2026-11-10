@@ -297,12 +297,35 @@ footer .err{color:var(--lost)}
 .opsx-col [data-a="flights"].shake{animation:opsx-sh .4s}
 @keyframes opsx-sh{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
 .opsx-bot{position:absolute;left:10px;bottom:34px;display:flex;flex-direction:column;gap:6px}
-.opsx-box{pointer-events:auto;position:absolute;top:48px;left:236px;max-width:min(330px,calc(100% - 250px));background:var(--panel);color:var(--ink);
+.opsx-box{pointer-events:auto;position:absolute;top:92px;left:52px;max-width:min(330px,calc(100% - 64px));background:var(--panel);color:var(--ink);
   border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;box-shadow:0 2px 8px rgba(0,0,0,.45)}
 .opsx-box table{border-collapse:collapse;width:100%;margin:5px 0;font-variant-numeric:tabular-nums}
 .opsx-box th,.opsx-box td{text-align:right;padding:1px 6px;border-bottom:1px solid var(--line)} .opsx-box th:first-child,.opsx-box td:first-child{text-align:left}
 .opsx-bh{display:flex;flex-direction:column;gap:2px} .opsx-bh span{color:var(--signal);font-weight:600}
-.opsx-eur{margin:4px 0;color:#fff} .opsx-eur small{color:var(--ink-2)}
+.opsx-sr{pointer-events:auto;position:absolute;top:92px;left:52px;width:min(360px,calc(100% - 64px));background:var(--panel);color:var(--ink);
+  border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 22px rgba(0,0,0,.45);overflow:hidden;font-family:var(--font)}
+.opsx-sr-in{display:flex;align-items:center;gap:6px;padding:6px}
+.opsx-sr-in input{flex:1;min-width:0;height:36px;padding:0 10px;border-radius:7px;border:1px solid var(--line);background:#fff;color:#111;font:500 15px/1 var(--font)}
+.opsx-sr-in input:focus{outline:2px solid #1E8BD6;outline-offset:0}
+.opsx .opsx-sr-in button{width:32px;height:32px;font-size:14px;box-shadow:none}
+.opsx-sr-list{max-height:min(360px,55vh);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.opsx-sr-list:empty{display:none}
+.opsx-sr-h{padding:6px 10px 3px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);border-top:1px solid var(--line)}
+.opsx-sr-h:first-child{border-top:0}
+.opsx .opsx-sr-it{display:flex;width:100%;height:auto;min-height:40px;align-items:flex-start;justify-content:flex-start;gap:9px;padding:7px 10px;border:0;border-radius:0;
+  background:transparent;color:var(--ink);box-shadow:none;text-align:left;font:500 13px/1.3 var(--font)}
+.opsx .opsx-sr-it:hover,.opsx .opsx-sr-it.act{background:rgba(30,139,214,.18)}
+.opsx-sr-it i{flex:none;width:20px;font-style:normal;text-align:center;font-size:14px;line-height:18px}
+.opsx-sr-it span{display:flex;flex-direction:column;min-width:0}
+.opsx-sr-it b{font-weight:700;overflow:hidden;text-overflow:ellipsis}
+.opsx-sr-it small{color:var(--ink-2);font-weight:400;font-size:11.5px;overflow:hidden;text-overflow:ellipsis}
+.opsx-sr-msg{padding:9px 11px;font-size:12.5px;color:var(--ink-2)}
+.opsx-pt.ofound b{position:absolute;left:-11px;top:-30px;font-size:26px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
+.opsx-pt.ofound span{left:14px;top:-26px;background:#B0177A;color:#fff;border-color:#fff;font-size:12px}
+.opsx-found-pop{font-size:12.5px;line-height:1.45}
+.opsx-found-pop .c{font-variant-numeric:tabular-nums}
+.opsx-found-pop .bb{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.opsx-found-pop .bb button{height:26px;padding:0 9px;border-radius:6px;border:1px solid rgba(0,0,0,.25);background:#fff;color:#111;font:600 12px/1 var(--font);cursor:pointer}
 .opsx-bb{display:flex;gap:6px;margin-top:6px} .opsx-bb button{width:auto;height:26px;padding:0 9px;font-size:12px}
 .opsx-cross{cursor:crosshair!important}
 .opsx-pt{position:relative;font:700 11px/1 var(--cond);white-space:nowrap}
@@ -657,7 +680,8 @@ const panes=[];
 /* ===================================================================
    OUTILS DE CARTE REPRIS DE « SAF OPERATIONS » (30.10.2026)
    Barre d'outils à gauche de chaque carte, comme dans l'application OPS :
-   en haut  ☰ libellés · trait (route avec ETE) · règle (mesure 2 points) · € (coût) · liste des missions
+   en haut  ☰ libellés · règle (mesure 2 points) · loupe (recherche d'un lieu) · liste des missions
+   (10.11.2026 : trait de route et coût € retirés ; recherche de lieu reprise de la carte OPS)
    colonne  aérodromes · hélistations · balises · espaces aériens · LZ/DZ · zones réglementées ·
             lieux · bases · carburant · appareils en vol
    en bas   zoom + / − · plein écran
@@ -770,7 +794,7 @@ async function opsRefresh(p){
   }catch(e){ console.warn("Couches OPS :", e); }
 }
 
-/* ---------- route (trait), mesure (règle) et coût (€) ---------- */
+/* ---------- mesure (règle) ---------- */
 function opsToolOff(p){
   const t = p.opsx.tool; p.opsx.tool = null; p.map.doubleClickZoom.enable();
   p.map.getContainer().classList.remove("opsx-cross");
@@ -788,22 +812,20 @@ function opsToolOn(p, tool){
 }
 function opsDrawRoute(p){
   const g = p.opsx.route; g.clearLayers();
-  const box = p.opsx.box, cruise = +(OPSX.settings?.cruise_kt) || 120, eur = +(OPSX.settings?.transit_eur_min) || null;
-  const pts = p.opsx.tool === "ruler" ? p.opsx.rpts : p.opsx.wpts;
+  const box = p.opsx.box, cruise = +(OPSX.settings?.cruise_kt) || 120;
+  const pts = p.opsx.rpts;
   if(!pts.length){ box.hidden = true; return; }
   const ll = pts.map(q => [q.lat,q.lon]);
   L.polyline(ll,{pane:"opsxPts", color:"#fff", weight:6, opacity:.85, interactive:false}).addTo(g);
-  L.polyline(ll,{pane:"opsxPts", color: p.opsx.tool==="ruler" ? "#F0C040" : "#B0177A", weight:3, dashArray: p.opsx.tool==="ruler" ? "6 5" : null, interactive:false}).addTo(g);
+  L.polyline(ll,{pane:"opsxPts", color:"#F0C040", weight:3, dashArray:"6 5", interactive:false}).addTo(g);
   pts.forEach((q,i) => L.circleMarker([q.lat,q.lon],{pane:"opsxPts", radius:5, color:"#0A1420", weight:2, fillColor:"#fff", fillOpacity:1, interactive:false}).addTo(g));
   let tot = 0; const legs = [];
   for(let i=1;i<pts.length;i++){ const km = opsKm(pts[i-1],pts[i]); tot += km; legs.push({km, brg:opsBrg(pts[i-1],pts[i])}); }
   const nm = tot/1.852, min = nm/cruise*60;
   const rows = legs.map((l,i) => `<tr><td>${i+1}</td><td>${String(Math.round(l.brg)%360).padStart(3,"0")}°</td><td>${(l.km/1.852).toFixed(1)} NM</td><td>${opsFmtMin(l.km/1.852/cruise*60)}</td></tr>`).join("");
-  const cost = p.opsx.euro && eur ? `<div class="opsx-eur">Coût transit estimé : <b>${Math.round(min*eur).toLocaleString("fr-FR")} €</b> <small>(${eur} €/min, réglage OPS)</small></div>` : "";
-  box.innerHTML = `<div class="opsx-bh"><b>${p.opsx.tool==="ruler" ? "Mesure" : "Route"}</b>
+  box.innerHTML = `<div class="opsx-bh"><b>Mesure</b>
       <span>${nm.toFixed(1)} NM · ${tot.toFixed(1)} km · ETE ${opsFmtMin(min)} à ${cruise} kt</span></div>
     ${legs.length ? `<table><tr><th>#</th><th>Route</th><th>Dist.</th><th>Temps</th></tr>${rows}</table>` : `<small>Cliquez le point suivant sur la carte.</small>`}
-    ${cost}
     <div class="opsx-bb"><button type="button" data-a="undo">↶ Dernier point</button><button type="button" data-a="clear">Effacer</button></div>`;
   box.hidden = false;
 }
@@ -853,6 +875,185 @@ function opsMark(p){
   f.querySelector("span").textContent = n; f.classList.toggle("on", n > 0);
 }
 
+
+/* ===================================================================
+   RECHERCHE D'UN LIEU (10.11.2026) — reprise de la carte OPS
+   Une seule zone de saisie, plusieurs sources, résultats regroupés :
+     1. coordonnées GPS saisies (DD, DDM ou DMS, N/S/E/W/O, signe −)
+     2. données OPS déjà chargées : LZ/DZ, lieux, bases, carburant, missions
+     3. appareils de la flotte (immatriculation → dernière position)
+     4. géocodage OpenStreetMap (Nominatim, repli Photon) : villes, cols,
+        sommets, aérodromes, adresses — orienté vers la zone affichée
+   Le lieu choisi est marqué d'une épingle ; « Mesurer depuis ici » ouvre la règle.
+   =================================================================== */
+const OPS_SR_CACHE = new Map();
+function opsNorm(s){ return String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase(); }
+function opsDms(v, pos, neg, w){
+  const h = v < 0 ? neg : pos, a = Math.abs(v), d = Math.floor(a), mf = (a-d)*60, m = Math.floor(mf);
+  let sec = (mf-m)*60; let dd = d, mm = m;
+  if(sec >= 59.95){ sec = 0; mm++; } if(mm >= 60){ mm = 0; dd++; }
+  return `${String(dd).padStart(w,"0")}°${String(mm).padStart(2,"0")}'${sec.toFixed(1).padStart(4,"0")}"${h}`;
+}
+function opsCoordTxt(lat, lon){ return `${opsDms(lat,"N","S",2)} ${opsDms(lon,"E","W",3)}`; }
+function opsCoordDD(lat, lon){ return `${lat.toFixed(5)}, ${lon.toFixed(5)}`; }
+/* Coordonnées saisies → {lat, lon} ou null */
+function opsParseCoord(raw){
+  let s = String(raw || "").trim().toUpperCase();
+  if(!s || !/\d/.test(s)) return null;
+  s = s.replace(/[″”“]/g,'"').replace(/[′’‘´`]/g,"'").replace(/''/g,'"').replace(/º|˚/g,"°")
+       .replace(/\bDEG\b/g,"°").replace(/([\d'"°])\s*O\b/g,"$1W").replace(/\bO(?=\s*\d)/g,"W").replace(/\s+/g," ");
+  const ok = (la, lo) => isFinite(la) && isFinite(lo) && Math.abs(la) <= 90 && Math.abs(lo) <= 180 ? {lat:la, lon:lo} : null;
+  const num = t => parseFloat(String(t).replace(",", "."));
+  // Décimal simple : « 45.678, 6.123 » ou « 45,678 6,123 » ou « 45.678;6.123 »
+  let m = s.match(/^([+-]?\d{1,2}(?:\.\d+)?)\s*,\s*([+-]?\d{1,3}(?:\.\d+)?)$/) || s.match(/^([+-]?\d{1,2}(?:[.,]\d+)?)\s*[; ]\s*([+-]?\d{1,3}(?:[.,]\d+)?)$/);
+  if(m) return ok(num(m[1]), num(m[2]));
+  // Une coordonnée : degrés [minutes [secondes]] → décimal
+  const one = part => {
+    const neg = /^\s*-/.test(part), n = (part.match(/\d+(?:[.,]\d+)?/g) || []).map(num);
+    if(!n.length || n.length > 3) return NaN;
+    if(n.length > 1 && !Number.isInteger(n[0])) return NaN;
+    if(n.length > 2 && !Number.isInteger(n[1])) return NaN;
+    if((n[1] ?? 0) >= 60 || (n[2] ?? 0) >= 60) return NaN;
+    const v = n[0] + (n[1] || 0)/60 + (n[2] || 0)/3600;
+    return neg ? -v : v;
+  };
+  // Avec hémisphères : « 45°40'12"N 6°23'24"E », « N45 40.2 E006 23.4 »
+  const la = s.match(/[NS]/), lo = s.match(/[EW]/);
+  if(la && lo){
+    const letterFirst = /^[NSEW]/.test(s);
+    let a, b;
+    if(letterFirst){
+      const i = s.search(/[EW]/), j = s.search(/[NS]/);
+      [a, b] = i > j ? [s.slice(0, i), s.slice(i)] : [s.slice(j), s.slice(0, j)];
+    }else{
+      const i = s.search(/[NS]/), j = s.search(/[EW]/);
+      [a, b] = i < j ? [s.slice(0, i+1), s.slice(i+1)] : [s.slice(j+1), s.slice(0, j+1)];
+    }
+    let A = one(a.replace(/[NSEW]/g," ")), B = one(b.replace(/[NSEW]/g," "));
+    if(/S/.test(a)) A = -Math.abs(A); if(/W/.test(b)) B = -Math.abs(B);
+    return ok(A, B);
+  }
+  // Sans hémisphère mais avec symboles : « 45°40'12" 6°23'24" » (latitude d'abord)
+  const deg = [...s.matchAll(/°/g)].map(x => x.index);
+  if(deg.length === 2){
+    const k = s.slice(0, deg[1]).search(/[+-]?\d+(?:[.,]\d+)?\s*$/);
+    if(k > 0) return ok(one(s.slice(0, k)), one(s.slice(k)));
+  }
+  return null;
+}
+async function opsGeocode(q, p){
+  const key = q.toLowerCase(); if(OPS_SR_CACHE.has(key)) return OPS_SR_CACHE.get(key);
+  const c = p.map.getCenter(), b = p.map.getBounds().pad(1.5);
+  const box = [b.getWest(), b.getNorth(), b.getEast(), b.getSouth()].map(v => v.toFixed(3)).join(",");
+  let out = [];
+  try{
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=7&addressdetails=0&accept-language=fr&viewbox=${box}&q=${encodeURIComponent(q)}`, {headers:{"Accept":"application/json"}});
+    if(!r.ok) throw Error("HTTP " + r.status);
+    const d = await r.json();
+    out = d.map(x => {
+      const parts = String(x.display_name || "").split(",").map(t => t.trim());
+      return {lat:+x.lat, lon:+x.lon, name:parts[0] || x.name, sub:parts.slice(1, 4).join(", "), kind:x.type || x.category,
+              bb: Array.isArray(x.boundingbox) ? x.boundingbox.map(Number) : null};
+    });
+  }catch(e){
+    try{
+      const r = await fetch(`https://photon.komoot.io/api/?limit=7&lang=fr&lat=${c.lat.toFixed(3)}&lon=${c.lng.toFixed(3)}&q=${encodeURIComponent(q)}`);
+      if(!r.ok) throw Error("HTTP " + r.status);
+      const d = await r.json();
+      out = (d.features || []).map(f => { const pr = f.properties || {}, g = f.geometry?.coordinates || [];
+        return {lat:+g[1], lon:+g[0], name:pr.name || pr.street || q, sub:[pr.city, pr.county, pr.state, pr.country].filter(Boolean).join(", "), kind:pr.osm_value,
+                bb: Array.isArray(pr.extent) ? [pr.extent[3], pr.extent[1], pr.extent[0], pr.extent[2]] : null}; });
+    }catch(e2){ console.warn("Recherche de lieu :", e, e2); return null; }
+  }
+  out = out.filter(x => isFinite(x.lat) && isFinite(x.lon));
+  OPS_SR_CACHE.set(key, out); return out;
+}
+function opsLocalHits(q){
+  const n = opsNorm(q).trim(); if(n.length < 2) return [];
+  const hit = (...f) => f.some(v => opsNorm(v).includes(n));
+  const st = OPSX.stat || {}, out = [];
+  (st.sites || []).forEach(x => hit(x.name, x.code) && out.push({g:"OPS", ic:"◆", lat:+x.lat, lon:+x.lon, name:x.name, sub:`${String(x.kind||"").toUpperCase()}${x.elevation_m!=null?" · "+opsFt(x.elevation_m):""}`}));
+  (st.venues || []).forEach(x => hit(x.name) && out.push({g:"OPS", ic:"▣", lat:+x.lat, lon:+x.lon, name:x.name, sub:{worksite:"Chantier / LZ",hotel:"Hôtel",provider:"Prestataire",training:"Centre de formation"}[x.kind] || "Lieu"}));
+  (st.bases || []).forEach(x => hit(x.name, x.code) && out.push({g:"OPS", ic:"⌂", lat:+x.lat, lon:+x.lon, name:x.name, sub:x.kind==="aff_base"?"Base AFF":x.kind==="office"?"Bureau":"Base SAF"}));
+  (st.fuel || []).forEach(x => hit(x.name, x.owner) && out.push({g:"OPS", ic:"⛽", lat:+x.lat, lon:+x.lon, name:x.name, sub:"Carburant" + (x.fuel ? " · " + x.fuel : "")}));
+  (OPSX.missions || []).forEach(x => hit(x.name, x.mission_no, x.reg) && out.push({g:"Missions", ic:"◇", lat:+x.lat, lon:+x.lon, name:`${x.mission_no ? x.mission_no + " " : ""}${x.name}`, sub:`${x.reg || ""}${x.work_date ? " · " + x.work_date.slice(8,10) + "/" + x.work_date.slice(5,7) : ""}`}));
+  try{ (fleet || []).forEach(a => { const l = state[a.reg]?.last; if(l && hit(a.reg)) out.push({g:"Appareils", ic:"🚁", lat:+l.lat, lon:+l.lon, name:a.reg, sub:"Dernière position connue"}); }); }catch(e){}
+  return out.filter(x => isFinite(x.lat) && isFinite(x.lon)).slice(0, 12);
+}
+function opsSearchToggle(p, open){
+  const sr = p.opsx.el.querySelector(".opsx-sr"), btn = p.opsx.el.querySelector('[data-a="search"]');
+  const show = open ?? sr.hidden;
+  sr.hidden = !show; btn.classList.toggle("on", show);
+  if(show){ const i = sr.querySelector("input"); setTimeout(() => { i.focus(); i.select(); }, 30); opsStatic(); opsMissions(); }
+}
+function opsSearchInit(p){
+  const sr = p.opsx.el.querySelector(".opsx-sr"), inp = sr.querySelector("input"), list = sr.querySelector(".opsx-sr-list");
+  let items = [], act = -1, tLoc = null, tWeb = null, seq = 0;
+  L.DomEvent.disableClickPropagation(sr); L.DomEvent.disableScrollPropagation(sr);
+  const paint = (groups, msg) => {
+    items = []; let h = "";
+    groups.forEach(([title, arr]) => { if(!arr.length) return;
+      h += `<div class="opsx-sr-h">${opsE(title)}</div>`;
+      arr.forEach(x => { items.push(x); h += `<button type="button" class="opsx-sr-it" role="option" data-i="${items.length-1}"><i>${x.ic}</i><span><b>${opsE(x.name)}</b><small>${opsE(x.sub || "")}</small></span></button>`; });
+    });
+    if(msg) h += `<div class="opsx-sr-msg">${msg}</div>`;
+    list.innerHTML = h; act = items.length ? 0 : -1; mark();
+  };
+  const mark = () => list.querySelectorAll(".opsx-sr-it").forEach(b => b.classList.toggle("act", +b.dataset.i === act));
+  const run = (web) => {
+    const q = inp.value.trim(), my = ++seq;
+    if(!q){ paint([]); return; }
+    const c = opsParseCoord(q);
+    const coord = c ? [{g:"Coordonnées", ic:"⌖", lat:c.lat, lon:c.lon, name:opsCoordTxt(c.lat, c.lon), sub:opsCoordDD(c.lat, c.lon), coord:true}] : [];
+    const loc = c ? [] : opsLocalHits(q);
+    const byG = g => loc.filter(x => x.g === g);
+    const base = [["Coordonnées", coord], ["Appareils", byG("Appareils")], ["Missions", byG("Missions")], ["Données OPS", byG("OPS")]];
+    if(c || q.length < 3){ paint(base, !c && !loc.length && q.length < 3 ? "Saisissez au moins 3 caractères." : ""); return; }
+    paint(base, web ? "" : "Recherche sur la carte…");
+    clearTimeout(tWeb);
+    tWeb = setTimeout(async () => {
+      const r = await opsGeocode(q, p); if(my !== seq) return;
+      const web = (r || []).map(x => ({...x, g:"Carte", ic:"📍"}));
+      paint(base.concat([["Carte (OpenStreetMap)", web]]),
+        r === null ? "Recherche en ligne indisponible — saisissez des coordonnées ou un lieu OPS." : (!web.length && !loc.length ? "Aucun lieu trouvé." : ""));
+    }, web ? 0 : 650);
+  };
+  inp.addEventListener("input", () => { clearTimeout(tLoc); tLoc = setTimeout(() => run(false), 120); });
+  inp.addEventListener("keydown", e => {
+    if(e.key === "ArrowDown" || e.key === "ArrowUp"){ e.preventDefault(); if(!items.length) return;
+      act = (act + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length; mark();
+      list.querySelector(".opsx-sr-it.act")?.scrollIntoView({block:"nearest"}); }
+    if(e.key === "Enter"){ e.preventDefault(); if(act >= 0 && items[act]) opsGoTo(p, items[act]); else run(true); }
+    if(e.key === "Escape"){ e.stopPropagation(); opsSearchToggle(p, false); }
+  });
+  list.addEventListener("click", e => { const b = e.target.closest(".opsx-sr-it"); if(b) opsGoTo(p, items[+b.dataset.i]); });
+}
+function opsGoTo(p, x){
+  if(!x) return;
+  const m = p.map;
+  if(!p.opsx.found) p.opsx.found = L.layerGroup().addTo(m);
+  const g = p.opsx.found; g.clearLayers();
+  const label = x.coord ? "Point GPS" : x.name;
+  const pop = document.createElement("div"); pop.className = "opsx-found-pop";
+  pop.innerHTML = `<b>${opsE(x.name)}</b>${x.sub && !x.coord ? `<br><small>${opsE(x.sub)}</small>` : ""}
+    <div class="c">${opsCoordTxt(x.lat, x.lon)}<br>${opsCoordDD(x.lat, x.lon)}</div>
+    <div class="bb"><button type="button" data-f="ruler">📏 Mesurer depuis ici</button><button type="button" data-f="copy">Copier</button><button type="button" data-f="clear">Effacer</button></div>`;
+  pop.addEventListener("click", e => {
+    const b = e.target.closest("[data-f]"); if(!b) return;
+    if(b.dataset.f === "ruler"){ m.closePopup(); if(p.opsx.tool !== "ruler") opsToolOn(p, "ruler"); p.opsx.rpts = [{lat:x.lat, lon:x.lon}]; opsDrawRoute(p); }
+    if(b.dataset.f === "copy"){ const t = `${opsCoordTxt(x.lat, x.lon)} (${opsCoordDD(x.lat, x.lon)})`;
+      (navigator.clipboard?.writeText(t) || Promise.reject()).then(() => { b.textContent = "Copié ✓"; }, () => { b.textContent = "Copie impossible"; }); }
+    if(b.dataset.f === "clear"){ g.clearLayers(); }
+  });
+  L.marker([x.lat, x.lon], {pane:"opsxPts", keyboard:false, icon:opsIcon("ofound", `<b>📍</b><span>${opsE(label.length > 34 ? label.slice(0,33) + "…" : label)}</span>`)})
+    .bindPopup(pop, {offset:[0,-24], maxWidth:280}).addTo(g).openPopup();
+  if(p.follow){ p.moved = true; if(p.btn) p.btn.hidden = false; }   // la carte arrête de suivre l'appareil
+  const bb = x.bb;
+  if(bb && bb.length === 4 && Math.abs(bb[1]-bb[0]) > 0.02) m.fitBounds([[bb[0], bb[2]], [bb[1], bb[3]]], {maxZoom:14});
+  else m.setView([x.lat, x.lon], Math.max(m.getZoom(), x.coord ? 13 : 12));
+  opsSearchToggle(p, false);
+}
+
 /* ---------- construction de la barre pour une carte ---------- */
 function opsTools(p){
   const m = p.map;
@@ -862,9 +1063,8 @@ function opsTools(p){
   el.innerHTML = `
     <div class="opsx-top">
       <button type="button" data-a="labels" title="Afficher les libellés des boutons">${ic('<path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>')}</button>
-      <button type="button" data-tool="route" title="Tracer une route (distance, cap, ETE)">${ic('<path d="M5 19L19 5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>')}</button>
       <button type="button" data-tool="ruler" title="Mesurer entre deux points">${ic('<path d="M3 17L17 3l4 4L7 21z" fill="#E0B23A" stroke="#7a5a10" stroke-width="1"/><path d="M8 12l2 2M11 9l2 2M14 6l2 2" stroke="#7a5a10" stroke-width="1.4"/>')}</button>
-      <button type="button" data-a="euro" title="Afficher le coût estimé de la route">€</button>
+      <button type="button" data-a="search" title="Rechercher un lieu (nom, LZ/DZ, base, mission, immatriculation ou coordonnées GPS)">${ic('<circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>')}</button>
       <select class="opsx-mis" aria-label="Mission"><option value="">Mission…</option></select>
     </div>
     <div class="opsx-col">
@@ -872,6 +1072,10 @@ function opsTools(p){
       <button type="button" data-a="flights" title="Appareils en vol : appuyer pour passer de l'un à l'autre">${ic('<path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="currentColor"/>')}<span>0</span><em>Appareils en vol</em></button>
     </div>
     <div class="opsx-box" hidden></div>
+    <div class="opsx-sr" hidden>
+      <div class="opsx-sr-in"><input type="search" enterkeyhint="search" autocomplete="off" spellcheck="false" placeholder="Lieu, LZ/DZ, base, mission, immat. ou 45°40'12&quot;N 6°23'24&quot;E" aria-label="Rechercher un lieu"><button type="button" data-a="srclose" title="Fermer la recherche">✕</button></div>
+      <div class="opsx-sr-list" role="listbox"></div>
+    </div>
     <div class="opsx-bot">
       <button type="button" data-a="zin" title="Zoom avant">+</button>
       <button type="button" data-a="zout" title="Zoom arrière">−</button>
@@ -879,7 +1083,7 @@ function opsTools(p){
     </div>`;
   p.el.appendChild(el);
   L.DomEvent.disableClickPropagation(el); L.DomEvent.disableScrollPropagation(el);
-  p.opsx = { el, g:{}, seq:0, tool:null, wpts:[], rpts:[], euro:false, idx:0,
+  p.opsx = { el, g:{}, seq:0, tool:null, wpts:[], rpts:[], idx:0, sr:null,
              box:el.querySelector(".opsx-box"), msel:el.querySelector(".opsx-mis"),
              route:L.layerGroup().addTo(m), mis:L.layerGroup().addTo(m) };
   OPSX.btns.forEach(b => p.opsx.g[b.k] = L.layerGroup().addTo(m));
@@ -895,10 +1099,11 @@ function opsTools(p){
     const a = e.target.closest("[data-a]"); if(!a) return;
     const act = a.dataset.a;
     if(act==="labels"){ el.classList.toggle("labels"); a.classList.toggle("on"); }
-    if(act==="euro"){ p.opsx.euro = !p.opsx.euro; a.classList.toggle("on", p.opsx.euro); opsDrawRoute(p); }
+    if(act==="search"){ opsSearchToggle(p); }
+    if(act==="srclose"){ opsSearchToggle(p, false); }
     if(act==="zin") m.zoomIn(); if(act==="zout") m.zoomOut();
     if(act==="full"){ const d=document; if(d.fullscreenElement) d.exitFullscreen(); else (p.el.requestFullscreen||p.el.webkitRequestFullscreen||(()=>{})).call(p.el); }
-    if(act==="undo"){ const arr = p.opsx.tool==="ruler" ? p.opsx.rpts : p.opsx.wpts; arr.pop(); opsDrawRoute(p); }
+    if(act==="undo"){ p.opsx.rpts.pop(); opsDrawRoute(p); }
     if(act==="clear"){ p.opsx.wpts = []; p.opsx.rpts = []; opsToolOff(p); opsDrawRoute(p); }
     if(act==="flights"){
       const live = opsLive(); if(!live.length){ a.classList.add("shake"); setTimeout(()=>a.classList.remove("shake"),500); return; }
@@ -917,6 +1122,7 @@ function opsTools(p){
     opsDrawRoute(p);
   });
   document.addEventListener("keydown", e => { if(e.key==="Escape" && p.opsx.tool) opsToolOff(p); });
+  opsSearchInit(p);
   document.addEventListener("fullscreenchange", () => setTimeout(() => m.invalidateSize(), 150));
   let deb = null;
   m.on("moveend zoomend", () => { clearTimeout(deb); deb = setTimeout(() => opsRefresh(p), 500); opsMark(p); });
