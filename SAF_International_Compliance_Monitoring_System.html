@@ -2575,7 +2575,6 @@ function safExportPDF() {
 <button class="tab" onclick="showMainTab('cmsx_registre',this)"><span class="cms-nav-icon">📋</span><span class="cms-nav-text"><span class="cms-nav-code">APP17-OMM</span><span class="cms-nav-title">Plan d’actions correctives / Corrective Action Plan</span></span></button>
 <button class="tab" onclick="showMainTab('cmsx_sous_traitants',this)"><span class="cms-nav-icon">🔗</span><span class="cms-nav-text"><span class="cms-nav-code">APP08-OMM</span><span class="cms-nav-title">Liste des sous-traitants / List of Subcontractors</span></span></button>
 <button class="tab" onclick="showMainTab('cmsx_auditeurs',this)"><span class="cms-nav-icon">👤</span><span class="cms-nav-text"><span class="cms-nav-code">APP09-OMM</span><span class="cms-nav-title">Auditeurs / Auditors</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_trainers',this)"><span class="cms-nav-icon">🎓</span><span class="cms-nav-text"><span class="cms-nav-code">CMS</span><span class="cms-nav-title">Liste des formateurs / List of Trainers</span></span></button>
 </div>
 <div class="cms-nav-section">
 <div class="cms-nav-label">Modules CMS / CMS Modules</div>
@@ -18158,7 +18157,7 @@ window.showMainTab = function(id, btn){
   if(id==='cmsx_settings'){ try{cmsxRenderTargets();}catch(e){} }
   if(id==='cmsx_sous_traitants'){ try{safSTRender();}catch(e){} }
   if(id==='cmsx_auditeurs'){ try{safAudRender();}catch(e){} }
-  if(id==='cmsx_trainers'){ try{safTrnRender();}catch(e){} }
+  
   if(id==='cmsx_rapport_annuel'){ try{safRapportRender();}catch(e){} }
   // 5) Remonter en haut pour que le panneau soit visible
   try{ window.scrollTo(0,0); }catch(e){}
@@ -18320,80 +18319,6 @@ else { cmsxInit(); }
 <div class="cmsx-toolbar" style="margin-top:14px;margin-bottom:0;">
 <button class="cmsx-btn primary" onclick="safAudSave()">💾 Enregistrer / Save</button>
 <button class="cmsx-btn" onclick="safAudCloseModal()">Annuler / Cancel</button>
-</div>
-</div>
-</div>
-<!-- ══════════════════════════════════════════════════════════
-     LIST OF TRAINERS (registre CMS)
-══════════════════════════════════════════════════════════ -->
-<section class="panel" id="cmsx_trainers">
-<div class="cmsx-panel">
-<div class="cmsx-h2">🎓 List of Trainers</div>
-<div style="font-family:var(--font-mono,monospace);font-size:11px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase;margin:2px 0 8px;">CMS · REGISTRE / REGISTER</div>
-<div class="cmsx-sub">Register of internal and external trainers authorized to deliver training within the SAF International training programme. Compliant with ORO.GEN.200(a)(4) — competency, qualification and currency of instructors.</div>
-<div class="cmsx-toolbar">
-<button class="cmsx-btn green" onclick="safTrnOpen()">＋ Ajouter un formateur / Add a trainer</button>
-<button class="cmsx-btn" onclick="safTrnExportCSV()">⬇ Exporter en CSV / Export CSV</button>
-<button class="cmsx-btn" onclick="safTrnPrint()">🖨 Imprimer / Print</button>
-</div>
-<div class="cmsx-note">⚠ La qualification du formateur doit être maintenue à jour. Un formateur ne doit pas dispenser une formation dans un domaine pour lequel sa propre qualification a expiré. Le maintien périodique de la qualification doit être documenté. / Trainer qualification must be kept current. A trainer must not deliver training in a domain where their own qualification has lapsed. Recurrent qualification must be documented.</div>
-<div style="overflow-x:auto;">
-<table class="cmsx-table" id="saf-trn-table">
-<thead><tr>
-<th>Formateur / Trainer</th><th>Fonction principale / Main function</th><th>Type de formateur / Trainer type</th>
-<th>Qualification / certificat / Qualification / certificate</th><th>Date de qualification / Qual. date</th><th>Dernière formation périodique / Last recurrent training</th><th>Prochaine formation périodique / Next recurrent training</th>
-<th>Domaines de formation / Training domains</th><th>Nombre de sessions / No. of sessions</th><th>Statut / Status</th><th></th>
-</tr></thead>
-<tbody id="saf-trn-body"></tbody>
-</table>
-</div>
-</div>
-</section>
-<!-- Modal trainer -->
-<div class="cmsx-modal-bg" id="saf-trn-modal">
-<div class="cmsx-modal" style="max-width:700px;">
-<div class="cmsx-modal-head"><h3>Fiche formateur / Trainer record</h3><button class="cmsx-x" onclick="safTrnCloseModal()">×</button></div>
-<input id="saf-trn-id" type="hidden"/>
-<div class="cmsx-grid2">
-<div class="cmsx-field"><label>Nom et prénom / Last name &amp; First name</label><input id="saf-trn-name" placeholder="ex. : Dupont Martin / e.g.: Dupont Martin"/></div>
-<div class="cmsx-field"><label>Fonction principale / Main function</label><input id="saf-trn-role" placeholder="ex. : responsable sécurité, TRI, technicien / e.g.: Safety Manager, TRI, Technician"/></div>
-</div>
-<div class="cmsx-grid2">
-<div class="cmsx-field"><label>Type de formateur / Trainer type</label>
-<select id="saf-trn-type" style="width:100%;background:var(--navy-deep,#071220);border:1px solid rgba(255,255,255,.12);color:#e8f0fe;padding:8px 10px;border-radius:6px;font-family:inherit;font-size:13px;">
-<option value="internal">Formateur interne / Internal trainer</option>
-<option value="external">Formateur externe / prestataire / External trainer / provider</option>
-<option value="authority">Autorité / organisme agréé / Authority / approved org.</option>
-</select>
-</div>
-<div class="cmsx-field"><label>Qualification / certificat / Qualification / certificate</label><input id="saf-trn-cert" placeholder="ex. : TRI(H), facilitateur CRM ENAC, instructeur SMS / e.g.: TRI(H), CRM Facilitator ENAC, SMS Instructor"/></div>
-</div>
-<div class="cmsx-grid2">
-<div class="cmsx-field"><label>Date de qualification / Qualification date</label><input id="saf-trn-init-date" type="date"/></div>
-<div class="cmsx-field"><label>Date de la dernière formation périodique / Last recurrent training date</label><input id="saf-trn-recycle-date" type="date"/></div>
-</div>
-<div class="cmsx-grid2">
-<div class="cmsx-field"><label>Périodicité du recyclage (mois) / Recurrent training frequency (months)</label><input id="saf-trn-period" max="60" min="12" placeholder="24" type="number"/></div>
-<div class="cmsx-field"><label>Nombre de sessions de formation dispensées / No. of training sessions delivered</label><input id="saf-trn-count" min="0" placeholder="0" type="number"/></div>
-</div>
-<div class="cmsx-field"><label>Domaines de formation autorisés / Authorized training domains</label>
-<div id="saf-trn-domains-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="SMS / Safety" type="checkbox"/> SMS / Culture de sécurité / Safety culture</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="CRM" type="checkbox"/> CRM / Facteurs humains / Human factors</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="Initial type rating" type="checkbox"/> Qualification de type initiale (AS 332) / Initial type rating (AS 332)</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="Recurrent training" type="checkbox"/> Formation périodique / contrôle de compétence / Recurrent / Proficiency check</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="HESLO" type="checkbox"/> Opérations HESLO / HESLO operations</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="MCF" type="checkbox"/> Montagne / zone exiguë (MCF) / Mountain / confined area (MCF)</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="Emergency procedures" type="checkbox"/> Procédures d’urgence / Emergency procedures</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="Ground ops" type="checkbox"/> Opérations au sol / marchandises dangereuses / Ground ops / Dangerous goods</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="Airworthiness" type="checkbox"/> Navigabilité / Part-M / Airworthiness / Part-M</label>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c8d8f0;"><input data-domain="Compliance / CMS" type="checkbox"/> Surveillance de la conformité / Compliance monitoring</label>
-</div>
-</div>
-<div class="cmsx-field"><label>Remarques / historique / Remarks / history</label><textarea id="saf-trn-notes" placeholder="Qualifications complémentaires, limitations, observations… / Additional qualifications, limitations, observations..."></textarea></div>
-<div class="cmsx-toolbar" style="margin-top:14px;margin-bottom:0;">
-<button class="cmsx-btn primary" onclick="safTrnSave()">💾 Enregistrer / Save</button>
-<button class="cmsx-btn" onclick="safTrnCloseModal()">Annuler / Cancel</button>
 </div>
 </div>
 </div>
@@ -20010,7 +19935,7 @@ window.safSmsConfirmImport=safSmsConfirmImport;
     });
     // 3) Findings / KPI / missions / targets (module cmsx)
     ['cmsxRenderFindings','cmsxRenderMissions','cmsxRenderTargets','cmsxRenderAuth',
-     'safTrnRender','safSTRender','g_renderSavedList']
+     'safAudRender','safSTRender','g_renderSavedList']
       .forEach(function(fn){ if(typeof window[fn]==='function'){ try{ window[fn](); }catch(e){} } });
   }
 
@@ -24385,7 +24310,7 @@ function init(){Object.keys(sets).forEach(render)}if(document.readyState==='load
 <script id="saf-omm-embedded-registry">
 (function(){
  var section=new URLSearchParams(location.search).get('saf_omm_registry');
- var allowed={subcontractors:'cmsx_sous_traitants',auditors:'cmsx_auditeurs',trainers:'cmsx_trainers'};
+ var allowed={subcontractors:'cmsx_sous_traitants',auditors:'cmsx_auditeurs'};
  if(!Object.prototype.hasOwnProperty.call(allowed,section))return;
  document.documentElement.classList.add('saf-embedded-registry');
  var st=document.createElement('style');
