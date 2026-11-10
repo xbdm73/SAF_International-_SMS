@@ -2569,31 +2569,32 @@ function safExportPDF() {
 <!-- ── END SAF INTER-TOOL NAV ── -->
 <button id="cms-side-toggle" type="button" aria-expanded="true">‹</button>
 <div class="cms-layout">
+<style id="cms-bilingual-2026">nav.cms-sidebar .cms-nav-en,nav.cms-sidebar .cms-nav-label-en{display:block;font-size:10px;font-weight:400;font-style:italic;color:#a5bacd;line-height:1.35;letter-spacing:0;text-transform:none;margin-top:2px}nav.cms-sidebar .tab:hover .cms-nav-en,nav.cms-sidebar .tab.active .cms-nav-en{color:#d5e5f3}#aoc24 .aoc-en{display:block;font-size:10.5px;font-weight:400;font-style:italic;color:#a9bfd4;line-height:1.4;margin-top:3px}#aoc24 th .aoc-en,#aoc24 button .aoc-en{font-size:10px}#aoc24 .aoc-domain-en{display:block;font-size:10.5px;font-style:italic;font-weight:400;color:#adc4db;margin-top:3px}</style>
 <nav class="cms-sidebar">
 <div class="cms-nav-section">
-<div class="cms-nav-label">Navigation / Navigation</div>
-<button class="tab active" onclick="showMainTab('dashboard',this)"><span class="cms-nav-icon">🏠</span><span class="cms-nav-text"><span class="cms-nav-title">Tableau de bord / Dashboard</span></span></button>
-<button class="tab" onclick="showMainTab('audit_plan',this)"><span class="cms-nav-icon">📝</span><span class="cms-nav-text"><span class="cms-nav-code">APP15-OMM</span><span class="cms-nav-title">Plan d’audit / Audit plan</span></span></button>
-<button class="tab" onclick="showMainTab('kpispi',this)"><span class="cms-nav-icon">📊</span><span class="cms-nav-text"><span class="cms-nav-code">APP16-OMM</span><span class="cms-nav-title">Indicateurs de conformité / Compliance indicators</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_registre',this)"><span class="cms-nav-icon">📋</span><span class="cms-nav-text"><span class="cms-nav-code">APP17-OMM</span><span class="cms-nav-title">Plan d’actions correctives / Corrective Action Plan</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_sous_traitants',this)"><span class="cms-nav-icon">🔗</span><span class="cms-nav-text"><span class="cms-nav-code">APP08-OMM</span><span class="cms-nav-title">Liste des sous-traitants / List of Subcontractors</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_auditeurs',this)"><span class="cms-nav-icon">👤</span><span class="cms-nav-text"><span class="cms-nav-code">APP09-OMM</span><span class="cms-nav-title">Auditeurs / Auditors</span></span></button>
+<div class="cms-nav-label">Navigation<span class="cms-nav-label-en">Navigation</span></div>
+<button class="tab active" onclick="showMainTab('dashboard',this)"><span class="cms-nav-icon">🏠</span><span class="cms-nav-text"><span class="cms-nav-title">Tableau de bord<span class="cms-nav-en">Dashboard</span></span></span></button>
+<button class="tab" onclick="showMainTab('audit_plan',this)"><span class="cms-nav-icon">📝</span><span class="cms-nav-text"><span class="cms-nav-code">APP15-OMM</span><span class="cms-nav-title">Plan d’audit<span class="cms-nav-en">Audit plan</span></span></span></button>
+<button class="tab" onclick="showMainTab('kpispi',this)"><span class="cms-nav-icon">📊</span><span class="cms-nav-text"><span class="cms-nav-code">APP16-OMM</span><span class="cms-nav-title">Indicateurs de conformité<span class="cms-nav-en">Compliance indicators</span></span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_registre',this)"><span class="cms-nav-icon">📋</span><span class="cms-nav-text"><span class="cms-nav-code">APP17-OMM</span><span class="cms-nav-title">Plan d’actions correctives<span class="cms-nav-en">Corrective action plan</span></span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_sous_traitants',this)"><span class="cms-nav-icon">🔗</span><span class="cms-nav-text"><span class="cms-nav-code">APP08-OMM</span><span class="cms-nav-title">Liste des sous-traitants<span class="cms-nav-en">List of subcontractors</span></span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_auditeurs',this)"><span class="cms-nav-icon">👤</span><span class="cms-nav-text"><span class="cms-nav-code">APP09-OMM</span><span class="cms-nav-title">Auditeurs<span class="cms-nav-en">Auditors</span></span></span></button>
 </div>
 <div class="cms-nav-section">
-<div class="cms-nav-label">Modules CMS / CMS Modules</div>
-<button class="tab" onclick="showMainTab('srb_full',this)"><span class="cms-nav-icon">☑</span><span class="cms-nav-text"><span class="cms-nav-title">Liste de contrôle SRB / SRB Checklist</span></span></button>
-<button class="tab" onclick="showMainTab('srb',this)"><span class="cms-nav-icon">🛡</span><span class="cms-nav-text"><span class="cms-nav-title">Revue SRB / SRB</span></span></button>
-<button class="tab" onclick="showMainTab('cms_dashboard',this)"><span class="cms-nav-icon">📈</span><span class="cms-nav-text"><span class="cms-nav-title">Tableau de bord CMS / CMS Dashboard</span></span></button>
+<div class="cms-nav-label">Modules CMS<span class="cms-nav-label-en">CMS Modules</span></div>
+<button class="tab" onclick="showMainTab('srb_full',this)"><span class="cms-nav-icon">☑</span><span class="cms-nav-text"><span class="cms-nav-title">Liste de contrôle SRB<span class="cms-nav-en">SRB checklist</span></span></span></button>
+<button class="tab" onclick="showMainTab('srb',this)"><span class="cms-nav-icon">🛡</span><span class="cms-nav-text"><span class="cms-nav-title">Revue SRB<span class="cms-nav-en">Safety Review Board</span></span></span></button>
+<button class="tab" onclick="showMainTab('cms_dashboard',this)"><span class="cms-nav-icon">📈</span><span class="cms-nav-text"><span class="cms-nav-title">Tableau de bord CMS<span class="cms-nav-en">CMS dashboard</span></span></span></button>
 </div>
 <div class="cms-nav-section">
-<div class="cms-nav-label">Outils / Tools</div>
-<button class="tab" onclick="showMainTab('grille_easa',this)"><span class="cms-nav-icon">🔍</span><span class="cms-nav-text"><span class="cms-nav-title">Grille d’audit EASA / EASA Audit Grid</span></span></button>
-<button class="tab" onclick="showMainTab('compliance_matrix',this)"><span class="cms-nav-icon">◫</span><span class="cms-nav-text"><span class="cms-nav-title">Matrice de conformité / Compliance matrix <span id="cmx-count" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#00d4ff;">0</span></span></span></button>
-<button class="tab" onclick="showMainTab('regulatory_watch',this);rwRender()"><span class="cms-nav-icon">↻</span><span class="cms-nav-text"><span class="cms-nav-title">Veille réglementaire / Regulatory watch</span></span></button>
-<button class="tab" onclick="showMainTab('sms_bridge',this);smsBridgeLoad()"><span class="cms-nav-icon">🛟</span><span class="cms-nav-text"><span class="cms-nav-title">Sécurité (SMS) / Safety (SMS)</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_audits',this)"><span class="cms-nav-icon">📁</span><span class="cms-nav-text"><span class="cms-nav-title">Audits et autorité / Audits &amp; Authority</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_rapport_annuel',this)"><span class="cms-nav-icon">📊</span><span class="cms-nav-text"><span class="cms-nav-title">Rapport annuel / Annual Report</span></span></button>
-<button class="tab" onclick="showMainTab('cmsx_settings',this)"><span class="cms-nav-icon">⚙</span><span class="cms-nav-text"><span class="cms-nav-title">Paramètres / Settings</span></span></button>
+<div class="cms-nav-label">Outils<span class="cms-nav-label-en">Tools</span></div>
+<button class="tab" onclick="showMainTab('grille_easa',this)"><span class="cms-nav-icon">🔍</span><span class="cms-nav-text"><span class="cms-nav-title">Grille d’audit EASA<span class="cms-nav-en">EASA audit grid</span></span></span></button>
+<button class="tab" onclick="showMainTab('compliance_matrix',this)"><span class="cms-nav-icon">◫</span><span class="cms-nav-text"><span class="cms-nav-title">Matrice de conformité <span class="cms-nav-en">Compliance matrix</span> <span id="cmx-count" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#00d4ff;">0</span></span></span></button>
+<button class="tab" onclick="showMainTab('regulatory_watch',this);rwRender()"><span class="cms-nav-icon">↻</span><span class="cms-nav-text"><span class="cms-nav-title">Veille réglementaire<span class="cms-nav-en">Regulatory monitoring</span></span></span></button>
+<button class="tab" onclick="showMainTab('sms_bridge',this);smsBridgeLoad()"><span class="cms-nav-icon">🛟</span><span class="cms-nav-text"><span class="cms-nav-title">Sécurité (SMS)<span class="cms-nav-en">Safety (SMS)</span></span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_audits',this)"><span class="cms-nav-icon">📁</span><span class="cms-nav-text"><span class="cms-nav-title">Audits et autorité<span class="cms-nav-en">Audits & authority</span></span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_rapport_annuel',this)"><span class="cms-nav-icon">📊</span><span class="cms-nav-text"><span class="cms-nav-title">Rapport annuel<span class="cms-nav-en">Annual report</span></span></span></button>
+<button class="tab" onclick="showMainTab('cmsx_settings',this)"><span class="cms-nav-icon">⚙</span><span class="cms-nav-text"><span class="cms-nav-title">Paramètres<span class="cms-nav-en">Settings</span></span></span></button>
 </div>
 </nav>
 <main>
@@ -16549,16 +16550,16 @@ function g_toggleText(el){
 <style>
 #aoc24{padding:18px;color:#dceaf8;background:#0c1727;font:13px Segoe UI,Arial,sans-serif}#aoc24 *{box-sizing:border-box}#aoc24 h2{font-size:24px;color:#e5f3ff;margin:0 0 7px}#aoc24 p{line-height:1.55}#aoc24 .hint{color:#b3c9df}#aoc24 .card{background:#13263b;border:1px solid #35506b;border-radius:11px;padding:12px;margin:13px 0}#aoc24 .warn{border-left:4px solid #e0ad5c;background:#2c271d;padding:12px;margin:13px 0}#aoc24 .metrics{display:flex;gap:8px;flex-wrap:wrap}#aoc24 .metric{background:#17304a;border-radius:8px;padding:10px 14px}#aoc24 .metric b{font-size:17px}#aoc24 .months{display:grid;grid-template-columns:repeat(12,minmax(65px,1fr));gap:5px}#aoc24 .month{border:1px solid #37536b;border-top:3px solid #e0ae5a;border-radius:5px;padding:7px 3px;min-height:83px;text-align:center;background:#192d42}#aoc24 .month.o{border-top-color:#53b7ec}#aoc24 .month b{display:block;margin-bottom:5px}#aoc24 .month small{display:block;color:#b1cce1;line-height:1.5}#aoc24 .tools{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}#aoc24 input,#aoc24 select,#aoc24 button{background:#1a3855;color:white;border:1px solid #4d7192;border-radius:6px;padding:7px;font:inherit}#aoc24 button{cursor:pointer}#aoc24 .scroll{overflow:auto;max-height:720px}#aoc24 .aoc-detail-row td{padding:10px 14px 14px;background:#172b41;border-bottom:2px solid #4d7192}#aoc24 .aoc-detail-row .more{margin:0;white-space:normal;overflow-wrap:anywhere}#aoc24 .aoc-detail-row p{margin:7px 0}#aoc24 table{border-collapse:collapse;width:100%;font-size:12px}#aoc24 th,#aoc24 td{border-bottom:1px solid #314b63;padding:8px;text-align:left;vertical-align:top}#aoc24 th{background:#1a344e;position:sticky;top:0}#aoc24 .ref{font:11px/1.5 Consolas,monospace}#aoc24 .more{background:#172f45;border:1px solid #487796;border-radius:8px;padding:13px;margin:12px 0;line-height:1.55}#aoc24 a{color:#7bd0ff}@media(max-width:1100px){#aoc24 .months{grid-template-columns:repeat(6,minmax(70px,1fr))}}@media print{#aoc24{background:white;color:black}#aoc24 .tools{display:none}}
 </style>
-<h2>APP15-OMM — AOC Audit Plan / Programme d'audit · 24 mois</h2>
+<h2>APP15-OMM — Programme d’audit AOC · 24 mois<span class="aoc-en">AOC audit programme · 24 months</span></h2>
 <div class="hint">SAF International | AS332 C1 / C1e (H215) | CAT · SPO / HESLO / MCF · NCC | Autorité FOCA | Référence 2027–2028</div>
-<div class="metrics"><div class="metric"><b>24 mois</b><br>Cycle complet</div><div class="metric"><b>RCA / OCA</b><br>Documents / opérations</div><div class="metric"><b>33 audits</b><br>Fiches traçables</div><div class="metric"><b>Avril–Novembre</b><br>Audits opérationnels</div></div>
+<div class="metrics"><div class="metric"><b>24 mois</b><br>Cycle complet<span class="aoc-en">Full 24-month cycle</span></div><div class="metric"><b>RCA / OCA</b><br>Documents / opérations<span class="aoc-en">Documents / operations</span></div><div class="metric"><b>33 audits</b><br>Fiches traçables<span class="aoc-en">Traceable audit records</span></div><div class="metric"><b>Avril–Novembre</b><br>Audits opérationnels<span class="aoc-en">April–November · operational audits</span></div></div>
 <div class="warn"><b>Certification AOC initiale :</b> le calendrier ci-dessous organise le cycle de surveillance, mais ne reporte pas les démonstrations de conformité préalables à la délivrance de l'AOC. <b>État de couverture :</b> les références indiquées cartographient les familles de règles. Elles ne constituent pas une preuve d'exhaustivité au niveau de chaque IR, sous-paragraphe et AMC. Cette preuve dépend de la matrice de conformité détaillée et de son contrôle contre les règlements à jour.</div>
-<div class="card"><b>Méthode de contrôle</b><p><b>RCA — Regulatory Compliance Audit :</b> réglementation IR + AMC retenus / AltMoC, approbations, manuel OMM, OM-A à E et SOP. <b>OCA — Operational Compliance Audit :</b> contrôle sur dossiers réels, équipages, aéronefs, observations ou démonstrations que les pratiques respectent les documents SAF et les règles applicables. Les résultats sont distingués dans chaque compte rendu; les constats sont traités dans APP17-OMM (CAP). Les barrières SMS sont aussi vérifiées pour leur efficacité.</p></div>
-<div class="card"><b>Année 1 — 2027</b><div class="months" id="aoccal1" style="margin-top:10px"></div></div>
-<div class="card"><b>Année 2 — 2028</b><div class="months" id="aoccal2" style="margin-top:10px"></div></div>
-<div class="card"><b>Liste des audits — calendrier et contrôles</b>
-<div class="tools"><select id="aocYear"><option value="all">Les deux années</option><option value="1">2027</option><option value="2">2028</option></select><input id="aocSearch" placeholder="Rechercher audit ou IR…"><button type="button" id="aocCSV">Exporter CSV</button><button type="button" onclick="window.print()">Imprimer le plan</button></div>
-<div class="scroll"><table><thead><tr><th>ID</th><th>Domaine</th><th>RCA</th><th>OCA</th><th>Contrôle</th></tr></thead><tbody id="aocRows"></tbody></table></div>
+<div class="card"><b>Méthode de contrôle<span class="aoc-en">Audit methodology</span></b><p><b>RCA — Regulatory Compliance Audit :</b> réglementation IR + AMC retenus / AltMoC, approbations, manuel OMM, OM-A à E et SOP. <b>OCA — Operational Compliance Audit :</b> contrôle sur dossiers réels, équipages, aéronefs, observations ou démonstrations que les pratiques respectent les documents SAF et les règles applicables. Les résultats sont distingués dans chaque compte rendu; les constats sont traités dans APP17-OMM (CAP). Les barrières SMS sont aussi vérifiées pour leur efficacité.</p></div>
+<div class="card"><b>Année 1 — 2027<span class="aoc-en">Year 1 — 2027</span></b><div class="months" id="aoccal1" style="margin-top:10px"></div></div>
+<div class="card"><b>Année 2 — 2028<span class="aoc-en">Year 2 — 2028</span></b><div class="months" id="aoccal2" style="margin-top:10px"></div></div>
+<div class="card"><b>Liste des audits — calendrier et contrôles<span class="aoc-en">Audit list — schedule and checks</span></b>
+<div class="tools"><select id="aocYear"><option value="all">Les deux années / Both years</option><option value="1">2027</option><option value="2">2028</option></select><input id="aocSearch" placeholder="Rechercher audit ou IR…"><button type="button" id="aocCSV">Exporter CSV<span class="aoc-en">Export CSV</span></button><button type="button" onclick="window.print()">Imprimer le plan<span class="aoc-en">Print plan</span></button></div>
+<div class="scroll"><table><thead><tr><th>ID</th><th>Domaine<span class="aoc-en">Area</span></th><th>RCA</th><th>OCA</th><th>Contrôle<span class="aoc-en">Actions</span></th></tr></thead><tbody id="aocRows"></tbody></table></div>
 </div>
 <div class="card"><b>Contrôle d'exhaustivité — points de vigilance</b><p>La checklist article par article doit couvrir ORO.GEN, ORO.AOC, ORO.MLR, ORO.FC et ORO.CC/SEC selon applicabilité; CAT.GEN.MPA, CAT.OP.MPA, CAT.POL.H, CAT.IDE.H; SPO.GEN, SPO.OP, SPO.POL, SPO.IDE.H, SPO.SPEC.HESLO, SPO.SPEC.MCF; NCC.GEN, NCC.OP, NCC.POL, NCC.IDE.H; SPA.DG/EFB; Part-FCL/MED, occurrences 376/2014, SERA et dispositions nationales. Chaque sous-paragraphe applicable doit avoir un responsable, un manuel, un audit RCA/OCA, une preuve et un résultat. Vérifier l'applicabilité des exigences temps de service pour CAT hélicoptères et de Part-IS. Pas d'audit CAMO: seulement interfaces OPS/One CAMO SAF Hélicoptères. Part-IS gérée par SAF Aerogroup: contrôle des interfaces sans audit du système du groupe.</p><p>Références officielles : <a href="https://www.easa.europa.eu/en/document-library/easy-access-rules/easy-access-rules-air-operations" target="_blank" rel="noopener">EASA Air OPS (Rév. 24, mars 2026)</a> ; <a href="https://www.easa.europa.eu/en/regulations/air-operations" target="_blank" rel="noopener">modifications réglementaires postérieures</a> ; <a href="https://www.easa.europa.eu/en/document-library/general-publications/management-system-assessment-tool" target="_blank" rel="noopener">EASA MSAT</a>.</p></div>
 </div>
@@ -16569,11 +16570,11 @@ const label=n=>M[(n-1)%12]+' '+(n>12?'2028':'2027');
 for(let y=1;y<=2;y++){let h='';for(let m=1;m<=12;m++){let n=(y-1)*12+m,r=A.filter(x=>x[5]===n).map(x=>x[0]).join(', ')||'—',o=A.filter(x=>x[6]===n).map(x=>x[0]).join(', ')||'—';h+='<div class="month '+(m>=4&&m<=11?'o':'')+'"><b>'+M[m-1]+'</b><small>RCA '+r+'</small><small>OCA '+o+'</small></div>'}document.getElementById('aoccal'+y).innerHTML=h}
 let aocExpandedId=null;
 function aocDetailMarkup(x){
- return '<div class="more"><b>Audit '+x[0]+' — '+esc(x[1])+'</b>'+
+ return '<div class="more"><b>Audit '+x[0]+' — '+esc(x[1])+'</b>''+
  '<p><b>RCA :</b> '+label(x[5])+' · <b>OCA :</b> '+label(x[6])+'</p>'+
- '<p><b>Articles IR à vérifier (grille EASA CMS) :</b> '+esc(x[2])+'</p>'+
- '<p><b>Documentation :</b> '+esc(x[3])+'</p>'+
- '<p><b>Preuves opérationnelles :</b> '+esc(x[4])+'</p>'+
+ '<p><b>Articles IR à vérifier (grille EASA CMS) :</b><span class="aoc-en">IR requirements to verify (CMS EASA audit grid)</span> '+esc(x[2])+'</p>'+
+ '<p><b>Documentation :</b><span class="aoc-en">Documentation to review</span> '+esc(x[3])+'</p>'+
+ '<p><b>Preuves opérationnelles :</b><span class="aoc-en">Operational evidence</span> '+esc(x[4])+'</p>'+
  '<p><small>Articles IR identifiés par numéro dans la base EASA du CMS. Vérifier l’applicabilité, les sous-paragraphes et AMC associés avant chaque audit.</small></p></div>';
 }
 function render(){
@@ -16583,8 +16584,8 @@ function render(){
  document.getElementById('aocRows').innerHTML=visible.map(x=>{
    const opened=aocExpandedId===x[0];
    return '<tr><td>'+x[0]+'</td><td>'+esc(x[1])+'</td><td>'+label(x[5])+'</td><td>'+label(x[6])+'</td>'+
-   '<td><button type="button" data-id="'+x[0]+'" aria-expanded="'+opened+'" aria-controls="aoc-detail-'+x[0]+'">'+(opened?'Fermer':'Détails')+'</button> '+
-   '<button type="button" data-grid="'+x[0]+'">Créer grille</button></td></tr>'+
+   '<td><button type="button" data-id="'+x[0]+'" aria-expanded="'+opened+'" aria-controls="aoc-detail-'+x[0]+'">'+(opened?'Fermer<span class="aoc-en">Close</span>':'Détails<span class="aoc-en">Details</span>')+'</button> '+
+   '<button type="button" data-grid="'+x[0]+'">Créer grille<span class="aoc-en">Create audit grid</span></button></td></tr>'+
    (opened?'<tr id="aoc-detail-'+x[0]+'" class="aoc-detail-row"><td colspan="5">'+aocDetailMarkup(x)+'</td></tr>':'');
  }).join('');
 }
