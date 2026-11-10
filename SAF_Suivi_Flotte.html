@@ -302,13 +302,18 @@ footer .err{color:var(--lost)}
 .opsx-box table{border-collapse:collapse;width:100%;margin:5px 0;font-variant-numeric:tabular-nums}
 .opsx-box th,.opsx-box td{text-align:right;padding:1px 6px;border-bottom:1px solid var(--line)} .opsx-box th:first-child,.opsx-box td:first-child{text-align:left}
 .opsx-bh{display:flex;flex-direction:column;gap:2px} .opsx-bh span{color:var(--signal);font-weight:600}
-.opsx-sr{pointer-events:auto;position:absolute;top:92px;left:52px;width:min(360px,calc(100% - 64px));background:var(--panel);color:var(--ink);
-  border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 22px rgba(0,0,0,.45);overflow:hidden;font-family:var(--font)}
-.opsx-sr-in{display:flex;align-items:center;gap:6px;padding:6px}
-.opsx-sr-in input{flex:1;min-width:0;height:36px;padding:0 10px;border-radius:7px;border:1px solid var(--line);background:#fff;color:#111;font:500 15px/1 var(--font)}
-.opsx-sr-in input:focus{outline:2px solid #1E8BD6;outline-offset:0}
-.opsx .opsx-sr-in button{width:32px;height:32px;font-size:14px;box-shadow:none}
+.opsx-sr{pointer-events:auto;position:relative;flex:0 1 auto;width:clamp(150px,28vw,300px);font-family:var(--font)}
+.opsx-sr-in{display:flex;align-items:center;height:34px;background:#fff;border-radius:17px;box-shadow:0 1px 5px rgba(0,0,0,.45);padding:0 4px 0 10px;gap:4px}
+.opsx-sr-ic{display:flex;color:#5b6573;flex:none}
+.opsx-sr-ic svg{width:16px;height:16px}
+.opsx-sr-in input{flex:1;min-width:0;height:32px;padding:0 2px;border:0;background:transparent;color:#111;font:500 14px/1 var(--font);outline:none}
+.opsx-sr-in input::-webkit-search-cancel-button{display:none}
+.opsx-sr-in:focus-within{box-shadow:0 0 0 2px #1E8BD6,0 1px 5px rgba(0,0,0,.45)}
+.opsx .opsx-sr-in button{width:26px;height:26px;font-size:12px;box-shadow:none;border:0;background:#eef1f5;color:#333;border-radius:13px}
+.opsx-sr-list{position:absolute;top:40px;left:0;width:max(100%,320px);max-width:calc(100vw - 30px);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 22px rgba(0,0,0,.45);overflow:hidden;}
 .opsx-sr-list{max-height:min(360px,55vh);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.opsx button[hidden]{display:none}
+@media (max-width:640px){ .opsx-sr{width:clamp(130px,40vw,220px)} .opsx-top select{max-width:28vw} .opsx-sr-list{width:calc(100vw - 110px);max-width:none} }
 .opsx-sr-list:empty{display:none}
 .opsx-sr-h{padding:6px 10px 3px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);border-top:1px solid var(--line)}
 .opsx-sr-h:first-child{border-top:0}
@@ -680,7 +685,7 @@ const panes=[];
 /* ===================================================================
    OUTILS DE CARTE REPRIS DE « SAF OPERATIONS » (30.10.2026)
    Barre d'outils à gauche de chaque carte, comme dans l'application OPS :
-   en haut  ☰ libellés · règle (mesure 2 points) · loupe (recherche d'un lieu) · liste des missions
+   en haut  ☰ libellés · règle (mesure 2 points) · champ « Rechercher un lieu » toujours visible · liste des missions
    (10.11.2026 : trait de route et coût € retirés ; recherche de lieu reprise de la carte OPS)
    colonne  aérodromes · hélistations · balises · espaces aériens · LZ/DZ · zones réglementées ·
             lieux · bases · carburant · appareils en vol
@@ -981,15 +986,20 @@ function opsLocalHits(q){
   return out.filter(x => isFinite(x.lat) && isFinite(x.lon)).slice(0, 12);
 }
 function opsSearchToggle(p, open){
-  const sr = p.opsx.el.querySelector(".opsx-sr"), btn = p.opsx.el.querySelector('[data-a="search"]');
-  const show = open ?? sr.hidden;
-  sr.hidden = !show; btn.classList.toggle("on", show);
-  if(show){ const i = sr.querySelector("input"); setTimeout(() => { i.focus(); i.select(); }, 30); opsStatic(); opsMissions(); }
+  const sr = p.opsx.el.querySelector(".opsx-sr"), i = sr.querySelector("input"), list = sr.querySelector(".opsx-sr-list");
+  if(open === false){ list.innerHTML = ""; i.blur(); return; }
+  setTimeout(() => { i.focus(); i.select(); }, 30); opsStatic(); opsMissions();
 }
 function opsSearchInit(p){
   const sr = p.opsx.el.querySelector(".opsx-sr"), inp = sr.querySelector("input"), list = sr.querySelector(".opsx-sr-list");
   let items = [], act = -1, tLoc = null, tWeb = null, seq = 0;
   L.DomEvent.disableClickPropagation(sr); L.DomEvent.disableScrollPropagation(sr);
+  const clr = sr.querySelector('[data-a="srclose"]');
+  inp.addEventListener("focus", () => { opsStatic(); opsMissions(); if(inp.value.trim()) run(false); });
+  inp.addEventListener("input", () => { clr.hidden = !inp.value; });
+  clr.addEventListener("click", () => { inp.value = ""; clr.hidden = true; list.innerHTML = ""; inp.focus(); });
+  // Clic ailleurs sur la carte : la liste se referme
+  p.map.on("click movestart", () => { list.innerHTML = ""; });
   const paint = (groups, msg) => {
     items = []; let h = "";
     groups.forEach(([title, arr]) => { if(!arr.length) return;
@@ -1051,6 +1061,7 @@ function opsGoTo(p, x){
   const bb = x.bb;
   if(bb && bb.length === 4 && Math.abs(bb[1]-bb[0]) > 0.02) m.fitBounds([[bb[0], bb[2]], [bb[1], bb[3]]], {maxZoom:14});
   else m.setView([x.lat, x.lon], Math.max(m.getZoom(), x.coord ? 13 : 12));
+  const si = p.opsx.el.querySelector(".opsx-sr input"); if(si){ si.value = x.coord ? opsCoordDD(x.lat, x.lon) : x.name; const c = p.opsx.el.querySelector('[data-a="srclose"]'); if(c) c.hidden = false; }
   opsSearchToggle(p, false);
 }
 
@@ -1064,7 +1075,10 @@ function opsTools(p){
     <div class="opsx-top">
       <button type="button" data-a="labels" title="Afficher les libellés des boutons">${ic('<path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>')}</button>
       <button type="button" data-tool="ruler" title="Mesurer entre deux points">${ic('<path d="M3 17L17 3l4 4L7 21z" fill="#E0B23A" stroke="#7a5a10" stroke-width="1"/><path d="M8 12l2 2M11 9l2 2M14 6l2 2" stroke="#7a5a10" stroke-width="1.4"/>')}</button>
-      <button type="button" data-a="search" title="Rechercher un lieu (nom, LZ/DZ, base, mission, immatriculation ou coordonnées GPS)">${ic('<circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>')}</button>
+      <div class="opsx-sr">
+        <div class="opsx-sr-in"><span class="opsx-sr-ic" aria-hidden="true">${ic('<circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>')}</span><input type="search" enterkeyhint="search" autocomplete="off" spellcheck="false" placeholder="Rechercher un lieu, une ville…" title="Ville, col, sommet, adresse, aérodrome, LZ/DZ, base, mission, immatriculation ou coordonnées GPS" aria-label="Rechercher un lieu"><button type="button" data-a="srclose" title="Effacer la recherche" hidden>✕</button></div>
+        <div class="opsx-sr-list" role="listbox"></div>
+      </div>
       <select class="opsx-mis" aria-label="Mission"><option value="">Mission…</option></select>
     </div>
     <div class="opsx-col">
@@ -1072,10 +1086,6 @@ function opsTools(p){
       <button type="button" data-a="flights" title="Appareils en vol : appuyer pour passer de l'un à l'autre">${ic('<path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="currentColor"/>')}<span>0</span><em>Appareils en vol</em></button>
     </div>
     <div class="opsx-box" hidden></div>
-    <div class="opsx-sr" hidden>
-      <div class="opsx-sr-in"><input type="search" enterkeyhint="search" autocomplete="off" spellcheck="false" placeholder="Lieu, LZ/DZ, base, mission, immat. ou 45°40'12&quot;N 6°23'24&quot;E" aria-label="Rechercher un lieu"><button type="button" data-a="srclose" title="Fermer la recherche">✕</button></div>
-      <div class="opsx-sr-list" role="listbox"></div>
-    </div>
     <div class="opsx-bot">
       <button type="button" data-a="zin" title="Zoom avant">+</button>
       <button type="button" data-a="zout" title="Zoom arrière">−</button>
@@ -1099,8 +1109,7 @@ function opsTools(p){
     const a = e.target.closest("[data-a]"); if(!a) return;
     const act = a.dataset.a;
     if(act==="labels"){ el.classList.toggle("labels"); a.classList.toggle("on"); }
-    if(act==="search"){ opsSearchToggle(p); }
-    if(act==="srclose"){ opsSearchToggle(p, false); }
+
     if(act==="zin") m.zoomIn(); if(act==="zout") m.zoomOut();
     if(act==="full"){ const d=document; if(d.fullscreenElement) d.exitFullscreen(); else (p.el.requestFullscreen||p.el.webkitRequestFullscreen||(()=>{})).call(p.el); }
     if(act==="undo"){ p.opsx.rpts.pop(); opsDrawRoute(p); }
