@@ -2597,6 +2597,8 @@ function safExportPDF() {
 </nav>
 <main>
 <section class="panel active" id="dashboard" data-dashboard-version="V9-home-restored">
+<div class="pd" id="pd-root"></div>
+<details class="pd-more" id="pd-more-cms"><summary>Indicateurs détaillés et vue d’ensemble<small>C-01 à C-04, synthèse du système de management, accès par annexe</small></summary><div class="pd-more-in">
 <section class="safp" id="saf-performance-cms" style="max-width:1700px;margin:20px auto"></section>
 <div class="saf-expert-wrap">
   <div class="card note" style="margin-bottom:16px;">
@@ -2619,6 +2621,7 @@ function safExportPDF() {
   </div>
   <div class="sx-note">Si les données ne sont pas encore disponibles, les indicateurs affichent « — » plutôt qu’une valeur estimée. / If data are unavailable, indicators show “—” rather than an estimated value.</div>
 </div>
+</div></details>
 </section>
 
 <!-- ═══════════════════════════════════════
@@ -19426,6 +19429,7 @@ window.safSmsConfirmImport=safSmsConfirmImport;
           if(Array.isArray(rg.auditors)) localStorage.setItem('saf_auditeurs', JSON.stringify(rg.auditors));
         }
       }catch(e){ console.warn('APP08/09 (Appendices OMM)', e); }
+      try{ if(typeof window.pdCmsRender === 'function') window.pdCmsRender(); }catch(e){}
 
       // Re-rendu : on relance les fonctions de rendu/application de l'outil
       refreshAll();
@@ -24550,6 +24554,232 @@ setTimeout(function(){try{ensureDocsUI();}catch(e){}},2500);
   });
   var off=false; try{ off=!!store&&store.getItem(KEY)==='1'; }catch(e){}
   set(off,false);
+})();
+</script>
+<style id="pd-style">
+/* ═══ Tableau de bord opérationnel « À traiter » — 10.11.2026 ═══ */
+.pd{font-family:inherit;color:#0b2340;margin:0 0 22px}
+.pd *{box-sizing:border-box}
+.pd-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:4px 0 10px}
+.pd-h{font-size:13px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#0b2340}
+.pd-upd{font-size:11.5px;color:#5b7088}
+.pd-upd a{color:#1a63b8;cursor:pointer;text-decoration:underline}
+.pd-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px;margin-bottom:16px}
+.pd-tile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:3px;min-height:96px;padding:12px 14px 11px;background:#fff;
+  border:1px solid #d6e2ef;border-left:5px solid #9fb3c8;border-radius:10px;box-shadow:0 1px 3px rgba(11,35,64,.06);transition:transform .12s,box-shadow .12s}
+.pd-tile:hover,.pd-tile:focus-visible{transform:translateY(-1px);box-shadow:0 5px 14px rgba(11,35,64,.13);outline:none}
+.pd-tile:focus-visible{border-color:#1a63b8}
+.pd-n{font-size:30px;line-height:1;font-weight:800;font-variant-numeric:tabular-nums;color:#0b2340}
+.pd-l{font-size:12.5px;font-weight:700;line-height:1.25;color:#0b2340}
+.pd-d{font-size:11px;line-height:1.3;color:#5b7088}
+.pd-tile.ok{border-left-color:#1f9d55}.pd-tile.ok .pd-n{color:#1f9d55}
+.pd-tile.amber{border-left-color:#e09a00;background:#fffaf0}.pd-tile.amber .pd-n{color:#b97800}
+.pd-tile.red{border-left-color:#d93a2b;background:#fff5f4}.pd-tile.red .pd-n{color:#c62f21}
+.pd-tile.info{border-left-color:#1a63b8}.pd-tile.info .pd-n{color:#1a63b8}
+.pd-tile.na .pd-n{color:#9fb3c8}
+.pd-cols{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:14px;margin-bottom:14px}
+@media (max-width:1100px){.pd-cols{grid-template-columns:1fr}}
+.pd-card{background:#fff;border:1px solid #d6e2ef;border-radius:10px;padding:14px 16px;box-shadow:0 1px 3px rgba(11,35,64,.06);min-width:0}
+.pd-card h3{margin:0 0 10px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#0b2340}
+.pd-card h3 small{font-weight:500;letter-spacing:0;text-transform:none;color:#5b7088;font-size:11px;margin-left:6px}
+.pd-dl{display:flex;flex-direction:column;font-size:12.5px}
+.pd-row{display:grid;grid-template-columns:92px minmax(0,1fr) auto auto;gap:4px 12px;align-items:start;padding:8px 6px;border-top:1px solid #e8eef5;cursor:pointer;border-radius:6px}
+.pd-row:first-child{border-top:0}
+.pd-row:hover,.pd-row:focus-visible{background:#f2f7fc;outline:none}
+@media (max-width:640px){.pd-row{grid-template-columns:84px minmax(0,1fr)}.pd-row .pd-who,.pd-row>div:last-child{grid-column:2}}
+.pd-when{white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:700}
+.pd-when small{display:block;font-weight:600;font-size:10.5px}
+.pd-when.late{color:#c62f21}.pd-when.soon{color:#b97800}.pd-when.later{color:#0b2340}
+.pd-what{color:#0b2340;line-height:1.35}
+.pd-what small{display:block;color:#5b7088;font-size:11px;margin-top:1px}
+.pd-who{white-space:nowrap;color:#33506e;font-size:11.5px}
+.pd-src{display:inline-block;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.03em;background:#e8f0fa;color:#1a63b8;white-space:nowrap}
+.pd-empty{padding:16px 6px;text-align:center;color:#5b7088;font-size:12.5px}
+.pd-bars{display:flex;align-items:flex-end;gap:5px;height:96px;padding:4px 0 0}
+.pd-bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%;min-width:0}
+.pd-bar i{display:block;width:100%;max-width:26px;background:#1a63b8;border-radius:4px 4px 0 0;min-height:2px}
+.pd-bar.cur i{background:#e09a00}
+.pd-bar b{font-size:10px;color:#0b2340;font-weight:700}
+.pd-bar span{font-size:9.5px;color:#5b7088;text-transform:capitalize}
+.pd-kv{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid #e8eef5;font-size:12.5px}
+.pd-kv:first-of-type{border-top:0}
+.pd-kv b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.pd-chip{display:inline-block;padding:1px 8px;border-radius:999px;font-size:10.5px;font-weight:700;white-space:nowrap}
+.pd-chip.red{background:#fde3e0;color:#b3261a}.pd-chip.amber{background:#fff0cc;color:#8a5a00}.pd-chip.ok{background:#dcf3e5;color:#16733d}.pd-chip.na{background:#eef2f6;color:#5b7088}
+.pd-sub{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#5b7088;margin:14px 0 4px}
+.pd-quick{display:flex;flex-wrap:wrap;gap:8px}
+.pd-q{all:unset;cursor:pointer;padding:8px 13px;border-radius:8px;background:#fff;border:1px solid #c5d5e6;color:#0b2340;font-size:12.5px;font-weight:700}
+.pd-q:hover,.pd-q:focus-visible{background:#e8f0fa;border-color:#1a63b8;outline:none}
+.pd-q.main{background:#0b2340;color:#fff;border-color:#0b2340}
+.pd-q.main:hover{background:#163a63}
+details.pd-more{margin-top:8px;border:1px solid #d6e2ef;border-radius:10px;background:rgba(255,255,255,.55)}
+details.pd-more>summary{cursor:pointer;list-style:none;padding:12px 16px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#33506e}
+details.pd-more>summary::-webkit-details-marker{display:none}
+details.pd-more>summary::before{content:"▸ ";}
+details.pd-more[open]>summary::before{content:"▾ ";}
+details.pd-more>summary small{font-weight:500;letter-spacing:0;text-transform:none;color:#5b7088;margin-left:6px}
+details.pd-more[open]>summary{border-bottom:1px solid #d6e2ef}
+details.pd-more>.pd-more-in{padding:14px 12px}
+#dashboard>.pd,#dashboard>details.pd-more{max-width:1700px;margin-left:auto;margin-right:auto;padding-left:20px;padding-right:20px}
+#dashboard>.pd{padding-top:18px}
+#dashboard>details.pd-more{padding:0;margin-bottom:24px;width:calc(100% - 40px)}
+@media print{.pd-quick,.pd-upd a{display:none}}
+</style>
+<script id="pd-cms">
+/* ═══ Tableau de bord opérationnel du CMS — 10.11.2026 ═══
+   Compteurs cliquables, prochaines échéances, tendance des constats. L'ancien contenu reste dessous, replié. */
+/* ── Noyau commun (tuiles, échéances, barres) ── */
+var PD = window.PD || (window.PD = {});
+PD.esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+PD.today = function(){ var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+PD.addDays = function(iso, n){ var d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0,10); };
+PD.days = function(iso){ if(!iso) return null; var d = new Date(String(iso).slice(0,10) + 'T12:00:00'); if(isNaN(d)) return null; return Math.round((d - new Date(PD.today() + 'T12:00:00')) / 86400000); };
+PD.fd = function(iso){ if(!iso) return '—'; var p = String(iso).slice(0,10).split('-'); return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0] : PD.esc(iso); };
+PD.CB = [];   // actions des éléments cliquables
+PD.cb = function(fn){ PD.CB.push(fn); return PD.CB.length - 1; };
+PD.go = function(i){ try{ (PD.CB[i] || function(){})(); }catch(e){ console.warn('PD', e); } };
+PD.tile = function(t){
+  var cls = t.cls || (t.n === null ? 'na' : (t.n === 0 ? 'ok' : (t.level || 'amber')));
+  return '<button type="button" class="pd-tile ' + cls + '" onclick="PD.go(' + PD.cb(t.go) + ')" title="' + PD.esc(t.title || 'Ouvrir la liste') + '">'
+    + '<span class="pd-n">' + (t.n === null ? '—' : t.n) + '</span><span class="pd-l">' + PD.esc(t.label) + '</span>'
+    + (t.detail ? '<span class="pd-d">' + t.detail + '</span>' : '') + '</button>';
+};
+PD.when = function(iso){
+  var d = PD.days(iso);
+  if(d === null) return '<div class="pd-when later">—</div>';
+  var cls = d < 0 ? 'late' : (d <= 30 ? 'soon' : 'later');
+  var rel = d < 0 ? 'retard ' + (-d) + ' j' : (d === 0 ? "aujourd'hui" : 'dans ' + d + ' j');
+  return '<div class="pd-when ' + cls + '">' + PD.fd(iso) + '<small>' + rel + '</small></div>';
+};
+PD.deadlines = function(items, max){
+  items = items.filter(function(x){ return x && x.date; }).sort(function(a,b){ return String(a.date).localeCompare(String(b.date)); }).slice(0, max || 10);
+  if(!items.length) return '<div class="pd-empty">Aucune échéance datée en cours. ✓</div>';
+  return '<div class="pd-dl">' + items.map(function(x){
+    return '<div class="pd-row" role="button" tabindex="0" onclick="PD.go(' + PD.cb(x.go) + ')" onkeydown="if(event.key===\'Enter\')this.click()" title="Ouvrir">' + PD.when(x.date)
+      + '<div class="pd-what">' + PD.esc(x.label) + (x.ctx ? '<small>' + PD.esc(String(x.ctx).slice(0,140)) + '</small>' : '') + '</div>'
+      + '<div class="pd-who">' + PD.esc(x.who || '—') + '</div><div><span class="pd-src">' + PD.esc(x.src || '') + '</span></div></div>';
+  }).join('') + '</div>';
+};
+PD.months = function(dates, n){
+  n = n || 12; var now = new Date(), out = [], idx = {};
+  for(var i = n - 1; i >= 0; i--){
+    var d = new Date(now.getFullYear(), now.getMonth() - i, 1), k = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    idx[k] = out.length; out.push({k:k, n:0, lbl:d.toLocaleDateString('fr-FR', {month:'short'}).replace('.', ''), cur:i === 0});
+  }
+  dates.forEach(function(s){ var k = String(s || '').slice(0,7); if(k in idx) out[idx[k]].n++; });
+  var mx = Math.max.apply(null, out.map(function(x){ return x.n; }).concat([1]));
+  return '<div class="pd-bars">' + out.map(function(x){
+    return '<div class="pd-bar' + (x.cur ? ' cur' : '') + '" title="' + x.k + ' : ' + x.n + '"><b>' + (x.n || '') + '</b><i style="height:' + Math.round(x.n / mx * 70) + 'px"></i><span>' + x.lbl + '</span></div>';
+  }).join('') + '</div>';
+};
+PD.quick = function(list){ return '<div class="pd-quick">' + list.map(function(q){ return '<button type="button" class="pd-q' + (q.main ? ' main' : '') + '" onclick="PD.go(' + PD.cb(q.go) + ')">' + PD.esc(q.label) + '</button>'; }).join('') + '</div>'; };
+PD.shell = function(o){
+  return '<div class="pd-head"><div class="pd-h">À traiter</div><div class="pd-upd">Mis à jour à ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})
+    + ' · <a onclick="PD.go(' + PD.cb(o.refresh) + ')">actualiser</a>' + (o.note ? ' · ' + o.note : '') + '</div></div>'
+    + '<div class="pd-tiles">' + o.tiles.map(PD.tile).join('') + '</div>'
+    + '<div class="pd-cols"><section class="pd-card"><h3>Prochaines échéances<small>' + PD.esc(o.dlNote || '') + '</small></h3>' + PD.deadlines(o.deadlines, 10) + '</section>'
+    + '<section class="pd-card"><h3>' + PD.esc(o.trendTitle) + '</h3>' + o.trend + '</section></div>'
+    + PD.quick(o.quick);
+};
+/* ── Adaptateur CMS ── */
+(function(){
+  function ld(k, d){ try{ var v = JSON.parse(localStorage.getItem(k) || 'null'); return v == null ? d : v; }catch(e){ return d; } }
+  function lvl(f){ var l = String(f.level || '').toUpperCase(); return l.indexOf('1') >= 0 ? 'N1' : (l.indexOf('2') >= 0 ? 'N2' : (l || '—')); }
+  function isClosed(f){ return f.status === 'completed' || f.status === 'closed' || f.status === 'observation'; }
+  function origin(f){ return f.origin === 'foca' ? 'Autorité' : (f.origin === 'external' ? 'Externe' : 'Interne'); }
+  function goReg(filter, orig){
+    showMainTab('cmsx_registre');
+    var a = document.getElementById('cmsx-reg-filter'), b = document.getElementById('cmsx-reg-origin-filter');
+    if(a) a.value = filter || 'all'; if(b) b.value = orig || 'all';
+    if(typeof window.cmsxRenderFindings === 'function') window.cmsxRenderFindings();
+  }
+  // Calendrier APP15 (programme AOC 24 mois) : lu dans le script du plan, sans le dupliquer
+  function plan(){
+    try{
+      var tx = (document.getElementById('aoc24script') || {}).textContent || '';
+      var m = tx.match(/const A=(\[\[[\s\S]*?\]\])(?:,M=|;)/); if(!m) return [];
+      var base = (tx.match(/n>12\?'(\d{4})':'(\d{4})'/) || [0, '2028', '2027']);
+      var y1 = parseInt(base[2], 10) || 2027, out = [];
+      JSON.parse(m[1]).forEach(function(x){
+        [[x[5], 'RCA'], [x[6], 'OCA']].forEach(function(p){
+          var n = parseInt(p[0], 10); if(!n) return;
+          var y = y1 + Math.floor((n - 1) / 12), mo = ((n - 1) % 12) + 1;
+          out.push({ num:x[0], title:x[1], kind:p[1], date:y + '-' + String(mo).padStart(2,'0') + '-01' });
+        });
+      });
+      return out;
+    }catch(e){ console.warn('PD CMS plan', e); return []; }
+  }
+  window.pdCmsRender = function(){
+    var root = document.getElementById('pd-root'); if(!root) return;
+    PD.CB = [];
+    var t = PD.today(), t30 = PD.addDays(t, 30), t60 = PD.addDays(t, 60);
+    var F = ld('cmsx_findings_v1', []); if(!Array.isArray(F)) F = [];
+    var open = F.filter(function(f){ return f && !isClosed(f); });
+    var n1 = open.filter(function(f){ return lvl(f) === 'N1'; }), n2 = open.filter(function(f){ return lvl(f) === 'N2'; });
+    var late = open.filter(function(f){ return f.deadline && f.deadline < t; });
+    var soon = open.filter(function(f){ return f.deadline && f.deadline >= t && f.deadline <= t30; });
+    var verify = F.filter(function(f){ return f && f.status === 'completed' && !f.verified; });
+    var auth = open.filter(function(f){ return f.origin === 'foca'; });
+    var lateAuth = late.filter(function(f){ return f.origin === 'foca'; }).length;
+    var A = ld('saf_audits_v1', []); if(!Array.isArray(A)) A = [];
+    var running = A.filter(function(a){ var s = a && a.wf && a.wf.status; return s && s !== 'cloture' && s !== 'closed' && s !== 'suspendu'; });
+    var P = plan(), upcoming = P.filter(function(p){ return p.date >= t.slice(0,8) + '01' && p.date <= t60; });
+    var nextP = P.filter(function(p){ return p.date >= t.slice(0,8) + '01'; }).sort(function(a,b){ return a.date.localeCompare(b.date); })[0];
+    var C = ld('cmsx_compliance_v1', []); if(!Array.isArray(C)) C = [];
+    var cDraft = C.filter(function(c){ return c && c.status !== 'approved' && c.status !== 'closed' && c.status !== 'submitted'; });
+    var noRoot = open.filter(function(f){ return !String(f.rootCause || '').trim(); }).length;
+
+    var tiles = [
+      { n:n1.length, label:'Constats niveau 1 ouverts', detail:'cible SAF : 0', level:'red', go:function(){ goReg('all'); } },
+      { n:n2.length, label:'Constats niveau 2 ouverts', detail:auth.length + ' de l’autorité · ' + noRoot + ' sans cause racine', level:'amber', go:function(){ goReg('all'); } },
+      { n:late.length, label:'Actions correctives en retard', detail:late.length ? (lateAuth + ' de l’autorité') : 'cible SAF : 0', level:'red', go:function(){ goReg('overdue'); } },
+      { n:soon.length, label:'Échéance ≤ 30 jours', detail:'actions correctives à tenir', level:'amber', go:function(){ goReg('all'); } },
+      { n:verify.length, label:'Efficacité à vérifier', detail:'actions terminées non vérifiées', level:'amber', go:function(){ goReg('completed'); } },
+      { n:running.length, label:'Audits en cours', detail:running.map(function(a){ return (a.done || 0) + '/' + (a.total || '?'); }).join(' · ') || 'grille EASA', level:'info', go:function(){ showMainTab('grille_easa'); } },
+      { n:P.length ? upcoming.length : null, label:'Audits du plan ≤ 60 jours', detail:nextP ? 'prochain : ' + nextP.num + ' ' + nextP.kind + ' — ' + PD.esc(nextP.title).slice(0, 40) : 'programme APP15', level:'info', go:function(){ showMainTab('audit_plan'); } },
+      { n:cDraft.length, label:'Dossiers de conformité en cours', detail:'matrices non approuvées', level:'info', go:function(){ showMainTab('compliance_matrix'); } }
+    ];
+
+    var dls = open.filter(function(f){ return f.deadline; }).map(function(f){
+      return { date:f.deadline, label:(f.focaRef ? f.focaRef + ' — ' : '') + (f.ref || '') + (f.ref ? ' · ' : '') + String(f.desc || f.action || 'Constat').slice(0, 110),
+               ctx:lvl(f) + ' · ' + origin(f) + (f.auditTitle ? ' · ' + f.auditTitle : ''), who:f.np || '—', src:'CAP', go:function(){ goReg(f.deadline < t ? 'overdue' : 'all', f.origin === 'foca' ? 'foca' : 'all'); } };
+    });
+    P.filter(function(p){ return p.date >= t.slice(0,8) + '01'; }).sort(function(a,b){ return a.date.localeCompare(b.date); }).slice(0, 4).forEach(function(p){
+      dls.push({ date:p.date, label:'Audit ' + p.num + ' (' + p.kind + ') — ' + p.title, ctx:'Programme APP15 · mois prévu', who:'CMM', src:'Plan', go:function(){ showMainTab('audit_plan'); } });
+    });
+
+    var closed = F.filter(function(f){ return f && isClosed(f) && f.closed; });
+    var onTime = closed.filter(function(f){ return !f.deadline || String(f.closed).slice(0,10) <= f.deadline; }).length;
+    var byO = { 'Autorité':0, 'Interne':0, 'Externe':0 }; open.forEach(function(f){ byO[origin(f)]++; });
+    var trend = PD.months(F.map(function(f){ return f && f.detected; }), 12)
+      + '<div class="pd-kv"><span>Constats ouverts</span><b>' + open.length + ' · ' + byO['Autorité'] + ' autorité · ' + byO['Interne'] + ' interne(s)' + (byO['Externe'] ? ' · ' + byO['Externe'] + ' externe(s)' : '') + '</b></div>'
+      + '<div class="pd-kv"><span>Clôtures dans le délai</span><b>' + (closed.length ? Math.round(onTime / closed.length * 100) + ' % <span class="pd-chip ' + (onTime === closed.length ? 'ok' : 'amber') + '">' + onTime + '/' + closed.length + '</span>' : '<span class="pd-chip na">aucune clôture</span>') + '</b></div>'
+      + '<div class="pd-kv"><span>Efficacité vérifiée (CMS-07)</span><b>' + (closed.length ? Math.round(closed.filter(function(f){ return f.verified; }).length / closed.length * 100) + ' %' : '—') + '</b></div>'
+      + '<div class="pd-kv"><span>Constats sans cause racine</span><b>' + noRoot + (noRoot ? ' <span class="pd-chip amber">à analyser</span>' : ' <span class="pd-chip ok">✓</span>') + '</b></div>';
+
+    root.innerHTML = PD.shell({
+      refresh:window.pdCmsRender, tiles:tiles, deadlines:dls, dlNote:'actions correctives et audits du programme',
+      trendTitle:'Constats détectés sur 12 mois', trend:trend,
+      quick:[
+        { label:'＋ Constat / action corrective', main:true, go:function(){ goReg('all'); setTimeout(function(){ if(typeof cmsxOpenFindingModal === 'function') cmsxOpenFindingModal(); }, 120); } },
+        { label:'Plan d’actions correctives', go:function(){ goReg('all'); } },
+        { label:'Programme d’audit', go:function(){ showMainTab('audit_plan'); } },
+        { label:'Grille d’audit EASA', go:function(){ showMainTab('grille_easa'); } },
+        { label:'Indicateurs de conformité', go:function(){ showMainTab('kpispi'); } },
+        { label:'Rapport annuel', go:function(){ showMainTab('cmsx_rapport_annuel'); } }
+      ]
+    });
+  };
+  if(typeof showMainTab === 'function'){
+    var _smt = showMainTab;
+    showMainTab = function(id){ var r = _smt.apply(this, arguments); if(id === 'dashboard'){ try{ window.pdCmsRender(); }catch(e){ console.warn('PD CMS', e); } } return r; };
+  }
+  function visible(){ var v = document.getElementById('dashboard'); return v && v.classList.contains('active'); }
+  setInterval(function(){ if(visible() && !document.hidden) window.pdCmsRender(); }, 60000);
+  window.addEventListener('storage', function(){ if(visible()) window.pdCmsRender(); });
+  function first(){ window.pdCmsRender(); setTimeout(window.pdCmsRender, 2500); setTimeout(window.pdCmsRender, 6000); }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', first); else first();
 })();
 </script>
 </body>
