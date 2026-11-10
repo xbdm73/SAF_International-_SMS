@@ -1388,32 +1388,32 @@ button .bi, a .bi{vertical-align:middle;}
 @media (max-width:700px){ #omm-reg-modal .g2{grid-template-columns:1fr;} }
 </style>
 <div class="view" id="view-app08">
-<div class="dash-header"><div><div class="dash-title">LIST OF SUBCONTRACTORS</div>
-<div class="dash-subtitle">APP08-OMM · Contracted organizations and their monitoring</div></div>
+<div class="dash-header"><div><div class="dash-title"><span class="bi"><span class="bi-fr">LISTE DES SOUS-TRAITANTS</span><span class="bi-en">LIST OF SUBCONTRACTORS</span></span></div>
+<div class="dash-subtitle"><span class="bi"><span class="bi-fr">APP08-OMM · Organismes sous-traitants et leur surveillance</span><span class="bi-en">Contracted organizations and their monitoring</span></span></div></div>
 <div class="doc-meta"><span class="meta-chip">APP08-OMM</span><button class="btn gold" style="margin-left:10px;" onclick="exportPDF('view-app08')" title="Export this appendix to PDF">📄 PDF</button></div></div>
-<div class="callout info">Contracted organizations (maintenance, training, handling, expertise). The operator remains responsible for contracted services (ORO.GEN.205) and monitors their compliance through the compliance monitoring function (AMC1 ORO.GEN.200(a)(6)). Each subcontractor is audited at the frequency defined below.</div>
+<div class="callout info"><span class="bi"><span class="bi-fr">Organismes sous-traitants (maintenance, CAMO, formation, marchandises dangereuses…). L’exploitant reste responsable des services sous-traités (ORO.GEN.205) et en surveille la conformité par la fonction de surveillance de la conformité (AMC1 ORO.GEN.200(a)(6)). Chaque sous-traitant est audité à la fréquence définie ci-dessous.</span><span class="bi-en">Contracted organizations (maintenance, CAMO, training, dangerous goods…). The operator remains responsible for contracted services (ORO.GEN.205) and monitors their compliance through the compliance monitoring function (AMC1 ORO.GEN.200(a)(6)). Each subcontractor is audited at the frequency defined below.</span></span></div>
 <div class="card card-accent">
 <div class="omm-reg-bar omm-reg-noprint">
-<button class="btn gold omm-reg-w" type="button" onclick="ommRegOpen('st')">＋ Add subcontractor</button>
-<input type="search" id="omm-st-q" placeholder="Search reference, organization, certificate…" oninput="ommRegRender()"/>
+<button class="btn gold omm-reg-w" type="button" onclick="ommRegOpen('st')">＋ <span class="bi"><span class="bi-fr">Ajouter un sous-traitant</span><span class="bi-en">Add subcontractor</span></span></button>
+<input type="search" id="omm-st-q" placeholder="Rechercher référence, organisme, certificat… / Search…" oninput="ommRegRender()"/>
 <button class="btn" type="button" onclick="ommRegCSV('st')">⬇ CSV</button>
 </div>
-<div class="omm-reg-status omm-reg-noprint" id="omm-st-status">Sign in to load the register.</div>
+<div class="omm-reg-status omm-reg-noprint" id="omm-st-status">Connectez-vous pour charger la liste / Sign in to load the register.</div>
 <div class="omm-reg-wrap" id="omm-st-wrap"></div>
 </div>
 </div>
 <div class="view" id="view-app09">
-<div class="dash-header"><div><div class="dash-title">LIST OF AUDITORS</div>
-<div class="dash-subtitle">APP09-OMM · Qualification, authorization and recurrent training of internal auditors</div></div>
+<div class="dash-header"><div><div class="dash-title"><span class="bi"><span class="bi-fr">LISTE DES AUDITEURS</span><span class="bi-en">LIST OF AUDITORS</span></span></div>
+<div class="dash-subtitle"><span class="bi"><span class="bi-fr">APP09-OMM · Qualification, habilitation et recyclage des auditeurs internes</span><span class="bi-en">Qualification, authorization and recurrent training of internal auditors</span></span></div></div>
 <div class="doc-meta"><span class="meta-chip">APP09-OMM</span><button class="btn gold" style="margin-left:10px;" onclick="exportPDF('view-app09')" title="Export this appendix to PDF">📄 PDF</button></div></div>
-<div class="callout info">Internal auditors of the compliance monitoring function must be competent, trained and independent of the audited domain (AMC1 ORO.GEN.200(a)(6)). An auditor does not audit his or her own area of work. The authorization remains valid as long as the recurrent training is up to date.</div>
+<div class="callout info"><span class="bi"><span class="bi-fr">Les auditeurs internes de la fonction de surveillance de la conformité doivent être compétents, formés et indépendants du domaine audité (AMC1 ORO.GEN.200(a)(6)). Un auditeur n’audite pas son propre domaine de travail. L’habilitation reste valable tant que le recyclage est à jour.</span><span class="bi-en">Internal auditors of the compliance monitoring function must be competent, trained and independent of the audited domain (AMC1 ORO.GEN.200(a)(6)). An auditor does not audit his or her own area of work. The authorization remains valid as long as the recurrent training is up to date.</span></span></div>
 <div class="card card-accent">
 <div class="omm-reg-bar omm-reg-noprint">
-<button class="btn gold omm-reg-w" type="button" onclick="ommRegOpen('aud')">＋ Add auditor</button>
-<input type="search" id="omm-aud-q" placeholder="Search name, function, domain…" oninput="ommRegRender()"/>
+<button class="btn gold omm-reg-w" type="button" onclick="ommRegOpen('aud')">＋ <span class="bi"><span class="bi-fr">Ajouter un auditeur</span><span class="bi-en">Add auditor</span></span></button>
+<input type="search" id="omm-aud-q" placeholder="Rechercher nom, fonction, domaine… / Search…" oninput="ommRegRender()"/>
 <button class="btn" type="button" onclick="ommRegCSV('aud')">⬇ CSV</button>
 </div>
-<div class="omm-reg-status omm-reg-noprint" id="omm-aud-status">Sign in to load the register.</div>
+<div class="omm-reg-status omm-reg-noprint" id="omm-aud-status">Connectez-vous pour charger la liste / Sign in to load the register.</div>
 <div class="omm-reg-wrap" id="omm-aud-wrap"></div>
 </div>
 </div>
@@ -2009,12 +2009,12 @@ button .bi, a .bi{vertical-align:middle;}
 <button class="saf-exp-mini pdf" onclick="exportPDF('view-app07')">📄 PDF</button>
 </div>
 <div class="saf-exp-row">
-<div class="lbl"><strong>APP08 — List of Subcontractors</strong><span>Contracted organizations &amp; monitoring</span></div>
+<div class="lbl"><strong>APP08 — Liste des sous-traitants / List of Subcontractors</strong><span>Organismes sous-traités et surveillance / Contracted organizations &amp; monitoring</span></div>
 <button class="saf-exp-mini json" onclick="ommRegCSV('st')">⬇ CSV</button>
 <button class="saf-exp-mini pdf" onclick="exportPDF('view-app08')">📄 PDF</button>
 </div>
 <div class="saf-exp-row">
-<div class="lbl"><strong>APP09 — List of Auditors</strong><span>Qualification &amp; recurrent training</span></div>
+<div class="lbl"><strong>APP09 — Liste des auditeurs / List of Auditors</strong><span>Qualification et recyclage / Qualification &amp; recurrent training</span></div>
 <button class="saf-exp-mini json" onclick="ommRegCSV('aud')">⬇ CSV</button>
 <button class="saf-exp-mini pdf" onclick="exportPDF('view-app09')">📄 PDF</button>
 </div>
@@ -2771,8 +2771,8 @@ var SAF_APP_LOGO_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+UAA
     'view-app13':'APP05-OMM — Aircraft Leasing',
     'view-app14':'APP06-OMM — Aircraft being used',
     'view-app07':'APP07-OMM — Safety Promotion',
-    'view-app08':'APP08-OMM — List of Subcontractors',
-    'view-app09':'APP09-OMM — List of Auditors'
+    'view-app08':'APP08-OMM — Liste des sous-traitants / List of Subcontractors',
+    'view-app09':'APP09-OMM — Liste des auditeurs / List of Auditors'
   };
 
   function _cleanViewForPrint(viewId){
@@ -3382,12 +3382,19 @@ h1 {
   var EXT = ['pdf','docx','pptx','xlsx','jpg','jpeg','png'];
   var MIME = {pdf:'application/pdf',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png'};
 
-  var SERVICE_TYPES = ['Maintenance (Part-145)','Training (ATO/DTO)','Handling','Navigation / Charting','Medical expertise','CRM/SMS training','Other'];
+  // 10.11.2026 : ajout CAMO et marchandises dangereuses ; retrait navigation, médical, handling et CRM/SMS.
+  // Une fiche existante gardant un ancien type l'affiche toujours (ajouté à la liste de sa propre fiche).
+  var SERVICE_TYPES = ['Maintenance (Part-145)','CAMO','Training (ATO/DTO)','Dangerous goods (DG)','Other'];
   var SERVICE_FR = {'Maintenance (Part-145) / Maintenance (Part-145)':'Maintenance (Part-145)','Formation (ATO/DTO) / Training (ATO/DTO)':'Training (ATO/DTO)',
     'Assistance en escale / Handling':'Handling','Navigation / cartographie / Navigation / Charting':'Navigation / Charting','Expertise médicale / Medical expertise':'Medical expertise',
     'Formation CRM/SMS / CRM/SMS training':'CRM/SMS training','Autre / Other':'Other'};
-  var ST_STATUS = {conforme:['Compliant','ok'], surveillance:['Enhanced monitoring','warn'], suspendu:['Suspended','bad'], expire:['Certificate expired','bad']};
+  var ST_STATUS = {conforme:['Compliant','ok','Conforme'], surveillance:['Enhanced monitoring','warn','Surveillance renforcée'], suspendu:['Suspended','bad','Suspendu'], expire:['Certificate expired','bad','Certificat expiré']};
   var DOMAINS = ['AIR-OPS','CAMO','Part 145'];
+  // Bilingue FR / EN, même présentation que les autres annexes (bi-fr au-dessus, bi-en en italique)
+  function B(fr, en){ return '<span class="bi"><span class="bi-fr">' + fr + '</span><span class="bi-en">' + en + '</span></span>'; }
+  var SVC_FR = {'Maintenance (Part-145)':'Maintenance (Part-145)','CAMO':'CAMO','Training (ATO/DTO)':'Formation (ATO/DTO)','Dangerous goods (DG)':'Marchandises dangereuses (DG)','Other':'Autre',
+    'Handling':'Assistance en escale','Navigation / Charting':'Navigation / cartographie','Medical expertise':'Expertise médicale','CRM/SMS training':'Formation CRM/SMS'};
+  function svcLbl(v){ return SVC_FR[v] && SVC_FR[v] !== v ? SVC_FR[v] + ' / ' + v : v; }
 
   function $(id){ return document.getElementById(id); }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -3400,9 +3407,9 @@ h1 {
   function addMonths(d, m){ if(!d || !m) return ''; var t = new Date(d + 'T12:00:00'); if(isNaN(t)) return ''; t.setMonth(t.getMonth() + (parseInt(m, 10) || 0)); return t.toISOString().slice(0,10); }
   function tag(days, okLabel){
     if(days === null) return '<span class="omm-reg-tag none">—</span>';
-    if(days < 0) return '<span class="omm-reg-tag bad">Overdue ' + Math.abs(days) + ' d</span>';
-    if(days < 30) return '<span class="omm-reg-tag warn">⚠ ' + days + ' d</span>';
-    return '<span class="omm-reg-tag ok">' + esc(okLabel) + '</span>';
+    if(days < 0) return '<span class="omm-reg-tag bad">' + B('Échu ' + Math.abs(days) + ' j', 'Overdue ' + Math.abs(days) + ' d') + '</span>';
+    if(days < 30) return '<span class="omm-reg-tag warn">⚠ ' + days + ' j / d</span>';
+    return '<span class="omm-reg-tag ok">' + okLabel + '</span>';
   }
   function svc(v){ v = String(v || ''); return SERVICE_FR[v] || v; }
   function status(msg, err){ ['omm-st-status','omm-aud-status'].forEach(function(id){ var e = $(id); if(e){ e.textContent = msg || ''; e.classList.toggle('err', !!err); } }); }
@@ -3472,7 +3479,7 @@ h1 {
             var n = mergeById(REG.subcontractors, old.subcontractors) + mergeById(REG.auditors, old.auditors);
             REG.migrated_from_cms = new Date().toISOString();
             saveWhenReady(0);
-            if(n) status(n + ' record(s) taken over from the Compliance Monitoring System.');
+            if(n) status(n + ' fiche(s) reprise(s) du CMS / record(s) taken over from the CMS.');
           }else if(!REG.subcontractors.length && !REG.auditors.length){
             REG.subcontractors = old.subcontractors; REG.auditors = old.auditors;   // lecture seule, avant reprise
           }
@@ -3492,37 +3499,37 @@ h1 {
     var st = $('omm-st-wrap'), au = $('omm-aud-wrap');
     if(!st || !au) return;
     if(!LOADED){ return; }
-    status(w ? '' : 'Read only.');
+    status(w ? '' : 'Lecture seule / Read only.');
     // APP08
     var sq = q('omm-st-q'), rows = REG.subcontractors.filter(function(r){ return rowMatch(r, sq); })
       .sort(function(a,b){ return String(a.ref || a.name || '').localeCompare(String(b.ref || b.name || '')); });
-    st.innerHTML = '<table class="tbl"><thead><tr><th>Ref.</th><th>Organization</th><th>Service type</th><th>Regulatory ref.</th><th>Certificate / approval</th><th>Approval date</th><th>Certificate expiry</th><th>Audit frequency</th><th>Last audit</th><th>Next audit</th><th>Status</th><th>Documents</th>' + (w ? '<th class="omm-reg-noprint"></th>' : '') + '</tr></thead><tbody>'
+    st.innerHTML = '<table class="tbl"><thead><tr><th>' + B('Réf.','Ref.') + '</th><th>' + B('Organisme','Organization') + '</th><th>' + B('Type de service','Service type') + '</th><th>' + B('Réf. réglementaire','Regulatory ref.') + '</th><th>' + B('Certificat / agrément','Certificate / approval') + '</th><th>' + B('Date d’agrément','Approval date') + '</th><th>' + B('Expiration du certificat','Certificate expiry') + '</th><th>' + B('Fréquence d’audit','Audit frequency') + '</th><th>' + B('Dernier audit','Last audit') + '</th><th>' + B('Prochain audit','Next audit') + '</th><th>' + B('Statut','Status') + '</th><th>Documents</th>' + (w ? '<th class="omm-reg-noprint"></th>' : '') + '</tr></thead><tbody>'
       + (rows.length ? rows.map(function(r){
           var nxt = addMonths(r.lastAudit, r.period || 12), s = ST_STATUS[r.status] || [r.status || '—', 'none'], nf = (r.files || []).length;
-          return '<tr><td class="omm-reg-ref">' + esc(r.ref) + '</td><td class="omm-reg-name">' + esc(r.name) + '</td><td class="omm-reg-dim">' + esc(svc(r.type)) + '</td>'
+          return '<tr><td class="omm-reg-ref">' + esc(r.ref) + '</td><td class="omm-reg-name">' + esc(r.name) + '</td><td class="omm-reg-dim">' + esc(svcLbl(svc(r.type))) + '</td>'
             + '<td class="omm-reg-dim">' + esc(r.reg) + '</td><td class="nw">' + esc(r.cert) + '</td><td class="nw">' + fd(r.certDate) + '</td>'
-            + '<td class="nw">' + fd(r.expiry) + '<br>' + tag(daysTo(r.expiry), 'Valid') + '</td><td class="nw">' + esc((r.period || 12) + ' months') + '</td>'
-            + '<td class="nw">' + fd(r.lastAudit) + '</td><td class="nw">' + (nxt ? fd(nxt) + '<br>' + tag(daysTo(nxt), 'Planned') : '—') + '</td>'
-            + '<td><span class="omm-reg-tag ' + s[1] + '">' + esc(s[0]) + '</span></td>'
+            + '<td class="nw">' + fd(r.expiry) + '<br>' + tag(daysTo(r.expiry), B('Valide','Valid')) + '</td><td class="nw">' + esc((r.period || 12) + ' mois / months') + '</td>'
+            + '<td class="nw">' + fd(r.lastAudit) + '</td><td class="nw">' + (nxt ? fd(nxt) + '<br>' + tag(daysTo(nxt), B('Planifié','Planned')) : '—') + '</td>'
+            + '<td><span class="omm-reg-tag ' + s[1] + '">' + (s[2] ? B(s[2], s[0]) : esc(s[0])) + '</span></td>'
             + '<td class="nw">' + (nf ? (r.files || []).map(function(f, i){ return '<a href="#" onclick="ommRegFile(\'' + esc(r.id) + '\',' + i + ');return false;" title="' + esc(f.name) + '">📎 ' + esc(String(f.name || 'file').slice(0, 22)) + '</a>'; }).join('<br>') : '—') + '</td>'
-            + (w ? '<td class="omm-reg-act omm-reg-noprint"><button class="btn" type="button" onclick="ommRegOpen(\'st\',\'' + esc(r.id) + '\')" title="Edit">✏ Edit</button> <button class="btn danger" type="button" onclick="ommRegDel(\'st\',\'' + esc(r.id) + '\')" title="Delete">🗑</button></td>' : '')
+            + (w ? '<td class="omm-reg-act omm-reg-noprint"><button class="btn" type="button" onclick="ommRegOpen(\'st\',\'' + esc(r.id) + '\')" title="Modifier / Edit">✏ ' + B('Modifier','Edit') + '</button> <button class="btn danger" type="button" onclick="ommRegDel(\'st\',\'' + esc(r.id) + '\')" title="Supprimer / Delete">🗑</button></td>' : '')
             + '</tr>';
-        }).join('') : '<tr><td colspan="' + (w ? 13 : 12) + '" class="omm-reg-empty">' + (sq ? 'No subcontractor matches the search.' : 'No subcontractor recorded.') + '</td></tr>')
+        }).join('') : '<tr><td colspan="' + (w ? 13 : 12) + '" class="omm-reg-empty">' + (sq ? B('Aucun sous-traitant ne correspond à la recherche.','No subcontractor matches the search.') : B('Aucun sous-traitant enregistré.','No subcontractor recorded.')) + '</td></tr>')
       + '</tbody></table>';
     // APP09
     var aq = q('omm-aud-q'), arows = REG.auditors.filter(function(r){ return rowMatch(r, aq); })
       .sort(function(a,b){ return String(a.name || '').localeCompare(String(b.name || '')); });
-    au.innerHTML = '<table class="tbl"><thead><tr><th>Auditor</th><th>Main function</th><th>Initial audit training</th><th>Initial training date</th><th>Last recurrent training</th><th>Next recurrent training</th><th>Authorized domains</th><th>Excluded domains (independence)</th><th>Audits completed</th><th>Authorization</th>' + (w ? '<th class="omm-reg-noprint"></th>' : '') + '</tr></thead><tbody>'
+    au.innerHTML = '<table class="tbl"><thead><tr><th>' + B('Auditeur','Auditor') + '</th><th>' + B('Fonction principale','Main function') + '</th><th>' + B('Formation initiale d’auditeur','Initial audit training') + '</th><th>' + B('Date de formation initiale','Initial training date') + '</th><th>' + B('Dernier recyclage','Last recurrent training') + '</th><th>' + B('Prochain recyclage','Next recurrent training') + '</th><th>' + B('Domaines autorisés','Authorized domains') + '</th><th>' + B('Domaines exclus (indépendance)','Excluded domains (independence)') + '</th><th>' + B('Audits réalisés','Audits completed') + '</th><th>' + B('Habilitation','Authorization') + '</th>' + (w ? '<th class="omm-reg-noprint"></th>' : '') + '</tr></thead><tbody>'
       + (arows.length ? arows.map(function(r){
           var nxt = addMonths(r.recycleDate, r.period || 24), dn = daysTo(nxt), valid = !!r.recycleDate && dn !== null && dn >= 0;
           return '<tr><td class="omm-reg-name">' + esc(r.name) + '</td><td class="omm-reg-dim">' + esc(r.role) + '</td><td class="omm-reg-dim">' + esc(r.training) + '</td>'
-            + '<td class="nw">' + fd(r.initDate) + '</td><td class="nw">' + fd(r.recycleDate) + '</td><td class="nw">' + (nxt ? fd(nxt) + '<br>' + tag(dn, 'Valid') : '—') + '</td>'
+            + '<td class="nw">' + fd(r.initDate) + '</td><td class="nw">' + fd(r.recycleDate) + '</td><td class="nw">' + (nxt ? fd(nxt) + '<br>' + tag(dn, B('Valide','Valid')) : '—') + '</td>'
             + '<td class="omm-reg-dim">' + esc((r.domains || []).join(', ')) + '</td><td class="omm-reg-dim">' + esc(r.exclusions) + '</td>'
             + '<td class="nw" style="text-align:center">' + esc(String(r.auditCount || 0)) + '</td>'
-            + '<td><span class="omm-reg-tag ' + (valid ? 'ok' : 'bad') + '">' + (valid ? 'Authorized' : (r.recycleDate ? 'Expired' : 'No recurrent training')) + '</span></td>'
-            + (w ? '<td class="omm-reg-act omm-reg-noprint"><button class="btn" type="button" onclick="ommRegOpen(\'aud\',\'' + esc(r.id) + '\')" title="Edit">✏ Edit</button> <button class="btn danger" type="button" onclick="ommRegDel(\'aud\',\'' + esc(r.id) + '\')" title="Delete">🗑</button></td>' : '')
+            + '<td><span class="omm-reg-tag ' + (valid ? 'ok' : 'bad') + '">' + (valid ? B('Habilité','Authorized') : (r.recycleDate ? B('Échue','Expired') : B('Aucun recyclage','No recurrent training'))) + '</span></td>'
+            + (w ? '<td class="omm-reg-act omm-reg-noprint"><button class="btn" type="button" onclick="ommRegOpen(\'aud\',\'' + esc(r.id) + '\')" title="Modifier / Edit">✏ ' + B('Modifier','Edit') + '</button> <button class="btn danger" type="button" onclick="ommRegDel(\'aud\',\'' + esc(r.id) + '\')" title="Supprimer / Delete">🗑</button></td>' : '')
             + '</tr>';
-        }).join('') : '<tr><td colspan="' + (w ? 11 : 10) + '" class="omm-reg-empty">' + (aq ? 'No auditor matches the search.' : 'No auditor recorded.') + '</td></tr>')
+        }).join('') : '<tr><td colspan="' + (w ? 11 : 10) + '" class="omm-reg-empty">' + (aq ? B('Aucun auditeur ne correspond à la recherche.','No auditor matches the search.') : B('Aucun auditeur enregistré.','No auditor recorded.')) + '</td></tr>')
       + '</tbody></table>';
   }
   window.ommRegRender = render;
@@ -3541,12 +3548,12 @@ h1 {
   function area(id, label, val){ return '<div class="f full"><label for="' + id + '">' + label + '</label><textarea id="' + id + '">' + esc(val) + '</textarea></div>'; }
   function filesHTML(){
     return EDIT.files.length ? EDIT.files.map(function(f, i){
-      return '<div class="file"><span>📎 ' + esc(f.name) + '</span><small>' + Math.max(1, Math.round((f.size || 0) / 1024)) + ' KB</small>'
-        + '<button class="btn" type="button" onclick="ommRegFileOpen(' + i + ')">Open</button><button class="btn danger" type="button" onclick="ommRegFileRemove(' + i + ')" title="Remove from this record">✕</button></div>';
-    }).join('') : '<div class="hint">No document attached.</div>';
+      return '<div class="file"><span>📎 ' + esc(f.name) + '</span><small>' + Math.max(1, Math.round((f.size || 0) / 1024)) + ' Ko</small>'
+        + '<button class="btn" type="button" onclick="ommRegFileOpen(' + i + ')">Ouvrir / Open</button><button class="btn danger" type="button" onclick="ommRegFileRemove(' + i + ')" title="Retirer de la fiche / Remove from this record">✕</button></div>';
+    }).join('') : '<div class="hint">Aucun document joint / No document attached.</div>';
   }
   window.ommRegOpen = function(kind, id){
-    if(!canWrite()){ alert('Read only.'); return; }
+    if(!canWrite()){ alert('Lecture seule / Read only.'); return; }
     var list = kind === 'st' ? REG.subcontractors : REG.auditors;
     var r = id ? list.find(function(x){ return x.id === id; }) : null;
     r = r ? JSON.parse(JSON.stringify(r)) : {};
@@ -3554,35 +3561,35 @@ h1 {
     var h;
     if(kind === 'st'){
       var t = svc(r.type), opts = SERVICE_TYPES.concat(t && SERVICE_TYPES.indexOf(t) < 0 ? [t] : []);
-      h = '<h3>' + (id ? 'Subcontractor record' : 'New subcontractor') + '</h3><div class="sub">APP08-OMM · List of Subcontractors</div>'
-        + '<div class="g2">' + fld('or-ref', 'Internal reference', r.ref, 'placeholder="e.g. ST-2026-01"')
-        + '<div class="f"><label for="or-type">Service type</label><select id="or-type">' + opts.map(function(o){ return '<option' + (o === (t || 'Maintenance (Part-145)') ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select></div>'
-        + fld('or-name', 'Organization name', r.name, 'placeholder="e.g. Heli Maintenance SA"', true)
-        + fld('or-cert', 'Certificate / approval no.', r.cert, 'placeholder="e.g. CH.MF.0042"')
-        + fld('or-reg', 'Applicable regulatory reference', r.reg, 'placeholder="e.g. Part-145, ORO.GEN.205"')
-        + fld('or-cert-date', 'Approval / issue date', r.certDate, 'type="date"')
-        + fld('or-expiry', 'Certificate expiry date', r.expiry, 'type="date"')
-        + fld('or-period', 'Audit frequency (months)', r.period || '12', 'type="number" min="1" max="36"')
-        + fld('or-last', 'Last audit date', r.lastAudit, 'type="date"')
-        + area('or-scope', 'Service scope', r.scope)
-        + '<div class="f full"><label for="or-status">Monitoring status</label><select id="or-status">' + Object.keys(ST_STATUS).map(function(k){ return '<option value="' + k + '"' + ((r.status || 'conforme') === k ? ' selected' : '') + '>' + ST_STATUS[k][0] + '</option>'; }).join('') + '</select></div>'
-        + area('or-notes', 'Remarks / findings', r.notes) + '</div>'
-        + '<div class="files"><label>Attachments (contract, certificate, audit report)</label><div class="hint">PDF, DOCX, PPTX, XLSX, JPG, PNG — 100 MB max per file. Private storage; documents open through a link valid for 1 hour.</div>'
+      h = '<h3>' + (id ? 'Fiche sous-traitant' : 'Nouveau sous-traitant') + '</h3><div class="sub">' + (id ? 'Subcontractor record' : 'New subcontractor') + ' · APP08-OMM · Liste des sous-traitants / List of Subcontractors</div>'
+        + '<div class="g2">' + fld('or-ref', 'Référence interne / Internal reference', r.ref, 'placeholder="ex. / e.g. ST-2026-01"')
+        + '<div class="f"><label for="or-type">Type de service / Service type</label><select id="or-type">' + opts.map(function(o){ return '<option value="' + esc(o) + '"' + (o === (t || 'Maintenance (Part-145)') ? ' selected' : '') + '>' + esc(svcLbl(o)) + '</option>'; }).join('') + '</select></div>'
+        + fld('or-name', 'Nom de l’organisme / Organization name', r.name, 'placeholder="ex. / e.g. Heli Maintenance SA"', true)
+        + fld('or-cert', 'N° de certificat ou d’agrément / Certificate or approval no.', r.cert, 'placeholder="ex. / e.g. CH.MF.0042"')
+        + fld('or-reg', 'Référence réglementaire / Regulatory reference', r.reg, 'placeholder="ex. / e.g. Part-145, ORO.GEN.205"')
+        + fld('or-cert-date', 'Date d’agrément / Approval date', r.certDate, 'type="date"')
+        + fld('or-expiry', 'Expiration du certificat / Certificate expiry', r.expiry, 'type="date"')
+        + fld('or-period', 'Fréquence d’audit (mois) / Audit frequency (months)', r.period || '12', 'type="number" min="1" max="36"')
+        + fld('or-last', 'Date du dernier audit / Last audit date', r.lastAudit, 'type="date"')
+        + area('or-scope', 'Périmètre du service / Service scope', r.scope)
+        + '<div class="f full"><label for="or-status">Statut de surveillance / Monitoring status</label><select id="or-status">' + Object.keys(ST_STATUS).map(function(k){ return '<option value="' + k + '"' + ((r.status || 'conforme') === k ? ' selected' : '') + '>' + ST_STATUS[k][2] + ' / ' + ST_STATUS[k][0] + '</option>'; }).join('') + '</select></div>'
+        + area('or-notes', 'Remarques et constatations / Remarks and findings', r.notes) + '</div>'
+        + '<div class="files"><label>Pièces jointes (contrat, certificat, rapport d’audit) / Attachments (contract, certificate, audit report)</label><div class="hint">PDF, DOCX, PPTX, XLSX, JPG, PNG — 100 Mo max par fichier. Stockage privé ; les documents s’ouvrent par un lien valable 1 heure. / 100 MB max per file. Private storage; links valid for 1 hour.</div>'
         + '<div id="or-files">' + filesHTML() + '</div><input type="file" id="or-file" multiple accept=".pdf,.docx,.pptx,.xlsx,.jpg,.jpeg,.png" onchange="ommRegUpload(this)"></div>';
     }else{
-      h = '<h3>' + (id ? 'Auditor record' : 'New auditor') + '</h3><div class="sub">APP09-OMM · List of Auditors</div>'
-        + '<div class="g2">' + fld('or-name', 'Last name & first name', r.name, 'placeholder="e.g. Martin Dupont"')
-        + fld('or-role', 'Main function', r.role, 'placeholder="e.g. Safety Manager, Captain, Technician"')
-        + fld('or-training', 'Initial audit training', r.training, 'placeholder="e.g. EASA internal auditor training — 2024"')
-        + fld('or-init', 'Initial training date', r.initDate, 'type="date"')
-        + fld('or-recycle', 'Last recurrent training date', r.recycleDate, 'type="date"')
-        + fld('or-period', 'Recurrent training frequency (months)', r.period || '24', 'type="number" min="12" max="60"')
-        + '<div class="f full"><label>Authorized domains</label><div class="chk">' + DOMAINS.map(function(d){ return '<label><input type="checkbox" data-dom="' + esc(d) + '"' + ((r.domains || []).indexOf(d) >= 0 ? ' checked' : '') + '> ' + esc(d) + '</label>'; }).join('') + '</div></div>'
-        + fld('or-excl', 'Excluded domains — independence principle', r.exclusions, 'placeholder="e.g. CAT.OP (line captain), ORO.FC (ongoing training)"', true)
-        + fld('or-count', 'Audits completed', r.auditCount || 0, 'type="number" min="0"')
-        + area('or-notes', 'Remarks / history', r.notes) + '</div>';
+      h = '<h3>' + (id ? 'Fiche auditeur' : 'Nouvel auditeur') + '</h3><div class="sub">' + (id ? 'Auditor record' : 'New auditor') + ' · APP09-OMM · Liste des auditeurs / List of Auditors</div>'
+        + '<div class="g2">' + fld('or-name', 'Nom et prénom / Last name & first name', r.name, 'placeholder="ex. / e.g. Martin Dupont"')
+        + fld('or-role', 'Fonction principale / Main function', r.role, 'placeholder="ex. / e.g. Safety Manager, commandant de bord, technicien"')
+        + fld('or-training', 'Formation initiale d’auditeur / Initial audit training', r.training, 'placeholder="ex. / e.g. formation auditeur interne EASA — 2024"')
+        + fld('or-init', 'Date de formation initiale / Initial training date', r.initDate, 'type="date"')
+        + fld('or-recycle', 'Date du dernier recyclage / Last recurrent training date', r.recycleDate, 'type="date"')
+        + fld('or-period', 'Fréquence de recyclage (mois) / Recurrent training frequency (months)', r.period || '24', 'type="number" min="12" max="60"')
+        + '<div class="f full"><label>Domaines autorisés / Authorized domains</label><div class="chk">' + DOMAINS.map(function(d){ return '<label><input type="checkbox" data-dom="' + esc(d) + '"' + ((r.domains || []).indexOf(d) >= 0 ? ' checked' : '') + '> ' + esc(d) + '</label>'; }).join('') + '</div></div>'
+        + fld('or-excl', 'Domaines exclus — principe d’indépendance / Excluded domains — independence principle', r.exclusions, 'placeholder="ex. / e.g. CAT.OP (commandant de bord en ligne), ORO.FC (formation en cours)"', true)
+        + fld('or-count', 'Audits réalisés / Audits completed', r.auditCount || 0, 'type="number" min="0"')
+        + area('or-notes', 'Remarques et historique / Remarks and history', r.notes) + '</div>';
     }
-    h += '<div class="foot"><span class="msg" id="or-msg"></span><button class="btn" type="button" onclick="ommRegClose()">Cancel</button><button class="btn gold" type="button" id="or-save" onclick="ommRegSave()">💾 Save</button></div>';
+    h += '<div class="foot"><span class="msg" id="or-msg"></span><button class="btn" type="button" onclick="ommRegClose()">' + B('Annuler','Cancel') + '</button><button class="btn gold" type="button" id="or-save" onclick="ommRegSave()">💾 ' + B('Enregistrer','Save') + '</button></div>';
     var m = modal(); m.innerHTML = '<div class="box" role="dialog" aria-modal="true">' + h + '</div>'; m.classList.add('open');
     setTimeout(function(){ var f = $(kind === 'st' ? 'or-ref' : 'or-name'); if(f) f.focus(); }, 30);
   };
@@ -3596,12 +3603,12 @@ h1 {
     if(!EDIT || !canWrite()) return;
     var list = EDIT.kind === 'st' ? REG.subcontractors : REG.auditors, rec;
     if(EDIT.kind === 'st'){
-      if(!v('or-name')){ msg('Enter the organization name.', true); return; }
+      if(!v('or-name')){ msg('Saisissez le nom de l’organisme / Enter the organization name.', true); return; }
       rec = { id:EDIT.id, ref:v('or-ref'), name:v('or-name'), type:v('or-type'), cert:v('or-cert'), reg:v('or-reg'), certDate:v('or-cert-date'), expiry:v('or-expiry'),
               period:v('or-period') || '12', lastAudit:v('or-last'), scope:v('or-scope'), status:v('or-status') || 'conforme', notes:v('or-notes'),
               files:EDIT.files, storageFolder:EDIT.folder || '' };
     }else{
-      if(!v('or-name')){ msg('Enter the auditor name.', true); return; }
+      if(!v('or-name')){ msg('Saisissez le nom de l’auditeur / Enter the auditor name.', true); return; }
       var doms = []; document.querySelectorAll('#omm-reg-modal [data-dom]').forEach(function(c){ if(c.checked) doms.push(c.getAttribute('data-dom')); });
       rec = { id:EDIT.id, name:v('or-name'), role:v('or-role'), training:v('or-training'), initDate:v('or-init'), recycleDate:v('or-recycle'), period:v('or-period') || '24',
               domains:doms, exclusions:v('or-excl'), auditCount:parseInt(v('or-count'), 10) || 0, notes:v('or-notes') };
@@ -3613,7 +3620,7 @@ h1 {
   window.ommRegDel = function(kind, id){
     if(!canWrite()) return;
     var list = kind === 'st' ? REG.subcontractors : REG.auditors, r = list.find(function(x){ return x.id === id; }); if(!r) return;
-    if(!confirm('Delete « ' + (r.name || r.ref || 'record') + ' » from the ' + (kind === 'st' ? 'List of Subcontractors' : 'List of Auditors') + '?' + (kind === 'st' && (r.files || []).length ? '\n\nIts attached documents are kept in storage.' : ''))) return;
+    if(!confirm('Supprimer « ' + (r.name || r.ref || 'fiche') + ' » de la ' + (kind === 'st' ? 'liste des sous-traitants' : 'liste des auditeurs') + ' ?\nDelete it from the ' + (kind === 'st' ? 'List of Subcontractors' : 'List of Auditors') + '?' + (kind === 'st' && (r.files || []).length ? '\n\nLes pièces jointes restent conservées dans le stockage. / Attached documents are kept in storage.' : ''))) return;
     list.splice(list.indexOf(r), 1); render(); save();
   };
 
@@ -3622,22 +3629,22 @@ h1 {
   function ext(n){ return (String(n || '').split('.').pop() || '').toLowerCase(); }
   window.ommRegUpload = async function(input){
     if(!EDIT || !canWrite()){ input.value = ''; return; }
-    var c = db(); if(!c){ msg('Storage unavailable — sign in again.', true); input.value = ''; return; }
+    var c = db(); if(!c){ msg('Stockage indisponible — reconnectez-vous / Storage unavailable — sign in again.', true); input.value = ''; return; }
     if(!EDIT.folder) EDIT.folder = ROOT + '/' + new Date().getFullYear() + '/' + seg(v('or-ref') || v('or-name') || 'Contractor') + '-' + seg(EDIT.id);
     var files = Array.from(input.files || []); input.value = '';
     var btn = $('or-save'); if(btn) btn.disabled = true;
     for(var i = 0; i < files.length; i++){
       var f = files[i], x = ext(f.name);
-      if(EXT.indexOf(x) < 0){ msg('Unsupported format: ' + f.name, true); continue; }
-      if(f.size > MAX){ msg('File over 100 MB: ' + f.name, true); continue; }
+      if(EXT.indexOf(x) < 0){ msg('Format non accepté / Unsupported format : ' + f.name, true); continue; }
+      if(f.size > MAX){ msg('Fichier de plus de 100 Mo / File over 100 MB : ' + f.name, true); continue; }
       var name = seg(f.name); if(name.toLowerCase().slice(-(x.length + 1)) !== '.' + x) name += '.' + x;
       var path = EDIT.folder + '/' + new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14) + '-' + Math.random().toString(36).slice(2, 7) + '-' + name;
-      msg('Uploading « ' + f.name + ' »…');
+      msg('Envoi de « ' + f.name + ' »… / Uploading…');
       var res = await c.storage.from(BUCKET).upload(path, f, { upsert:false, contentType:f.type || MIME[x] || 'application/octet-stream' });
-      if(res.error){ msg('Upload failed: ' + (res.error.message || res.error), true); continue; }
+      if(res.error){ msg('Échec de l’envoi / Upload failed : ' + (res.error.message || res.error), true); continue; }
       EDIT.files.push({ id:'f' + uid(), name:f.name, type:f.type || MIME[x] || '', size:f.size, path:path, bucket:BUCKET, uploaded_at:new Date().toISOString() });
       EDIT.uploaded.push(path);
-      msg('« ' + f.name + ' » uploaded — save the record to keep it.');
+      msg('« ' + f.name + ' » envoyé — enregistrez la fiche pour le conserver / uploaded — save the record to keep it.');
     }
     if(btn) btn.disabled = false;
     var box = $('or-files'); if(box) box.innerHTML = filesHTML();
@@ -3645,16 +3652,16 @@ h1 {
   async function openMeta(f){
     if(!f) return;
     if(f.data && !f.path){ var a = document.createElement('a'); a.href = f.data; a.target = '_blank'; a.rel = 'noopener'; a.click(); return; }
-    var c = db(); if(!c || !f.path){ alert('Document unavailable.'); return; }
+    var c = db(); if(!c || !f.path){ alert('Document indisponible / Document unavailable.'); return; }
     var w = null; try{ w = window.open('about:blank', '_blank'); }catch(e){}
     var res = await c.storage.from(f.bucket || BUCKET).createSignedUrl(f.path, 3600);
-    if(res.error){ if(w) w.close(); alert('Cannot open the document: ' + res.error.message); return; }
+    if(res.error){ if(w) w.close(); alert('Impossible d’ouvrir le document / Cannot open the document : ' + res.error.message); return; }
     if(w) w.location.href = res.data.signedUrl; else window.location.href = res.data.signedUrl;
   }
   window.ommRegFileOpen = function(i){ if(EDIT) openMeta(EDIT.files[i]); };
   window.ommRegFileRemove = function(i){
     if(!EDIT) return; var f = EDIT.files[i]; if(!f) return;
-    if(!confirm('Remove « ' + f.name + ' » from this record?')) return;
+    if(!confirm('Retirer « ' + f.name + ' » de cette fiche ? / Remove it from this record?')) return;
     EDIT.files.splice(i, 1); var box = $('or-files'); if(box) box.innerHTML = filesHTML();
   };
   window.ommRegFile = function(id, i){ var r = REG.subcontractors.find(function(x){ return x.id === id; }); if(r) openMeta((r.files || [])[i]); };
@@ -3664,13 +3671,13 @@ h1 {
     var head, rows;
     var c = function(x){ return '"' + String(x == null ? '' : x).replace(/"/g, '""') + '"'; };
     if(kind === 'st'){
-      head = ['Ref.','Organization','Service type','Regulatory ref.','Certificate / approval','Approval date','Certificate expiry','Audit frequency (months)','Last audit','Next audit','Status','Scope','Remarks','Documents'];
-      rows = REG.subcontractors.map(function(r){ return [r.ref, r.name, svc(r.type), r.reg, r.cert, r.certDate, r.expiry, r.period || 12, r.lastAudit, addMonths(r.lastAudit, r.period || 12), (ST_STATUS[r.status] || [r.status])[0], r.scope, r.notes, (r.files || []).map(function(f){ return f.name; }).join(' | ')]; });
+      head = ['Réf. / Ref.','Organisme / Organization','Type de service / Service type','Réf. réglementaire / Regulatory ref.','Certificat / Certificate','Date d’agrément / Approval date','Expiration / Certificate expiry','Fréquence d’audit (mois) / Audit frequency (months)','Dernier audit / Last audit','Prochain audit / Next audit','Statut / Status','Périmètre / Scope','Remarques / Remarks','Documents'];
+      rows = REG.subcontractors.map(function(r){ return [r.ref, r.name, svcLbl(svc(r.type)), r.reg, r.cert, r.certDate, r.expiry, r.period || 12, r.lastAudit, addMonths(r.lastAudit, r.period || 12), (ST_STATUS[r.status] ? ST_STATUS[r.status][2] + ' / ' + ST_STATUS[r.status][0] : r.status), r.scope, r.notes, (r.files || []).map(function(f){ return f.name; }).join(' | ')]; });
     }else{
-      head = ['Auditor','Main function','Initial audit training','Initial training date','Last recurrent training','Frequency (months)','Next recurrent training','Authorized domains','Excluded domains','Audits completed','Remarks'];
+      head = ['Auditeur / Auditor','Fonction / Main function','Formation initiale / Initial audit training','Date formation initiale / Initial training date','Dernier recyclage / Last recurrent training','Fréquence (mois) / Frequency (months)','Prochain recyclage / Next recurrent training','Domaines autorisés / Authorized domains','Domaines exclus / Excluded domains','Audits réalisés / Audits completed','Remarques / Remarks'];
       rows = REG.auditors.map(function(r){ return [r.name, r.role, r.training, r.initDate, r.recycleDate, r.period || 24, addMonths(r.recycleDate, r.period || 24), (r.domains || []).join(' | '), r.exclusions, r.auditCount || 0, r.notes]; });
     }
-    if(!rows.length){ alert('No data.'); return; }
+    if(!rows.length){ alert('Aucune donnée / No data.'); return; }
     var csv = '\uFEFF' + [head].concat(rows).map(function(r){ return r.map(c).join(';'); }).join('\r\n');
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
     a.download = kind === 'st' ? 'APP08-OMM_List_of_Subcontractors.csv' : 'APP09-OMM_List_of_Auditors.csv'; a.click();
