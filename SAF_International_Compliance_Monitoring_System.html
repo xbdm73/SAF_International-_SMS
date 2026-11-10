@@ -1459,6 +1459,9 @@ tbody tr.hidden{display:none;}
 .ctitle{font-weight:600;font-size:12px;}
 .cir{color:var(--text-dim);font-size:11.5px;line-height:1.55;white-space:pre-wrap;max-height:80px;overflow:hidden;cursor:pointer;position:relative;transition:max-height .35s ease;}
 .cir.expanded{max-height:2000px;}
+/* APP15-OMM: always display the full regulatory IR/AMC text in generated audit grids. */
+.cir.cir-full,.amc-body.cir-full{max-height:none!important;overflow:visible!important;cursor:default;}
+.cir.cir-full::after,.amc-body.cir-full::after{display:none!important;}
 .cir:not(.expanded)::after{content:'';position:absolute;bottom:0;left:0;right:0;height:28px;background:linear-gradient(transparent,rgba(10,22,40,.95));pointer-events:none;}
 .amc-body{color:var(--silver);font-size:11px;line-height:1.55;white-space:pre-wrap;max-height:72px;overflow:hidden;cursor:pointer;position:relative;transition:max-height .35s ease;display:block;}
 .amc-body.expanded{max-height:2000px;}
@@ -15883,8 +15886,8 @@ function g_buildHTML(){
           <td class="cref">${g_esc(row.ref)}</td>
           <td class="ctitle">${g_esc(row.title)}${row.variant?` <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent-light);background:rgba(232,160,32,.15);padding:1px 6px;border-radius:3px;">${row.variant}</span>`:''}</td>
           <td class="cir-cell">
-            <div class="cir" onclick="g_toggleText(this)">${g_esc(row.ir)}</div>
-            <button class="expand-btn" onclick="g_toggleText(this.previousElementSibling)">▼ Read more</button>
+            <div class="cir${row.planId&&String(row.planId).startsWith('AOC24-')?' cir-full':''}" ${row.planId&&String(row.planId).startsWith('AOC24-')?'':'onclick="g_toggleText(this)"'}>${g_esc(row.ir)}</div>
+            ${row.planId&&String(row.planId).startsWith('AOC24-')?'':'<button class="expand-btn" onclick="g_toggleText(this.previousElementSibling)">▼ Read more</button>'}
           </td>
           <td><select class="ss" onchange="g_setStatus(this,'${rid}')">
             <option value="">— Select —</option>
@@ -15930,8 +15933,8 @@ function g_buildHTML(){
               <td class="amc-ref-cell">${g_esc(amc.ref)}</td>
               <td colspan="2" class="amc-indent">
                 ${amc.subtitle?`<span class="amc-sub-badge">${g_esc(amc.subtitle)}</span>`:''}
-                <span class="amc-body" onclick="g_toggleText(this)">${g_esc(amc.text)}</span>
-                <button class="expand-btn" onclick="g_toggleText(this.previousElementSibling)">▼ Read more</button>
+                <span class="amc-body${row.planId&&String(row.planId).startsWith('AOC24-')?' cir-full':''}" ${row.planId&&String(row.planId).startsWith('AOC24-')?'':'onclick="g_toggleText(this)"'}>${g_esc(amc.text)}</span>
+                ${row.planId&&String(row.planId).startsWith('AOC24-')?'':'<button class="expand-btn" onclick="g_toggleText(this.previousElementSibling)">▼ Read more</button>'}
               </td>
               <td><select class="ss" onchange="g_setStatus(this,'${amid}')">
                 <option value="">— Select —</option>
@@ -16553,9 +16556,9 @@ function g_toggleText(el){
 <div class="card"><b>Méthode de contrôle</b><p><b>RCA — Regulatory Compliance Audit :</b> réglementation IR + AMC retenus / AltMoC, approbations, manuel OMM, OM-A à E et SOP. <b>OCA — Operational Compliance Audit :</b> contrôle sur dossiers réels, équipages, aéronefs, observations ou démonstrations que les pratiques respectent les documents SAF et les règles applicables. Les résultats sont distingués dans chaque compte rendu; les constats sont traités dans APP17-OMM (CAP). Les barrières SMS sont aussi vérifiées pour leur efficacité.</p></div>
 <div class="card"><b>Année 1 — 2027</b><div class="months" id="aoccal1" style="margin-top:10px"></div></div>
 <div class="card"><b>Année 2 — 2028</b><div class="months" id="aoccal2" style="margin-top:10px"></div></div>
-<div class="card"><b>Liste des audits — calendrier, références et preuves</b>
+<div class="card"><b>Liste des audits — calendrier et contrôles</b>
 <div class="tools"><select id="aocYear"><option value="all">Les deux années</option><option value="1">2027</option><option value="2">2028</option></select><input id="aocSearch" placeholder="Rechercher audit ou IR…"><button type="button" id="aocCSV">Exporter CSV</button><button type="button" onclick="window.print()">Imprimer le plan</button></div>
-<div class="scroll"><table><thead><tr><th>ID</th><th>Domaine</th><th>RCA</th><th>OCA</th><th>Références réglementaires</th><th>Contrôle</th></tr></thead><tbody id="aocRows"></tbody></table></div><div id="aocDetail"></div>
+<div class="scroll"><table><thead><tr><th>ID</th><th>Domaine</th><th>RCA</th><th>OCA</th><th>Contrôle</th></tr></thead><tbody id="aocRows"></tbody></table></div><div id="aocDetail"></div>
 </div>
 <div class="card"><b>Contrôle d'exhaustivité — points de vigilance</b><p>La checklist article par article doit couvrir ORO.GEN, ORO.AOC, ORO.MLR, ORO.FC et ORO.CC/SEC selon applicabilité; CAT.GEN.MPA, CAT.OP.MPA, CAT.POL.H, CAT.IDE.H; SPO.GEN, SPO.OP, SPO.POL, SPO.IDE.H, SPO.SPEC.HESLO, SPO.SPEC.MCF; NCC.GEN, NCC.OP, NCC.POL, NCC.IDE.H; SPA.DG/EFB; Part-FCL/MED, occurrences 376/2014, SERA et dispositions nationales. Chaque sous-paragraphe applicable doit avoir un responsable, un manuel, un audit RCA/OCA, une preuve et un résultat. Vérifier l'applicabilité des exigences temps de service pour CAT hélicoptères et de Part-IS. Pas d'audit CAMO: seulement interfaces OPS/One CAMO SAF Hélicoptères. Part-IS gérée par SAF Aerogroup: contrôle des interfaces sans audit du système du groupe.</p><p>Références officielles : <a href="https://www.easa.europa.eu/en/document-library/easy-access-rules/easy-access-rules-air-operations" target="_blank" rel="noopener">EASA Air OPS (Rév. 24, mars 2026)</a> ; <a href="https://www.easa.europa.eu/en/regulations/air-operations" target="_blank" rel="noopener">modifications réglementaires postérieures</a> ; <a href="https://www.easa.europa.eu/en/document-library/general-publications/management-system-assessment-tool" target="_blank" rel="noopener">EASA MSAT</a>.</p></div>
 </div>
@@ -16564,7 +16567,7 @@ const A=[["01","Gouvernance, AOC, management","ORO.GEN.005; ORO.GEN.105; ORO.GEN
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const label=n=>M[(n-1)%12]+' '+(n>12?'2028':'2027');
 for(let y=1;y<=2;y++){let h='';for(let m=1;m<=12;m++){let n=(y-1)*12+m,r=A.filter(x=>x[5]===n).map(x=>x[0]).join(', ')||'—',o=A.filter(x=>x[6]===n).map(x=>x[0]).join(', ')||'—';h+='<div class="month '+(m>=4&&m<=11?'o':'')+'"><b>'+M[m-1]+'</b><small>RCA '+r+'</small><small>OCA '+o+'</small></div>'}document.getElementById('aoccal'+y).innerHTML=h}
-function render(){const y=document.getElementById('aocYear').value,q=document.getElementById('aocSearch').value.toLowerCase();document.getElementById('aocRows').innerHTML=A.filter(x=>(y==='all'||(x[5]>12?2:1)===+y)&&x.join(' ').toLowerCase().includes(q)).map(x=>'<tr><td>'+x[0]+'</td><td>'+esc(x[1])+'</td><td>'+label(x[5])+'</td><td>'+label(x[6])+'</td><td class="ref">'+esc(x[2])+'</td><td><button type="button" data-id="'+x[0]+'">Détails</button> <button type="button" data-grid="'+x[0]+'">Créer grille</button></td></tr>').join('')}
+function render(){const y=document.getElementById('aocYear').value,q=document.getElementById('aocSearch').value.toLowerCase();document.getElementById('aocRows').innerHTML=A.filter(x=>(y==='all'||(x[5]>12?2:1)===+y)&&x.join(' ').toLowerCase().includes(q)).map(x=>'<tr><td>'+x[0]+'</td><td>'+esc(x[1])+'</td><td>'+label(x[5])+'</td><td>'+label(x[6])+'</td><td><button type="button" data-id="'+x[0]+'">Détails</button> <button type="button" data-grid="'+x[0]+'">Créer grille</button></td></tr>').join('')}
 document.getElementById('aocYear').addEventListener('change',render);document.getElementById('aocSearch').addEventListener('input',render);
 document.getElementById('aocRows').addEventListener('click',e=>{let c=e.target.closest('button[data-grid]');if(c){window.safAoc24CreateGrid(c.dataset.grid);return;}let b=e.target.closest('button[data-id]');if(!b)return;let x=A.find(a=>a[0]===b.dataset.id);document.getElementById('aocDetail').innerHTML='<div class="more"><b>Audit '+x[0]+' — '+esc(x[1])+'</b><p><b>RCA :</b> '+label(x[5])+' · <b>OCA :</b> '+label(x[6])+'</p><p><b>Articles IR à vérifier (grille EASA CMS) :</b> '+esc(x[2])+'</p><p><b>Documentation :</b> '+esc(x[3])+'</p><p><b>Preuves opérationnelles :</b> '+esc(x[4])+'</p><p><small>Articles IR identifiés par numéro dans la base EASA du CMS. Vérifier l’applicabilité, les sous-paragraphes et AMC associés avant chaque audit.</small></p></div>'});
 
