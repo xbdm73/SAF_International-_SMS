@@ -4,7 +4,7 @@
    - Bibliothèques CDN (Supabase, pdf.js, polices) : cache d'abord, mise à jour
      en arrière-plan.
    - Jamais de cache pour l'API Supabase (données, authentification, fichiers). */
-const VERSION = 'saf-cms-2026-10-27b';
+const VERSION = 'saf-cms-2026-11-10a';
 // Page du CMS telle que l'ouvre la tuile du portail (URL « jolie » Netlify, sans .html)
 const PAGE = './saf_international_compliance_monitoring_system';
 const CORE = [
@@ -65,18 +65,26 @@ async function staleWhileRevalidate(req) {
   const c = await caches.open(VERSION);
   const hit = await c.match(req);
   const net = fetch(req).then(r => { if (r && (r.ok || r.type === 'opaque')) c.put(req, r.clone()); return r; }).catch(() => null);
-  return hit || (await net) || new Response('', { status: 504 });
+  return hit || (await net) || fetch(req);
 }
 
+/* 10.11.2026 — Le service worker est installé par le CMS mais sa portée (/sms/) couvre aussi
+   le suivi flotte, le SMS, les Appendices… Il ne prend désormais en charge que ce qui sert au
+   CMS hors ligne : la page du CMS, ses icônes et la liste CDN précise ci-dessus. Tout le reste
+   passe directement par le navigateur. Avant, il interceptait aussi Leaflet et les polices du
+   suivi flotte ; la règle de sécurité du portail lui interdisant ces adresses, il renvoyait une
+   réponse vide (504) et la page restait noire jusqu'à un Ctrl+Maj+R. */
+const CMS_RE = /compliance_monitoring_system/i;
+const OWN_ASSET_RE = /\/(manifest\.webmanifest|cms-icon-\d+\.png)$/i;
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.hostname.endsWith('supabase.co') || url.hostname.endsWith('supabase.in')) return; // API : jamais en cache
   if (req.mode === 'navigate' || (url.origin === self.location.origin && /\.html?$/.test(url.pathname))) {
-    e.respondWith(networkFirst(req)); return;
+    if (CMS_RE.test(url.pathname)) e.respondWith(networkFirst(req));
+    return;                                   // autres pages : navigateur seul
   }
-  if (url.origin === self.location.origin || CDN_HOSTS.includes(url.hostname)) {
-    e.respondWith(staleWhileRevalidate(req));
-  }
+  if (url.origin === self.location.origin && OWN_ASSET_RE.test(url.pathname)) { e.respondWith(staleWhileRevalidate(req)); return; }
+  if (CDN.includes(req.url)) { e.respondWith(staleWhileRevalidate(req)); return; }
 });
