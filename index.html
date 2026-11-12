@@ -1179,6 +1179,18 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
         throw new Error('Rôle SMS non reconnu : ' + (role || '(vide)'));
       }
       applyRole(role, email);
+      // Journaliser une seule ouverture du SMS par session authentifiee.
+      // Les notifications sont gerees cote serveur ; aucune adresse dans le client.
+      try {
+        var log = await db.rpc('sms_register_login');
+        if (log.error) throw log.error;
+        if (log.data && log.data.id) {
+          var response = await db.functions.invoke('sms-login-notify', {
+            body: { event_id: log.data.id }
+          });
+          if (response.error) console.warn('SAF SMS login notification:', response.error);
+        }
+      } catch(logErr) { console.warn('SAF SMS login audit:', logErr); }
     } catch(e) {
       SAF_ROLE = null;
       var badge = document.getElementById('saf-role-badge');
