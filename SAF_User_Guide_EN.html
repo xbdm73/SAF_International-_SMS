@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SAF International — System user guide</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0D1B2A;--navy-mid:#1A2E42;--navy-light:#243B55;--gold:#C9A227;--gold-light:#F0C040;--steel:#4A9FE0;--white:#F4F6F8;--g1:#C8D0D8;--g2:#8896A0;--red:#e07070;--green:#70d0a0;--side:315px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#0A1520;color:var(--white);font-family:'IBM Plex Sans',sans-serif;line-height:1.62}
+header{position:sticky;top:0;z-index:50;background:linear-gradient(135deg,#07111e,#13233a);border-bottom:1px solid rgba(201,162,39,.35);padding:14px 20px}
+.head{max-width:1600px;margin:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}.brand{font-family:'Bebas Neue',sans-serif;font-size:29px;letter-spacing:.06em}.sub{font-family:'IBM Plex Mono',monospace;color:var(--g2);font-size:10px}.spacer{flex:1}
+.topbtn{border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:var(--g1);padding:8px 12px;border-radius:7px;font:600 11px 'IBM Plex Mono',monospace;cursor:pointer;text-decoration:none}.topbtn:hover{border-color:var(--gold);color:var(--gold-light)}
+.search{min-width:260px;background:#07111e;border:1px solid rgba(255,255,255,.14);color:white;border-radius:7px;padding:9px 11px;font:12px 'IBM Plex Sans',sans-serif}
+.layout{max-width:1600px;margin:auto;display:grid;grid-template-columns:var(--side) minmax(0,1fr);min-height:calc(100vh - 82px)}
+aside{position:sticky;top:82px;height:calc(100vh - 82px);overflow:auto;background:#0D1B2A;border-right:1px solid rgba(255,255,255,.08);padding:18px 14px 40px}.nav-group{font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.15em;color:var(--gold);padding:15px 9px 7px;text-transform:uppercase}aside a{display:block;color:#b9c6d4;text-decoration:none;font-size:11.5px;padding:7px 9px;border-radius:6px;margin:1px 0}aside a:hover{background:rgba(74,159,224,.12);color:#fff}aside a.hidden{display:none}
+main{padding:28px clamp(20px,4vw,64px) 70px;min-width:0}.hero{background:linear-gradient(135deg,#13233a,#0d1b2a);border:1px solid rgba(201,162,39,.25);border-radius:14px;padding:24px 26px;margin-bottom:24px}.hero h1{font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:.05em;margin:0}.hero p{color:var(--g1);max-width:1050px}.chips{display:flex;gap:7px;flex-wrap:wrap}.chip{font:10px 'IBM Plex Mono',monospace;border:1px solid rgba(74,159,224,.3);padding:4px 8px;border-radius:999px;color:#9ccff6}
+.guide-section{scroll-margin-top:105px;background:#101f30;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:23px 26px;margin:0 0 18px}h2{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:.035em;color:#fff;margin:0 0 13px;border-bottom:1px solid rgba(201,162,39,.2);padding-bottom:9px}h4{font-size:14px;color:var(--gold-light);margin:18px 0 7px}p{margin:7px 0 12px}ul,ol{padding-left:24px;margin:8px 0 14px}li{margin:5px 0}strong{color:#fff}.note,.warn{padding:12px 14px;border-left:3px solid var(--steel);background:rgba(74,159,224,.08);border-radius:0 7px 7px 0;margin:14px 0}.warn{border-left-color:var(--red);background:rgba(224,112,112,.08)}.table-scroll{overflow:auto}table{width:100%;border-collapse:collapse;margin:12px 0 16px;font-size:12px}th{text-align:left;color:var(--gold-light);font:600 10px 'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.05em;background:#0b1724}th,td{padding:9px 10px;border:1px solid rgba(255,255,255,.08);vertical-align:top}
+.guide-section.search-hide{display:none}.no-results{display:none;color:var(--g2);padding:18px;border:1px dashed rgba(255,255,255,.15);border-radius:9px}footer{text-align:center;color:#536273;font:10px 'IBM Plex Mono',monospace;padding:30px}
+@media(max-width:950px){.layout{grid-template-columns:1fr}aside{position:relative;top:0;height:auto;border-right:0;border-bottom:1px solid rgba(255,255,255,.08);max-height:340px}header{position:relative}.search{min-width:180px;flex:1}}
+@media print{header,aside,.topbtn,.search{display:none!important}.layout{display:block}main{padding:0}.guide-section{break-inside:avoid;background:#fff;color:#111;border:1px solid #ccc}body{background:#fff;color:#111}h2{color:#000}h4{color:#333}strong{color:#000}.note,.warn{background:#f5f5f5}table,th,td{border-color:#bbb;color:#111}}
+code{font:11px 'IBM Plex Mono',monospace;background:rgba(74,159,224,.12);padding:1px 5px;border-radius:4px}
+</style>
+<script id="saf-sky-theme">
+/* SAF — THÈME CLAIR « BLEU CIEL »
+   Remplace le thème bleu nuit par un fond bleu ciel clair, des panneaux
+   blancs et du texte foncé. Fonctionne en deux temps :
+   1) les variables de couleur du :root sont converties (fond sombre -> clair,
+      texte clair -> foncé, traits -> gris-bleu) ;
+   2) les couleurs écrites directement dans le HTML/JS (styles en ligne,
+      contenus générés) sont corrigées élément par élément, y compris pour
+      tout ce qui est ajouté ensuite à la page (MutationObserver).
+   Les couleurs « signal » (rouge, orange, vert, or, badges) sont conservées ;
+   le contraste du texte est vérifié sur chaque élément. */
+(function(){
+  'use strict';
+  if(window.__safSkyTheme) return; window.__safSkyTheme = true;
+
+  var SKY   = '#E3F1FB';   // fond de page bleu ciel clair
+  var PANEL = '#FFFFFF';   // panneaux / cartes
+  var SUB   = '#F2F8FD';   // sous-panneaux
+  var LINE  = '#C3D8EA';   // traits / bordures
+  var TEXT  = '#0B1622';   // texte principal (contraste ≈ 16:1 sur le bleu ciel)
+  var MUTED = '#1E2D3D';   // texte secondaire (≈ 12:1)
+  var FAINT = '#2E3F51';   // texte discret / placeholders (≈ 9:1)
+
+  /* ---------- outils couleur ---------- */
+  function parse(c){
+    c = String(c || '').trim();
+    var m = c.match(/^rgba?\(([^)]+)\)$/i);
+    if(m){
+      var p = m[1].split(/[\s,\/]+/).filter(Boolean);
+      return { r:+p[0], g:+p[1], b:+p[2],
+               a: p.length > 3 ? (String(p[3]).indexOf('%') > -1 ? parseFloat(p[3]) / 100 : +p[3]) : 1 };
+    }
+    m = c.match(/^#([0-9a-f]{3,8})$/i);
+    if(m){
+      var h = m[1];
+      if(h.length === 3 || h.length === 4) h = h.split('').map(function(x){ return x + x; }).join('');
+      return { r:parseInt(h.substr(0,2),16), g:parseInt(h.substr(2,2),16), b:parseInt(h.substr(4,2),16),
+               a: h.length === 8 ? parseInt(h.substr(6,2),16) / 255 : 1 };
+    }
+    return null;
+  }
+  function lin(v){ v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+  function L(c){ return 0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b); }   // luminance relative
+  function Y(c){ return (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) / 255; }          // clarté perçue simple
+  function S(c){ return Math.max(c.r, c.g, c.b) - Math.min(c.r, c.g, c.b); }
+  function contrast(a, b){ var x = L(a), y = L(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+  function hex(c){ return '#' + [c.r, c.g, c.b].map(function(v){ v = Math.max(0, Math.min(255, Math.round(v))); return (v < 16 ? '0' : '') + v.toString(16); }).join(''); }
+  function rgba(c){ return 'rgba(' + Math.round(c.r) + ',' + Math.round(c.g) + ',' + Math.round(c.b) + ',' + (+c.a.toFixed(3)) + ')'; }
+  function over(top, bot){ // compose top (alpha) sur bot (opaque)
+    var a = top.a; return { r: top.r * a + bot.r * (1 - a), g: top.g * a + bot.g * (1 - a), b: top.b * a + bot.b * (1 - a), a: 1 };
+  }
+  var cSKY = parse(SKY), cPANEL = parse(PANEL), cTEXT = parse(TEXT), cWHITE = { r:255, g:255, b:255, a:1 };
+  var isNeutral = function(c){ return S(c) < 70; };
+
+  /* ---------- 1) variables du :root ---------- */
+  function rootVarNames(){
+    var names = {};
+    function walk(rules){
+      for(var i = 0; i < rules.length; i++){
+        var r = rules[i];
+        if(r.cssRules && !r.selectorText){ try{ walk(r.cssRules); }catch(e){} continue; }
+        if(!r.selectorText || !r.style) continue;
+        if(!/(^|,)\s*(:root|html)\s*(,|$)/.test(r.selectorText)) continue;
+        for(var j = 0; j < r.style.length; j++){ var n = r.style[j]; if(n.indexOf('--') === 0) names[n] = 1; }
+      }
+    }
+    for(var k = 0; k < document.styleSheets.length; k++){
+      var sh = document.styleSheets[k];
+      if(sh.ownerNode && sh.ownerNode.id === 'saf-sky-vars') continue;
+      try{ walk(sh.cssRules); }catch(e){}
+    }
+    return Object.keys(names);
+  }
+  var origVars = {}, DARK = false, DARK_LOCK = false;
+  function ourTags(on){
+    ['saf-sky-vars','saf-sky-base'].forEach(function(id){ var t = document.getElementById(id); if(t) t.disabled = !on; });
+  }
+  // Thème d'origine sombre ? (texte clair sur fond foncé)
+  // Échantillonne le fond réellement visible en plusieurs points de l'écran
+  function detectDark(){
+    if(!document.body) return DARK;
+    var vw = window.innerWidth || 1200, vh = window.innerHeight || 800, dark = 0, light = 0;
+    [[.5,.5],[.25,.4],[.75,.3],[.5,.8],[.12,.6],[.88,.7]].forEach(function(p){
+      var el = document.elementFromPoint(vw * p[0], vh * p[1]); if(!el) return;
+      var bg = null, a = el;
+      while(a && a.nodeType === 1){ var c = parse(getComputedStyle(a).backgroundColor); if(c && c.a >= 0.5){ bg = c; break; } a = a.parentElement; }
+      if(!bg) return;
+      if(Y(bg) < 0.35) dark++; else light++;
+    });
+    var bodyDark = (function(){
+      var b = parse(getComputedStyle(document.body).backgroundColor), c = parse(getComputedStyle(document.body).color);
+      if(b && b.a > 0.5) return Y(b) < 0.45;
+      return c ? Y(c) > 0.55 : false;
+    })();
+    if(dark + light === 0) return bodyDark;
+    return bodyDark || dark >= light;
+  }
+  function pageBg(){
+    var els = [document.body, document.documentElement];
+    for(var i = 0; i < els.length; i++){ if(!els[i]) continue; var b = parse(getComputedStyle(els[i]).backgroundColor); if(b && b.a > 0.5) return b; }
+    return null;
+  }
+  function applyVars(){
+    var tag = document.getElementById('saf-sky-vars');
+    ourTags(false);                                    // relire les valeurs d'origine
+    if(!DARK_LOCK){ DARK = detectDark(); if(DARK && document.body) DARK_LOCK = true; }
+    var pb = pageBg();
+    var cs = getComputedStyle(document.documentElement);
+    var names = rootVarNames(), list = [];
+    names.forEach(function(n){
+      var v = cs.getPropertyValue(n).trim(); var c = parse(v);
+      if(!c) return; origVars[n] = c; list.push(n);
+    });
+    // la variable neutre la plus sombre = fond de page
+    var darkest = null;
+    list.forEach(function(n){ var c = origVars[n]; if(c.a > 0.9 && isNeutral(c) && Y(c) < 0.2 && (!darkest || Y(c) < Y(origVars[darkest]))) darkest = n; });
+    var out = [];
+    if(!DARK){
+      // page déjà claire : seul le fond de page passe au bleu ciel
+      list.forEach(function(n){ var c = origVars[n]; if(pb && c.a > 0.9 && Math.abs(c.r - pb.r) + Math.abs(c.g - pb.g) + Math.abs(c.b - pb.b) < 6) out.push(n + ':' + SKY + ' !important'); });
+      list = [];
+    }
+    list.forEach(function(n){
+      var c = origVars[n], nv = null, lineName = /(line|rule|border|stroke|divider|sep|grid)/i.test(n);
+      if(c.a < 0.6){
+        if(Y(c) > 0.75) nv = lineName ? LINE : rgba({ r:19, g:32, b:46, a: Math.min(0.5, c.a * 1.2) }); // voile blanc -> voile foncé
+        else if(lineName && isNeutral(c)) nv = LINE;
+      } else if(isNeutral(c)){
+        var y = Y(c);
+        if(lineName && y < 0.45) nv = LINE;
+        else if(y < 0.2) nv = (n === darkest) ? SKY : PANEL;
+        else if(y < 0.32) nv = SUB;
+        else if(y > 0.7) nv = TEXT;
+        else if(y > 0.45) nv = MUTED;
+      } else if(Y(c) < 0.18 && !lineName){
+        nv = (n === darkest) ? SKY : PANEL;          // fond « bleu nuit » légèrement saturé
+      }
+      if(nv) out.push(n + ':' + nv + ' !important');
+    });
+    if(!tag){ tag = document.createElement('style'); tag.id = 'saf-sky-vars'; }
+    tag.textContent = 'html:root{' + out.join(';') + (DARK ? ';color-scheme:light !important' : '') + '}';
+    if(!tag.parentNode) (document.head || document.documentElement).appendChild(tag);
+    ourTags(true);
+  }
+
+  /* ---------- CSS de base ---------- */
+  var BASE =
+      'html,body{background:' + SKY + ' !important;color-scheme:light}'
+    + '::placeholder{color:' + FAINT + ' !important;opacity:1}'
+    + '::-webkit-scrollbar-track{background:#EAF3FA}'
+    + '::-webkit-scrollbar-thumb{background:#B7CCDF;border-radius:6px}'
+    + 'select option{background:#fff;color:' + TEXT + '}';
+  function injectBase(){
+    if(document.getElementById('saf-sky-base')) return;
+    var st = document.createElement('style'); st.id = 'saf-sky-base'; st.textContent = BASE;
+    (document.head || document.documentElement).appendChild(st);
+  }
+
+  /* ---------- 2) correction élément par élément ---------- */
+  // Les corrections sont posées en style en ligne « !important » (priorité
+  // maximale), en mémorisant la valeur d'origine pour pouvoir la restituer.
+  var saved = new WeakMap();
+  function setP(el, prop, val){
+    var st = el.style; if(!st) return;
+    var rec = saved.get(el); if(!rec){ rec = {}; saved.set(el, rec); }
+    if(!rec[prop]) rec[prop] = { v: st.getPropertyValue(prop), p: st.getPropertyPriority(prop) };
+    st.setProperty(prop, val, 'important');
+    rec[prop].ours = st.getPropertyValue(prop);
+  }
+  function strip(el){
+    var rec = saved.get(el); if(!rec || !el.style) return;
+    var st = el.style;
+    for(var prop in rec){
+      var r = rec[prop];
+      if(st.getPropertyValue(prop) === r.ours && st.getPropertyPriority(prop) === 'important'){
+        if(r.v) st.setProperty(prop, r.v, r.p); else st.removeProperty(prop);
+      }
+    }
+    saved.delete(el);
+  }
+  function getBgOverride(el){ var rec = saved.get(el); return rec && rec['background-color'] ? parse(rec['background-color'].ours) : null; }
+  var SKIP = { SCRIPT:1, STYLE:1, LINK:1, META:1, HEAD:1, TITLE:1, NOSCRIPT:1, BR:1, IMG:1, VIDEO:1, CANVAS:1, IFRAME:1, PICTURE:1, SOURCE:1, TEMPLATE:1 };
+  function skippable(el){
+    if(SKIP[el.tagName]) return true;
+    if(el.closest && el.closest('.leaflet-tile-pane,.leaflet-tile-container,[data-saf-sky-skip]')) return true;
+    return false;
+  }
+  function darkNeutralBg(c){ return c && c.a >= 0.5 && isNeutral(c) && Y(c) < 0.3; }
+  function darkSatBg(c){ return c && c.a >= 0.5 && !isNeutral(c) && Y(c) < 0.14 && (c.b >= c.r); } // bleu nuit saturé
+
+  // Fond final d'un élément déjà traité (lecture sans recalcul de nos décisions)
+  function finalBgOf(el, decided){
+    if(decided && decided.has(el)) return decided.get(el);
+    var c = parse(getComputedStyle(el).backgroundColor);
+    return c;
+  }
+  function effectiveBg(el, decided){
+    var layers = [], a = el;
+    while(a && a.nodeType === 1){
+      var c = finalBgOf(a, decided);
+      if(c && c.a > 0.02){ layers.push(c); if(c.a >= 0.95) break; }
+      a = a.parentElement;
+    }
+    var base = (a && a.nodeType === 1) ? layers.pop() : cSKY;
+    if(!base || base.a < 0.95) base = cSKY;
+    for(var i = layers.length - 1; i >= 0; i--) base = over(layers[i], base);
+    return base;
+  }
+  // Contraste visé : 7:1 minimum (WCAG AAA) pour tout le texte
+  var TARGET = 7;
+  function bestNeutral(bg){ return contrast(cTEXT, bg) >= contrast(cWHITE, bg) ? TEXT : '#FFFFFF'; }
+  function fixText(c, bg){
+    if(!c || c.a === 0) return null;
+    var cc = c.a < 1 ? over(c, bg) : c;
+    if(contrast(cc, bg) >= TARGET) return null;
+    if(isNeutral(cc)) return bestNeutral(bg);
+    // texte coloré : même teinte, assombrie (ou éclaircie) jusqu'à 7:1
+    var bgLight = contrast(cTEXT, bg) >= contrast(cWHITE, bg), k = { r:cc.r, g:cc.g, b:cc.b, a:1 }, i = 0;
+    while(contrast(k, bg) < TARGET && i < 40){
+      k = bgLight ? { r:k.r * 0.9, g:k.g * 0.9, b:k.b * 0.9, a:1 }
+                  : { r:k.r + (255 - k.r) * 0.15, g:k.g + (255 - k.g) * 0.15, b:k.b + (255 - k.b) * 0.15, a:1 };
+      i++;
+    }
+    return contrast(k, bg) >= TARGET ? hex(k) : bestNeutral(bg);
+  }
+  function gradientIsDark(img){
+    if(!img || img === 'none' || img.indexOf('gradient') < 0 || img.indexOf('url(') > -1) return false;
+    var cols = img.match(/rgba?\([^)]+\)/g) || []; if(!cols.length) return false;
+    var tot = 0, n = 0;
+    cols.forEach(function(x){ var c = parse(x); if(c && c.a > 0.3){ tot += Y(c); n++; } });
+    return n > 0 && tot / n < 0.3;
+  }
+
+  var imgSeen = new WeakMap();
+  function darkImg(img){
+    var was = busy; busy = true;
+    setP(img, 'filter', 'brightness(0) saturate(100%) invert(10%) sepia(28%) saturate(1400%) hue-rotate(178deg) brightness(92%)');
+    if(obs) obs.takeRecords(); busy = was;
+  }
+  function checkImg(img){
+    if(imgSeen.has(img) && imgSeen.get(img).src === img.currentSrc){ if(imgSeen.get(img).dark) darkImg(img); return; }
+    if(!img.complete || !img.naturalWidth){ img.addEventListener('load', function(){ checkImg(img); }, { once:true }); return; }
+    var rec = { src: img.currentSrc, dark: false }; imgSeen.set(img, rec);
+    try{
+      var w = Math.min(120, img.naturalWidth), h = Math.max(1, Math.round(img.naturalHeight * w / img.naturalWidth));
+      var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      var cx = cv.getContext('2d'); cx.drawImage(img, 0, 0, w, h);
+      var d = cx.getImageData(0, 0, w, h).data, tr = 0, op = 0, wh = 0;
+      for(var i = 0; i < d.length; i += 4){
+        if(d[i+3] < 40){ tr++; continue; }
+        op++; if(d[i] > 225 && d[i+1] > 225 && d[i+2] > 225) wh++;
+      }
+      var tot = tr + op;
+      if(tot && tr / tot > 0.2 && op && wh / op > 0.85){ rec.dark = true; darkImg(img); }
+    }catch(e){}
+  }
+  function processList(els){
+    var vw = window.innerWidth || 1200, vh = window.innerHeight || 800;
+    ourTags(false);   // lectures sur les couleurs d'origine
+    var restore = true;
+    var decided = new Map(), work = [];
+    // a) lectures (styles d'origine : nos classes ont été retirées)
+    els.forEach(function(el){
+      if(!el || el.nodeType !== 1) return;
+      if(el.tagName === 'IMG'){ if(DARK) checkImg(el); return; }
+      if(skippable(el)) return;
+      var cs = getComputedStyle(el);
+      work.push({ el:el, svg: el instanceof SVGElement, bg: parse(cs.backgroundColor), img: cs.backgroundImage,
+        tx: parse(cs.color), tf: parse(cs.webkitTextFillColor),
+        bd: [parse(cs.borderTopColor), parse(cs.borderRightColor), parse(cs.borderBottomColor), parse(cs.borderLeftColor)],
+        bw: [parseFloat(cs.borderTopWidth), parseFloat(cs.borderRightWidth), parseFloat(cs.borderBottomWidth), parseFloat(cs.borderLeftWidth)],
+        fill: parse(cs.fill), stroke: parse(cs.stroke), sh: cs.boxShadow, rad: parseFloat(cs.borderTopLeftRadius) || 0 });
+    });
+    work.forEach(function(w){
+      if(w.svg) return;
+      var b = w.bg;
+      if(DARK && b && b.a >= 0.5 && (darkNeutralBg(b) || darkSatBg(b))){ var r = w.el.getBoundingClientRect(); w.big = w.rad < 2 && ((r.width >= vw * 0.6 && r.height >= 48) || r.height >= vh * 0.7); }
+    });
+    ourTags(true);
+    // b) décisions de fond
+    work.forEach(function(w){
+      var el = w.el, bg = w.bg, nb = null, tag = el.tagName;
+      if(w.svg){ return; }
+      if(tag === 'HTML' || tag === 'BODY'){ decided.set(el, cSKY); return; }
+      if(!DARK){ decided.set(el, bg); return; }
+      if(darkNeutralBg(bg) || darkSatBg(bg)){
+        nb = w.big ? SKY : ((Y(bg) < 0.16) ? PANEL : SUB);
+      } else if(bg && bg.a > 0 && bg.a < 0.5 && Y(bg) > 0.75 && isNeutral(bg)){
+        nb = rgba({ r:19, g:32, b:46, a: Math.min(0.08, bg.a * 1.1) });    // voile blanc -> voile gris-bleu
+      } else if(bg && bg.a > 0 && bg.a < 0.5 && isNeutral(bg) && Y(bg) < 0.25 && el.children.length){
+        nb = null;                                                          // voile sombre (fond de modale) : conservé
+      }
+      if(gradientIsDark(w.img)){ w.dropImg = true; if(!nb && (!bg || bg.a < 0.5)) nb = PANEL; }
+      if(nb){ w.nb = nb; decided.set(el, parse(nb)); }
+      else decided.set(el, bg);
+      if(w.sh && w.sh !== 'none' && /rgba?\(0, 0, 0/.test(w.sh)) w.softShadow = true;
+    });
+    // c) décisions de texte, bordures, SVG
+    work.forEach(function(w){
+      var el = w.el;
+      if(w.svg){
+        var t = el.tagName.toLowerCase();
+        if(t === 'text' || t === 'tspan' || t === 'textpath'){
+          var holder = el.closest('g') || el.parentNode, shape = null;
+          if(holder){ var cand = holder.querySelector('rect,path,circle,ellipse,polygon'); if(cand){ var f = parse(getComputedStyle(cand).fill); if(f && f.a > 0.6 && !isNeutral(f) && Y(f) < 0.65) shape = f; } }
+          var bgS = shape || cPANEL;
+          var nf = fixText(w.fill, bgS); if(nf) w.nfill = nf;
+        } else if(DARK && t !== 'svg' && t !== 'g' && t !== 'defs'){
+          if(w.fill && w.fill.a > 0.5 && isNeutral(w.fill) && Y(w.fill) < 0.25) w.nfill = SUB;
+          else if(w.fill && w.fill.a > 0.3 && isNeutral(w.fill) && Y(w.fill) > 0.8 && /^(path|circle|polygon|line|polyline|use)$/.test(t)) w.nfill = MUTED;
+          if(w.stroke && w.stroke.a > 0.05 && isNeutral(w.stroke) && (Y(w.stroke) > 0.6 || Y(w.stroke) < 0.3)) w.nstroke = (Y(w.stroke) > 0.6) ? '#7F96AA' : LINE;
+        }
+        return;
+      }
+      var eb = effectiveBg(el, decided);
+      var nt = fixText(w.tx, eb); if(nt) w.ntx = nt;
+      if(w.tf && w.tx && (w.tf.r !== w.tx.r || w.tf.g !== w.tx.g || w.tf.b !== w.tx.b)){ var nf2 = fixText(w.tf, eb); if(nf2) w.ntf = nf2; }
+
+      w.nbd = [];
+      for(var i = 0; i < 4 && DARK; i++){
+        var b = w.bd[i];
+        if(!b || !(w.bw[i] > 0) || b.a === 0) continue;
+        if(isNeutral(b) && (b.a < 0.6 || Y(b) > 0.55 || Y(b) < 0.3)) w.nbd[i] = 1;
+        else if(!isNeutral(b) && b.a < 0.35) w.nbd[i] = 0;   // trait coloré translucide : gardé
+      }
+    });
+    // d) écritures
+    work.forEach(function(w){
+      var el = w.el;
+      if(w.nb) setP(el, 'background-color', w.nb);
+      if(w.dropImg) setP(el, 'background-image', 'none');
+      if(w.ntx) setP(el, 'color', w.ntx);
+      if(w.ntf) setP(el, '-webkit-text-fill-color', w.ntf);
+      if(w.nbd) ['border-top-color','border-right-color','border-bottom-color','border-left-color'].forEach(function(pr, i){ if(w.nbd[i] === 1) setP(el, pr, LINE); });
+      if(w.softShadow) setP(el, 'box-shadow', '0 1px 3px rgba(19,32,46,.10)');
+      if(w.nfill) setP(el, 'fill', w.nfill);
+      if(w.nstroke) setP(el, 'stroke', w.nstroke);
+    });
+  }
+  function processTree(root){
+    if(!root || root.nodeType !== 1) return;
+    var els = [root].concat(Array.prototype.slice.call(root.querySelectorAll('*')));
+    els.forEach(strip);
+    processList(els);
+  }
+
+  /* ---------- observation des changements ---------- */
+  var queue = new Set(), scheduled = false, busy = false, obs = null;
+  function schedule(){
+    if(scheduled) return; scheduled = true;
+    requestAnimationFrame(function(){ scheduled = false; flush(); });
+  }
+  function flush(){
+    if(!queue.size) return;
+    var roots = Array.from(queue); queue.clear();
+    roots = roots.filter(function(r){
+      if(!r.isConnected) return false;
+      for(var i = 0; i < roots.length; i++){ if(roots[i] !== r && roots[i].contains(r)) return false; }
+      return true;
+    });
+    busy = true;
+    try{
+      var all = [];
+      roots.forEach(function(r){ all.push(r); Array.prototype.push.apply(all, r.querySelectorAll('*')); });
+      all.forEach(strip);
+      processList(all);
+    }catch(e){ console.warn('[thème bleu ciel]', e); }
+    if(obs) obs.takeRecords();
+    busy = false;
+    scheduleGuard();
+  }
+  function onMut(list){
+    if(busy) return;
+    for(var i = 0; i < list.length; i++){
+      var m = list[i];
+      if(m.type === 'childList'){
+        for(var j = 0; j < m.addedNodes.length; j++){ var n = m.addedNodes[j]; if(n.nodeType === 1) queue.add(n); else if(n.parentElement) queue.add(n.parentElement); }
+      } else if(m.type === 'attributes' && m.target.nodeType === 1){
+        if(String(m.oldValue || '') === String(m.target.getAttribute(m.attributeName) || '')) continue;
+        queue.add(m.target);
+      }
+    }
+    if(queue.size) schedule();
+  }
+
+  /* ---------- 3) contrôle final du contraste ----------
+     Vérifie le rendu réel de chaque texte visible (couleur finale, fond
+     effectif, opacité) et corrige tout ce qui reste sous 7:1. */
+  function hasOwnText(el){
+    if(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return true;
+    for(var n = el.firstChild; n; n = n.nextSibling) if(n.nodeType === 3 && /\S/.test(n.nodeValue)) return true;
+    return false;
+  }
+  function finalBg(el){
+    var layers = [], a = el;
+    while(a && a.nodeType === 1){
+      var c = parse(getComputedStyle(a).backgroundColor);
+      if(c && c.a > 0.02){ layers.push(c); if(c.a >= 0.95) break; }
+      a = a.parentElement;
+    }
+    var base = (a && a.nodeType === 1) ? layers.pop() : cSKY;
+    if(!base || base.a < 0.95) base = cSKY;
+    for(var i = layers.length - 1; i >= 0; i--) base = over(layers[i], base);
+    return base;
+  }
+  function guard(){
+    if(!document.body) return;
+    var todo = [];
+    var els = document.body.getElementsByTagName('*');
+    for(var i = 0; i < els.length; i++){
+      var el = els[i];
+      if(SKIP[el.tagName] || el.tagName === 'OPTION' || el instanceof SVGElement) continue;
+      if(!hasOwnText(el)) continue;
+      if(!el.getClientRects().length) continue;
+      var cs = getComputedStyle(el);
+      if(cs.visibility !== 'visible') continue;
+      var tc = parse(cs.webkitTextFillColor) || parse(cs.color); if(!tc || tc.a === 0) continue;
+      var own = parseFloat(cs.opacity), anc = 1, a = el.parentElement;
+      while(a && a !== document.body){ anc *= parseFloat(getComputedStyle(a).opacity); a = a.parentElement; }
+      if(own * anc < 0.05) continue;
+      var bg = finalBg(el);
+      var seen = over({ r:tc.r, g:tc.g, b:tc.b, a:tc.a * own * anc }, bg);
+      if(contrast(seen, bg) >= TARGET) continue;
+      // couleur requise en tenant compte de l'opacité des parents
+      var target = fixText({ r:tc.r, g:tc.g, b:tc.b, a:1 }, bg) || hex(tc);
+      if(anc < 1){
+        var t = parse(target), shown = over({ r:t.r, g:t.g, b:t.b, a:anc }, bg);
+        if(contrast(shown, bg) < TARGET) target = bestNeutral(bg);
+      }
+      var tgt = parse(target);
+      if(tgt && contrast(tgt, bg) < TARGET && anc >= 0.95){
+        // fond coloré (matrice OACI, boutons…) : on le fonce ou l'éclaircit
+        // juste assez pour atteindre 7:1, en gardant sa teinte
+        var owner = el;
+        while(owner && owner !== document.body){ var ob = parse(getComputedStyle(owner).backgroundColor); if(ob && ob.a >= 0.95) break; owner = owner.parentElement; }
+        if(owner && owner !== document.body && !isNeutral(bg)){
+          var whiteText = L(tgt) > 0.5, k = { r:bg.r, g:bg.g, b:bg.b, a:1 }, n = 0;
+          while(contrast(tgt, k) < TARGET && n < 40){
+            k = whiteText ? { r:k.r * 0.93, g:k.g * 0.93, b:k.b * 0.93, a:1 }
+                          : { r:k.r + (255 - k.r) * 0.08, g:k.g + (255 - k.g) * 0.08, b:k.b + (255 - k.b) * 0.08, a:1 };
+            n++;
+          }
+          todo.push([owner, null, false, hex(k)]);
+        }
+      }
+      todo.push([el, target, own < 1]);
+    }
+    // textes SVG (graphiques, jauges)
+    var svgt = document.body.querySelectorAll('svg text, svg tspan');
+    for(var j = 0; j < svgt.length; j++){
+      var t = svgt[j];
+      if(!t.getClientRects().length || !/\S/.test(t.textContent)) continue;
+      var f = parse(getComputedStyle(t).fill); if(!f || f.a === 0) continue;
+      var holder = t.closest('g') || t.parentNode, sb = null;
+      if(holder && holder.querySelector){ var cand = holder.querySelector('rect,circle,ellipse,polygon'); if(cand){ var cf = parse(getComputedStyle(cand).fill); if(cf && cf.a > 0.6) sb = cf; } }
+      var svgEl = t.ownerSVGElement;
+      var bgS = sb || finalBg(svgEl && svgEl.parentElement ? svgEl.parentElement : document.body);
+      if(contrast(f.a < 1 ? over(f, bgS) : f, bgS) >= TARGET) continue;
+      var nf = fixText(f, bgS); if(nf) todo.push([t, nf, false, null, true]);
+    }
+    if(!todo.length) return;
+    var was = busy; busy = true;
+    todo.forEach(function(x){
+      if(x[3]){ setP(x[0], 'background-color', x[3]); return; }
+      if(x[4]){ setP(x[0], 'fill', x[1]); return; }
+      setP(x[0], 'color', x[1]);
+      setP(x[0], '-webkit-text-fill-color', x[1]);
+      if(x[2]) setP(x[0], 'opacity', '1');
+    });
+    if(obs) obs.takeRecords();
+    busy = was;
+  }
+  var guardTimer = null;
+  function scheduleGuard(){ clearTimeout(guardTimer); guardTimer = setTimeout(function(){ try{ guard(); }catch(e){ console.warn('[contraste]', e); } }, 120); }
+  setInterval(function(){ if(document.visibilityState !== 'hidden') scheduleGuard(); }, 2500);
+
+  function fullRefresh(){
+    busy = true;
+    try{
+      Array.prototype.forEach.call(document.querySelectorAll('*'), strip);
+      applyVars();   // le mode sombre d'origine, une fois détecté, reste acquis
+      processTree(document.body);
+    }catch(e){ console.warn('[thème bleu ciel]', e); }
+    if(obs) obs.takeRecords();
+    busy = false;
+    watch();
+    scheduleGuard();
+  }
+  // Changement de thème au niveau de <html> (ex. bouton clair/sombre du portail)
+  new MutationObserver(function(){ requestAnimationFrame(fullRefresh); })
+    .observe(document.documentElement, { attributes:true, attributeFilter:['data-theme','data-mode'] });
+  function watch(){
+    if(obs || !document.body) return;
+    obs = new MutationObserver(onMut);
+    obs.observe(document.body, { childList:true, subtree:true, attributes:true, attributeOldValue:true, attributeFilter:['style','class','fill','stroke'] });
+  }
+  function start(){
+    injectBase();
+    applyVars();
+
+    busy = true;
+    try{ processTree(document.body); }catch(e){ console.warn('[thème bleu ciel]', e); }
+    busy = false;
+    watch();
+    try{ guard(); }catch(e){}
+    uncloak();
+  }
+  // Anti-éclair : tant que la première conversion n'est pas faite, la page est
+  // masquée sur fond bleu ciel (jamais plus de 2,5 s, même en cas de souci).
+  function cloak(){
+    if(document.getElementById('saf-sky-cloak')) return;
+    var c = document.createElement('style'); c.id = 'saf-sky-cloak';
+    c.textContent = 'html{background:' + SKY + ' !important}body{opacity:0 !important}';
+    (document.head || document.documentElement).appendChild(c);
+    setTimeout(uncloak, 2500);
+  }
+  function uncloak(){ var c = document.getElementById('saf-sky-cloak'); if(c) c.remove(); }
+  try{ cloak(); injectBase(); }catch(e){}
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+  window.addEventListener('load', function(){
+    try{ applyVars(); busy = true; processTree(document.body); if(obs) obs.takeRecords(); busy = false; }catch(e){ busy = false; } scheduleGuard();
+  });
+  window.safSkyThemeRefresh = fullRefresh;
+  window.safSkyContrastCheck = guard;
+})();
+
+</script>
+</head>
+<body>
+<header><div class="head"><div><div class="brand">SAF INTERNATIONAL — USER GUIDE</div><div class="sub">User guide · English version · 12.11.2026</div></div><div class="spacer"></div><input id="search" class="search" placeholder="Search the guide…"/><a class="topbtn" href="SAF_User_Guide.html" hreflang="fr" lang="fr">🇫🇷 FRANÇAIS</a><button class="topbtn" onclick="window.print()">PRINT / PDF</button><a class="topbtn" href="https://saf-international-portail.netlify.app/">◂ PORTAL</a><a class="topbtn" href="index.html">⌂ HOME</a><a class="topbtn" href="SAF_International_Safety.html">SMS</a><a class="topbtn" href="SAF_International_Compliance_Monitoring_System.html">CMS</a><a class="topbtn" href="SAF_International_Appendices_OMM.html">OMM</a><a class="topbtn" href="SAF_Report.html">REPORT</a></div></header>
+<div class="layout"><aside id="toc"><div class="nav-group">GENERAL</div><a href="#overview">1. Overview of the SAF system</a><a href="#access">2. Access, sign-in and roles</a><a href="#saving">3. Saving, synchronisation and backups</a><a href="#workflow">4. Cross-cutting workflow</a><div class="nav-group">REPORTING</div><a href="#report">5. Reporting an occurrence (SAF Report)</a><div class="nav-group">SMS</div><a href="#sms">6. SMS — general orientation</a><a href="#sms-dashboard">6.1 Dashboard</a><a href="#sms-risk">6.2 APP10-OMM — Risk Register</a><a href="#sms-moc">6.3 APP11-OMM — Management of Change</a><a href="#sms-erp">6.4 APP12-OMM — Emergency Response Plan</a><a href="#sms-spi">6.5 APP13-OMM — Safety Performance Indicators</a><a href="#sms-occ">6.6 APP14-OMM — Occurrence Log</a><a href="#sms-actions">6.7 Action tracking (Suivi des actions)</a><a href="#sms-accounting">6.8 Event Taxonomy &amp; Accounting</a><a href="#sms-controls">6.9 Safety Policy &amp; Objectives and Controls Review</a><a href="#sms-barriers">6.10 Barrier register</a><a href="#sms-barriereff">6.11 Barrier effectiveness</a><a href="#sms-bowtie">6.12 Bow-Tie Analysis</a><a href="#sms-promotion">6.13 Safety Communication Register</a><a href="#sms-meetings">6.14 Safety Meetings</a><a href="#sms-training">6.15 SMS Training &amp; Competence</a><a href="#sms-assurance">6.16 Safety Assurance — Effectiveness Review</a><a href="#sms-audits">6.17 Internal SMS audits</a><a href="#sms-alos">6.18 ALoS / Safety Case</a><a href="#sms-camo">6.19 CAMO → SMS Interface</a><a href="#sms-interfaces">6.20 External Interfaces</a><a href="#sms-isms">6.21 Part-IS — ISMS</a><a href="#sms-export">6.22 Export &amp; Import</a><div class="nav-group">CMS</div><a href="#cms">7. CMS — general orientation</a><a href="#cms-dashboard">7.1 Dashboards</a><a href="#cms-auditplan">7.2 APP15-OMM — Audit programme</a><a href="#cms-kpi">7.3 APP16-OMM — Compliance indicators</a><a href="#cms-cap">7.4 APP17-OMM — Corrective Action Plan (CAP)</a><a href="#cms-srb">7.5 SRB — checklist and review</a><a href="#cms-easa">7.6 EASA audit grid</a><a href="#cms-matrix">7.7 Compliance matrix</a><a href="#cms-watch">7.8 Regulatory monitoring</a><a href="#cms-bridge">7.9 Safety (SMS) — read only</a><a href="#cms-authority">7.10 Audits &amp; authority</a><a href="#cms-annual">7.11 Annual report and settings</a><div class="nav-group">OMM</div><a href="#omm">8. OMM Appendices — general orientation</a><a href="#omm-app01">8.1 APP01-OMM — List of appendices</a><a href="#omm-app02">8.2 APP02-OMM — Facilities &amp; Infrastructure</a><a href="#omm-app03">8.3 APP03-OMM — Organisation chart</a><a href="#omm-app04">8.4 APP04-OMM — Management personnel</a><a href="#omm-app05">8.5 APP05-OMM — Aircraft Leasing</a><a href="#omm-app06">8.6 APP06-OMM — Aircraft being used</a><a href="#omm-app07">8.7 APP07-OMM — Safety Promotion</a><a href="#omm-app08">8.8 APP08-OMM — Subcontractors</a><a href="#omm-app09">8.9 APP09-OMM — Auditors</a><a href="#omm-save">8.10 Saving the OMM Appendices</a><div class="nav-group">TOOLS &amp; HELP</div><a href="#synoptique">9. SMS synoptic</a><a href="#troubleshooting">10. Troubleshooting</a><a href="#routine">11. Usage routine</a></aside><main>
+<div class="hero"><h1>SAF SYSTEM USER GUIDE</h1><p>This guide explains how to use Safety Management, Compliance Monitoring, the OMM Appendices, the reporting form and the synoptic, as of 12.11.2026. The tools themselves are partly in French: French screen labels are quoted as they appear, with their English meaning in brackets. The French version of this guide is the reference.</p><p><strong>Main changes since the 22.09.2026 version:</strong> appendices renumbered (APP10 to APP14 in the SMS, APP15 to APP17 in the CMS, subcontractors and auditors as APP08 and APP09 in the OMM), second sign-in factor, action tracking, Safety Meetings, External Interfaces, Part-IS, four-type reporting form with attachments, audit grid built from the plan or a manual, 24-month audit programme.</p><div class="chips"><a class="chip" href="#sms">SMS</a><a class="chip" href="#cms">CMS</a><a class="chip" href="#omm">OMM</a><a class="chip" href="#report">REPORTING</a><a class="chip" href="#saving">SAVING</a><a class="chip" href="#troubleshooting">TROUBLESHOOTING</a></div></div><div class="no-results" id="no-results">No chapter matches your search.</div>
+<section class="guide-section" id="overview"><h2>1. Overview of the SAF system</h2>
+<p>The SAF system brings SAF International’s management tools together in web pages opened from the <strong>SAF Portal</strong>. The <strong>HOME</strong> page (<code>index.html</code>) handles sign-in and opens the tools your role allows. All data is stored in SAF’s cloud (Supabase).</p>
+<div class="table-scroll"><table><thead><tr><th>Tool</th><th>Purpose</th><th>Main content</th></tr></thead><tbody>
+<tr><td>Safety Management (SMS)</td><td>Identify hazards, assess and treat risks, investigate occurrences, manage safety performance.</td><td>APP10 to APP14-OMM, action tracking, barriers, Bow-Tie, safety communication and meetings, assurance, external interfaces, Part-IS.</td></tr>
+<tr><td>Compliance Monitoring (CMS)</td><td>Plan and record compliance monitoring and management reviews.</td><td>APP15 to APP17-OMM, SRB, EASA audit grid, compliance matrix, regulatory watch, authority, annual report.</td></tr>
+<tr><td>OMM Appendices</td><td>Keep the appendices of the management manual up to date.</td><td>APP01 to APP09-OMM, including the subcontractor and auditor registers.</td></tr>
+<tr><td>Reporting (Report)</td><td>Report an occurrence from a phone, tablet or PC, without an account.</td><td>Safety, Security, Part-IS, dangerous goods, attached photos and files.</td></tr>
+<tr><td>SMS synoptic</td><td>Check live the status of the SMS functions and of the links between them.</td><td>Failures, degraded functions, “To be handled” list.</td></tr>
+</tbody></table></div>
+<h4>OMM appendix numbering</h4>
+<p>The appendices have been renumbered. APP01-OMM (list of appendices) is the reference.</p>
+<div class="table-scroll"><table><thead><tr><th>Appendix</th><th>Title</th><th>Tool</th></tr></thead><tbody>
+<tr><td>APP01 to APP09-OMM</td><td>List of appendices, facilities, organisation chart, management personnel, leasing, aircraft, safety promotion, subcontractors, auditors</td><td>OMM Appendices</td></tr>
+<tr><td>APP10-OMM</td><td>Risk Register</td><td>SMS</td></tr>
+<tr><td>APP11-OMM</td><td>Management of Change</td><td>SMS</td></tr>
+<tr><td>APP12-OMM</td><td>Emergency Response Plan</td><td>SMS</td></tr>
+<tr><td>APP13-OMM</td><td>Safety Performance Indicators</td><td>SMS</td></tr>
+<tr><td>APP14-OMM</td><td>Occurrence Log</td><td>SMS</td></tr>
+<tr><td>APP15-OMM</td><td>Audit programme</td><td>CMS</td></tr>
+<tr><td>APP16-OMM</td><td>Compliance indicators</td><td>CMS</td></tr>
+<tr><td>APP17-OMM</td><td>Corrective Action Plan (CAP)</td><td>CMS</td></tr>
+</tbody></table></div>
+<div class="note"><strong>Key point:</strong> training records (including SMS training) are kept in Crew Training; the SMS only shows a read-only mirror. This guide explains how to use the tools. It does not replace the OMM, the OM or the approved procedures.</div></section>
+
+<section class="guide-section" id="access"><h2>2. Access, sign-in and roles</h2>
+<h4>Signing in</h4>
+<ol><li>Open the SAF Portal, then HOME, or open a tool directly.</li>
+<li>Enter your email address and password.</li>
+<li>Admin and Editor accounts: enter the 6-digit code from your authenticator app (second factor). At first sign-in, scan the QR code shown with Microsoft Authenticator, Google Authenticator, 1Password… then enter the code it gives.</li>
+<li>Check the role badge shown at the top of the page.</li>
+<li>Open the tool you need from its card. Cards your role cannot use are hidden.</li>
+<li>On a shared computer, click <strong>Sign out</strong> at the end of the session.</li></ol>
+<p>The <strong>Forgot password?</strong> link on the sign-in screen sends a reset link. Keep a second authenticator device (backup device): without it, losing your phone blocks access until the administrator steps in.</p>
+<h4>Roles</h4>
+<div class="table-scroll"><table><thead><tr><th>Role</th><th>Visible tools</th><th>Rights</th><th>Second factor</th></tr></thead><tbody>
+<tr><td>Admin</td><td>SMS, CMS, OMM, Synoptic, Guide</td><td>Read and write, register publication, global backup and restore.</td><td>Required</td></tr>
+<tr><td>Editor</td><td>SMS, CMS, OMM, Synoptic, Guide</td><td>Read and write operational data.</td><td>Required</td></tr>
+<tr><td>Authority (FOCA/OFAC)</td><td>SMS, CMS, OMM, Synoptic, Guide</td><td>Full read access, no writing at all. No access to incoming reports or to the mobile report import: consults the investigated Occurrence Log.</td><td>No</td></tr>
+<tr><td>Reader (read only)</td><td>SMS, Guide</td><td>Sees only the published version of the Risk Register. Cannot change their password (changed by the administrator).</td><td>No</td></tr>
+</tbody></table></div>
+<div class="warn"><strong>Warning:</strong> an amber “no role found” banner means the signed-in address is not declared in the roles table, so the tool switches to read-only. This is not a rights decision but an address the administrator must correct.</div>
+<div class="note"><strong>Key point:</strong> a greyed-out button or a field you cannot edit usually reflects your role’s rights, not a fault.</div></section>
+
+<section class="guide-section" id="saving"><h2>3. Saving, synchronisation and backups</h2>
+<p>For Admin and Editor roles, changes are saved automatically to the cloud a few seconds after typing. The <strong>cloud bar</strong> at the top of each tool shows the status: “Cloud ✓” when everything is saved, a red message if saving failed.</p>
+<h4>Good practice</h4>
+<ol><li>Use the form’s <strong>Save</strong> button when there is one: it confirms the write or shows why it was refused.</li>
+<li>Check that the cloud bar is back to “Cloud ✓” before closing the tab. The “● MODIFICATIONS NON ENREGISTRÉES” (unsaved changes) indicator and the browser warning on closing flag input not yet sent.</li>
+<li>Work in a single tab per tool. If the SMS is already open elsewhere in the browser, a screen offers <strong>Prendre la main ici</strong> (take over here): the other tab saves, then switches to read-only.</li>
+<li>The <strong>Close</strong> button offers Admin and Editor roles to save or export before returning home.</li></ol>
+<h4>Version conflict</h4>
+<p>If someone has saved the same module in the meantime, saving is suspended and a red banner shows who wrote, when and from which browser. Three choices:</p>
+<ul><li><strong>Download my changes</strong>: do this first so nothing is lost.</li>
+<li><strong>Reload from the server</strong>: takes the latest version; your changes not downloaded are lost.</li>
+<li><strong>Overwrite the server</strong>: imposes your version; the other person’s changes are lost.</li></ul>
+<h4>Exports and backups</h4>
+<div class="table-scroll"><table><thead><tr><th>Format</th><th>Use</th></tr></thead><tbody>
+<tr><td>JSON</td><td>Backup and restore of structured data.</td></tr>
+<tr><td>CSV</td><td>Analysis in Excel, register checks.</td></tr>
+<tr><td>PDF / print</td><td>Frozen record for a review, distribution, signature or archiving.</td></tr>
+<tr><td>HTML</td><td>OMM Appendices: standalone copy of the updated document.</td></tr></tbody></table></div>
+<p>The <strong>Global backup</strong> card on HOME (Admin) exports SMS, CMS and OMM data into a single JSON file and can restore it.</p>
+<div class="warn"><strong>Warning:</strong> a restore overwrites the current state for all users. Export the current state first, then check the file’s origin, date and module before confirming.</div></section>
+
+<section class="guide-section" id="workflow"><h2>4. Cross-cutting workflow</h2>
+<p>The tools form a single management system. Information must not stay isolated in one register when others are concerned.</p>
+<ol><li><strong>Detect</strong>: report, safety meeting, audit, CAMO signal, external interface, regulatory watch.</li>
+<li><strong>Qualify</strong>: link the occurrence to a catalogue event (taxonomy) and to the Risk Register scenario, or the finding to its requirement.</li>
+<li><strong>Assess</strong>: rate the risk (ICAO matrix; EBIOS RM method for a Part-IS risk) or the finding level.</li>
+<li><strong>Treat</strong>: barriers, corrective actions, owner, deadline, expected evidence. A significant change goes through a change study (APP11) before it is implemented.</li>
+<li><strong>Track</strong>: all actions are gathered in the SMS <strong>Action tracking</strong> view.</li>
+<li><strong>Verify effectiveness</strong>: a completed action is not necessarily effective. Verification is recorded (barriers, CAP, Safety Assurance).</li>
+<li><strong>Review</strong>: SPIs, CMS indicators, Safety Assurance, SRB and annual report.</li></ol>
+<div class="note"><strong>Key point:</strong> always quote cross-references: SMS-xx, RPT-…, MOC, CAP, IF-xxx, ISR-xxx, audit.</div></section>
+
+<section class="guide-section" id="report"><h2>5. Reporting an occurrence (SAF Report)</h2>
+<p>The form is open to everyone, without an account, from HOME (“Report an occurrence”), from the SAF QR code or from its direct address. It is bilingual (🇫🇷 / 🇬🇧) and recalls the company safety policy.</p>
+<h4>5.1 Choose the type</h4>
+<div class="table-scroll"><table><thead><tr><th>Type</th><th>For</th></tr></thead><tbody>
+<tr><td>SAFETY</td><td>Flight safety occurrence: incident, serious incident, accident, airprox, unsafe situation.</td></tr>
+<tr><td>SECURITY</td><td>Security, unlawful interference: unauthorised access, tampering, theft, drone, laser, threat…</td></tr>
+<tr><td>PART-IS</td><td>Information security: phishing, ransomware, account access, data leak, compromised EFB…</td></tr>
+<tr><td>MD</td><td>Dangerous goods: mandatory information (UN number, class, quantity, packaging…), with a dedicated section for tanks or drums carried as a HESLO external load.</td></tr></tbody></table></div>
+<h4>5.2 Fill in the form</h4>
+<ol><li>Leave your details (first name, last name, email, phone, function) or switch on <strong>Anonymous</strong>. An anonymous report is accepted but prevents any follow-up and any acknowledgement.</li>
+<li>Tick the event type(s).</li>
+<li>Complete the information shown: aircraft, registration, crew (PIC, copilot, TSOP), date, local time, location, base, flight phase, Part-145/CAMO section if relevant.</li>
+<li>State the consequence and any pressure felt.</li>
+<li>Enter a short <strong>title</strong> (required), then the description in chronological order, keeping facts apart from assumptions.</li>
+<li>Describe the immediate actions taken and your suggestions.</li>
+<li>Attach photos, videos or files if useful.</li>
+<li>Send, and note the reference shown (format <code>RPT-YYMMDD-XXXX</code>).</li></ol>
+<h4>5.3 Security and information security</h4>
+<ul><li>Event in progress (intrusion, threat, suspicious item): alert the emergency services and the Accountable Manager first.</li>
+<li>Cyber attack in progress: disconnect the device from the network without switching it off, inform the Security Manager and IT support, then fill in the form.</li>
+<li>Do not forward a suspicious email or open its attachments; do not describe an exploitable vulnerability in detail.</li>
+<li>State whether the event has, or could have, an impact on flight safety: “Yes” or “Unknown” also sends it to the Safety Manager.</li></ul>
+<h4>5.4 After sending</h4>
+<p>The Safety Manager receives an email alert as soon as the report arrives, without the reporter’s identity. Attachments are stored in the SMS private storage. If the network fails, the report is kept on the device with its reference: reopen the page once the connection is back to send it.</p></section>
+
+<section class="guide-section" id="sms"><h2>6. SMS — general orientation</h2>
+<p>The left menu of Safety Management is organised in groups.</p>
+<div class="table-scroll"><table><thead><tr><th>Group</th><th>Views</th></tr></thead><tbody>
+<tr><td>Navigation</td><td>Dashboard, APP10 Risk Register, APP11 Management of Change, APP12 ERP, APP13 SPI, APP14 Occurrence Log, Suivi des actions (action tracking), Event Accounting.</td></tr>
+<tr><td>Tools</td><td>Export &amp; Import.</td></tr>
+<tr><td>SMS Modules</td><td>Safety Policy &amp; Objectives, Controls Review, Registre des barrières (barrier register), Efficacité des barrières (barrier effectiveness), Bow-Tie, Safety Communication Register, Safety Meetings, SMS Training &amp; Competence, Safety Assurance, Internal SMS audits, ALoS / Safety Case, CAMO → SMS Interface, External Interfaces, Part-IS — ISMS.</td></tr>
+<tr><td>Domains</td><td>Quick filter of the register by risk domain.</td></tr></tbody></table></div>
+<p>The cloud bar shows the save status, the role badge and, for the administrator, the register publication status with the <strong>PUBLIER</strong> (publish) button (see 6.2).</p></section>
+
+<section class="guide-section" id="sms-dashboard"><h2>6.1 Dashboard</h2>
+<p>The Dashboard gives a quick reading of the register: risks by domain, initial and residual risk, reference ICAO matrix, probability thresholds recalibrated on annual flight hours (OMM §4.2.4.2), top 10 risks, uncontrolled measures, risk-map quality and AS 332 leading indicators.</p>
+<ol><li>Spot high risks, measures without a recent check and data-quality alerts.</li>
+<li>Then open the detailed view to analyse and decide.</li></ol>
+<div class="note"><strong>Key point:</strong> the Dashboard guides the review; the reference data stays in the relevant register.</div></section>
+
+<section class="guide-section" id="sms-risk"><h2>6.2 APP10-OMM — Risk Register</h2>
+<p>The register is atomic: one scenario = one undesirable event. It has three levels: occurrence category (CICTT/ECCAIRS type), stable SAF family, scenario. Each scenario carries hazards, consequences, prevention, mitigation and recovery measures, initial risk, target residual risk and risk in force.</p>
+<h4>Create or edit a scenario</h4>
+<ol><li>First search for the scenario (search, ⚙ Filters, Domains menu) to avoid a duplicate.</li>
+<li><strong>＋ NEW ENTRY</strong> for a new scenario, or the edit action on an existing row.</li>
+<li>Fill in category, SAF family, operation, light, visual aid, weather, site type, undesirable event, hazards and consequences.</li>
+<li>Describe the measures: one line per barrier, with its document reference in square brackets where possible (e.g. <code>[OM-A 8.3]</code>).</li>
+<li>Rate the initial then the residual risk on the ICAO matrix, and justify the rating (Rating rationale).</li>
+<li>Complete the governance fields: risk owner, effectiveness due date, linked SPI, target or trigger, verification method, formal acceptance basis, linked change study, risk origin.</li>
+<li><strong>✓ SAVE CHANGES</strong>. The record is stamped (author, date) and your changes are kept even on a reference-set scenario.</li></ol>
+<h4>Exports</h4>
+<ul><li><strong>PDF — Fiches barrières</strong> (barrier sheets), <strong>JSON</strong> and <strong>CSV</strong> (full register or current filter).</li>
+<li><strong>ⓘ ICAO / CICTT definitions</strong> recalls the categories; <strong>⇕ Compact</strong> makes the display denser.</li></ul>
+<h4>Publishing the register for readers</h4>
+<p>Reader accounts do not see the working register but its latest published version. After a review or a significant update, the administrator clicks <strong>PUBLIER</strong> in the cloud bar. The bar then shows the publication date and the number of scenarios.</p>
+<div class="warn"><strong>Warning:</strong> do not create duplicates. Update the existing scenario when exposure or barriers change; a reduction in severity, not only in probability, must be justified by reactive measures.</div></section>
+
+<section class="guide-section" id="sms-moc"><h2>6.3 APP11-OMM — Management of Change</h2>
+<p>The change study analyses an organisational, operational, technical or regulatory change before it is implemented. Saved studies are listed under “Saved change studies”.</p>
+<ol><li><strong>＋ New Change Study</strong>.</li>
+<li><strong>Title &amp; identification</strong>: title, internal reference, assessment type, whether authority approval is required (upload the FOCA approval once received), workflow status (Draft, Under review, Approved, Superseded) and version history.</li>
+<li><strong>Description</strong>: detailed description, origin of the decision, dates. If the change stems from an occurrence (5 Whys) or a CMS finding, enter its reference in <em>Root cause reference</em>, then 🔍 <em>Look up</em>.</li>
+<li><strong>Documentation, regulations, assessors</strong>. The EASA compliance matrix attached to the study is kept in the CMS (7.7) and appended to the PDF.</li>
+<li><strong>Risk assessment</strong>: import scenarios from the register (category then event, ↓ Import), or add hazards specific to the change.</li>
+<li><strong>Part-IS section</strong> (mandatory): state whether the change affects an information system. If it does, describe the scenario, the feared event, severity G1–G5, initial and residual likelihood V1–V4, the measures, then the PRC review and decision. If not, justify that conclusion.</li>
+<li><strong>Actions</strong>: <strong>+ ADD ACTION</strong> with owner, email, deadline and status. The assignment email is sent from the study (template set in Export &amp; Import).</li>
+<li>Have the ACM and the assessor sign (read and acknowledged), save, then produce the study PDF.</li></ol>
+<div class="note"><strong>Key point:</strong> close the change only after the effectiveness of the measures has been verified and open actions are handled.</div></section>
+
+<section class="guide-section" id="sms-erp"><h2>6.4 APP12-OMM — Emergency Response Plan</h2>
+<p>The ERP is used as a checklist in a real situation or an exercise.</p>
+<div class="table-scroll"><table><thead><tr><th>Tab</th><th>Use</th></tr></thead><tbody>
+<tr><td>1 · Alert</td><td>Receiving the alert (emergency call or witness), selecting the activation scenario (chapters A to J, level L1→2 or L2), which adapts the action card.</td></tr>
+<tr><td>2 · Call sheet</td><td>Sheet to fill in during the call.</td></tr>
+<tr><td>3 · Crisis cell</td><td>Activating and running the crisis cell.</td></tr>
+<tr><td>4 · Return to normal</td><td>End of crisis and return to operations.</td></tr>
+<tr><td>Directory / Roles</td><td>Directory and roles of the response team.</td></tr>
+<tr><td>Exercises</td><td>Exercise programme and reports; their actions appear in Action tracking.</td></tr>
+<tr><td>Manual / Archive</td><td>Reference ERP text and archived files.</td></tr></tbody></table></div>
+<p><strong>⎙ Blank ERP — full PDF</strong> produces a complete blank ERP for offline use.</p>
+<div class="warn"><strong>Warning:</strong> a printed copy goes out of date. Check contacts, version and date before any distribution.</div></section>
+
+<section class="guide-section" id="sms-spi"><h2>6.5 APP13-OMM — Safety Performance Indicators</h2>
+<p>The view explains SPI (indicator), SPT (target and green/amber/red thresholds) and CAPA (corrective and preventive actions), then computes the indicators from SMS data. CAPA are pulled automatically from audits, change studies and controls.</p>
+<ol><li>Click <strong>↺ Refresh</strong> to recompute.</li>
+<li>Check the period and the exposure (flight hours, missions) used for the rates.</li>
+<li>Check that each safety objective is covered by at least one SPI (coverage carried over from Safety Policy &amp; Objectives).</li>
+<li>Analyse the trend rather than a single value, and record the response when a threshold is crossed.</li>
+<li>Present the results at the SRB.</li></ol>
+<div class="note"><strong>Key point:</strong> SPIs only show an observed frequency if occurrences are linked to the event catalogue (6.8).</div></section>
+
+<section class="guide-section" id="sms-occ"><h2>6.6 APP14-OMM — Occurrence Log</h2>
+<p>The Occurrence Log receives reports, holds the investigation (ECCAIRS2 classification, risk assessment, 5 Whys, actions) and tracks the deadlines of Regulation (EU) 376/2014.</p>
+<h4>Handling an incoming report</h4>
+<ol><li><strong>📱 Rapports mobiles</strong> (mobile reports): the list of mobile reports awaiting investigation shows the reports received; import them into the log.</li>
+<li>Check that no record already exists for the same <code>RPT-…</code> reference. Keep a clean identifier, without a title appended: the title has its own field.</li>
+<li>Complete the <strong>event title</strong> (it feeds the ECCAIRS2 Headline and the PDF name), the date, the activity (including NCC), the aircraft and the source.</li>
+<li>Link the occurrence to a <strong>catalogue event</strong> and to the register scenario. If this is not yet possible, save anyway: the record stays pending with the “∑ TAXONOMIE À COMPLÉTER” (taxonomy to complete) badge.</li>
+<li>Fill in the analysis in the form’s <strong>5 Whys</strong> panel: problem statement, chain of whys, root cause, corrective actions (owner, email, status, deadline), register link and ECCAIRS link. The 🎯 window is only for viewing and printing.</li>
+<li>Save and check the confirmation message.</li>
+<li>Send the <strong>acknowledgement</strong> to the reporter (dedicated button, bilingual message) unless the report is anonymous.</li>
+<li>Track the ECCAIRS2 deadlines: initial notification within 72 h of awareness, follow-up when the analysis identifies a risk.</li>
+<li>Close only when actions are completed and verified.</li></ol>
+<h4>Bulk linking</h4>
+<p><strong>∑ Rattacher taxonomie &amp; risque</strong> (link taxonomy &amp; risk) opens a screen listing all occurrences without a catalogue event, filterable by activity. Linking an event does not change the record’s investigation status.</p>
+<h4>PDF</h4>
+<p><strong>🖨 PDF</strong> exports the open record on a white background; collapsed panels are not printed.</p></section>
+
+<section class="guide-section" id="sms-actions"><h2>6.7 Action tracking (Suivi des actions)</h2>
+<p>Single register of all actions to track, gathered from seven sources: Occurrence Log, change studies, Safety Review Board, SMS audits, CAMO signals, ERP exercises and the CMS action plan.</p>
+<ol><li>Read the counters at the top (open, overdue, not notified…) and the breakdown by source; a click filters the list.</li>
+<li>Filter by source, owner, status, text, or tick <strong>En retard seulement</strong> (overdue only).</li>
+<li>Update status and deadline directly in the row where the source allows it, or open the source record.</li>
+<li>Send or resend the action to its owners by email.</li>
+<li><strong>⇩ EXPORT CSV</strong> for a review or the SRB.</li></ol>
+<div class="note"><strong>Key point:</strong> the data lives in the source module. Action tracking gathers it; it does not replace it.</div></section>
+
+<section class="guide-section" id="sms-accounting"><h2>6.8 Event Taxonomy &amp; Accounting</h2>
+<p>The event catalogue links three levels: occurrence category, stable SAF family (seventeen families), risk scenario. Each linked occurrence increments an event: this is what gives scenarios an observed frequency and feeds the SPIs. Counters include only linked occurrences.</p>
+<ol><li>Review volumes and trends by category and by family.</li>
+<li><strong>＋ NEW EVENT CANDIDATE</strong> when an observed event has no equivalent in the catalogue.</li>
+<li>The Safety Manager reviews each candidate (<em>Safety Manager review</em>): link to an existing scenario, merge of counters or creation, with justification, name and date.</li>
+<li><strong>⇩ EXPORT CSV</strong> for further analysis.</li></ol></section>
+
+<section class="guide-section" id="sms-controls"><h2>6.9 Safety Policy &amp; Objectives and Controls Review</h2>
+<h4>Safety Policy &amp; Objectives</h4>
+<ol><li>Write or revise the policy: version number, revision and next review dates, text, objectives for the year.</li>
+<li>Declare each measurable objective with <strong>＋ Nouvel objectif</strong> (new objective) and link it to the SPIs that measure its achievement.</li>
+<li>Have it approved by the Accountable Manager (electronic “read and approved” signature).</li>
+<li><strong>💾 Enregistrer cette version</strong> (save this version): it enters the version history.</li></ol>
+<div class="warn"><strong>Warning:</strong> any change to the text or objectives after signature invalidates the signature; a new approval is required.</div>
+<h4>Controls Review</h4>
+<p>Review of risk controls, risk acceptance and their effectiveness (ORO.GEN.200(a)(3)). Record the status and evidence of each control; raise an action or a change study if a control becomes inadequate.</p></section>
+
+<section class="guide-section" id="sms-barriers"><h2>6.10 Barrier register</h2>
+<p>Flat view of all prevention, mitigation and recovery measures in the register, with their traceability.</p>
+<ol><li>Filter and read the completeness indicators at the top.</li>
+<li>For each barrier, record: establishing document (reference, section, status), creation date and author, last verification (date, by whom, method) and next due date, owner.</li>
+<li>Barriers marked “to confirm” inherited the scenario’s document reference: confirm or correct them.</li>
+<li>A barrier that no longer exists is archived, not deleted.</li>
+<li>Export to CSV for a review.</li></ol>
+<p>The same traceability card also opens from the expanded record of a Risk Register scenario.</p></section>
+
+<section class="guide-section" id="sms-barriereff"><h2>6.11 Barrier effectiveness</h2>
+<p>Verification campaign that shows the barriers work.</p>
+<ol><li>Designate the critical barriers. The tool suggests some using three criteria: red scenario, severity reduction, only measure of its type.</li>
+<li>For each barrier, define the success criterion, the evidence source and the period.</li>
+<li>Record each check with its method and source: Occurrence Log, CMS audit, Crew Training, CAMO, ERP exercise, line observation, FDM, document review or other.</li>
+<li>Select the level reached: in place, applied, effective, not called upon or failed. The “effective” level requires an evidence reference.</li></ol>
+<p>Results roll up to the scenario (control effectiveness, date, author, evidence). A banner flags any scenario whose claimed risk reduction is not supported by its barriers. The list is shown in pages of 80 rows; <strong>← Registre des risques</strong> returns to the register.</p>
+<div class="note"><strong>Key point:</strong> revise the residual risk when observed effectiveness differs from the initial assumption.</div></section>
+
+<section class="guide-section" id="sms-bowtie"><h2>6.12 Bow-Tie Analysis</h2>
+<p>The Bow-Tie shows a register event: causes, preventive barriers, undesirable event, mitigation and recovery barriers, consequences.</p>
+<ol><li>Select the SMS event in the list.</li>
+<li>Check that each barrier shown matches an identifiable, verifiable control in the barrier register.</li>
+<li>Export as <strong>PDF — Structure Bow-Tie</strong> or CSV.</li>
+<li><strong>▾ Replier le Bow-Tie</strong> (collapse) to free the screen.</li></ol>
+<div class="note"><strong>Key point:</strong> the Bow-Tie is read from the register. To change a barrier, edit the scenario.</div></section>
+
+<section class="guide-section" id="sms-promotion"><h2>6.13 Safety Communication Register</h2>
+<p>Register of Safety Alerts and safety communications (AMC1 ORO.GEN.200(a)(4)). It is shown read-only in APP07-OMM and in the SRB.</p>
+<ol><li><strong>＋ New communication</strong> and choose the type: Safety Alert or Communication. The reference is proposed automatically.</li>
+<li>Enter the date, the distribution list, the linked occurrences and risk.</li>
+<li>Write the French part, then the English part: each language has its own title and can take additional pages, images and page breaks.</li>
+<li>Produce the PDF on the SAF background (letterhead and signature included).</li>
+<li>To change a communication already distributed, create a new version; correcting a typo does not change the version.</li>
+<li>Keep the proof of distribution and later check whether the message had the intended effect.</li></ol>
+<div class="warn"><strong>Warning:</strong> remove any personal data that is not needed. Lessons of general interest are shared in de-identified form.</div></section>
+
+<section class="guide-section" id="sms-meetings"><h2>6.14 Safety Meetings</h2>
+<p>Record of safety meetings held with staff: at least one a year (APP07-OMM §3). They are also a means of hazard identification.</p>
+<ol><li><strong>＋ New safety meeting</strong>. The reference <code>SMT-YYYY-NN</code> is assigned automatically.</li>
+<li>Fill in status (planned, held, cancelled), date, type (annual meeting, base meeting, SAG, pre-season briefing, post-season debrief, hazard identification workshop, extraordinary meeting after an occurrence), activity, location, format and chair.</li>
+<li>Enter participants (one line per person: name — function) and guests; the attendance rate is computed.</li>
+<li>Tick the agenda items covered, write the summary and key messages, link the occurrences, communications and risks discussed.</li>
+<li>Record the hazards identified and the actions decided.</li>
+<li>Enter the date the minutes were sent, their recipients and the next meeting.</li></ol>
+<p>Meetings and communications since the last SRB are shown automatically in the CMS SRB review.</p></section>
+
+<section class="guide-section" id="sms-training"><h2>6.15 SMS Training &amp; Competence</h2>
+<p>Read-only mirror of the SMS training records kept in Crew Training (modules TM08 SMS and TM09 Advanced SMS): person, function, module, date, expiry and mode (on site, e-learning, external).</p>
+<ul><li><strong>↻ Refresh</strong> reloads the data.</li>
+<li>A warning appears if the last sync is more than 36 hours old.</li>
+<li>All input and corrections are made in Crew Training, not in the SMS.</li></ul></section>
+
+<section class="guide-section" id="sms-assurance"><h2>6.16 Safety Assurance — Effectiveness Review</h2>
+<p>Checks that controls, actions and changes have the intended effect (AMC2 ORO.GEN.200(a)(5)).</p>
+<ol><li><strong>＋ New Review</strong>: review type and main source.</li>
+<li>Describe the actions or barriers reviewed and the effectiveness criterion used.</li>
+<li>Record the findings, then conclude on effectiveness.</li>
+<li>Define the follow-up, the next review date, the reviewer and the approver.</li></ol></section>
+
+<section class="guide-section" id="sms-audits"><h2>6.17 Internal SMS audits</h2>
+<p>Log of internal audits and inspections of the SMS itself.</p>
+<ol><li><strong>＋ Nouvel audit / New Audit</strong>: scope, criteria, auditor, date.</li>
+<li>Gather evidence before concluding.</li>
+<li>Record findings and actions, with owner and deadline; they appear in Action tracking.</li>
+<li>Verify closure and effectiveness.</li></ol>
+<p>Regulatory compliance audits are carried out in the CMS (chapter 7).</p></section>
+
+<section class="guide-section" id="sms-alos"><h2>6.18 ALoS / Safety Case</h2>
+<p>Internal framework to demonstrate safety performance for AS 332 specialised operations.</p>
+<ol><li><strong>＋ New Safety Case</strong>: subject and decision to be supported.</li>
+<li>Gather assumptions, data, risks and barriers; link each piece of evidence to a conclusion.</li>
+<li>Define the success criteria and the limits of validity.</li>
+<li>Revise the Safety Case whenever an assumption or an operating condition changes.</li></ol></section>
+
+<section class="guide-section" id="sms-camo"><h2>6.19 CAMO → SMS Interface</h2>
+<p>Captures airworthiness signals that matter for safety (AMC1 CAMO.A.200(a)(2)).</p>
+<ol><li><strong>＋ Nouveau signal CAMO</strong> (new CAMO signal): description and source.</li>
+<li>Look for the associated risk scenario; link it or have one created.</li>
+<li>Assign follow-up and decision; actions appear in Action tracking.</li>
+<li>Close after treatment and verification.</li></ol></section>
+
+<section class="guide-section" id="sms-interfaces"><h2>6.20 External Interfaces</h2>
+<p>Register of the external organisations SAF works with and of the hazards at the interface (ORO.GEN.205, ORO.GEN.200(a)(3), IS.I.OR.235).</p>
+<ol><li><strong>＋ New interface</strong>: organisation, type (Part-145/CAMO maintenance, subcontractor, customer, landing site, ATS, fuel, ground handling, training, authority, IT provider…), status.</li>
+<li>Describe the scope, the hazards at the interface and the agreed arrangements (contract, SLA, procedures, audits, meetings).</li>
+<li>Enter the agreement reference, the external contact and the SAF interface owner.</li>
+<li>Link the risk scenarios concerned (e.g. <code>SMS-12, SMS-40</code>) and state whether the interface is Part-IS relevant.</li>
+<li>Set the last and next review.</li></ol>
+<p>Counters flag interfaces without a review date and those not linked to a risk.</p></section>
+
+<section class="guide-section" id="sms-isms"><h2>6.21 Part-IS — ISMS</h2>
+<p>Information security management system under Regulation (EU) 2023/203. The rating method is the MGSI one (EBIOS RM): severity of the feared event G1 to G5 × likelihood V1 to V4. V4 is always unacceptable.</p>
+<div class="table-scroll"><table><thead><tr><th>Tab</th><th>Use</th></tr></thead><tbody>
+<tr><td>Overview</td><td>Requirement implementation rate, unacceptable risks, tolerable risks without PRC justification, open incidents and incidents not reported within 72 h; list of next actions.</td></tr>
+<tr><td>Requirements</td><td>Status and evidence of each requirement IS.I.OR.200 to 260.</td></tr>
+<tr><td>Assets</td><td>Asset inventory (<code>ISA-xxx</code>): category, owner, C/I/A needs, effect of a compromise on flight safety, provider or interface.</td></tr>
+<tr><td>IS risks</td><td>Risks (<code>ISR-xxx</code>): threat scenario, assets, feared event, risk source and target objective, initial and residual ratings, measures, PRC acceptance, link to the safety register.</td></tr>
+<tr><td>Incidents</td><td>Information security incidents and their external reporting (IS.I.OR.230).</td></tr></tbody></table></div>
+<div class="warn"><strong>Warning:</strong> an incident that may affect flight safety must be reported to the authority within 72 h. Risks converted from the former 1–5 × 1–5 scale are flagged: review their rating, then save them.</div></section>
+
+<section class="guide-section" id="sms-export"><h2>6.22 Export &amp; Import</h2>
+<div class="table-scroll"><table><thead><tr><th>Block</th><th>Content</th></tr></thead><tbody>
+<tr><td>PDF Report</td><td>Dashboard report, full register, change study.</td></tr>
+<tr><td>CSV Export</td><td>Full register, current filter, change studies.</td></tr>
+<tr><td>Backup / Restore</td><td>Full JSON backup and restore.</td></tr>
+<tr><td>Export → CMS</td><td>Register, occurrences or full export in the format expected by the CMS.</td></tr>
+<tr><td>Risk ↔ Change Study Links</td><td>Risks linked to one or more change studies.</td></tr>
+<tr><td>Email settings</td><td>EmailJS credentials, action assignment template, reporter acknowledgement template.</td></tr>
+<tr><td>Safety Report notifications</td><td>Reminder: the alert for incoming reports is sent server-side, even when the SMS is closed.</td></tr></tbody></table></div>
+<div class="warn"><strong>Warning:</strong> before <strong>Import / Restore JSON</strong>, export the current state. After a restore, open several views to check consistency. A JSON backup is a controlled document: avoid uncontrolled copies.</div></section>
+
+<section class="guide-section" id="cms"><h2>7. CMS — general orientation</h2>
+<p>The Compliance Monitoring System is bilingual FR/EN. Its menu contains:</p>
+<div class="table-scroll"><table><thead><tr><th>Group</th><th>Tabs</th></tr></thead><tbody>
+<tr><td>Navigation</td><td>Dashboard, APP15-OMM Audit plan, APP16-OMM Compliance indicators, APP17-OMM Corrective action plan.</td></tr>
+<tr><td>CMS Modules</td><td>SRB checklist, SRB review, CMS dashboard.</td></tr>
+<tr><td>Tools</td><td>EASA audit grid, Compliance matrix, Regulatory monitoring, Safety (SMS), Audits &amp; authority, Annual report, Settings.</td></tr></tbody></table></div>
+<p>Subcontractors and auditors are no longer in the CMS: they are kept in the OMM Appendices (APP08 and APP09). Trainers belong to Crew Training.</p></section>
+
+<section class="guide-section" id="cms-dashboard"><h2>7.1 Dashboards</h2>
+<p>The <strong>Dashboard</strong> (home tab) gives quick access to APP15 to APP17 and a summary: open Level 1 findings, overdue actions, CAP effectiveness verified.</p>
+<p>The <strong>CMS dashboard</strong> shows three separate views:</p>
+<ul><li><strong>A — Compliance Assurance</strong>: CMS-01 to CMS-08 (programme completed on time, requirement coverage, Level 1 findings, deadlines, overdue items, repeat findings, effectiveness, regulatory changes handled).</li>
+<li><strong>B — Safety Performance</strong>: SPI-01 onwards, normalised by exposure.</li>
+<li><strong>C — Management System Health</strong>: MSH indicators.</li></ul>
+<div class="note"><strong>Key point:</strong> an indicator without reliable data shows “—” rather than an estimated value. Targets are SAF internal targets, set in Settings.</div></section>
+
+<section class="guide-section" id="cms-auditplan"><h2>7.2 APP15-OMM — Audit programme</h2>
+<p>AOC audit programme over a 24-month cycle (years 1 and 2) from the AOC issue date, covering CAT, SPO HESLO/MCF and NCC. Each audit separates the <strong>RCA</strong> part (regulatory compliance: IR, AMC/AltMoC, approvals, OMM, OM) from the <strong>OCA</strong> part (operational compliance: real records, crews, aircraft, observations).</p>
+<ol><li>Enter the <strong>AOC issue date</strong> and save it: the schedule is set from it.</li>
+<li>Check the audit list, their areas, months and checks.</li>
+<li>Build an audit’s grid directly from the plan (see 7.6).</li>
+<li>Export to CSV or print the plan.</li></ol>
+<div class="warn"><strong>Warning:</strong> the schedule organises oversight; it does not postpone the compliance demonstrations required before the AOC is issued. References map rule families; completeness is demonstrated in the compliance matrix.</div></section>
+
+<section class="guide-section" id="cms-kpi"><h2>7.3 APP16-OMM — Compliance indicators</h2>
+<p>Internal indicators for monitoring the compliance monitoring programme.</p>
+<ol><li>Check the period and the source data.</li>
+<li>Compare each value with its target and alert threshold.</li>
+<li>Analyse the trend and record the response when a threshold is crossed.</li>
+<li>Present the results at the SRB and in the annual report.</li></ol></section>
+
+<section class="guide-section" id="cms-cap"><h2>7.4 APP17-OMM — Corrective Action Plan (CAP)</h2>
+<p>Register of findings and their corrective actions up to effectiveness verification (AMC1 ORO.GEN.200(a)(6), GM1 ORO.GEN.150).</p>
+<ol><li><strong>＋ Add corrective action</strong>, or let the audit grid send Level 1 and 2 findings automatically.</li>
+<li>Enter audit, origin, authority or external auditor reference, level, regulatory reference, date and description of the deviation.</li>
+<li>Attach the supporting evidence (PDF, DOCX, PPTX, XLSX, JPG, PNG; 100 MB maximum). Files are kept in private storage and open through a link valid for one hour.</li>
+<li>Carry out the <strong>5 Whys</strong> analysis (each answer opens the next why) and tick the contributing factors.</li>
+<li>Define correction and action plan, nominated person, deadline, status, notification.</li>
+<li>Verify effectiveness before treating the finding as closed.</li></ol>
+<p>Reference deadlines: Level 1, corrective action within 30 days; Level 2, accepted plan then closure within the agreed deadline, usually 90 days at most. Exports: CSV, register print, PDF of selected rows.</p>
+<div class="warn"><strong>Warning:</strong> <strong>🗑 Clear register</strong> deletes all findings. Use it only after a backup.</div></section>
+
+<section class="guide-section" id="cms-srb"><h2>7.5 SRB — checklist and review</h2>
+<p>The <strong>SRB checklist</strong> prepares the meeting; the <strong>SRB review</strong> is its record.</p>
+<ol><li>Prepare the meeting with the checklist, ticking only what was actually reviewed.</li>
+<li>Open the SRB review: reference, date, period covered, status.</li>
+<li>Read the “Safety meetings &amp; safety communications since the last SRB” section, pulled automatically from the SMS (🔄 Refresh SMS data).</li>
+<li>Complete attendance (ACM, SM, NPFO, NPCT, NPGO, NPCA, CMM; excused, substitutes, guests).</li>
+<li>Review SPI/KPI in alert, occurrences, actions, resources, changes and trends; record the new decisions with owner and deadline.</li>
+<li>Export the SRB as PDF and keep the signed version.</li></ol>
+<div class="warn"><strong>Warning:</strong> the SRB review is not saved to the cloud. <strong>💾 Save (local)</strong> downloads a JSON file to the computer; <strong>📂 Load backup</strong> reloads it. Keep this file and the PDF in SAF’s archive.</div></section>
+
+<section class="guide-section" id="cms-easa"><h2>7.6 EASA audit grid</h2>
+<p>The grid is used to prepare, conduct and close an audit. In-progress audits are saved as you work and resumed from the “In-progress audits” list.</p>
+<h4>Three ways to build a grid</h4>
+<ul><li><strong>From the regulation</strong>: choose the regulation, Parts and subparts, then tick the regulatory points (articles) you want; or enter a direct reference. ▶ Generate the grid.</li>
+<li><strong>From the audit plan</strong> (APP15): select the audit and its points; the grid takes over the number, phase and dates.</li>
+<li><strong>From an internal manual</strong> (PDF): the manual is read in the browser, with nothing sent outside. Sentences carrying an obligation become proposed checkpoints (audit question, expected evidence, interviewee). Review, tick, correct, then generate. PDFs must come from <strong>Documents compagnie</strong> (company documents, latest revision); two uploaded revisions can be compared. Scanned PDFs go through text recognition.</li></ul>
+<h4>Conducting the audit</h4>
+<ol><li>Enter number (🔢 Generate N°), title, auditor and date.</li>
+<li>Follow the workflow: Planned, Prepared, In progress, Completed, Report issued, Closed (or Suspended).</li>
+<li>For each point: result (Compliant, L1, L2, Observation, N/A, N/O), evidence, comments. On iPad, field mode records interviewees, sample and timestamps, even offline.</li>
+<li>Attach the audit documents (📎).</li>
+<li>Write the closing summary and have it signed.</li>
+<li>Export to CSV, print or produce the PDF; 💾 Save / 📂 Load as JSON if needed.</li></ol>
+<div class="note"><strong>Key point:</strong> L1 and L2 findings go to the CAP automatically. Check that the regulation version loaded is the one applicable on the audit date.</div></section>
+
+<section class="guide-section" id="cms-matrix"><h2>7.7 Compliance matrix</h2>
+<p>Links each requirement (IR and AMC) to SAF documentation (document and chapter) and states whether it is implemented. Requirements are taken from the tool’s regulatory database (Reg. 965/2012 and 1321/2014); Part-IS and Reg. 376/2014 are entered as short titles.</p>
+<ol><li>Create a matrix (identification, status) or open an existing one.</li>
+<li>Add requirements from the regulatory database.</li>
+<li>Fill in document, chapter and status based on verifiable evidence.</li>
+<li>Attach the matrix to the relevant change study: the MOC PDF appends it.</li></ol></section>
+
+<section class="guide-section" id="cms-watch"><h2>7.8 Regulatory monitoring</h2>
+<p>Watch on EASA and EUR-Lex publications. Detecting a publication does not mean it applies: the analysis and decision remain with the Compliance Monitoring Manager.</p>
+<ol><li>Review new publications and check the official source.</li>
+<li>Decide applicability to SAF’s scope and record the analysis.</li>
+<li>Open a MOC, a CAP action or a documentation update if the change has an impact.</li>
+<li>Mark the entry as handled only once the conclusion is written.</li></ol></section>
+
+<section class="guide-section" id="cms-bridge"><h2>7.9 Safety (SMS) — read only</h2>
+<p>Shows SMS risks (most to least severe) and occurrences read-only, to prepare an audit or an SRB. Click <strong>↻ Refresh from SMS</strong>. Any change is made in the SMS.</p></section>
+
+<section class="guide-section" id="cms-authority"><h2>7.10 Audits &amp; authority</h2>
+<ul><li><strong>Audit mission orders</strong> (AMC2 ORO.GEN.200(a)(6)): reference, scope, auditors, planned date, CMM approval, status and report.</li>
+<li><strong>Contacts and commitments with the authority</strong> (ORO.GEN.130 / 135): date, type, subject, authority reference, commitment and deadline, status.</li></ul>
+<p>Each list exports to CSV and PDF. Link authority findings to the CAP.</p></section>
+
+<section class="guide-section" id="cms-annual"><h2>7.11 Annual report and settings</h2>
+<h4>Annual report</h4>
+<ol><li>Update the audit plan, findings, CAP and indicators.</li>
+<li>Enter the period, the author, the Accountable Manager approval and the conclusions.</li>
+<li><strong>🔄 Generate report</strong> (live data), check the totals, then print or export to PDF.</li></ol>
+<h4>Settings</h4>
+<p>For each indicator, set the direction (≥ or ≤), the target and the alert threshold, as well as finding processing deadlines. <strong>💾 Save targets</strong>; <strong>↺ Reset</strong> returns to SAF default values.</p></section>
+
+<section class="guide-section" id="omm"><h2>8. OMM Appendices — general orientation</h2>
+<p>The tool holds nine appendices, APP01 to APP09-OMM. Changes are saved to the cloud; each appendix has a PDF export and some views a <strong>💾 Save (HTML)</strong>.</p>
+<div class="table-scroll"><table><thead><tr><th>Appendix</th><th>Content</th></tr></thead><tbody>
+<tr><td>APP01-OMM</td><td>List of Appendices: versions and dates of the OMM, appendices and OM.</td></tr>
+<tr><td>APP02-OMM</td><td>Facilities &amp; Infrastructure: Sion and Albertville bases.</td></tr>
+<tr><td>APP03-OMM</td><td>Organizational Chart.</td></tr>
+<tr><td>APP04-OMM</td><td>List of Management Personnel.</td></tr>
+<tr><td>APP05-OMM</td><td>Aircraft Leasing.</td></tr>
+<tr><td>APP06-OMM</td><td>Aircraft being used.</td></tr>
+<tr><td>APP07-OMM</td><td>Safety Promotion.</td></tr>
+<tr><td>APP08-OMM</td><td>List of Subcontractors.</td></tr>
+<tr><td>APP09-OMM</td><td>List of Auditors.</td></tr></tbody></table></div></section>
+
+<section class="guide-section" id="omm-app01"><h2>8.1 APP01-OMM — List of appendices</h2>
+<p>Document index of the OMM and the OM. In edit mode, click in a cell to edit it, use “+ Ajouter une ligne” (add a row) or ✕ to delete.</p>
+<ol><li>Edit only the cells needed and check version and date.</li>
+<li>Add a row only for a document that is actually referenced.</li>
+<li>Export to PDF for a frozen record.</li></ol></section>
+
+<section class="guide-section" id="omm-app02"><h2>8.2 APP02-OMM — Facilities &amp; Infrastructure</h2>
+<p>Description of the bases (address, rooms, areas, access, aerodrome information). Update factual data, check plans and photos, then export to PDF.</p></section>
+
+<section class="guide-section" id="omm-app03"><h2>8.3 APP03-OMM — Organisation chart</h2>
+<p>Functional and reporting relationships between ACM, SM/CMM, EFBA, NPFO, NPCT, NPGO, NPCA and base managers. Click a box to edit its label, then <strong>Save changes</strong>.</p>
+<div class="note"><strong>Key point:</strong> a significant organisational change first goes through a change study (APP11) and, if it affects a nominated person, a notification to the authority.</div></section>
+
+<section class="guide-section" id="omm-app04"><h2>8.4 APP04-OMM — Management personnel</h2>
+<p>Name, function, email and phone of management personnel and their deputies. Check consistency with APP03, then export to PDF.</p></section>
+
+<section class="guide-section" id="omm-app05"><h2>8.5 APP05-OMM — Aircraft Leasing</h2>
+<p>Definitions and checklists for leases (dry/wet lease-in and lease-out), SPO leasing with European operators and with third-country operators. Always check both sides: where the aircraft comes from and where it goes.</p></section>
+
+<section class="guide-section" id="omm-app06"><h2>8.6 APP06-OMM — Aircraft being used</h2>
+<p>Fleet in use: registration, type, version, serial number, engines, CAMO and Part-145. “+ Ajouter un aéronef” (add an aircraft) for a fleet entry; check consistency with fleet documents.</p></section>
+
+<section class="guide-section" id="omm-app07"><h2>8.7 APP07-OMM — Safety Promotion</h2>
+<p>SMS training and safety communication programme:</p>
+<ol><li>Safety communication principles, feedback to reporters, population and frequency of training.</li>
+<li>Training modules TM08 and TM09 (individual records are in Crew Training).</li>
+<li>Communication tools, including safety meetings.</li>
+<li>Safety Communication Register: read-only view of the SMS register.</li></ol></section>
+
+<section class="guide-section" id="omm-app08"><h2>8.8 APP08-OMM — Subcontractors</h2>
+<p>Contracted organisations (maintenance, CAMO, training, dangerous goods…) and their monitoring. SAF remains responsible for contracted services (ORO.GEN.205).</p>
+<ol><li><strong>＋ Add subcontractor</strong>: organisation, service type, regulatory reference, certificate and dates, audit frequency, last audit, status, documents.</li>
+<li>The next audit date and the certificate status are computed.</li>
+<li>Search, export to CSV.</li></ol>
+<p>Hazards at the interface with these organisations are tracked in External Interfaces (6.20).</p></section>
+
+<section class="guide-section" id="omm-app09"><h2>8.9 APP09-OMM — Auditors</h2>
+<p>Internal auditors of the compliance monitoring function. They must be competent, trained and independent of the audited area; an auditor does not audit their own area of work. The authorisation remains valid as long as recurrent training is up to date.</p>
+<ol><li><strong>＋ Add auditor</strong>: name, main function, initial auditor training and date, last recurrent training, authorised areas and excluded areas (independence).</li>
+<li>The authorisation (authorised / expired) and the next recurrent training are computed.</li>
+<li>Check excluded areas before each mission order.</li>
+<li>Search, export to CSV.</li></ol></section>
+
+<section class="guide-section" id="omm-save"><h2>8.10 Saving the OMM Appendices</h2>
+<p>Input is saved to the cloud. Two exports complement this:</p>
+<ul><li><strong>📄 PDF</strong>: frozen record for reference, submission to the authority or archiving.</li>
+<li><strong>💾 Save (HTML)</strong>: standalone copy of the updated document. Name it with its version, then reopen it to check it contains the changes.</li></ul></section>
+
+<section class="guide-section" id="synoptique"><h2>9. SMS synoptic</h2>
+<p>The synoptic shows each SMS function and the links between them, checked live. Each satellite is a check, coloured by its result: failure, degraded, operational, not checked.</p>
+<ol><li>Open the synoptic from HOME (Admin, Editor, Authority) and sign in.</li>
+<li>Read the <strong>À traiter</strong> (to be handled) list.</li>
+<li><strong>Relancer les contrôles</strong> (rerun checks) after a fix.</li>
+<li><strong>Copier le diagnostic</strong> (copy diagnostics) to send it to the administrator.</li></ol></section>
+
+<section class="guide-section" id="troubleshooting"><h2>10. Troubleshooting</h2>
+<div class="table-scroll"><table><thead><tr><th>Symptom</th><th>What to check</th></tr></thead><tbody>
+<tr><td>Tool missing from HOME</td><td>The role badge: the card is hidden for that role.</td></tr>
+<tr><td>Amber “no role” banner</td><td>The signed-in address is not declared: inform the administrator.</td></tr>
+<tr><td>6-digit code rejected</td><td>The phone’s clock (automatic setting), then the backup device.</td></tr>
+<tr><td>Field cannot be edited</td><td>Reader or Authority role, tab taken over elsewhere (“Lecture seule — SMS repris dans un autre onglet”) or a read-only view (🎯 window, training mirror, CMS SMS bridge).</td></tr>
+<tr><td>Data missing on reopening</td><td>That the cloud bar showed “Cloud ✓”; that no red error message appeared; reload the page (Ctrl+F5) to rule out a cached version.</td></tr>
+<tr><td>“Version conflict” banner</td><td>Another tab or person has written. Download your changes first, then choose (chapter 3).</td></tr>
+<tr><td>Occurrence refused or incomplete</td><td>The message shown and the highlighted block; a record without taxonomy is still saved with the “∑ TAXONOMIE À COMPLÉTER” badge.</td></tr>
+<tr><td>Reader: old register</td><td>The publication date in the cloud bar; ask the administrator to publish.</td></tr>
+<tr><td>SMS training missing</td><td>The entry in Crew Training and the time of the last sync.</td></tr>
+<tr><td>Navigation link gives a 404 error</td><td>All files sit at the repository root: no link may contain <code>Archives/</code>. The synoptic flags this kind of fault.</td></tr>
+<tr><td>Mobile report not sent</td><td>Note the reference shown, restore the network, reopen the form.</td></tr></tbody></table></div>
+<h4>Before reporting a problem</h4>
+<ul><li>Note the tool, the view, the action and the exact message.</li>
+<li>Do not run several restores in a row to “test”.</li>
+<li>Export a backup if the current state is still accessible.</li></ul></section>
+
+<section class="guide-section" id="routine"><h2>11. Usage routine</h2>
+<h4>As events occur</h4>
+<ul><li>Import and investigate mobile reports; send the acknowledgement.</li>
+<li>Meet the 72 h ECCAIRS2 deadline.</li>
+<li>Open a change study before a significant change.</li></ul>
+<h4>Every week</h4>
+<ul><li>Action tracking: overdue and not-notified actions.</li>
+<li>Occurrences without taxonomy: bulk linking.</li>
+<li>CAMO signals, open Part-IS incidents, open CAP items.</li></ul>
+<h4>Every month or quarter</h4>
+<ul><li>Red risks and critical barriers; barrier effectiveness campaign.</li>
+<li>SPIs, CMS indicators and regulatory monitoring.</li>
+<li>Reviews of external interfaces and subcontractors falling due.</li></ul>
+<h4>Before an SRB</h4>
+<ul><li>Update register, Occurrence Log, SPIs, CAP and Action tracking.</li>
+<li>Complete the SRB checklist and refresh the SMS data in the review.</li>
+<li>Identify the decisions expected and the overdue actions.</li></ul>
+<h4>After a significant change</h4>
+<ul><li>Check “Cloud ✓”, export suitable evidence and, for the register, publish the new version for readers.</li></ul></section>
+
+<footer>SAF International · Integrated user guide · 12.11.2026</footer>
+</main></div>
+<script>
+(function(){
+  var q=document.getElementById('search'), sections=[].slice.call(document.querySelectorAll('.guide-section')), links=[].slice.call(document.querySelectorAll('#toc a')), empty=document.getElementById('no-results');
+  function norm(s){return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');}
+  q.addEventListener('input',function(){var n=norm(q.value.trim()),shown=0;sections.forEach(function(s){var ok=!n||norm(s.textContent).indexOf(n)!==-1;s.classList.toggle('search-hide',!ok);if(ok)shown++;});links.forEach(function(a){var id=a.getAttribute('href').slice(1),s=document.getElementById(id);a.classList.toggle('hidden',!!n&&s&&s.classList.contains('search-hide'));});empty.style.display=shown?'none':'block';});
+  if(location.hash){setTimeout(function(){var el=document.querySelector(location.hash);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},80);}
+})();
+</script>
+</body></html>

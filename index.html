@@ -39,6 +39,17 @@
 #saf-mfa-box .msg{min-height:16px;font-size:12px;margin:0 0 10px}
 #saf-mfa-box .msg.err{color:#ff8a80}
 #saf-mfa-box .msg.ok{color:#7ee2a8}
+
+/* Bloc « Modes d'emploi du SMS » : une entrée par langue (12.11.2026) */
+#card-guide { cursor: default; }
+#card-guide:hover { transform: none; }
+.guide-links { display: flex; flex-direction: column; gap: .45rem; margin-top: auto; }
+.guide-link { display: flex; align-items: center; gap: .6rem; padding: .55rem .75rem; border: 1px solid rgba(201,162,39,.25); border-radius: 7px; text-decoration: none; color: inherit; font-size: .9rem; transition: border-color .2s, background .2s; }
+.guide-link:hover, .guide-link:focus-visible { border-color: rgba(201,162,39,.6); background: rgba(201,162,39,.08); outline: none; }
+.guide-link .arrow { margin-left: auto; opacity: .6; }
+#card-guide:hover .guide-link .arrow { opacity: .6; transform: none; }
+#card-guide .guide-link:hover .arrow { opacity: 1; transform: translateX(3px); }
+.guide-lang { font-family: var(--font-mono); font-size: 9px; font-weight: 600; letter-spacing: .1em; padding: 2px 6px; border-radius: 3px; background: rgba(201,162,39,.12); color: var(--gold-light); border: 1px solid rgba(201,162,39,.25); }
 </style>
 <script id="saf-mfa-gate">
 (function(){
@@ -940,15 +951,17 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
       <span class="tool-tag tag-synoptique">SMS</span>
     </a>
 
-    <a class="tool-card" id="card-guide" data-module="guide" href="SAF_User_Guide.html">
+    <div class="tool-card" id="card-guide" data-module="guide">
       <div class="tool-header">
         <div class="tool-icon" style="background:rgba(201,162,39,.15);color:var(--gold-light);font-family:var(--font-mono);font-weight:700;">?</div>
-        <span class="tool-name">Mode d'emploi SAF</span>
-        <span class="arrow">→</span>
+        <span class="tool-name">Modes d'emploi du SMS<span class="bi-en">SMS user guides</span></span>
       </div>
-      <p class="tool-desc">Guide utilisateur détaillé de l'ensemble du système SAF : SMS, CMS, Appendices OMM, reporting, sauvegardes et dépannage.</p>
-      <span class="tool-tag" style="background:rgba(201,162,39,.12);color:var(--gold-light);border:1px solid rgba(201,162,39,.25);">FR</span>
-    </a>
+      <p class="tool-desc">Guide utilisateur du Safety Management System SAF : Safety, Compliance Monitoring, Appendices OMM, signalement, sauvegardes et dépannage. Choisissez la langue.<span class="bi-en">User guide for the SAF Safety Management System: Safety, Compliance Monitoring, OMM Appendices, reporting, backups and troubleshooting. Choose the language.</span></p>
+      <div class="guide-links">
+        <a class="guide-link" href="SAF_User_Guide.html" hreflang="fr"><span class="guide-lang">FR</span><span>Français</span><span class="arrow">→</span></a>
+        <a class="guide-link" href="SAF_User_Guide_EN.html" hreflang="en"><span class="guide-lang">EN</span><span>English</span><span class="arrow">→</span></a>
+      </div>
+    </div>
 
 
   </div>
