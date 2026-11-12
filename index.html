@@ -500,6 +500,11 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
     return Object.keys(names);
   }
   var origVars = {}, DARK = false, DARK_LOCK = false;
+  /* HOME du SMS (12.11.2026) : le thème d'origine de cette page est connu (bleu nuit).
+     On ne le devine plus d'après ce qui est affiché au chargement : selon le moment
+     (connexion, second facteur, cartes encore masquées), la détection concluait parfois
+     à une page claire et laissait le texte blanc sur le fond bleu ciel. */
+  var FORCE_DARK = true;
   function ourTags(on){
     ['saf-sky-vars','saf-sky-base'].forEach(function(id){ var t = document.getElementById(id); if(t) t.disabled = !on; });
   }
@@ -531,7 +536,8 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   function applyVars(){
     var tag = document.getElementById('saf-sky-vars');
     ourTags(false);                                    // relire les valeurs d'origine
-    if(!DARK_LOCK){ DARK = detectDark(); if(DARK && document.body) DARK_LOCK = true; }
+    if(FORCE_DARK){ DARK = true; DARK_LOCK = true; }
+    else if(!DARK_LOCK){ DARK = detectDark(); if(DARK && document.body) DARK_LOCK = true; }
     var pb = pageBg();
     var cs = getComputedStyle(document.documentElement);
     var names = rootVarNames(), list = [];
@@ -815,7 +821,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
     busy = true;
     try{
       Array.prototype.forEach.call(document.querySelectorAll('*'), strip);
-      DARK_LOCK = false; applyVars();
+      DARK_LOCK = FORCE_DARK; applyVars();
       if(DARK) processTree(document.body);
     }catch(e){ console.warn('[thème bleu ciel]', e); }
     if(obs) obs.takeRecords();
