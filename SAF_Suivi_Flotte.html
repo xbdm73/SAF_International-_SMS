@@ -138,7 +138,8 @@ footer .err{color:var(--lost)}
 .acm{position:relative}
 .acm .heli-icon{position:absolute;left:-22px;top:-22px;width:44px;height:44px;transform-origin:22px 22px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.7))}
 .acm .heli-icon svg{display:block;width:44px;height:44px;overflow:visible}
-.acm .heli-rotor{transform-box:view-box;transform-origin:22px 22px;animation:saf-heli-spin .22s linear infinite}
+.acm .heli-rotor{position:absolute;left:-22px;top:-22px;width:44px;height:44px;display:block;transform-origin:50% 50%;-webkit-transform-origin:50% 50%;animation:saf-heli-spin .22s linear infinite;-webkit-animation:saf-heli-spin .22s linear infinite;pointer-events:none}
+.acm .heli-rotor svg{display:block;width:44px;height:44px;overflow:visible}
 .acm:not(.live) .heli-rotor{animation-play-state:paused}
 @keyframes saf-heli-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .acm .lbl{position:absolute;left:25px;top:-11px;white-space:nowrap;font-family:var(--cond);font-weight:700;font-size:15px;
@@ -277,7 +278,7 @@ footer .err{color:var(--lost)}
   #ana .amap{grid-row:1} #ana .acharts{grid-row:2} #ana .aside{grid-column:1;grid-row:3;border-left:0;border-top:1px solid var(--line)}
   #ana .abar{padding:10px 14px}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important} .acm.live .heli-rotor{animation:saf-heli-spin .22s linear infinite!important;-webkit-animation:saf-heli-spin .22s linear infinite!important}}
 /* Outils de carte repris de SAF Operations */
 .opsx{position:absolute;inset:0;pointer-events:none;z-index:790}
 .opsx button,.opsx select{pointer-events:auto;font-family:var(--font)}
@@ -1551,11 +1552,10 @@ function arrowSvg(color,heading){
       <path d="M19.3 12.4 Q22 8.7 24.7 12.4 L24.4 14.4 L19.6 14.4 Z" fill="#d4f4ff" stroke-width=".6"/>
     </g>
     <circle cx="21.1" cy="27.6" r=".8" fill="#0A1420"/><circle cx="22.9" cy="27.6" r=".8" fill="#0A1420"/>
-    <g class="heli-rotor" stroke="#fff" stroke-width="1.9" stroke-linecap="round">
+  </svg><span class="heli-rotor"><svg viewBox="0 0 44 44" aria-hidden="true"><g stroke="#fff" stroke-width="1.9" stroke-linecap="round">
       <path d="M9.3 9.3 L34.7 34.7 M34.7 9.3 L9.3 34.7"/>
       <circle cx="22" cy="22" r="2.2" fill="${color}" stroke="#0A1420" stroke-width="1.1"/>
-    </g>
-  </svg></span>`;
+    </g></svg></span></span>`;
 }
 const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
