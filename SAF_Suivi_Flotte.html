@@ -154,6 +154,8 @@ footer .err{color:var(--lost)}
 .acm .heli-rotor{position:absolute;left:-22px;top:-22px;width:44px;height:44px;display:block;transform-origin:50% 50%;-webkit-transform-origin:50% 50%;animation:saf-heli-spin .22s linear infinite;-webkit-animation:saf-heli-spin .22s linear infinite;pointer-events:none}
 .acm .heli-rotor svg{display:block;width:44px;height:44px;overflow:visible}
 .acm:not(.live) .heli-rotor{animation-play-state:paused}
+/* Rotor imbriqué dans .heli-icon : il se cale sur le fuselage (0,0), sinon il était décalé de 22 px hors de l'appareil */
+.acm .heli-icon .heli-rotor{left:0;top:0}
 @keyframes saf-heli-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .acm .lbl{position:absolute;left:25px;top:-11px;white-space:nowrap;font-family:var(--cond);font-weight:700;font-size:15px;
   background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:3px;padding:0 5px;line-height:20px}
