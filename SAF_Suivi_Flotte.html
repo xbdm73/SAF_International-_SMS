@@ -36,7 +36,6 @@ button,input,select{font:inherit;color:inherit}
 #as332-ribbon button[data-tracker="on"]{background:#F0C040;border-color:#D39B19;color:#111827}
 #as332-ribbon button[aria-pressed="true"]{outline:2px solid #fff;outline-offset:-2px}
 #map-area #maps{flex:1;min-height:0;height:auto}
-@media(max-width:760px){#map-area{grid-row:1}#map-area #maps{grid-row:auto}}
 #maps{height:100%;width:100%;display:grid;gap:2px;background:var(--line);grid-template-columns:1fr;grid-template-rows:1fr}
 #maps[data-n="2"]{grid-template-columns:1fr 1fr}
 #maps[data-n="3"]{grid-template-columns:1fr 1fr 1fr}
@@ -97,6 +96,12 @@ header p{margin:4px 0 0;color:var(--ink-2);font-size:13px}
 
 .ac .facts{font-size:13px;margin-top:8px;display:grid;gap:2px}
 .ac .facts b{font-weight:600}
+.ac .pos{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px}
+.ac .pos .k{color:var(--ink-2)}
+.ac .pos .v{font-variant-numeric:tabular-nums;letter-spacing:.01em;white-space:nowrap}
+.ac .pos button{margin-left:auto;font:inherit;font-size:12px;color:var(--ink-2);background:transparent;border:1px solid var(--line);border-radius:4px;padding:2px 8px;cursor:pointer}
+.ac .pos button:hover{color:var(--ink);border-color:var(--ink-2)}
+.ac .pos button.ok{color:var(--live);border-color:var(--live)}
 .ac .more{margin-top:8px;font-size:12px;color:var(--gold)}
 .det{margin-top:12px;border-top:1px solid var(--line);padding-top:4px;font-size:13px;cursor:default}
 .det h3{font-family:var(--cond);font-size:15px;font-weight:600;margin:12px 0 4px;color:var(--signal)}
@@ -199,8 +204,6 @@ footer .err{color:var(--lost)}
 .leaflet-container{font-family:var(--font)}
 
 @media (max-width:760px){
-  #app{grid-template-columns:1fr;grid-template-rows:55% 45%}
-  #maps{grid-row:1} #side{grid-row:2;border-right:0;border-top:1px solid var(--line);padding-top:0}
   #maps[data-n="2"],#maps[data-n="3"]{grid-template-columns:1fr;grid-auto-rows:1fr}
   #maps[data-n="4"]{grid-template-columns:1fr 1fr}
   header{padding:10px 16px 8px} header h1{font-size:22px}
@@ -370,26 +373,59 @@ footer .err{color:var(--lost)}
 .acm .eta.night{background:#13224A} .acm .eta.soon{background:#C2610C}
 .navdst.night{background:#13224A} .navdst.soon{background:#C2610C}
 
-/* Panneau gauche rétractable (08.11.2026) — plus de place pour la carte */
-#app{transition:grid-template-columns .25s ease,grid-template-rows .25s ease}
-#map-area{position:relative}
-#app.side-off{grid-template-columns:0 1fr}
-#app.side-off #side{visibility:hidden;overflow:hidden;min-width:0;border-right:0}
-#sidetoggle{position:absolute;left:0;top:50%;transform:translateY(-50%);z-index:1000;width:22px;height:64px;padding:0;
-  border:1px solid var(--line);border-left:0;border-radius:0 6px 6px 0;background:var(--panel);color:var(--signal);
-  font:700 18px/1 var(--cond);cursor:pointer;box-shadow:2px 0 8px rgba(0,0,0,.35)}
-#sidetoggle:hover{background:#1d2d3d}
-@media (max-width:760px){
-  #app.side-off{grid-template-columns:1fr;grid-template-rows:100% 0}
-  #app.side-off #side{border-top:0}
-  #sidetoggle{top:auto;bottom:0;left:50%;transform:translateX(-50%);width:64px;height:22px;
-    border:1px solid var(--line);border-bottom:0;border-radius:6px 6px 0 0;box-shadow:0 -2px 8px rgba(0,0,0,.35)}
+
+/* ---------- Colonne repliable : PC, tablette, téléphone ---------- */
+#mapbar{flex:0 0 auto;display:flex;align-items:stretch;background:var(--panel);border-bottom:1px solid var(--line);min-width:0}
+#mapbar #as332-ribbon{flex:1;min-width:0;border-bottom:0}
+#sidetoggle{flex:0 0 auto;display:flex;align-items:center;gap:7px;background:none;border:0;border-right:1px solid var(--line);
+  color:var(--ink);padding:0 14px;font:600 14px var(--cond);cursor:pointer}
+#sidetoggle:hover{background:rgba(255,255,255,.05)}
+#sidetoggle svg{width:18px;height:18px;flex:none}
+#sideclose{display:none;position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:10px;width:36px;height:36px;
+  background:none;border:1px solid var(--line);border-radius:50%;color:var(--ink-2);font-size:20px;line-height:1;cursor:pointer}
+#sideclose:hover{color:var(--ink);border-color:var(--ink-2)}
+#side{position:relative}
+#scrim{display:none}
+@media (min-width:1024px){
+  body.side-hidden #app{grid-template-columns:1fr}
+  body.side-hidden #side{display:none}
 }
+@media (min-width:761px) and (max-width:1023px){
+  #app{grid-template-columns:1fr}
+  #side{position:fixed;z-index:1100;top:0;bottom:0;left:0;width:min(360px,86vw);box-shadow:8px 0 28px rgba(0,0,0,.45);transition:transform .22s ease}
+  body.side-hidden #side{transform:translateX(-102%);box-shadow:none}
+  #sideclose{display:block}
+  header{padding-right:56px}
+}
+@media (max-width:760px){
+  #app{grid-template-columns:1fr;grid-template-rows:1fr}
+  #side{position:fixed;z-index:1100;left:0;right:0;bottom:0;top:auto;height:min(68vh,640px);
+    border-right:0;border-top:1px solid var(--line);border-radius:14px 14px 0 0;padding-top:14px;
+    padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:0 -10px 30px rgba(0,0,0,.5);transition:transform .22s ease}
+  @supports (height:1dvh){ #side{height:min(68dvh,640px)} }
+  #side::before{content:"";position:absolute;top:6px;left:50%;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:var(--line)}
+  body.side-hidden #side{transform:translateY(102%);box-shadow:none}
+  #sideclose{display:block;top:10px}
+  header{padding:4px 56px 8px 16px}
+  #controls,#filters{padding-left:16px;padding-right:16px}
+  #sidetoggle{padding:0 12px}
+}
+@media (max-width:1023px){
+  #scrim{display:block;position:fixed;inset:0;z-index:1090;background:rgba(0,0,0,.35);opacity:1;transition:opacity .22s ease}
+  body.side-hidden #scrim{opacity:0;pointer-events:none}
+}
+@media (pointer:coarse){
+  #controls button,#controls select{min-height:40px;padding:6px 12px}
+  #as332-ribbon button{min-height:36px;padding:6px 10px}
+  .ac .pos button{min-height:34px;padding:4px 12px}
+}
+@media (prefers-reduced-motion:reduce){ #side,#scrim{transition:none} }
 </style>
 </head>
 <body>
 <div id="app">
-  <aside id="side">
+  <aside id="side" aria-label="Liste des hélicoptères">
+    <button id="sideclose" type="button" title="Masquer la liste" aria-label="Masquer la liste">×</button>
     <header>
       <a class="home" href="https://saf-international-portail.netlify.app/">← Portail SAF International</a>
       <h1>Suivi flotte AS 332</h1>
@@ -421,8 +457,9 @@ footer .err{color:var(--lost)}
     <ul id="list"></ul>
     <footer id="foot">—</footer>
   </aside>
-  <div id="map-area"><button id="sidetoggle" type="button" aria-controls="side" aria-expanded="true">‹</button><nav id="as332-ribbon" aria-label="État des traceurs AS332"><span class="ribbon-label">Traceurs AS332</span></nav><div id="maps" data-n="1"></div></div>
+  <div id="map-area"><div id="mapbar"><button id="sidetoggle" type="button" aria-controls="side" aria-expanded="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="3.5" width="15" height="13" rx="2"/><line x1="8" y1="3.5" x2="8" y2="16.5"/></svg><span class="lbl">Masquer la liste</span></button><nav id="as332-ribbon" aria-label="État des traceurs AS332"><span class="ribbon-label">Traceurs AS332</span></nav></div><div id="maps" data-n="1"></div></div>
 </div>
+<div id="scrim" aria-hidden="true"></div>
 
 <div id="hist" hidden role="dialog" aria-modal="true" aria-labelledby="h-title">
   <div class="hbar">
@@ -1566,6 +1603,14 @@ function arrowSvg(color,heading){
     </g></svg></span></span>`;
 }
 const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+/* Coordonnées en degrés minutes décimales, ex. 45°37.656'N 006°19.782'E (minutes à 3 décimales, ≈ 2 m) */
+function ddmPart(v,deg3,pos,neg){
+  const h=v<0?neg:pos, a=Math.abs(v);
+  let d=Math.floor(a), m=Math.round((a-d)*60000)/1000;
+  if(m>=60){ m=0; d+=1; }                       // retenue : 59.9995' → 60.000' → degré suivant
+  return String(d).padStart(deg3?3:2,"0")+"°"+m.toFixed(3).padStart(6,"0")+"'"+h;
+}
+const ddm=(lat,lon)=>ddmPart(lat,false,"N","S")+" "+ddmPart(lon,true,"E","W");
 
 /* ---------- Référentiel aérodromes (distance à vol d'oiseau, coordonnées approchées) ---------- */
 // metar:true = aérodrome publiant un METAR (indicatif : les METAR / TAF des appareils sont désormais
@@ -2224,6 +2269,7 @@ function render(ps){
         <div><dt>${gs!=null?"Vit. sol calc.":"Vitesse (brute)"}</dt><dd>${gs!=null?Math.round(gs/1.852)+' <small>kt</small>':esc(last.speed)}</dd></div>
       </dl>
       <div class="facts">${facts}</div>
+      <div class="pos"><span class="k">Position</span><span class="v">${ddm(last.lat,last.lon)}</span><button type="button" class="cp" title="Copier les coordonnées">Copier</button></div>
       <div class="when">Dernier point ${hhmm(last.fix_time)} – ${ago(last.fix_time)}</div>
       ${selected===a.reg?detailsHTML(a.reg):`<div class="more">Afficher vols et météo</div>`}`:""}
     </div>`;
@@ -2238,7 +2284,15 @@ function render(ps){
         else p.map.setView([last.lat,last.lon],Math.max(p.map.getZoom(),11)); }
       render(lastPs); ensureDetails(a.reg);
     };
-    li.onclick=e=>{ if(e.target.closest(".det,.wxnear")) return; go(); };
+    li.onclick=e=>{
+      const cp=e.target.closest(".cp");
+      if(cp){ e.stopPropagation(); const txt=a.reg+" "+ddm(last.lat,last.lon)+" ("+hhmm(last.fix_time)+")";
+        const done=()=>{ cp.textContent="Copié"; cp.classList.add("ok"); };
+        (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(done).catch(()=>{
+          const t=document.createElement("textarea"); t.value=txt; document.body.appendChild(t); t.select();
+          try{ document.execCommand("copy"); done(); }catch(_){} t.remove(); });
+        return; }
+      if(e.target.closest(".det,.wxnear")) return; go(); };
     li.querySelectorAll("details[data-taf]").forEach(d=>d.addEventListener("toggle",()=>{ d.open?nwxOpen.add(a.reg):nwxOpen.delete(a.reg); }));
     li.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};
     if(shown) list.appendChild(li);
@@ -2894,38 +2948,44 @@ document.addEventListener("keydown",e=>{
 },true);
 
 boot();
-</script>
-<script>
-/* Panneau gauche rétractable (08.11.2026) : bouton sur le bord de la carte, touche « [ », état mémorisé */
+
+/* ---------- Colonne repliable selon l'écran (PC / tablette / téléphone) — remplace le panneau du 08.11.2026 ---------- */
 (function(){
-  const app=document.getElementById("app"),btn=document.getElementById("sidetoggle"),KEY="saf_flotte_side_off";
-  if(!app||!btn) return;
-  const mq=matchMedia("(max-width:760px)");
-  const isOff=()=>app.classList.contains("side-off");
-  function label(){
-    const off=isOff();
-    btn.textContent=mq.matches?(off?"▲":"▼"):(off?"›":"‹");
-    btn.title=(off?"Afficher le panneau":"Masquer le panneau")+" (touche [ )";
-    btn.setAttribute("aria-label",off?"Afficher le panneau":"Masquer le panneau");
-    btn.setAttribute("aria-expanded",String(!off));
+  const MQ={phone:matchMedia("(max-width:760px)"),tablet:matchMedia("(min-width:761px) and (max-width:1023px)")};
+  const mode=()=>MQ.phone.matches?"phone":MQ.tablet.matches?"tablet":"pc";
+  const KEY="saf-flotte-side-hidden-";
+  const tgl=document.getElementById("sidetoggle"); if(!tgl) return;
+  const lbl=tgl.querySelector(".lbl");
+  const read=m=>{ try{ const v=localStorage.getItem(KEY+m); if(v!==null) return v==="1";
+      if(m==="pc"){ const old=localStorage.getItem("saf_flotte_side_off"); if(old!==null) return old==="1"; } }catch(_){}
+    return m!=="pc"; };   // ouverte sur PC, repliée ailleurs
+  const save=(m,h)=>{ try{ localStorage.setItem(KEY+m,h?"1":"0"); }catch(_){} };
+  const resizeMaps=()=>{ try{ panes.forEach(p=>p.map&&p.map.invalidateSize()); }catch(_){} };
+  const isHidden=()=>document.body.classList.contains("side-hidden");
+  function apply(hidden,persist){
+    document.body.classList.toggle("side-hidden",hidden);
+    tgl.setAttribute("aria-expanded",String(!hidden));
+    lbl.textContent=hidden?"Liste":"Masquer la liste";
+    tgl.title=(hidden?"Afficher la liste des hélicoptères":"Masquer la liste pour agrandir la carte")+" (touche [ )";
+    if(persist) save(mode(),hidden);
+    setTimeout(resizeMaps,60); setTimeout(resizeMaps,260);
   }
-  function refit(){ try{ (typeof panes!=="undefined"?panes:[]).forEach(p=>p.map&&p.map.invalidateSize()); }catch(e){} }
-  function set(off,save){
-    app.classList.toggle("side-off",off); label();
-    if(save){ try{ localStorage.setItem(KEY,off?"1":"0"); }catch(e){} }
-    setTimeout(refit,320);
-  }
-  app.addEventListener("transitionend",e=>{ if(e.target===app) refit(); });
-  btn.addEventListener("click",()=>set(!isOff(),true));
+  const overlayOpen=()=>!document.getElementById("hist")?.hidden || !document.getElementById("ana")?.hidden;
+  tgl.addEventListener("click",()=>apply(!isHidden(),true));
+  document.getElementById("sideclose").addEventListener("click",()=>{ apply(true,true); tgl.focus(); });
+  document.getElementById("scrim").addEventListener("click",()=>apply(true,true));
   document.addEventListener("keydown",e=>{
-    if(e.key!=="["||e.ctrlKey||e.metaKey||e.altKey) return;
     const t=e.target; if(t&&(/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)||t.isContentEditable)) return;
-    if(!document.getElementById("hist")?.hidden || !document.getElementById("ana")?.hidden) return;
-    e.preventDefault(); set(!isOff(),true);
+    if(overlayOpen()) return;
+    if(e.key==="[" && !e.ctrlKey && !e.metaKey && !e.altKey){ e.preventDefault(); apply(!isHidden(),true); }
+    else if(e.key==="Escape" && mode()!=="pc" && !isHidden()) apply(true,true);
   });
-  mq.addEventListener("change",label);
-  let off=false; try{ off=localStorage.getItem(KEY)==="1"; }catch(e){}
-  set(off,false);
+  const side=document.getElementById("side"); let y0=null;
+  side.addEventListener("touchstart",e=>{ y0=(mode()==="phone" && e.touches[0].clientY-side.getBoundingClientRect().top<70)?e.touches[0].clientY:null; },{passive:true});
+  side.addEventListener("touchend",e=>{ if(y0!==null && e.changedTouches[0].clientY-y0>60) apply(true,true); y0=null; },{passive:true});
+  const onMode=()=>apply(read(mode()),false);
+  MQ.phone.addEventListener("change",onMode); MQ.tablet.addEventListener("change",onMode);
+  apply(read(mode()),false);
 })();
 </script>
 </body>
