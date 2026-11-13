@@ -1601,10 +1601,15 @@ const CARD=["N","NE","E","SE","S","SO","O","NO"];
 function nearestAds(p,filter=()=>true,n=1){
   return AERODROMES.filter(filter).map(ad=>({ad,km:haversineKm(p,ad)})).sort((a,b)=>a.km-b.km).slice(0,n);
 }
+// 13.11.2026 — Position exprimée par rapport à LFKA Albertville (référence fixe), et non plus à l'aérodrome
+// le plus proche de la liste : celle-ci ne couvre que les Alpes, d'où « 600 km NO de LSGG » pour un appareil
+// dans le Nord. Seule exception : appareil posé à moins de BASE_RADIUS_KM d'un aérodrome connu, nommé tel quel.
+const POS_REF = AERODROMES.find(a=>a.icao==="LFKA");
 function placeLabel(p){
   const {ad,km}=nearestAds(p)[0];
   if(km<BASE_RADIUS_KM) return `${ad.icao} ${ad.name}`;
-  return `${km<10?km.toFixed(1):Math.round(km)} km ${CARD[Math.round(bearingDeg(ad,p)/45)%8]} de ${ad.icao} ${ad.name}`;
+  const d=haversineKm(p,POS_REF);
+  return `${d<10?d.toFixed(1):Math.round(d)} km ${CARD[Math.round(bearingDeg(POS_REF,p)/45)%8]} de ${POS_REF.icao} ${POS_REF.name}`;
 }
 const atBase = p => nearestAds(p,ad=>ad.base)[0].km < BASE_RADIUS_KM;
 const isAir = p => (p.speed??0) > CONFIG.movingSpeed;
@@ -1752,7 +1757,8 @@ function detailsHTML(reg){
   const since24=Date.now()-24*3600e3;
   const fl=an.flights.filter(f=>new Date(f.ldTo||f.toTo)>=since24).reverse();
   let h=`<div class="det">`;
-  h+=`<h3>Position</h3><p>${esc(placeLabel(last))}<br><span class="muted">Aérodrome le plus proche : ${esc(near.ad.icao)} ${esc(near.ad.name)}, ${near.km.toFixed(1)} km</span></p>`;
+  h+=`<h3>Position</h3><p>${esc(placeLabel(last))}`+
+    (near.km<50&&near.ad.icao!==POS_REF.icao?`<br><span class="muted">Aérodrome le plus proche : ${esc(near.ad.icao)} ${esc(near.ad.name)}, ${near.km.toFixed(1)} km</span>`:"")+`</p>`;
   h+=`<h3>Vols des dernières 24 h</h3>`;
   if(!fl.length) h+=`<p class="muted">Aucun vol enregistré sur la période.</p>`;
   else{
