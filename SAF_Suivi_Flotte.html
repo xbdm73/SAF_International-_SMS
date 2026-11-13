@@ -107,6 +107,14 @@ header p{margin:4px 0 0;color:var(--ink-2);font-size:13px}
 .det td{padding:3px 0}
 .det tr.sum td{padding-bottom:8px;border-bottom:1px solid var(--line);color:var(--ink-2)}
 .det .metar{font-family:var(--cond);font-size:13.5px;line-height:1.35}
+/* METAR / TAF les plus proches de chaque appareil (fiche en vol et détails) */
+.wxnear{margin-top:6px;padding:5px 7px;border:1px solid var(--line);border-radius:5px;font-size:12.5px;cursor:default}
+.wxnear .wxh{font-family:var(--cond);font-size:13px}
+.wxnear .cat{display:inline-block;color:#fff;border-radius:3px;padding:0 5px;font-weight:700;font-size:11px;margin-right:4px}
+.wxnear pre{margin:3px 0 0;white-space:pre-wrap;word-break:break-word;font:12px/1.35 ui-monospace,Menlo,Consolas,monospace}
+.wxnear details{margin-top:4px} .wxnear summary{cursor:pointer;color:var(--ink-2)}
+.wxnear .old{color:var(--ink-2);font-style:italic}
+.wxnear + .wxnear{margin-top:4px}
 /* Filtre par type et ouverture automatique d'une carte à la mise en route */
 #filters{display:flex;gap:8px 12px;padding:8px 20px 10px;border-bottom:1px solid var(--line);align-items:center;flex-wrap:wrap;font-size:13px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
@@ -138,7 +146,8 @@ footer .err{color:var(--lost)}
 .acm{position:relative}
 .acm .heli-icon{position:absolute;left:-22px;top:-22px;width:44px;height:44px;transform-origin:22px 22px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.7))}
 .acm .heli-icon svg{display:block;width:44px;height:44px;overflow:visible}
-.acm .heli-rotor{transform-box:view-box;transform-origin:22px 22px;animation:saf-heli-spin .22s linear infinite}
+.acm .heli-rotor{position:absolute;left:-22px;top:-22px;width:44px;height:44px;display:block;transform-origin:50% 50%;-webkit-transform-origin:50% 50%;animation:saf-heli-spin .22s linear infinite;-webkit-animation:saf-heli-spin .22s linear infinite;pointer-events:none}
+.acm .heli-rotor svg{display:block;width:44px;height:44px;overflow:visible}
 .acm:not(.live) .heli-rotor{animation-play-state:paused}
 @keyframes saf-heli-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .acm .lbl{position:absolute;left:25px;top:-11px;white-space:nowrap;font-family:var(--cond);font-weight:700;font-size:15px;
@@ -277,7 +286,7 @@ footer .err{color:var(--lost)}
   #ana .amap{grid-row:1} #ana .acharts{grid-row:2} #ana .aside{grid-column:1;grid-row:3;border-left:0;border-top:1px solid var(--line)}
   #ana .abar{padding:10px 14px}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important} .acm.live .heli-rotor{animation:saf-heli-spin .22s linear infinite!important;-webkit-animation:saf-heli-spin .22s linear infinite!important}}
 /* Outils de carte repris de SAF Operations */
 .opsx{position:absolute;inset:0;pointer-events:none;z-index:790}
 .opsx button,.opsx select{pointer-events:auto;font-family:var(--font)}
@@ -1551,16 +1560,16 @@ function arrowSvg(color,heading){
       <path d="M19.3 12.4 Q22 8.7 24.7 12.4 L24.4 14.4 L19.6 14.4 Z" fill="#d4f4ff" stroke-width=".6"/>
     </g>
     <circle cx="21.1" cy="27.6" r=".8" fill="#0A1420"/><circle cx="22.9" cy="27.6" r=".8" fill="#0A1420"/>
-    <g class="heli-rotor" stroke="#fff" stroke-width="1.9" stroke-linecap="round">
+  </svg><span class="heli-rotor"><svg viewBox="0 0 44 44" aria-hidden="true"><g stroke="#fff" stroke-width="1.9" stroke-linecap="round">
       <path d="M9.3 9.3 L34.7 34.7 M34.7 9.3 L9.3 34.7"/>
       <circle cx="22" cy="22" r="2.2" fill="${color}" stroke="#0A1420" stroke-width="1.1"/>
-    </g>
-  </svg></span>`;
+    </g></svg></span></span>`;
 }
 const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 /* ---------- Référentiel aérodromes (distance à vol d'oiseau, coordonnées approchées) ---------- */
-// metar:true = aérodrome publiant un METAR
+// metar:true = aérodrome publiant un METAR (indicatif : les METAR / TAF des appareils sont désormais
+// cherchés autour de leur position, voir « METAR / TAF les plus proches de chaque appareil »)
 const AERODROMES = [
   {icao:"LFKA",name:"Albertville",lat:45.6276,lon:6.3297,base:true},
   {icao:"LSGS",name:"Sion",lat:46.2196,lon:7.3268,base:true,metar:true},
@@ -1637,7 +1646,7 @@ function analyze(pts){
 }
 
 /* ---------- Météo (à la demande, pour l'appareil sélectionné) ---------- */
-const wxCache={}, metarCache={};
+const wxCache={};
 const WX_TTL=10*60e3;
 async function ensureDetails(reg){
   const last=state[reg]?.last; if(!last) return;
@@ -1652,17 +1661,88 @@ async function ensureDetails(reg){
     }catch(e){ wxCache[reg].err=String(e.message||e); }
     wxCache[reg].loading=false; changed=true;
   }
-  const m=metarCache[reg];
-  if(!m || Date.now()-m.t>WX_TTL || haversineKm(m,last)>5){
-    const ids=nearestAds(last,ad=>ad.metar,2).map(x=>x.ad.icao);
-    metarCache[reg]={t:Date.now(),lat:last.lat,lon:last.lon,ids,loading:true};
-    try{
-      const {data,error}=await sb.functions.invoke("fleet-metar",{body:{ids}});
-      if(error) throw error; metarCache[reg].data=data.metars;
-    }catch(e){ metarCache[reg].err=String(e.message||e); }
-    metarCache[reg].loading=false; changed=true;
-  }
   if(changed && selected===reg) render(lastPs);
+  ensureNearWx();
+}
+
+/* ---------- METAR / TAF les plus proches de chaque appareil ----------
+   13.11.2026 — Les stations ne sont plus prises dans la liste fixe AERODROMES (une dizaine de terrains
+   des Alpes) mais cherchées autour de la position de l'appareil, via le mode bbox du relais fleet-metar
+   (aviationweather.gov) : boîte de ±80 km, élargie à 160 puis 320 km tant qu'on n'a pas à la fois un
+   METAR et un TAF. On retient les 2 stations METAR les plus proches (METAR de moins de 3 h : un terrain
+   fermé la nuit ne masque pas une station qui observe) et la station TAF la plus proche — souvent la même,
+   mais un terrain peut publier un METAR sans TAF.
+   Calcul pour chaque appareil en vol (ou signal perdu en vol, à la dernière position) et pour l'appareil
+   sélectionné ; renouvelé toutes les 10 min ou dès que l'appareil s'est déplacé de plus de 15 km. */
+const NWX_TTL=10*60e3, NWX_RETRY=2*60e3, NWX_MOVE_KM=15, NWX_STEPS_KM=[80,160,320], NWX_MAX_AGE_MIN=180;
+const nearWx={}, nwxOpen=new Set();
+const nwxAge=t=>t?Math.round((nowMs()-Date.parse(t))/60000):null;
+function nwxBox(p,km){
+  const dLat=km/111, dLon=km/(111*Math.max(.2,Math.cos(p.lat*Math.PI/180)));
+  return [Math.max(-89,p.lat-dLat),Math.max(-180,p.lon-dLon),Math.min(89,p.lat+dLat),Math.min(180,p.lon+dLon)];
+}
+async function nwxFetch(p){
+  let sts=[], km=NWX_STEPS_KM[0];
+  for(km of NWX_STEPS_KM){
+    const {data,error}=await sb.functions.invoke("fleet-metar",{body:{bbox:nwxBox(p,km)}});
+    if(error) throw error;
+    sts=((data&&data.stations)||[]).filter(x=>Number.isFinite(+x.lat)&&Number.isFinite(+x.lon))
+      .map(x=>({...x,lat:+x.lat,lon:+x.lon,km:haversineKm(p,{lat:+x.lat,lon:+x.lon})}))
+      .filter(x=>x.km<=km).sort((a,b)=>a.km-b.km);
+    const okMet=sts.some(x=>x.raw&&(nwxAge(x.time)??0)<=NWX_MAX_AGE_MIN), okTaf=sts.some(x=>x.taf);
+    if(okMet&&okTaf) break;
+  }
+  let met=sts.filter(x=>x.raw&&(nwxAge(x.time)??0)<=NWX_MAX_AGE_MIN);
+  if(!met.length) met=sts.filter(x=>x.raw);   // à défaut, le plus proche même ancien (signalé comme tel)
+  return {met:met.slice(0,2), taf:sts.find(x=>x.taf)||null, km};
+}
+function nwxWanted(a){
+  const s=state[a.reg]; if(!a.active||!s?.last) return false;
+  const k=status(s.last).k; return k==="live"||k==="lost"||selected===a.reg;
+}
+async function ensureNearWx(){
+  const regs=fleet.filter(a=>passFilter(a)&&nwxWanted(a)).map(a=>a.reg);
+  let changed=false;
+  await Promise.all(regs.map(async reg=>{
+    const last=state[reg].last, c=nearWx[reg];
+    if(c&&(c.loading||(Date.now()-c.t<(c.err?NWX_RETRY:NWX_TTL)&&haversineKm(c,last)<NWX_MOVE_KM))) return;
+    nearWx[reg]={...(c||{}),loading:true};
+    try{
+      const r=await nwxFetch(last);
+      nearWx[reg]={t:Date.now(),lat:last.lat,lon:last.lon,...r};
+    }catch(e){
+      console.warn("METAR/TAF les plus proches de "+reg+" indisponibles :",e);
+      nearWx[reg]={...(c||{}),t:Date.now(),lat:last.lat,lon:last.lon,loading:false,err:String(e.message||e)};
+    }
+    changed=true;
+  }));
+  if(changed&&lastPs) render(lastPs);
+}
+function nwxName(x){ return x.name||(AERODROMES.find(a=>a.icao===x.id)||{}).name||""; }
+function nwxHead(x){
+  const [col]=WX_CAT[x.cat]||[WX_NONE], a=nwxAge(x.time);
+  return `<span class="cat" style="background:${col}">${esc(x.cat||"?")}</span><b>${esc(x.id)}</b>`+
+    `${nwxName(x)?" "+esc(nwxName(x)):""} · ${x.km<10?x.km.toFixed(1):Math.round(x.km)} km`+
+    (x.time?` · ${hm(x.time)} UTC${a!=null&&a>90?` <span class="old">(il y a ${dur(a)})</span>`:""}`:"");
+}
+// Bloc METAR / TAF d'un appareil. full=false : fiche compacte (1 METAR, TAF repliable) ; full=true : détails.
+function nwxHTML(reg,full){
+  const c=nearWx[reg];
+  if(!c||(!c.met&&c.loading)) return `<div class="wxnear"><span class="muted">METAR / TAF les plus proches : chargement…</span></div>`;
+  if(!c.met) return `<div class="wxnear"><span class="muted">METAR / TAF indisponibles.</span></div>`;
+  let h="";
+  const mets=full?c.met:c.met.slice(0,1);
+  if(!mets.length) h+=`<div class="wxnear"><span class="muted">Aucun METAR publié à moins de ${c.km} km.</span></div>`;
+  for(const x of mets) h+=`<div class="wxnear"><div class="wxh">METAR ${nwxHead(x)}</div><pre>${esc(x.raw)}</pre></div>`;
+  const t=c.taf;
+  if(!t) h+=`<div class="wxnear"><span class="muted">Aucun TAF publié à moins de ${c.km} km.</span></div>`;
+  else{
+    const lbl=`TAF <b>${esc(t.id)}</b>${nwxName(t)?" "+esc(nwxName(t)):""} · ${t.km<10?t.km.toFixed(1):Math.round(t.km)} km`;
+    h+=full?`<div class="wxnear"><div class="wxh">${lbl}</div><pre>${esc(t.taf)}</pre></div>`
+      :`<div class="wxnear"><details data-taf="${esc(reg)}"${nwxOpen.has(reg)?" open":""}><summary>${lbl}</summary><pre>${esc(t.taf)}</pre></details></div>`;
+  }
+  if(c.err) h+=`<div class="wxnear"><span class="muted">Dernière mise à jour en échec, données de ${hm(c.t)} UTC conservées.</span></div>`;
+  return h;
 }
 
 function detailsHTML(reg){
@@ -1700,14 +1780,7 @@ function detailsHTML(reg){
        `${c.wind_gusts_10m>c.wind_speed_10m+5?`, rafales ${Math.round(c.wind_gusts_10m)} kt`:""} · ${Math.round(c.temperature_2m)} °C · nébulosité ${c.cloud_cover} % · visibilité ${vis}`+
        `<br><span class="muted">Modèle Open-Meteo à ${hm(c.time+"Z")} UTC, pas une observation.</span></p>`;
   }
-  const m=metarCache[reg];
-  h+=`<h3>METAR les plus proches</h3>`;
-  if(!m||m.loading) h+=`<p class="muted">Chargement…</p>`;
-  else if(m.err||!m.data) h+=`<p class="muted">METAR indisponibles.</p>`;
-  else for(const id of m.ids){
-    const x=m.data[id], ad=AERODROMES.find(a=>a.icao===id);
-    h+=`<p class="metar"><b>${id}</b> <span class="muted">${esc(ad.name)}, ${Math.round(haversineKm(last,ad))} km</span><br>${x?esc(x.raw):"<span class='muted'>pas de METAR récent</span>"}</p>`;
-  }
+  h+=`<h3>METAR / TAF les plus proches</h3>`+nwxHTML(reg,true);
   return h+`</div>`;
 }
 
@@ -1909,7 +1982,7 @@ async function load(retried){
     // Même cycle de données NSE pour les projections sur la carte et le profil AGL.
     // Les altitudes de terrain manquantes sont demandées, les autres restent en cache.
     if(terrain.visible) updateTerrain();
-    if(selected) ensureDetails(selected);
+    if(selected) ensureDetails(selected); else ensureNearWx();
   }catch(e){
     if(!retried && isAuthError(e)){
       // Jeton expiré (onglet en veille, PC sorti de veille) : renouvellement puis nouvel essai
@@ -2133,6 +2206,7 @@ function render(ps){
       if(n24) facts+=`<div>${n24} vol${n24>1?"s":""} sur 24 h</div>`;
     }
     if(last) facts+=nightFact(last);
+    if(last && a.active && (st.k==="live"||st.k==="lost") && selected!==a.reg) facts+=nwxHTML(a.reg,false);
     const li=document.createElement("li");
     li.className="ac"+(selected===a.reg?" sel":"")+(a.active && last && minsAgo(last.fix_time)>=-1 && minsAgo(last.fix_time)<=CONFIG.liveMaxMin?" tracker-active":""); li.dataset.st=st.k; li.tabIndex=0;
     li.innerHTML=`<div class="bar"></div><div class="body">
@@ -2158,7 +2232,8 @@ function render(ps){
         else p.map.setView([last.lat,last.lon],Math.max(p.map.getZoom(),11)); }
       render(lastPs); ensureDetails(a.reg);
     };
-    li.onclick=e=>{ if(e.target.closest(".det")) return; go(); };
+    li.onclick=e=>{ if(e.target.closest(".det,.wxnear")) return; go(); };
+    li.querySelectorAll("details[data-taf]").forEach(d=>d.addEventListener("toggle",()=>{ d.open?nwxOpen.add(a.reg):nwxOpen.delete(a.reg); }));
     li.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};
     if(shown) list.appendChild(li);
 
