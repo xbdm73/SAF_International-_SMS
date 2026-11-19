@@ -30,6 +30,7 @@ class Scripts(HTMLParser):
             return
         opts = dict(attrs)
         kind = (opts.get("type") or "text/javascript").lower()
+        self.kind = kind
         self.in_script = ("src" not in opts and kind in (
             "text/javascript", "application/javascript", "module", ""))
         self.chunks = []
@@ -39,7 +40,7 @@ class Scripts(HTMLParser):
     def handle_endtag(self, tag):
         if tag == "script":
             if self.in_script:
-                self.scripts.append("".join(self.chunks))
+                self.scripts.append(("".join(self.chunks), self.kind))
             self.in_script = False
 
 def files(suffix):
@@ -67,14 +68,15 @@ def main():
                     errors.append(f"{path.relative_to(ROOT)}: unresolved merge conflict")
             snippets = []
             if path.suffix.lower() in (".js", ".mjs"):
-                snippets = [content]
+                snippets = [(content, "module" if path.suffix.lower() == ".mjs" else "text/javascript")]
             else:
                 extractor = Scripts()
                 extractor.feed(content)
                 snippets = extractor.scripts
-            for index, code in enumerate(snippets, 1):
+            for index, (code, kind) in enumerate(snippets, 1):
                 if not code.strip():
                     continue
+                target = pathlib.Path(tmp) / ("inline.mjs" if kind == "module" else "inline.js")
                 target.write_text(code, encoding="utf-8")
                 result = subprocess.run(["node", "--check", str(target)],
                     capture_output=True, text=True)
