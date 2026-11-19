@@ -57,6 +57,7 @@ jobs:
                           continue
                       path = Path(tmp) / ('script_' + str(count) + ('.mjs' if 'import ' in script or 'export ' in script else '.js'))
                       path.write_text(script, encoding='utf-8')
+                      print(f'Checking {page} inline script #{i+1}', flush=True)
                       subprocess.run(['node','--check',str(path)], check=True)
                       count += 1
           print(f'Checked {len(pages)} HTML pages and {count} inline JS scripts')
