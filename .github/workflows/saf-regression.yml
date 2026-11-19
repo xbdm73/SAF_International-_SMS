@@ -1,0 +1,63 @@
+name: SAF static regression checks
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate HTML and embedded JavaScript (no deployment)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import subprocess, tempfile
+          class Scripts(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.inline = []
+                  self.current = None
+              def handle_starttag(self, tag, attrs):
+                  if tag != 'script':
+                      return
+                  a = dict(attrs)
+                  if 'src' not in a and a.get('type','').lower() in ('','text/javascript','module','application/javascript'):
+                      self.current = []
+              def handle_data(self, data):
+                  if self.current is not None:
+                      self.current.append(data)
+              def handle_endtag(self, tag):
+                  if tag == 'script' and self.current is not None:
+                      self.inline.append(''.join(self.current))
+                      self.current = None
+          pages = sorted(Path('.').rglob('*.html'))
+          pages = [p for p in pages if not any(s in ('node_modules','.git','vendor') for s in p.parts)]
+          assert pages, 'No HTML pages found'
+          count = 0
+          with tempfile.TemporaryDirectory() as tmp:
+              for page in pages:
+                  html = page.read_text(encoding='utf-8-sig')
+                  assert '<html' in html.lower() and '</html>' in html.lower(), f'Incomplete HTML: {page}'
+                  assert not any(x in html for x in ('<<<<<<< HEAD','=======\n>>>>>>>','>>>>>>> ')), f'Merge conflict marker in {page}'
+                  parser = Scripts()
+                  parser.feed(html)
+                  for i, script in enumerate(parser.inline):
+                      if not script.strip():
+                          continue
+                      path = Path(tmp) / ('script_' + str(count) + ('.mjs' if 'import ' in script or 'export ' in script else '.js'))
+                      path.write_text(script, encoding='utf-8')
+                      subprocess.run(['node','--check',str(path)], check=True)
+                      count += 1
+          print(f'Checked {len(pages)} HTML pages and {count} inline JS scripts')
+          PY
