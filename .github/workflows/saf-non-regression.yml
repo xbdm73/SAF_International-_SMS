@@ -1,0 +1,23 @@
+name: SAF non-regression checks
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-smoke:
+    name: Offline integrity and JavaScript syntax
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify critical entrypoints and JavaScript syntax
+        run: python3 tests/saf_smoke.py
