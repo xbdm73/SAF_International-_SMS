@@ -1,0 +1,23 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0d1b2a"><title>SAF | Briefing TST — prototype</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#0d1b2a;color:#f2f6fa;font:16px system-ui,-apple-system,sans-serif}main{max-width:750px;padding:22px;margin:auto}a{color:#e1b64e}h1{margin:20px 0 8px}.hint{color:#ccd5de}.notice{padding:14px 18px;border:1px solid #b38e42;border-radius:10px;color:#ffe1a4;margin:20px 0}form{display:grid;gap:16px}.field{display:grid;gap:6px}input,textarea{width:100%;font:inherit;padding:13px;background:#162a3e;color:white;border:1px solid #617487;border-radius:8px}label{font-weight:600}fieldset{border:1px solid #617487;border-radius:10px;display:grid;gap:12px}legend{font-weight:bold;padding:0 8px}.check{display:flex;gap:12px;align-items:start}.check input{width:19px;height:19px;flex-shrink:0}button{border:0;border-radius:9px;background:#e1b64e;color:#122234;font:700 16px system-ui;padding:14px;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}.minor{background:#29445c;color:white}.actions{display:flex;gap:10px;flex-wrap:wrap}footer{color:#ccd5de;font-size:13px;margin-top:20px}</style></head><body><main>
+<a href="./SAF_App.html">← Accueil / Home</a><h1>Briefing TST</h1><p class="hint">Projet d'interface — préparation des données de briefing pour Crew Training.</p>
+<div role="status" class="notice"><strong>Non connecté à Crew Training.</strong> Cette version ne transmet ni ne valide aucune formation. Ne pas utiliser comme justificatif de briefing effectué.</div>
+<form id="brief"><div class="field"><label for="date">Date du briefing</label><input id="date" type="date" required></div>
+<div class="field"><label for="leader">Animateur / Responsable</label><input id="leader" required maxlength="140" autocomplete="name"></div>
+<div class="field"><label for="attendees">Participants (noms, un par ligne)</label><textarea id="attendees" required rows="4" placeholder="Un nom par ligne"></textarea></div>
+<div class="field"><label for="mission">Mission / Site / Référence</label><input id="mission" maxlength="180"></div>
+<fieldset><legend>Sujets abordés (à adapter et valider)</legend>
+<label class="check"><input type="checkbox" name="topic" value="mission">Objectif et déroulement de la mission</label>
+<label class="check"><input type="checkbox" name="topic" value="roles">Rôles, responsabilités et communication</label>
+<label class="check"><input type="checkbox" name="topic" value="hazards">Dangers, risques et mesures de maîtrise</label>
+<label class="check"><input type="checkbox" name="topic" value="aircraft">Hélicoptère, charges, équipements et limitations</label>
+<label class="check"><input type="checkbox" name="topic" value="emergency">Situations anormales et procédures d'urgence</label>
+<label class="check"><input type="checkbox" name="topic" value="questions">Questions et compréhension des participants</label></fieldset>
+<div class="field"><label for="notes">Points particuliers / actions à suivre</label><textarea id="notes" rows="4"></textarea></div>
+<div class="actions"><button type="submit">Exporter le brouillon JSON</button><button type="button" class="minor" id="clear">Effacer</button></div></form>
+<footer>Aucune donnée personnelle n'est sauvegardée sur un serveur par cette page. Le fichier exporté reste sous votre responsabilité ; il n'est pas une attestation Crew Training.</footer>
+<script>
+document.getElementById('date').value=new Date().toLocaleDateString('en-CA');
+document.getElementById('clear').onclick=()=>{document.getElementById('brief').reset();};
+document.getElementById('brief').addEventListener('submit',event=>{event.preventDefault();const get=id=>document.getElementById(id).value.trim();const d={schema_version:'tst-briefing-draft-1',status:'draft_not_validated',date:get('date'),leader:get('leader'),participants:get('attendees').split(/\r?\n/).map(s=>s.trim()).filter(Boolean),mission:get('mission'),topics:[...document.querySelectorAll('input[name=topic]:checked')].map(e=>e.value),notes:get('notes'),exported_at:new Date().toISOString()};const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='TST-briefing-brouillon-'+d.date+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+</script></main></body></html>
