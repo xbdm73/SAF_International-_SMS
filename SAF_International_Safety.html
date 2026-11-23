@@ -16933,11 +16933,12 @@ function renderActionTracker(){
       stCell='<select class="at-st at-st-'+r.st+'" onchange="atSetField(\''+key+',\'status\',this.value)">'+['Not started','In progress','Completed'].map(function(o){return '<option value="'+o+'"'+(stLbl[r.st]===o?' selected':'')+'>'+o+'</option>';}).join('')+'</select>'+closedNote;
       dueCell='<input type="date" class="at-due" value="'+atEsc(r.due)+'" onchange="atSetField(\''+key+',\'actionDate\',this.value)"/>';
       sendBtn='<button type="button" class="at-btn" title="Envoyer / renvoyer aux responsables" onclick="atSend(\''+key+')">✉</button>';
-    }else if(r.edit==='srb'||r.edit==='sm'){
+    }else if(r.edit==='srb'||r.edit==='sm'||r.edit==='forum'){
       var k2=atJs(r.id)+'\','+r.idx;
+      var setFn={sm:'atSetSM',forum:'atSetForum'}[r.edit]||'atSetSRB';
       var sv={todo:'open',progress:'in-progress',closed:'closed',cancelled:'cancelled'}[r.st];
-      stCell='<select class="at-st at-st-'+r.st+'" onchange="'+(r.edit==='sm'?'atSetSM':'atSetSRB')+'(\''+k2+',\'status\',this.value)">'+[['open','Open'],['in-progress','In progress'],['closed','Closed'],['cancelled','Cancelled']].map(function(o){return '<option value="'+o[0]+'"'+(sv===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>'+closedNote;
-      dueCell='<input type="date" class="at-due" value="'+atEsc(r.due)+'" onchange="'+(r.edit==='sm'?'atSetSM':'atSetSRB')+'(\''+k2+',\'due\',this.value)"/>';
+      stCell='<select class="at-st at-st-'+r.st+'" onchange="'+setFn+'(\''+k2+',\'status\',this.value)">'+[['open','Open'],['in-progress','In progress'],['closed','Closed'],['cancelled','Cancelled']].map(function(o){return '<option value="'+o[0]+'"'+(sv===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>'+closedNote;
+      dueCell='<input type="date" class="at-due" value="'+atEsc(r.due)+'" onchange="'+setFn+'(\''+k2+',\'due\',this.value)"/>';
     }else{
       stCell='<span class="at-pill at-st-'+r.st+'">'+stLbl[r.st]+'</span>'+closedNote;
       dueCell='<span>'+(r.due?atEsc(r.due):'—')+'</span>';
@@ -18696,7 +18697,7 @@ function renderOccurrenceList() {
       + '<button class="occ-csv-btn" data-id="' + occHtmlEsc(o.id) + '" style="padding:3px 8px;background:rgba(63,185,80,.12);border:1px solid rgba(63,185,80,.35);border-radius:4px;color:#3fb950;font-family:var(--font-mono);font-size:10px;cursor:pointer;margin-right:3px;" title="Export CSV">CSV</button>'
       + '<button class="occ-e5x-btn" data-id="' + occHtmlEsc(o.id) + '" style="padding:3px 8px;background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.4);border-radius:4px;color:#F0C040;font-family:var(--font-mono);font-size:10px;cursor:pointer;" title="Export E5X ECCAIRS">E5X</button>'
       + '</td>'
-      + '<td style="padding:8px 14px;white-space:nowrap;"><div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;"><button class="edit-occ-btn" data-id="' + occHtmlEsc(o.id) + '" style="padding:2px 8px;background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.3);border-radius:4px;color:var(--steel-bright);font-family:var(--font-mono);font-size:10px;cursor:pointer;white-space:nowrap;">✎ Edit</button><button class="del-occ-btn" data-id="' + occHtmlEsc(o.id) + '" title="Supprimer l’occurrence / Delete occurrence" style="background:none;border:none;color:#f85149;cursor:pointer;font-size:13px;padding:0 2px;">&#10005;</button></div></td>'
+      + '<td style="padding:8px 14px;white-space:nowrap;"><div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;">' + (typeof occForumBtnHtml === 'function' ? occForumBtnHtml(o) : '') + '<button class="edit-occ-btn" data-id="' + occHtmlEsc(o.id) + '" style="padding:2px 8px;background:rgba(74,159,224,.15);border:1px solid rgba(74,159,224,.3);border-radius:4px;color:var(--steel-bright);font-family:var(--font-mono);font-size:10px;cursor:pointer;white-space:nowrap;">✎ Edit</button><button class="del-occ-btn" data-id="' + occHtmlEsc(o.id) + '" title="Supprimer l’occurrence / Delete occurrence" style="background:none;border:none;color:#f85149;cursor:pointer;font-size:13px;padding:0 2px;">&#10005;</button></div></td>'
       + '</tr>';
   });
 
@@ -25366,7 +25367,9 @@ setTimeout(function(){
       // Ajout 26.10.2026 : révisions des Safety Alerts / Communications.
       'llStartRevision','llRevDiscardDraft',
       // Ajout 09.11.2026 : registre des Safety Meetings.
-      'smSave','smDelete','atSetSM'
+      'smSave','smDelete','atSetSM',
+      // Ajout 23.11.2026 : forum par événement (le serveur refuse aussi toute écriture hors admin/editor MFA).
+      'forumInvite','forumMember','forumPost','forumActSet','forumSaveCtx','forumSetStatus','atSetForum'
     ];
     var GUARD_MSG = (SAF_ROLE === 'authority')
       ? 'Accès autorité — consultation seule, aucune écriture possible.'
@@ -33234,5 +33237,395 @@ PD.shell = function(o){
   setTimeout(tick, 400);
 })();
 </script>
+
+<!-- ═══ FORUM PAR ÉVÉNEMENT — Occurrence Log (23.11.2026) ═══════════════════
+     Données : tables saf_forum_* (Supabase), accessibles uniquement via
+     l'Edge Function « saf-forum ». Invités : page SAF_Forum.html + lien
+     personnel envoyé par e-mail (Resend, côté serveur).
+     ═════════════════════════════════════════════════════════════════════ -->
+<style id="saf-forum-style">
+.occ-forum-btn{padding:2px 8px;border-radius:4px;font-family:var(--font-mono);font-size:10px;cursor:pointer;white-space:nowrap;border:1px solid #6f42c1;background:rgba(111,66,193,.10);color:#4b2a8f;font-weight:700;}
+.occ-forum-btn.has{background:#6f42c1;color:#fff;}
+.occ-forum-btn .dot{display:inline-block;min-width:15px;padding:0 4px;margin-left:4px;border-radius:8px;background:#ff1744;color:#fff;font-size:9px;line-height:14px;text-align:center;}
+#forum-modal{position:fixed;inset:0;z-index:9000;background:rgba(10,25,40,.55);display:none;overflow-y:auto;padding:24px 12px;}
+#forum-modal .fm-box{max-width:1180px;margin:0 auto;background:#f4f9fd;color:#0d1f30;border-radius:10px;border:1px solid #9cc3e6;box-shadow:0 10px 40px rgba(0,0,0,.35);}
+#forum-modal .fm-hd{display:flex;align-items:flex-start;gap:12px;padding:16px 20px;border-bottom:1px solid #b9d3e8;background:#1a2e42 !important;color:#fff !important;border-radius:10px 10px 0 0;}
+#forum-modal .fm-hd *{color:#fff !important;}
+#forum-modal .fm-side{min-width:0;}
+#forum-modal .fm-hd .t{font-size:17px;font-weight:700;}
+#forum-modal .fm-hd .s{font-family:var(--font-mono);font-size:11px;opacity:.85;margin-top:2px;}
+#forum-modal .fm-x{margin-left:auto;background:none;border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;}
+#forum-modal .fm-body{padding:18px 20px;display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:18px;}
+@media(max-width:900px){#forum-modal .fm-body{grid-template-columns:minmax(0,1fr);}}
+#forum-modal h3{font-size:13px;margin:0 0 8px;color:#1a2e42;font-family:var(--font-mono);letter-spacing:.5px;}
+#forum-modal .fm-card{background:#fff;border:1px solid #b9d3e8;border-radius:8px;padding:12px 14px;margin-bottom:14px;}
+#forum-modal textarea,#forum-modal input,#forum-modal select{width:100%;background:#fff !important;color:#0d1f30 !important;border:1.5px solid #8fb4d6 !important;border-radius:6px;padding:7px 9px;font-size:12.5px;font-family:inherit;}
+#forum-modal textarea{min-height:70px;resize:vertical;}
+#forum-modal label.fl{display:block;font-size:11px;font-weight:700;color:#34495e;margin:8px 0 3px;}
+#forum-modal .fm-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+#forum-modal .fm-btn{border:0;border-radius:6px;padding:7px 14px;font-weight:700;font-size:12px;cursor:pointer;background:#1a5fa8;color:#fff;}
+#forum-modal .fm-btn.ghost{background:transparent;color:#1a5fa8;border:1.5px solid #1a5fa8;}
+#forum-modal .fm-btn.danger{background:transparent;color:#b71c1c;border:1.5px solid #b71c1c;}
+#forum-modal .fm-btn:disabled{opacity:.5;cursor:wait;}
+#forum-modal .fm-mini{font-size:11px;padding:3px 8px;}
+#forum-modal .fm-thread{display:flex;flex-direction:column;gap:9px;max-height:52vh;overflow-y:auto;padding-right:4px;}
+#forum-modal .fm-msg{border:1px solid #b9d3e8;border-radius:8px;padding:8px 11px;background:#f3f8fc;max-width:94%;}
+#forum-modal .fm-msg.sm{align-self:flex-end;background:#d7e8f7;border-left:4px solid #1a2e42;}
+#forum-modal .fm-msg .w{font-weight:700;font-size:12px;}
+#forum-modal .fm-msg .w span{font-weight:500;color:#34495e;font-family:var(--font-mono);font-size:10.5px;margin-left:6px;}
+#forum-modal .fm-msg .b{white-space:pre-wrap;font-size:12.5px;margin-top:2px;overflow-wrap:anywhere;}
+#forum-modal .fm-sys{align-self:center;font-size:11.5px;color:#34495e;text-align:center;}
+#forum-modal .fm-act{border:1px solid #b9d3e8;border-left:6px solid #ff1744;border-radius:6px;padding:8px 10px;margin-bottom:8px;background:#fff;font-size:12.5px;}
+#forum-modal .fm-act.st-in-progress{border-left-color:#ff6d00;} #forum-modal .fm-act.st-closed{border-left-color:#00e676;} #forum-modal .fm-act.st-cancelled{border-left-color:#8a99a8;opacity:.75;}
+#forum-modal .fm-act .m{font-size:11px;color:#34495e;margin-top:2px;}
+#forum-modal .fm-act .late{color:#b71c1c;font-weight:700;}
+#forum-modal .fm-mem{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid #e3edf6;font-size:12px;}
+#forum-modal .fm-mem:last-child{border-bottom:0;}
+#forum-modal .fm-mem .n{flex:1;min-width:0;}
+#forum-modal .fm-mem .n small{display:block;color:#34495e;font-size:10.5px;}
+#forum-modal .fm-mem .err{color:#b71c1c;}
+#forum-modal .fm-fb{font-family:var(--font-mono);font-size:11px;margin-top:6px;min-height:14px;}
+#forum-modal .fm-fb.err{color:#b71c1c;} #forum-modal .fm-fb.ok{color:#0a6b33;}
+#forum-modal .fm-warn{font-size:11px;color:#6b4f00;background:#fff5d6;border:1px solid #e3c25a;border-radius:6px;padding:7px 10px;margin-top:6px;}
+#forum-modal .fm-state{display:inline-block;font-size:11px;font-weight:800;border-radius:4px;padding:2px 8px;margin-left:8px;vertical-align:middle;}
+#forum-modal .fm-state.open{background:#00e676;color:#004d1a;} #forum-modal .fm-state.closed{background:#8a99a8;color:#fff;}
+</style>
+<div id="forum-modal" role="dialog" aria-modal="true" aria-labelledby="fm-title"><div class="fm-box">
+  <div class="fm-hd"><div><div class="t" id="fm-title">Forum de l’événement</div><div class="s" id="fm-sub"></div></div><button class="fm-x" type="button" onclick="forumClose()">✕ Fermer / Close</button></div>
+  <div id="fm-content" style="padding:18px 20px;">Chargement…</div>
+</div></div>
+<script id="saf-forum-runtime">
+(function(){
+'use strict';
+var FORUM = window.SAF_FORUM = { byOcc:{}, actions:[], at:0, loading:null, canWrite:false, err:'' };
+var CUR = { occId:null, data:null };
+var AST = [['open','Open / Ouverte'],['in-progress','In progress / En cours'],['closed','Closed / Clôturée'],['cancelled','Cancelled / Annulée']];
+var ASTL = {}; AST.forEach(function(s){ ASTL[s[0]] = s[1]; });
+
+function E(v){ return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function Q(v){ return E(String(v == null ? '' : v).replace(/\\/g,'\\\\').replace(/'/g,"\\'")); }
+function fDT(s){ var d = new Date(s); return isNaN(d) ? '' : d.toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function fD(s){ var m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[3]+'.'+m[2]+'.'+m[1] : '—'; }
+function today(){ return new Date().toISOString().slice(0,10); }
+function role(){ return String((typeof safCurrentRole === 'function' ? safCurrentRole() : '') || '').toLowerCase(); }
+function canRead(){ return ['admin','editor','authority'].indexOf(role()) >= 0; }
+function toast(m, t){ if(typeof showToast === 'function') showToast(m, t || 'success'); }
+function forumUrl(){ try{ return new URL('SAF_Forum.html', location.href).href.split('?')[0].split('#')[0]; }catch(e){ return ''; } }
+var ERR = {
+  read_only:'Accès en lecture seule — écriture réservée aux admin/éditeurs avec MFA.',
+  unauthorized:'Session expirée ou rôle non reconnu — reconnectez-vous.',
+  bad_email:'Adresse e-mail invalide.', name_required:'Nom obligatoire.', already_staff:'Cette personne participe déjà comme Safety Management.',
+  thread_closed:'Forum clôturé — rouvrez-le pour écrire.', rate_limited:'Trop de messages en une minute.', empty:'Message vide.',
+  thread_not_found:'Forum introuvable.', not_configured:'Fonction serveur non configurée.'
+};
+function errT(e){ return ERR[e] || ('Erreur : ' + e); }
+
+function call(body){
+  var db = window.safDb;
+  if(!db || !db.functions) return Promise.resolve({ error:'Supabase indisponible (mode local)' });
+  return db.functions.invoke('saf-forum', { body: body }).then(function(r){
+    if(r.error){
+      var ctx = r.error.context;
+      if(ctx && typeof ctx.json === 'function') return ctx.json().then(function(j){ return j && j.error ? j : { error: r.error.message }; }, function(){ return { error: r.error.message }; });
+      return { error: r.error.message || 'erreur réseau' };
+    }
+    return r.data || { error:'réponse vide' };
+  }, function(e){ return { error: (e && e.message) || 'erreur réseau' }; });
+}
+
+/* ── Cache : fils + actions (badges de la liste, Suivi des actions) ── */
+function refresh(force){
+  if(!canRead() || !window.safDb) return Promise.resolve(false);
+  if(FORUM.loading) return FORUM.loading;
+  if(!force && FORUM.at && Date.now() - FORUM.at < 60000) return Promise.resolve(false);
+  FORUM.loading = call({ op:'list' }).then(function(j){
+    FORUM.loading = null;
+    if(j.error){ FORUM.err = j.error; return false; }
+    var by = {}, tid = {};
+    (j.threads || []).forEach(function(t){ by[t.occ_id] = t; tid[t.id] = t; t.open_actions = 0; t.late_actions = 0; });
+    (j.actions || []).forEach(function(a){
+      var t = tid[a.thread_id]; if(!t) return; a.occ_id = t.occ_id;
+      if(a.status === 'open' || a.status === 'in-progress'){ t.open_actions++; if(a.due && a.due < today()) t.late_actions++; }
+    });
+    FORUM.byOcc = by; FORUM.actions = j.actions || []; FORUM.canWrite = !!j.can_write; FORUM.at = Date.now(); FORUM.err = '';
+    return true;
+  });
+  return FORUM.loading;
+}
+window.forumRefresh = refresh;
+
+window.occForumBtnHtml = function(o){
+  if(!o || !o.id || !canRead()) return '';
+  var t = FORUM.byOcc[o.id];
+  var lbl = '💬 Forum' + (t ? ' ' + t.posts : '');
+  var dot = t && t.open_actions ? '<span class="dot" title="' + t.open_actions + ' action(s) ouverte(s)' + (t.late_actions ? ', dont ' + t.late_actions + ' en retard' : '') + '">' + t.open_actions + '</span>' : '';
+  var tip = t ? ('Forum ' + (t.status === 'closed' ? 'clôturé' : 'ouvert') + ' · ' + t.posts + ' message(s)' + (t.last_post_at ? ' · dernier ' + fDT(t.last_post_at) : '')) : 'Ouvrir un forum de discussion sur cet événement';
+  return '<button type="button" class="occ-forum-btn' + (t ? ' has' : '') + '" title="' + E(tip) + '" onclick="forumOpen(\'' + Q(o.id) + '\')">' + lbl + dot + '</button>';
+};
+
+/* Rafraîchit le cache puis redessine la liste une fois (pas de boucle) */
+(function(){
+  var base = window.renderOccurrenceList;
+  if(typeof base !== 'function' || base.__forum) return;
+  var w = function(){
+    var r = base.apply(this, arguments);
+    if(canRead() && window.safDb && (!FORUM.at || Date.now() - FORUM.at > 60000) && !FORUM.loading){
+      refresh(false).then(function(ch){ if(ch){ try{ base(); }catch(e){} } });
+    }
+    return r;
+  };
+  w.__forum = true; window.renderOccurrenceList = w; try{ renderOccurrenceList = w; }catch(e){}
+})();
+
+/* ── Modale ─────────────────────────────────────────────────────── */
+function occOf(id){ return (typeof getOccurrences === 'function' ? getOccurrences() : []).find(function(o){ return o.id === id; }) || null; }
+
+window.forumOpen = function(occId){
+  if(!canRead()){ toast('Forum réservé au Safety Management (admin, éditeur) et à l’autorité.', 'error'); return; }
+  CUR.occId = occId; CUR.data = null;
+  var m = document.getElementById('forum-modal'); m.style.display = 'block'; document.body.style.overflow = 'hidden';
+  document.getElementById('fm-title').textContent = 'Forum de l’événement / Occurrence forum';
+  document.getElementById('fm-sub').textContent = occId;
+  document.getElementById('fm-content').innerHTML = '<div style="padding:10px;">Chargement du forum…</div>';
+  load();
+};
+window.forumClose = function(){
+  var m = document.getElementById('forum-modal'); m.style.display = 'none'; document.body.style.overflow = '';
+  CUR.data = null;
+  refresh(true).then(function(){ try{ renderOccurrenceList(); }catch(e){} try{ if(typeof renderActionTracker === 'function') renderActionTracker(); }catch(e){} });
+};
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && document.getElementById('forum-modal').style.display === 'block') forumClose(); });
+
+function load(){
+  var o = occOf(CUR.occId);
+  var q = { op:'open', occ_id: CUR.occId };
+  return call(q).then(function(j){
+    if(j.error){ document.getElementById('fm-content').innerHTML = '<div class="fm-fb err" style="padding:12px;">' + E(errT(j.error)) + '</div>'; return; }
+    CUR.data = j;
+    if(!j.thread) renderCreate(o, j); else render(j);
+  });
+}
+
+function renderCreate(o, j){
+  var title = o ? (o.title || String(o.description || '').slice(0, 120)) : '';
+  var dt = o && o.date ? fD(o.date) : '';
+  var ctxDefault = (title ? 'Événement : ' + title : '') + (dt ? '\nDate : ' + dt : '') + (o && o.location ? '\nLieu : ' + o.location : '');
+  document.getElementById('fm-content').innerHTML = !j.can_write
+    ? '<p>Aucun forum n’a été ouvert pour cet événement.</p>'
+    : '<div class="fm-card" style="max-width:760px;">'
+      + '<h3>OUVRIR UN FORUM POUR ' + E(CUR.occId) + '</h3>'
+      + '<label class="fl" for="fm-c-title">Titre visible des participants</label><input id="fm-c-title" maxlength="300" value="' + E(title) + '">'
+      + '<label class="fl" for="fm-c-ctx">Contexte transmis aux invités</label><textarea id="fm-c-ctx" rows="6" maxlength="8000">' + E(ctxDefault) + '</textarea>'
+      + '<div class="fm-warn">Les invités ne voient QUE ce titre, ce contexte et la discussion — jamais la fiche d’occurrence. Désidentifiez : pas de nom du déclarant ni de détail permettant de l’identifier (Règl. (UE) 376/2014, art. 16).</div>'
+      + '<div style="margin-top:12px;display:flex;gap:8px;"><button class="fm-btn" type="button" id="fm-c-go">Ouvrir le forum</button></div><div class="fm-fb" id="fm-c-fb"></div></div>';
+  var go = document.getElementById('fm-c-go');
+  if(go) go.onclick = function(){
+    go.disabled = true;
+    call({ op:'create', occ_id: CUR.occId, title: document.getElementById('fm-c-title').value, context: document.getElementById('fm-c-ctx').value, forum_url: forumUrl() }).then(function(r){
+      if(r.error){ go.disabled = false; var f = document.getElementById('fm-c-fb'); f.className = 'fm-fb err'; f.textContent = errT(r.error); return; }
+      toast('✓ Forum ouvert pour ' + CUR.occId);
+      FORUM.at = 0; load();
+    });
+  };
+}
+
+function mailSummary(mails){
+  mails = mails || []; if(!mails.length) return '';
+  var ok = mails.filter(function(m){ return m.ok; }).length, ko = mails.length - ok;
+  return ok + ' e-mail(s) envoyé(s)' + (ko ? ' · ' + ko + ' en échec (' + (mails.find(function(m){ return !m.ok; }).error || '') + ')' : '');
+}
+
+function render(j){
+  var t = j.thread, open = t.status === 'open', w = !!j.can_write;
+  document.getElementById('fm-title').innerHTML = E(t.title || 'Forum') + '<span class="fm-state ' + (open ? 'open' : 'closed') + '">' + (open ? 'OUVERT' : 'CLÔTURÉ') + '</span>';
+  document.getElementById('fm-sub').textContent = t.occ_id + ' · ouvert le ' + fDT(t.created_at) + (t.created_by ? ' par ' + t.created_by : '');
+  var mem = {}; j.members.forEach(function(m){ mem[m.id] = m; });
+  var active = j.members.filter(function(m){ return !m.revoked; });
+
+  var posts = j.posts.map(function(p){
+    if(p.kind === 'system') return '<div class="fm-sys">' + E(p.body) + ' <span style="font-family:var(--font-mono);font-size:10px;">' + E(fDT(p.created_at)) + '</span></div>';
+    var m = mem[p.member_id];
+    return '<div class="fm-msg' + (p.author_role === 'sm' ? ' sm' : '') + '"><div class="w">' + E(p.author_name) + (m && m.fn ? ' <span>' + E(m.fn) + '</span>' : '') + '<span>' + E(fDT(p.created_at)) + '</span></div><div class="b">' + E(p.body) + '</div></div>';
+  }).join('') || '<div class="fm-sys">Aucun message. Invitez des participants puis lancez la discussion.</div>';
+
+  var ownerOpts = function(sel){ return '<option value="">— Non désigné —</option>' + active.map(function(m){ return '<option value="' + E(m.id) + '"' + (m.id === sel ? ' selected' : '') + '>' + E(m.name) + (m.fn ? ' — ' + E(m.fn) : '') + '</option>'; }).join(''); };
+
+  var acts = j.actions.map(function(a){
+    var late = (a.status === 'open' || a.status === 'in-progress') && a.due && a.due < today();
+    return '<div class="fm-act st-' + E(a.status) + '"><div style="font-weight:700;">' + E(a.what) + '</div>'
+      + '<div class="m">Proposée par ' + E(a.created_by_name || '—') + ' · ' + E(fDT(a.created_at)) + '</div>'
+      + (w ? '<div class="fm-row" style="margin-top:6px;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);">'
+            + '<select onchange="forumActSet(' + a.id + ',{owner_member_id:this.value})" title="Responsable">' + ownerOpts(a.owner_member_id) + '</select>'
+            + '<input type="date" value="' + E(a.due || '') + '" onchange="forumActSet(' + a.id + ',{due:this.value})" title="Échéance"/>'
+            + '<select onchange="forumActSet(' + a.id + ',{status:this.value})" title="Statut">' + AST.map(function(s){ return '<option value="' + s[0] + '"' + (s[0] === a.status ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select></div>'
+            + (!a.owner_member_id && a.owner_name ? '<div class="m">Responsable saisi : ' + E(a.owner_name) + '</div>' : '')
+            + (late ? '<div class="m late">En retard (échéance ' + E(fD(a.due)) + ')</div>' : '')
+          : '<div class="m">Responsable : ' + E(a.owner_name || '—') + ' · Échéance : <span class="' + (late ? 'late' : '') + '">' + E(fD(a.due)) + '</span> · ' + E(ASTL[a.status] || a.status) + '</div>')
+      + '</div>';
+  }).join('') || '<div class="fm-sys" style="text-align:left;">Aucune action.</div>';
+
+  var members = j.members.map(function(m){
+    var tag = m.role === 'sm' ? 'Safety Management' : (m.fn || 'Invité');
+    var st = m.revoked ? '<span class="err">accès retiré</span>' : (m.last_mail_error ? '<span class="err" title="' + E(m.last_mail_error) + '">dernier e-mail en échec</span>' : (m.last_seen ? 'vu le ' + fDT(m.last_seen) : (m.role === 'guest' ? 'pas encore venu' : '')));
+    return '<div class="fm-mem"><div class="n"><b>' + E(m.name) + '</b> <small>' + E(tag) + ' · ' + E(m.email) + (st ? ' · ' + st : '') + '</small></div>'
+      + (w && m.role === 'guest' && !m.revoked ? '<button class="fm-btn ghost fm-mini" type="button" title="Renvoyer l’invitation par e-mail" onclick="forumMember(\'resend\',\'' + Q(m.id) + '\')">✉</button>'
+          + '<button class="fm-btn ghost fm-mini" type="button" title="Copier le lien personnel" onclick="forumMember(\'link\',\'' + Q(m.id) + '\')">🔗</button>'
+          + '<button class="fm-btn danger fm-mini" type="button" title="Retirer l’accès (le lien cesse de fonctionner)" onclick="forumMember(\'revoke\',\'' + Q(m.id) + '\',\'' + Q(m.name) + '\')">✕</button>' : '')
+      + '</div>';
+  }).join('');
+
+  var people = (j.people || []).map(function(p){ return '<option value="' + E(p.email) + '">' + E(p.full_name || '') + (p.fonction ? ' — ' + E(p.fonction) : '') + '</option>'; }).join('');
+
+  document.getElementById('fm-content').innerHTML = '<div class="fm-body" style="padding:0;">'
+    + '<section>'
+    +   '<div class="fm-card"><h3>CONTEXTE TRANSMIS AUX INVITÉS</h3>'
+    +     (w ? '<textarea id="fm-ctx" rows="4" maxlength="8000">' + E(t.context) + '</textarea><div style="display:flex;gap:8px;margin-top:6px;align-items:center;"><button class="fm-btn ghost fm-mini" type="button" onclick="forumSaveCtx()">Enregistrer le contexte</button><span class="fm-fb" id="fm-ctx-fb"></span></div>'
+           : '<div style="white-space:pre-wrap;font-size:12.5px;">' + E(t.context || '—') + '</div>')
+    +   '</div>'
+    +   '<div class="fm-card"><h3>DISCUSSION (' + j.posts.filter(function(p){ return p.kind !== 'system'; }).length + ')</h3><div class="fm-thread" id="fm-thread">' + posts + '</div>'
+    +   (w && open ? '<div style="border-top:1px solid #b9d3e8;margin-top:10px;padding-top:8px;">'
+          + '<label class="fl" for="fm-body">Votre message (envoyé par e-mail à tous les participants)</label><textarea id="fm-body" maxlength="8000"></textarea>'
+          + '<label style="display:flex;gap:6px;align-items:center;font-size:12px;font-weight:700;margin-top:6px;cursor:pointer;"><input type="checkbox" id="fm-wact" style="width:auto;" onchange="document.getElementById(\'fm-actbox\').style.display=this.checked?\'\':\'none\'"> Ajouter une action</label>'
+          + '<div id="fm-actbox" style="display:none;"><label class="fl" for="fm-what">Action</label><input id="fm-what" maxlength="1000"/>'
+          + '<div class="fm-row"><div><label class="fl" for="fm-owner">Responsable</label><select id="fm-owner">' + ownerOpts('') + '</select></div><div><label class="fl" for="fm-due">Échéance</label><input id="fm-due" type="date"/></div></div></div>'
+          + '<div style="display:flex;gap:8px;margin-top:8px;align-items:center;"><button class="fm-btn" type="button" id="fm-send" onclick="forumPost()">Envoyer</button><span class="fm-fb" id="fm-post-fb"></span></div></div>'
+        : (open ? '' : '<div class="fm-sys" style="margin-top:8px;">Forum clôturé — consultation seule.</div>'))
+    +   '</div>'
+    + '</section>'
+    + '<div class="fm-side">'
+    +   '<div class="fm-card"><h3>ACTIONS (' + j.actions.length + ')</h3>' + acts + '<div class="m" style="font-size:11px;color:#34495e;">Ces actions apparaissent aussi dans « Suivi des actions » (source Forum).</div></div>'
+    +   '<div class="fm-card"><h3>PARTICIPANTS (' + active.length + ')</h3>' + members
+    +   (w && open ? '<div style="border-top:1px solid #b9d3e8;margin-top:8px;padding-top:6px;"><div style="font-weight:700;font-size:12px;">Inviter une personne</div>'
+          + '<label class="fl" for="fm-inv-email">E-mail</label><input id="fm-inv-email" type="email" list="fm-people" placeholder="prenom.nom@saf-helico.com" oninput="forumPickPerson(this.value)"/><datalist id="fm-people">' + people + '</datalist>'
+          + '<div class="fm-row"><div><label class="fl" for="fm-inv-name">Nom</label><input id="fm-inv-name"/></div><div><label class="fl" for="fm-inv-fn">Fonction</label><input id="fm-inv-fn" placeholder="Pilote, TSOP, mécanicien…"/></div></div>'
+          + '<label class="fl" for="fm-inv-msg">Message d’invitation (facultatif)</label><textarea id="fm-inv-msg" rows="3" maxlength="2000"></textarea>'
+          + '<div style="display:flex;gap:8px;margin-top:8px;align-items:center;"><button class="fm-btn" type="button" id="fm-inv-go" onclick="forumInvite()">Inviter et envoyer le lien</button></div><div class="fm-fb" id="fm-inv-fb"></div></div>' : '')
+    +   '</div>'
+    +   (w ? '<div class="fm-card"><h3>FORUM</h3>' + (open
+            ? '<button class="fm-btn danger" type="button" onclick="forumSetStatus(\'closed\')">Clôturer le forum</button><div class="m" style="font-size:11px;color:#34495e;margin-top:6px;">Les participants sont prévenus ; le forum reste consultable mais plus personne ne peut écrire.</div>'
+            : '<button class="fm-btn ghost" type="button" onclick="forumSetStatus(\'open\')">Rouvrir le forum</button>') + '</div>' : '')
+    + '</div></div>';
+  var th = document.getElementById('fm-thread'); if(th) th.scrollTop = th.scrollHeight;
+}
+
+window.forumPickPerson = function(v){
+  var p = ((CUR.data && CUR.data.people) || []).find(function(x){ return String(x.email).toLowerCase() === String(v).trim().toLowerCase(); });
+  if(!p) return;
+  var n = document.getElementById('fm-inv-name'), f = document.getElementById('fm-inv-fn');
+  if(n && !n.value) n.value = p.full_name || ''; if(f && !f.value) f.value = p.fonction || '';
+};
+function tid(){ return CUR.data && CUR.data.thread ? CUR.data.thread.id : null; }
+function fb(id, cls, txt){ var e = document.getElementById(id); if(e){ e.className = 'fm-fb ' + cls; e.textContent = txt; } }
+
+window.forumInvite = function(){
+  var email = document.getElementById('fm-inv-email').value.trim(), name = document.getElementById('fm-inv-name').value.trim();
+  if(!email || !name){ fb('fm-inv-fb','err','Nom et e-mail obligatoires.'); return; }
+  var b = document.getElementById('fm-inv-go'); b.disabled = true; fb('fm-inv-fb','','Envoi de l’invitation…');
+  call({ op:'invite', thread_id: tid(), email: email, name: name, fn: document.getElementById('fm-inv-fn').value, message: document.getElementById('fm-inv-msg').value }).then(function(r){
+    b.disabled = false;
+    if(r.error){ fb('fm-inv-fb','err', errT(r.error)); return; }
+    var ok = (r.mails || []).some(function(m){ return m.ok; });
+    toast(ok ? '✓ Invitation envoyée à ' + name : '⚠ Invité ajouté, mais l’e-mail n’est pas parti — copiez le lien 🔗', ok ? 'success' : 'error');
+    load().then(function(){ if(!ok && r.link) fb('fm-inv-fb','err','E-mail non envoyé (' + mailSummary(r.mails) + '). Lien à transmettre : ' + r.link); });
+  });
+};
+window.forumMember = function(op, id, name){
+  if(op === 'revoke' && !confirm('Retirer l’accès de ' + name + ' au forum ?\n\nSon lien cessera immédiatement de fonctionner. Ses messages restent dans la discussion.')) return;
+  call({ op: op, thread_id: tid(), member_id: id }).then(function(r){
+    if(r.error){ toast('✗ ' + errT(r.error), 'error'); return; }
+    if(op === 'link'){
+      var done = function(){ toast('✓ Lien personnel copié — ne le transmettez qu’à cette personne'); };
+      if(navigator.clipboard) navigator.clipboard.writeText(r.link).then(done, function(){ prompt('Lien personnel :', r.link); }); else prompt('Lien personnel :', r.link);
+      return;
+    }
+    if(op === 'resend') toast(((r.mails || [])[0] || {}).ok ? '✓ Invitation renvoyée' : '✗ Envoi impossible : ' + mailSummary(r.mails), ((r.mails || [])[0] || {}).ok ? 'success' : 'error');
+    if(op === 'revoke') toast('Accès retiré');
+    load();
+  });
+};
+window.forumPost = function(){
+  var body = document.getElementById('fm-body').value.trim(), withA = document.getElementById('fm-wact').checked;
+  var what = withA ? document.getElementById('fm-what').value.trim() : '';
+  if(!body && !what){ fb('fm-post-fb','err','Message vide.'); return; }
+  if(withA && !what){ fb('fm-post-fb','err','Décrivez l’action.'); return; }
+  var p = { op:'post', thread_id: tid(), body: body };
+  if(what) p.action = { what: what, owner_member_id: document.getElementById('fm-owner').value || null, due: document.getElementById('fm-due').value || null };
+  var b = document.getElementById('fm-send'); b.disabled = true; fb('fm-post-fb','','Envoi…');
+  call(p).then(function(r){
+    b.disabled = false;
+    if(r.error){ fb('fm-post-fb','err', errT(r.error)); return; }
+    toast('✓ Message publié' + (r.mails && r.mails.length ? ' — ' + mailSummary(r.mails) : ''), (r.mails || []).every(function(m){ return m.ok; }) ? 'success' : 'error');
+    FORUM.at = 0; load();
+  });
+};
+window.forumActSet = function(id, patch){
+  var p = Object.assign({ op:'action', thread_id: tid(), action_id: id }, patch);
+  call(p).then(function(r){
+    if(r.error){ toast('✗ ' + errT(r.error), 'error'); }
+    else toast('✓ Action mise à jour' + (r.mails && r.mails.length ? ' — participants prévenus' : ''));
+    FORUM.at = 0; load();
+  });
+};
+window.forumSaveCtx = function(){
+  call({ op:'update', thread_id: tid(), context: document.getElementById('fm-ctx').value }).then(function(r){
+    fb('fm-ctx-fb', r.error ? 'err' : 'ok', r.error ? errT(r.error) : '✓ Contexte enregistré');
+  });
+};
+window.forumSetStatus = function(st){
+  if(st === 'closed' && !confirm('Clôturer le forum ?\n\nLes participants seront prévenus par e-mail et ne pourront plus écrire.')) return;
+  call({ op:'update', thread_id: tid(), status: st }).then(function(r){
+    if(r.error){ toast('✗ ' + errT(r.error), 'error'); return; }
+    toast(st === 'closed' ? 'Forum clôturé' : 'Forum rouvert'); FORUM.at = 0; load();
+  });
+};
+
+/* ── Suivi des actions : source « Forum » ───────────────────────── */
+window.atSetForum = function(occId, actionId, field, val){
+  var t = FORUM.byOcc[occId];
+  var p = { op:'action', occ_id: occId, action_id: actionId };
+  p[field] = val;
+  call(p).then(function(r){
+    if(r.error){ toast('✗ ' + errT(r.error), 'error'); return; }
+    toast('✓ Action du forum mise à jour');
+    refresh(true).then(function(){ if(typeof renderActionTracker === 'function') renderActionTracker(); });
+  });
+};
+(function(){
+  if(typeof AT_SRC !== 'undefined') AT_SRC.FORUM = { label:'Forum événement', short:'Forum', color:'#6f42c1' };
+  if(typeof atCollect === 'function' && !atCollect.__forum){
+    var base = atCollect;
+    atCollect = function(){
+      var out = base.apply(this, arguments);
+      (FORUM.actions || []).forEach(function(a){
+        if(!a.occ_id) return;
+        var st = a.status === 'closed' ? 'closed' : (a.status === 'cancelled' ? 'cancelled' : (a.status === 'in-progress' ? 'progress' : 'todo'));
+        var t = FORUM.byOcc[a.occ_id] || {};
+        out.push({ src:'FORUM', ref:a.occ_id, id:a.occ_id, idx:a.id, num:a.id, text:a.what, ctx:'Forum — ' + (t.title || a.occ_id),
+          owners:a.owner_name ? [a.owner_name] : [], ownersLbl:a.owner_name || '—', due:a.due || '', st:st, closed:a.closed_at || '', log:[], origin:String(a.created_at || '').slice(0,10), edit: FORUM.canWrite ? 'forum' : '' });
+      });
+      return out;
+    };
+    atCollect.__forum = true; window.atCollect = atCollect;
+  }
+  var rat = window.renderActionTracker;
+  if(typeof rat === 'function' && !rat.__forum){
+    var w = function(){
+      var r = rat.apply(this, arguments);
+      if(canRead() && window.safDb && (!FORUM.at || Date.now() - FORUM.at > 60000) && !FORUM.loading){
+        refresh(false).then(function(ch){ if(ch){ try{ rat(); }catch(e){} } });
+      }
+      return r;
+    };
+    w.__forum = true; window.renderActionTracker = w; try{ renderActionTracker = w; }catch(e){}
+  }
+  var ao = window.atOpen;
+  if(typeof ao === 'function' && !ao.__forum){
+    var w2 = function(src, id){ if(src === 'FORUM'){ forumOpen(id); return; } return ao.apply(this, arguments); };
+    w2.__forum = true; window.atOpen = w2; try{ atOpen = w2; }catch(e){}
+  }
+})();
+})();
+</script>
+
 </body>
 </html>
