@@ -2,6 +2,9 @@
 
 <html lang="fr">
 <head>
+<style>
+@media screen { #g-grid-section {overflow:auto !important; min-width:0; position:relative;} #g-grid-section table {border-collapse:separate;border-spacing:0;} #g-grid-section thead th {position:sticky;top:0 !important;z-index:5;background:#1a3a6e;} #g-toolbar {z-index:21 !important;} }
+</style>
 <script>/* Porte d'entrée unique (30.10.2026) : ce bloc s'ouvre par le portail SAF, qui le sert à /sms/
    (même adresse, donc même session). Ouvert depuis son ancienne adresse, il y est renvoyé. */
 (function(){ if(location.hostname==='saf-international-sms.netlify.app')
@@ -15818,7 +15821,8 @@ function g_buildHTML(){
     const header = document.querySelector('header');
     const toolbar= document.getElementById('g-toolbar');
     if(!toolbar) return;
-    const headerH = header ? Math.round(header.getBoundingClientRect().height) : 0;
+    const subnav=document.getElementById('saf-subnav');
+    const headerH = (header ? Math.round(header.getBoundingClientRect().height) : 0)+(subnav && subnav.getClientRects().length ? Math.round(subnav.getBoundingClientRect().height):0);
     // La navigation est désormais une sidebar fixe à gauche : la toolbar se cale
     // uniquement sous le header (pas sous la nav, qui n'occupe plus de hauteur en haut).
     toolbar.style.position   = 'sticky';
@@ -15828,7 +15832,9 @@ function g_buildHTML(){
     toolbar.style.borderBottom = '1px solid var(--border, #1a2840)';
     toolbar.style.padding    = '10px 20px';
     const toolbarH = Math.round(toolbar.getBoundingClientRect().height);
-    const theadTop = headerH + toolbarH;
+    const grid=document.getElementById('g-grid-section');
+    if(grid){grid.style.maxHeight=Math.max(120,window.innerHeight-headerH-toolbarH-16)+'px';}
+    const theadTop = 0; // EASA grid has its own scroll container
     // Mise à jour via CSS variable (appliqué instantanément à tous les th)
     document.documentElement.style.setProperty('--g-sticky-top', theadTop + 'px');
     // CRITIQUE : forcer overflow:visible sur toutes les tables ET leurs ancêtres
@@ -15977,7 +15983,11 @@ function g_buildHTML(){
       setTimeout(g_fixStickyHeader, 200);
     });
   });
-  window.addEventListener('resize', g_fixStickyHeader, {passive:true});
+  if(window.g_gridResizeObserver)window.g_gridResizeObserver.disconnect();
+  if(window.g_gridResizeHandler)window.removeEventListener('resize',window.g_gridResizeHandler);
+  window.g_gridResizeHandler=g_fixStickyHeader;
+  window.addEventListener('resize',g_fixStickyHeader,{passive:true});
+  if(window.ResizeObserver){window.g_gridResizeObserver=new ResizeObserver(g_fixStickyHeader);['g-toolbar','saf-subnav'].forEach(id=>{const el=document.getElementById(id);if(el)window.g_gridResizeObserver.observe(el);});}
 }
 
 /* ── INTERACTIONS ── */
@@ -16178,7 +16188,7 @@ function g_progressStats(){
   return {done:done,total:total};
 }
 function g_autosave(){
-  if(!gridRows || !gridRows.length) return;          // nothing generated yet
+  if(!safCMSCanWrite() || !gridRows || !gridRows.length || document.getElementById('g-grid-section').style.display==='none') return; // no hidden/deleted grid autosave
   if(!g_currentAuditId) g_currentAuditId='aud_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
   var num=(document.getElementById('g-audit-num')||{}).value||'';
   var title=(document.getElementById('g-audit-title')||{}).value||'';
@@ -16297,7 +16307,10 @@ async function g_deleteAudit(id){
     var kept=fs.filter(function(f){return f.auditNum!==a.num;});
     if(kept.length!==fs.length)localStorage.setItem('cmsx_findings_v1',JSON.stringify(kept));
   }catch(e){}
-  if(g_currentAuditId===id){g_currentAuditId=null;g_editingAuditId=null;}
+  if(g_currentAuditId===id || g_editingAuditId===id){
+    g_currentAuditId=null;g_editingAuditId=null;queue=[];gridRows=[];rowData={};
+    g_backToSel();g_renderQueue();
+  }
   g_renderSavedList();
   g_setAuditAttachStatus('');
 }
