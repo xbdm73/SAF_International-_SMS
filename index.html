@@ -93,7 +93,7 @@
     return 'Erreur / Error : ' + m;
   }
   async function signOutAndReload(db){
-    try { await db.auth.signOut(); } catch(e){}
+    try { await db.auth.signOut({ scope: 'local' }); } catch(e){}
     try { localStorage.removeItem('saf_role'); } catch(e){}
     location.reload();
   }
@@ -275,6 +275,8 @@
   window.safMfaAddBackup = function(db){ return enrollScreen(db, '', true); };
 })();
 </script>
+<!-- Compte démo (25.11.2026) : bac à sable partagé, après la porte MFA et avant tout createClient -->
+<script src="saf-demo.js"></script>
 <!-- ===== FIN SAF MFA GATE ===== -->
 
 <style>
@@ -1293,7 +1295,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
   });
 
   logoutBtn.addEventListener('click', async function(){
-    await db.auth.signOut();
+    await db.auth.signOut({ scope: 'local' });   // ce poste seulement
     applyGuestRole();
   });
 
