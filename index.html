@@ -749,6 +749,16 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
         }
         return;
       }
+      // The home cards have an explicitly light palette, independent of the automatic converter.
+      if(el.closest && el.closest('.tools-grid .tool-card')){
+        var card = el.closest('.tool-card');
+        if(el === card){ w.nb = PANEL; w.dropImg = true; }
+        if(el.matches('.tool-name,.tool-name .bi-en,.tool-desc,.tool-desc .bi-en,.guide-link,.guide-link span')){
+          w.ntx = el.matches('.tool-desc,.tool-desc .bi-en,.tool-name .bi-en') ? MUTED : TEXT;
+          w.ntf = w.ntx;
+          return;
+        }
+      }
       var eb = effectiveBg(el, decided);
       var nt = fixText(w.tx, eb); if(nt) w.ntx = nt;
       if(w.tf && w.tx && (w.tf.r !== w.tx.r || w.tf.g !== w.tx.g || w.tf.b !== w.tx.b)){ var nf2 = fixText(w.tf, eb); if(nf2) w.ntf = nf2; }
@@ -856,6 +866,15 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
 })();
 
 </script>
+
+<style id="saf-home-card-contrast">
+/* Home only: stable light surfaces and readable labels even before the theme observer runs. */
+.tools-grid .tool-card{background:#fff!important;color:#13202e!important;border-color:#c3d8ea!important}
+.tools-grid .tool-card:hover,.tools-grid .tool-card:focus-visible{background:#f2f8fd!important;border-color:#779bb9!important}
+.tools-grid .tool-name,.tools-grid .guide-link{color:#13202e!important;-webkit-text-fill-color:#13202e!important}
+.tools-grid .tool-name .bi-en,.tools-grid .tool-desc,.tools-grid .tool-desc .bi-en{color:#4a5d70!important;-webkit-text-fill-color:#4a5d70!important}
+.tools-grid .guide-link span:not(.arrow):not(.guide-lang){color:#13202e!important;-webkit-text-fill-color:#13202e!important}
+</style>
 </head>
 <body>
 
