@@ -863,7 +863,7 @@ button .bi-en { color:inherit; opacity:.78; font-size:.68em; line-height:1.1; }
 body.sms-portal-home{background:#020611;background-image:radial-gradient(circle at 15% 18%,rgba(41,87,164,.18),transparent 24%),radial-gradient(circle at 82% 22%,rgba(120,63,186,.12),transparent 22%),radial-gradient(circle at 36% 82%,rgba(40,132,116,.10),transparent 18%)}
 body.sms-portal-home main{max-width:min(1480px,98vw);padding:1.4rem 1rem 2rem}
 body.sms-portal-home .section-label{margin-bottom:1rem}
-body.sms-portal-home .tools-grid.sms-portal{display:block;position:relative;isolation:isolate;overflow:hidden;width:100%;height:clamp(500px,72vh,980px);min-height:500px;border-radius:22px;border:1px solid rgba(201,162,39,.16);background:radial-gradient(ellipse at center,#05101f 0%,#030812 56%,#01040a 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.02),0 24px 80px rgba(0,0,0,.38);--orbit-outer:min(33vw,31vh,330px);--orbit-inner:calc(var(--orbit-outer) * .58);--planet:clamp(62px,7.2vw,104px)}
+body.sms-portal-home .tools-grid.sms-portal{display:block;position:relative;isolation:isolate;overflow:hidden;width:100%;height:clamp(560px,78vh,980px);min-height:560px;border-radius:22px;border:1px solid rgba(201,162,39,.16);background:radial-gradient(ellipse at center,#05101f 0%,#030812 56%,#01040a 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.02),0 24px 80px rgba(0,0,0,.38);--orbit-outer:min(38vw,36vh,390px);--orbit-mid:calc(var(--orbit-outer) * .77);--orbit-inner:calc(var(--orbit-outer) * .56);--planet:clamp(58px,6.3vw,92px)}
 body.sms-portal-home .tools-grid.sms-portal::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(255,201,87,.05),transparent 16%),radial-gradient(circle at 50% 50%,rgba(255,183,78,.04),transparent 28%);pointer-events:none}
 .sms-space{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0}
 .sms-nebula{position:absolute;border-radius:50%;filter:blur(8px);opacity:.55}
@@ -882,7 +882,7 @@ body.sms-portal-home .tools-grid.sms-portal .tool-card{position:absolute;left:50
 body.sms-portal-home .tools-grid.sms-portal .tool-card:hover,body.sms-portal-home .tools-grid.sms-portal .tool-card:focus-visible{filter:brightness(1.07);box-shadow:0 0 42px -4px color-mix(in srgb,var(--planet-color) 86%,transparent),inset -10px -10px 16px rgba(0,0,0,.22);outline:none}
 body.sms-portal-home .tools-grid.sms-portal .tool-header{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:100%;padding:0 6px;text-align:center}
 body.sms-portal-home .tools-grid.sms-portal .tool-icon{width:auto;height:auto;border-radius:0;background:transparent!important;color:#fff;font-size:clamp(20px,3vw,32px);line-height:1;box-shadow:none}
-body.sms-portal-home .tools-grid.sms-portal .tool-name{position:absolute;left:50%;top:calc(100% + 9px);transform:translateX(-50%);display:block;width:max-content;max-width:170px;padding:4px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(10,20,34,.88);box-shadow:0 8px 24px rgba(0,0,0,.28);font-family:var(--font-display);font-size:clamp(12px,1vw,14px);letter-spacing:.045em;line-height:1.15;color:#fff!important;-webkit-text-fill-color:#fff!important;white-space:normal;text-align:center}
+body.sms-portal-home .tools-grid.sms-portal .tool-name{position:absolute;left:50%;top:calc(100% + 12px);transform:translateX(-50%);display:block;width:max-content;max-width:150px;padding:4px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(10,20,34,.88);box-shadow:0 8px 24px rgba(0,0,0,.28);font-family:var(--font-display);font-size:clamp(12px,1vw,14px);letter-spacing:.045em;line-height:1.15;color:#fff!important;-webkit-text-fill-color:#fff!important;white-space:normal;text-align:center}
 body.sms-portal-home .tools-grid.sms-portal .tool-name .bi-en{display:block;margin-top:3px;font-family:var(--font-body);font-size:.72em;color:#bed1e7!important;-webkit-text-fill-color:#bed1e7!important;letter-spacing:.025em;line-height:1.18}
 body.sms-portal-home .tools-grid.sms-portal .tool-desc,
 body.sms-portal-home .tools-grid.sms-portal .tool-tag,
@@ -891,11 +891,11 @@ body.sms-portal-home .tools-grid.sms-portal .guide-links{position:absolute;top:6
 body.sms-portal-home .tools-grid.sms-portal .guide-link{min-width:0;padding:2px 6px;border-radius:999px;border:1px solid rgba(255,255,255,.34);background:rgba(12,24,39,.72);color:#fff!important;-webkit-text-fill-color:#fff!important;text-decoration:none;font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;box-shadow:0 4px 14px rgba(0,0,0,.24)}
 body.sms-portal-home .tools-grid.sms-portal .guide-link .arrow,body.sms-portal-home .tools-grid.sms-portal .guide-link > span:not(.guide-lang){display:none!important}
 body.sms-portal-home .tools-grid.sms-portal .guide-link .guide-lang{color:#fff!important;-webkit-text-fill-color:#fff!important}
-#card-omm{--planet-color:#29a57f;--start-angle:220deg;--orbit-radius:var(--orbit-outer);--orbit-speed:98s}
-#card-sms{--planet-color:#d84f57;--start-angle:10deg;--orbit-radius:var(--orbit-inner);--orbit-speed:62s}
-#card-cms{--planet-color:#438fdf;--start-angle:186deg;--orbit-radius:var(--orbit-inner);--orbit-speed:62s}
-#card-synoptique{--planet-color:#39b9d6;--start-angle:332deg;--orbit-radius:var(--orbit-outer);--orbit-speed:98s}
-#card-guide{--planet-color:#c89b3d;--start-angle:102deg;--orbit-radius:var(--orbit-outer);--orbit-speed:98s}
+#card-omm{--planet-color:#29a57f;--start-angle:168deg;--orbit-radius:var(--orbit-inner);--orbit-speed:94s}
+#card-sms{--planet-color:#d84f57;--start-angle:20deg;--orbit-radius:var(--orbit-inner);--orbit-speed:94s}
+#card-cms{--planet-color:#438fdf;--start-angle:224deg;--orbit-radius:var(--orbit-outer);--orbit-speed:94s}
+#card-synoptique{--planet-color:#39b9d6;--start-angle:338deg;--orbit-radius:var(--orbit-outer);--orbit-speed:94s}
+#card-guide{--planet-color:#c89b3d;--start-angle:96deg;--orbit-radius:var(--orbit-mid);--orbit-speed:94s}
 .sms-ship{position:absolute;left:-80px;top:12%;width:clamp(34px,4.5vw,70px);height:auto;aspect-ratio:260/112;opacity:0;pointer-events:none;z-index:1;animation:smsShipPass 48s linear 3s infinite;filter:drop-shadow(0 0 3px #72cfff88)}
 .sms-meteor{position:absolute;left:var(--x);top:var(--y);width:110px;height:2px;pointer-events:none;opacity:0;transform:rotate(28deg);background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(232,244,255,.92) 48%,rgba(162,217,255,.0) 100%);filter:drop-shadow(0 0 8px rgba(255,255,255,.35));animation:smsMeteor 18s linear var(--delay) infinite}
 .v8-exhaust{animation:v8Engine .45s ease-in-out infinite alternate;transform-origin:right center}
@@ -912,11 +912,11 @@ body.sms-portal-home .tools-grid.sms-portal:focus-within .tool-card{animation-pl
 @keyframes smsShipPass{0%{left:-80px;top:12%;opacity:1;transform:rotate(5deg)}21%{left:calc(100% + 10px);top:28%;opacity:1;transform:rotate(5deg)}22%,49.99%{left:calc(100% + 10px);opacity:0}50%{left:calc(100% + 10px);top:65%;opacity:1;transform:scaleX(-1) rotate(5deg)}71%{left:-80px;top:50%;opacity:1;transform:scaleX(-1) rotate(5deg)}72%,100%{left:-80px;opacity:0}}
 @media (max-width: 900px){
   body.sms-portal-home main{padding:1rem .55rem 1.5rem}
-  body.sms-portal-home .tools-grid.sms-portal{height:560px;--orbit-outer:min(37vw,180px);--orbit-inner:calc(var(--orbit-outer) * .58);--planet:clamp(58px,12vw,82px)}
+  body.sms-portal-home .tools-grid.sms-portal{height:600px;min-height:600px;--orbit-outer:min(40vw,215px);--orbit-mid:calc(var(--orbit-outer) * .76);--orbit-inner:calc(var(--orbit-outer) * .54);--planet:clamp(54px,10.4vw,78px)}
 }
 @media (max-width: 640px){
-  body.sms-portal-home .tools-grid.sms-portal{height:520px;min-height:520px;--orbit-outer:min(36vw,145px);--orbit-inner:calc(var(--orbit-outer) * .58);--planet:clamp(52px,14vw,68px)}
-  body.sms-portal-home .tools-grid.sms-portal .tool-name{max-width:108px;font-size:10.5px;padding:3px 6px}
+  body.sms-portal-home .tools-grid.sms-portal{height:560px;min-height:560px;--orbit-outer:min(42vw,168px);--orbit-mid:calc(var(--orbit-outer) * .76);--orbit-inner:calc(var(--orbit-outer) * .53);--planet:clamp(48px,12.2vw,62px)}
+  body.sms-portal-home .tools-grid.sms-portal .tool-name{max-width:104px;font-size:10px;padding:3px 5px}
   body.sms-portal-home .tools-grid.sms-portal .tool-name .bi-en{font-size:8px}
   body.sms-portal-home .tools-grid.sms-portal .tool-icon{font-size:18px}
   body.sms-portal-home .tools-grid.sms-portal .guide-links{top:66%;gap:3px}
@@ -964,7 +964,7 @@ document.addEventListener('DOMContentLoaded', function(){
     star.style.cssText = 'left:' + x + '%;top:' + y + '%;width:' + size + 'px;height:' + size + 'px;--a:' + alpha;
     space.appendChild(star);
   }
-  ['var(--orbit-outer)','var(--orbit-inner)'].forEach(function(r){ var ring = document.createElement('i'); ring.className = 'sms-ring'; ring.style.setProperty('--r', r); space.appendChild(ring); });
+  ['var(--orbit-outer)','var(--orbit-mid)','var(--orbit-inner)'].forEach(function(r){ var ring = document.createElement('i'); ring.className = 'sms-ring'; ring.style.setProperty('--r', r); space.appendChild(ring); });
   var sun = document.createElement('div');
   sun.className = 'sms-sun';
   sun.insertAdjacentHTML('beforeend','<i class="sms-flare"></i><i class="sms-flare"></i>');
