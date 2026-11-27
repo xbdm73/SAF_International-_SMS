@@ -89,8 +89,9 @@ header p{margin:4px 0 0;color:var(--ink-2);font-size:13px}
 .ac .st{font-weight:600;font-size:14px;margin-top:4px}
 .ac[data-st=live] .st{color:var(--live)} .ac[data-st=ground] .st{color:var(--ground)}
 .ac[data-st=lost] .st{color:var(--lost)} .ac[data-st=none] .st,.ac[data-st=stale] .st{color:var(--stale)}
-.ac dl{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px;margin:10px 0 0}
-.ac dt{font-size:12px;color:var(--ink-2)} .ac dd{margin:0;font-family:var(--cond);font-weight:600;font-size:19px}
+.ac dl{display:grid;grid-template-columns:repeat(4,auto);justify-content:space-between;gap:6px 8px;margin:10px 0 0}
+.ac dt{font-size:12px;color:var(--ink-2)} .ac dd{margin:0;font-family:var(--cond);font-weight:600;font-size:18px;white-space:nowrap}
+.ac dd.agl-old{opacity:.6}
 .ac dd small{font-family:var(--font);font-weight:400;font-size:12px;color:var(--ink-2)}
 .ac .when{font-size:12px;color:var(--ink-2);margin-top:8px}
 
@@ -157,6 +158,7 @@ footer .err{color:var(--lost)}
 /* Rotor imbriqué dans .heli-icon : il se cale sur le fuselage (0,0), sinon il était décalé de 22 px hors de l'appareil */
 .acm .heli-icon .heli-rotor{left:0;top:0}
 @keyframes saf-heli-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.acm .lbl small.lagl{font-weight:600;font-size:12px;opacity:.85}
 .acm .lbl{position:absolute;left:25px;top:-11px;white-space:nowrap;font-family:var(--cond);font-weight:700;font-size:15px;
   background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:3px;padding:0 5px;line-height:20px}
 .acm.lost .lbl{background:var(--lost);color:#fff;border-color:var(--lost)}
@@ -2177,6 +2179,7 @@ async function load(retried){
     }
     render(lastPs);
     checkStarts();
+    ensureLastAgl();
     // Même cycle de données NSE pour les projections sur la carte et le profil AGL.
     // Les altitudes de terrain manquantes sont demandées, les autres restent en cache.
     if(terrain.visible) updateTerrain();
@@ -2211,6 +2214,78 @@ setInterval(()=>{
     load();
   }
 },10000);
+
+/* ---------- Hauteur sol du dernier point de chaque appareil (fiche + étiquette carte) ----------
+   Altitude GPS du traceur moins relief (Copernicus GLO-90 via Open-Meteo, EU-DEM 25 m en secours).
+   Indicative : précision verticale GPS + modèle de terrain de l'ordre de plusieurs dizaines de mètres.
+   Le relief est demandé au plus toutes les 30 s par appareil ; la valeur affichée correspond
+   toujours au point pour lequel le relief est connu (altitude et relief au même endroit). */
+const lastAgl={};          // reg -> {key, agl_ft, fix_time, source}
+let aglBusy=false, aglAt=0;
+const AGL_MIN_MS=30000;
+async function ensureLastAgl(){
+  if(aglBusy) return;
+  const now=Date.now();
+  const want=[];
+  for(const a of fleet){
+    const last=state[a.reg]?.last;
+    if(!a.active||!last||!Number.isFinite(+last.lat)||!Number.isFinite(+last.lon)||!Number.isFinite(+last.alt_m)) continue;
+    const key=terrainKey(last), cur=lastAgl[a.reg];
+    if(cur && cur.key===key) continue;
+    if(terrain.elevations.has(key)){ setLastAgl(a.reg,last,terrain.elevations.get(key),terrain.source); continue; }
+    want.push({reg:a.reg,p:last,key});
+  }
+  if(!want.length){ return; }
+  if(now-aglAt<AGL_MIN_MS) return;
+  aglBusy=true; aglAt=now;
+  const uniq=[...new Map(want.map(w=>[w.key,w.p])).values()];
+  async function getJson(url){
+    const ctrl=new AbortController(), t=setTimeout(()=>ctrl.abort(),10000);
+    try{ const r=await fetch(url,{signal:ctrl.signal,cache:"no-store"}); if(!r.ok) throw Error("HTTP "+r.status); return await r.json(); }
+    finally{ clearTimeout(t); }
+  }
+  try{
+    let h=null, source="";
+    try{
+      const j=await getJson("https://api.open-meteo.com/v1/elevation?latitude="+encodeURIComponent(uniq.map(p=>(+p.lat).toFixed(5)).join(","))+
+        "&longitude="+encodeURIComponent(uniq.map(p=>(+p.lon).toFixed(5)).join(",")));
+      if(!Array.isArray(j.elevation)||j.elevation.length!==uniq.length) throw Error(j.reason||"Copernicus");
+      h=j.elevation; source="Copernicus GLO-90 (90 m)";
+    }catch(e1){
+      const j=await getJson("https://api.opentopodata.org/v1/eudem25m?locations="+encodeURIComponent(uniq.map(terrainKey).join("|")));
+      if(j.status!=="OK"||!Array.isArray(j.results)||j.results.length!==uniq.length) throw Error(j.error||"EU-DEM");
+      h=j.results.map(v=>v.elevation); source="EU-DEM 25 m";
+    }
+    uniq.forEach((p,i)=>terrain.elevations.set(terrainKey(p),Number.isFinite(h[i])?h[i]:null));
+    want.forEach(w=>setLastAgl(w.reg,w.p,terrain.elevations.get(w.key),source));
+    render(lastPs);
+  }catch(e){ console.warn("Hauteur sol indisponible :",e); }
+  finally{ aglBusy=false; }
+}
+function setLastAgl(reg,p,ground,source){
+  lastAgl[reg]={key:terrainKey(p), fix_time:p.fix_time, source:source||"",
+    agl_ft:Number.isFinite(ground)?(+p.alt_m-ground)*3.28084:null};
+}
+function aglFmt(v){ return (Math.round(v/10)*10).toLocaleString("fr-FR"); }
+function aglCell(reg,last,st){
+  const o=lastAgl[reg];
+  const tip="Hauteur sol indicative : altitude GPS du traceur moins relief"+(o&&o.source?" ("+o.source+")":"")+
+    ". Précision de l'ordre de plusieurs dizaines de mètres. Non utilisable pour la navigation.";
+  let v="–", cls="";
+  if(o && o.agl_ft!=null){
+    const onGround=st.k==="ground"||st.k==="stale";
+    if(onGround && o.agl_ft<150) v="Sol";
+    else if(o.agl_ft<0) v=`≈ 0 <small>ft</small>`;
+    else v=`${aglFmt(o.agl_ft)} <small>ft</small>`;
+    if(o.key!==terrainKey(last)) cls="agl-old";   // relief du point précédent, mise à jour en cours
+  }
+  return `<div title="${esc(tip)}"><dt>Haut. sol</dt><dd class="${cls}">${v}</dd></div>`;
+}
+function aglLabel(reg){
+  const o=lastAgl[reg];
+  if(!o||o.agl_ft==null) return "";
+  return (o.agl_ft<0?"≈ 0":aglFmt(o.agl_ft))+" ft sol";
+}
 
 /* ---------- Profil relief et hauteur sol (affichage consultatif) ---------- */
 const terrain={visible:false, reg:null, elevations:new Map(), lastFetch:0, fetching:false, pending:false, token:0, retryTimer:null, source:""};
@@ -2412,6 +2487,7 @@ function render(ps){
       <div class="st">${esc(st.t)}</div>
       ${last?`<dl>
         <div><dt>Altitude</dt><dd>${Math.round(last.alt_m*3.28084).toLocaleString("fr-FR")} <small>ft</small></dd></div>
+        ${aglCell(a.reg,last,st)}
         <div><dt>Cap</dt><dd>${hd==null?"–":String(Math.round(hd)%360).padStart(3,"0")+"°"}</dd></div>
         <div><dt>${gs!=null?"Vit. sol calc.":"Vitesse (brute)"}</dt><dd>${gs!=null?Math.round(gs/1.852)+' <small>kt</small>':esc(last.speed)}</dd></div>
       </dl>
@@ -2468,7 +2544,7 @@ function render(ps){
       }
       const focus=p.follow||selected;   // appareil mis en avant sur cette carte
       if(last){
-        const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl" style="top:${-11+idx*23}px">${esc(a.reg)}</span>${nightBadge(last)}${nav?`<span class="eta${nav.night?" "+nav.night.k:""}" style="top:${11+idx*23}px">${navLine(nav)}</span>`:""}</div>`;
+        const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl" style="top:${-11+idx*23}px">${esc(a.reg)}${st.k==="live"&&aglLabel(a.reg)?` <small class="lagl">${aglLabel(a.reg)}</small>`:""}</span>${nightBadge(last)}${nav?`<span class="eta${nav.night?" "+nav.night.k:""}" style="top:${11+idx*23}px">${navLine(nav)}</span>`:""}</div>`;
         const icon=L.divIcon({className:"",html,iconSize:[0,0]});
         if(p.markers[a.reg]) p.markers[a.reg].setLatLng([last.lat,last.lon]).setIcon(icon);
         else p.markers[a.reg]=L.marker([last.lat,last.lon],{icon,keyboard:false}).addTo(p.map);
