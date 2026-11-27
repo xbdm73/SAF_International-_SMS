@@ -571,7 +571,38 @@ const sb = supabase.createClient(CONFIG.url, CONFIG.key);
 /* ---------- Cartes (écran découpable en 1 à 4 cartes) ----------
    Chaque carte suit soit toute la flotte (vue libre), soit un appareil choisi :
    elle se recentre sur lui à chaque actualisation, jusqu'à ce qu'on la déplace à la main. */
+/* 27.11.2026 — Tuile de fond en échec (carré gris) : jusqu'à 3 nouvelles tentatives, espacées,
+   en changeant de serveur (a/b/c) quand le fond en propose plusieurs. OpenTopoMap calcule à la demande
+   les tuiles des forts zooms (cadrage sur un workpath) et laisse parfois expirer la première requête. */
+function retryTiles(layer){
+  /* 27.11.2026 (2) — Certaines tuiles OpenTopoMap échouent à chaque fois (tuile jamais calculée par le serveur) :
+     après 2 nouvelles tentatives, la case est remplie avec la tuile du zoom inférieur (puis jusqu'à 3 niveaux
+     au-dessus), agrandie et découpée sur le bon quart. Image un peu plus floue, mais plus de carré gris. */
+  layer.on("tileerror",e=>{
+    const t=e.tile, c=e.coords, n=+(t.dataset.retry||0);
+    if(!c || n>=5) return;
+    t.dataset.retry=n+1;
+    const k=n<2?0:n-1;                       // essais 1-2 : même tuile ; 3-5 : 1, 2 puis 3 niveaux au-dessus
+    if(k>c.z) return;
+    const f=1<<k, sz=layer.getTileSize().x, qx=c.x%f, qy=c.y%f;
+    const url=L.Util.template(layer._url,L.extend({},layer.options,{s:"abc"[(n+1)%3],x:c.x>>k,y:c.y>>k,z:c.z-k,r:""}));
+    setTimeout(()=>{
+      if(k){
+        t.style.width=t.style.height=(sz*f)+"px";
+        t.style.marginLeft=(-qx*sz)+"px"; t.style.marginTop=(-qy*sz)+"px";
+        t.style.clipPath=`inset(${qy*sz}px ${(f-1-qx)*sz}px ${(f-1-qy)*sz}px ${qx*sz}px)`;
+      }
+      t.src=url+(url.includes("?")?"&":"?")+"_r="+(n+1);
+    },k?300:1200*(n+1));
+  });
+  return layer;
+}
 function makeLayers(){
+  const lay=makeBaseLayers();
+  Object.values(lay).forEach(retryTiles);
+  return lay;
+}
+function makeBaseLayers(){
   return {
     "Topo (OpenTopoMap)": L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"© OpenTopoMap, © OSM"}),
     "Plan (OSM)": L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}),
