@@ -1358,7 +1358,7 @@ function createPane(i){
   // Déplacement à la main : on arrête de suivre jusqu'au clic sur « Recentrer »
   m.on("dragstart",()=>{ if(pane.follow){ pane.moved=true; pane.btn.hidden=false; } });
   pane.btn.onclick=()=>{ pane.moved=false; pane.btn.hidden=true; centerPane(pane,true); };
-  pane.sel.onchange=()=>{ pane.autoAt=0; pane.follow=pane.sel.value||null; viewFollow[i]=pane.follow; saveView();
+  pane.sel.onchange=()=>{ pane.autoAt=0; pane.wsKey=null; pane.follow=pane.sel.value||null; viewFollow[i]=pane.follow; saveView();
     pane.moved=false; pane.btn.hidden=true; pane.fitted=false; centerPane(pane,true); render(lastPs); };
   L.DomEvent.disableClickPropagation(el.querySelector(".pane-bar"));
   L.DomEvent.disableScrollPropagation(el.querySelector(".pane-bar"));
@@ -1394,9 +1394,43 @@ function predictionBounds(reg){
   // une carte et levait « Cannot read properties of undefined (reading 'layerPointToLatLng') ».
   return L.latLng(last.lat,last.lon).toBounds(radius*2);
 }
+/* 27.11.2026 — Arrivée sur un chantier : la carte qui suit l'appareil zoome sur le workpath du chantier
+   (trajet saisi dans le Day Plan, points DZ/LZ et point principal), appareil compris.
+   Sur zone = à moins de WORKSITES.nearKm d'un point du chantier ; zone quittée au-delà de nearKm + 1 km
+   (marge pour éviter les allers-retours de cadrage). L'arrivée recadre une seule fois, même si la carte
+   avait été déplacée à la main ; ensuite l'utilisateur garde la main, « Recentrer » revient au workpath.
+   En quittant le chantier, la carte reprend le suivi normal de l'appareil. */
+const wsKeyOf=w=>[w.reg,w.site_id??w.name,w.seq??""].join("|");
+function paneWorksite(pane,last){
+  let best=null;
+  for(const w of sitesFor(pane.follow)){
+    const d=siteDist(w,last), lim=WORKSITES.nearKm+(pane.wsKey===wsKeyOf(w)?1:0);
+    if(d<=lim && (!best||d<best.d)) best={w,d};
+  }
+  return best?.w||null;
+}
+function workpathBounds(w,last){
+  const ll=[[+w.lat,+w.lon],[last.lat,last.lon]];
+  sitePts(w).forEach(p=>ll.push([+p.lat,+p.lon]));
+  (Array.isArray(w.route)?w.route:[]).forEach(r=>Array.isArray(r)&&r.forEach(c=>{ if(Array.isArray(c)&&isFinite(+c[0])&&isFinite(+c[1])) ll.push([+c[0],+c[1]]); }));
+  return L.latLngBounds(ll);
+}
 function centerPane(pane,force){
   if(pane.follow){
     const last=state[pane.follow]?.last; if(!last) return;
+    const ws=paneWorksite(pane,last);
+    if(ws){
+      const key=wsKeyOf(ws), arrived=pane.wsKey!==key;
+      pane.wsKey=key;
+      if(arrived){ pane.moved=false; if(pane.btn) pane.btn.hidden=true; }
+      if(pane.moved && !force) return;
+      // Recadrage à l'arrivée, sur « Recentrer », ou si l'appareil sort du cadre pendant le travail
+      if(arrived || force || !pane.fitted || !pane.map.getBounds().pad(-.05).contains([last.lat,last.lon]))
+        pane.map.fitBounds(workpathBounds(ws,last),{padding:[40,40],maxZoom:15,animate:arrived&&!force});
+      pane.fitted=true;
+      return;
+    }
+    if(pane.wsKey){ pane.wsKey=null; pane.fitted=false; }   // chantier quitté : retour au suivi normal
     if(pane.moved && !force) return;
     const bounds=predictionBounds(pane.follow);
     if(bounds){
