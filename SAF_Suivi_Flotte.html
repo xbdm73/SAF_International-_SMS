@@ -158,7 +158,10 @@ footer .err{color:var(--lost)}
 /* Rotor imbriqué dans .heli-icon : il se cale sur le fuselage (0,0), sinon il était décalé de 22 px hors de l'appareil */
 .acm .heli-icon .heli-rotor{left:0;top:0}
 @keyframes saf-heli-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-.acm .lbl small.lagl{font-weight:600;font-size:12px;opacity:.85}
+.acm .fd{position:absolute;left:25px;white-space:nowrap;font:600 12px/17px var(--cond);color:#fff;background:rgba(14,22,32,.82);
+  border:1px solid rgba(255,255,255,.7);border-radius:3px;padding:0 5px;box-shadow:0 1px 3px rgba(0,0,0,.45);font-variant-numeric:tabular-nums}
+.acm .fd b{font-weight:700} .acm .fd i{font-style:normal;opacity:.55;margin:0 3px}
+.acm .fd.lost{background:rgba(70,20,22,.85);opacity:.85}
 .acm .lbl{position:absolute;left:25px;top:-11px;white-space:nowrap;font-family:var(--cond);font-weight:700;font-size:15px;
   background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:3px;padding:0 5px;line-height:20px}
 .acm.lost .lbl{background:var(--lost);color:#fff;border-color:var(--lost)}
@@ -2281,6 +2284,14 @@ function aglCell(reg,last,st){
   }
   return `<div title="${esc(tip)}"><dt>Haut. sol</dt><dd class="${cls}">${v}</dd></div>`;
 }
+function flightDataLine(reg,hd,gs){
+  const parts=[];
+  const o=lastAgl[reg];
+  if(o&&o.agl_ft!=null) parts.push(`<b>${o.agl_ft<0?"≈ 0":aglFmt(o.agl_ft)}</b> ft sol`);
+  if(gs!=null) parts.push(`<b>${Math.round(gs/1.852)}</b> kt`);
+  if(hd!=null) parts.push(`<b>${String(Math.round(hd)%360).padStart(3,"0")}</b>°`);
+  return parts.join("<i>·</i>");
+}
 function aglLabel(reg){
   const o=lastAgl[reg];
   if(!o||o.agl_ft==null) return "";
@@ -2543,8 +2554,10 @@ function render(ps){
         continue;
       }
       const focus=p.follow||selected;   // appareil mis en avant sur cette carte
+      // Données de vol en surimpression (en vol, ou dernières valeurs si signal perdu)
+      const fd=last&&(st.k==="live"||st.k==="lost")?flightDataLine(a.reg,hd,gs):"";
       if(last){
-        const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl" style="top:${-11+idx*23}px">${esc(a.reg)}${st.k==="live"&&aglLabel(a.reg)?` <small class="lagl">${aglLabel(a.reg)}</small>`:""}</span>${nightBadge(last)}${nav?`<span class="eta${nav.night?" "+nav.night.k:""}" style="top:${11+idx*23}px">${navLine(nav)}</span>`:""}</div>`;
+        const html=`<div class="acm ${st.k}">${arrowSvg(COLORS[st.k],hd)}<span class="lbl" style="top:${-11+idx*23}px">${esc(a.reg)}</span>${nightBadge(last)}${fd?`<span class="fd${st.k==="lost"?" lost":""}" style="top:${11+idx*23}px">${fd}</span>`:""}${nav?`<span class="eta${nav.night?" "+nav.night.k:""}" style="top:${(fd?30:11)+idx*23}px">${navLine(nav)}</span>`:""}</div>`;
         const icon=L.divIcon({className:"",html,iconSize:[0,0]});
         if(p.markers[a.reg]) p.markers[a.reg].setLatLng([last.lat,last.lon]).setIcon(icon);
         else p.markers[a.reg]=L.marker([last.lat,last.lon],{icon,keyboard:false}).addTo(p.map);
