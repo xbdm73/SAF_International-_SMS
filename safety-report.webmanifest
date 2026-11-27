@@ -1,9 +1,9 @@
 {
-  "name": "SAF International - Safety Report",
-  "short_name": "Safety Report",
-  "description": "Compte rendu d’événement SAF International",
+  "name": "SAF International - Crew App",
+  "short_name": "SAF Mobile",
+  "description": "Safety Report, documentation compagnie et briefing TST",
   "lang": "fr",
-  "start_url": "./SAF_Report.html",
+  "start_url": "./SAF_App.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0D1B2A",
